@@ -91,6 +91,7 @@ window.FleetKitBoot = (() => {
     _timeouts.push({
       clear: () => {
         window.removeEventListener('keydown', onSkip);
+        _overlay?.removeEventListener('click', onSkip);
       }
     });
   }
@@ -441,7 +442,7 @@ window.FleetKitBoot = (() => {
       // Get agent names from theme-names
       const names = window.FleetKitNames;
       const agentIds = ['hunter', 'forge', 'echo', 'atlas', 'sentinel'];
-      const agentLabels = agentIds.map(id => names ? names.resolve('gameboy', id) : id.toUpperCase());
+      const agentLabels = agentIds.map(id => names?.resolve ? names.resolve('gameboy', id) : (id || '').toUpperCase());
 
       await new Promise((resolve) => {
         function frame(now) {
@@ -650,8 +651,8 @@ window.FleetKitBoot = (() => {
     const names = window.FleetKitNames;
     const agentIds = ['hunter', 'forge', 'echo', 'atlas', 'sentinel'];
     const agentTitles = agentIds.map(id => {
-      if (names) return names.resolve('cyberpunk', id, 'title');
-      return id.toUpperCase();
+      if (names?.resolve) return names.resolve('cyberpunk', id, 'title');
+      return (id || '').toUpperCase();
     });
 
     for (let i = 0; i < agentTitles.length; i++) {
@@ -937,15 +938,15 @@ window.FleetKitBoot = (() => {
     const names = window.FleetKitNames;
     const agentIds = ['hunter', 'forge', 'echo', 'atlas', 'sentinel'];
     const agentInfo = agentIds.map(id => {
-      if (names) {
+      if (names?.resolve) {
         return {
-          name: names.resolve('executive', id),
-          title: names.resolve('executive', id, 'title'),
-          role: names.resolve('executive', id, 'role'),
-          emoji: names.resolve('executive', id, 'emoji')
+          name: names.resolve('executive', id) || id,
+          title: names.resolve('executive', id, 'title') || id,
+          role: names.resolve('executive', id, 'role') || '',
+          emoji: names.resolve('executive', id, 'emoji') || ''
         };
       }
-      return { name: id, title: id, role: '', emoji: '' };
+      return { name: id || '', title: id || '', role: '', emoji: '' };
     });
 
     {
@@ -1005,7 +1006,7 @@ window.FleetKitBoot = (() => {
             ctx.fillStyle = EX_NAVY;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            const initials = (agent.name || 'A').charAt(0).toUpperCase();
+            const initials = ((agent?.name) || 'A').charAt(0).toUpperCase();
             ctx.fillText(initials, avatarCx, avatarCy + 1);
 
             // Name
@@ -1017,10 +1018,10 @@ window.FleetKitBoot = (() => {
             ctx.font = `${Math.max(8, Math.floor(cardW / 14))}px "Georgia", serif`;
             ctx.fillStyle = EX_GOLD_LIGHT;
             // Wrap role if too long
-            const roleText = agent.role || '';
+            const roleText = agent?.role || '';
             const roleLines = [];
             const maxRoleW = cardW - 10;
-            const words = roleText.split(' ');
+            const words = (roleText || '').split(' ');
             let currentLine = '';
             words.forEach(word => {
               const test = currentLine ? currentLine + ' ' + word : word;
@@ -1059,7 +1060,7 @@ window.FleetKitBoot = (() => {
       else if (hour < 17) greeting = 'Good afternoon';
       else greeting = 'Good evening';
 
-      const userName = options.userName || 'there';
+      const userName = options?.userName || 'there';
       const fullGreeting = `${greeting}, ${userName}.`;
 
       const dur = abbreviated ? 400 : 1000;

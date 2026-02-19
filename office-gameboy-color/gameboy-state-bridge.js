@@ -62,9 +62,9 @@ class GameBoyStateBridge {
     }
     
     updateAgentStatuses(agents) {
-        agents.forEach(agent => {
-            const character = this.characterManager.findCharacterByRole(agent.role) ||
-                            this.characterManager.findCharacterByName(agent.name);
+        (agents || []).forEach(agent => {
+            const character = this.characterManager?.findCharacterByRole(agent.role) ||
+                            this.characterManager?.findCharacterByName(agent.name);
             
             if (character) {
                 const newState = this.mapAgentStatusToCharacterState(agent.status, agent.currentTask);
@@ -97,7 +97,7 @@ class GameBoyStateBridge {
     }
     
     updateMissionBoard(missions) {
-        this.displayedMissions = missions.slice(0, 3);
+        this.displayedMissions = (missions || []).slice(0, 3);
         this.updateMissionBoardUI();
         
         missions.forEach(mission => {
@@ -108,22 +108,22 @@ class GameBoyStateBridge {
     }
     
     updateSubagents(subagents) {
-        this.displayedSubagents = subagents;
-        subagents.forEach(subagent => {
-            if (subagent.status === 'running' && !this.characterManager.hasSubagent(subagent.id)) {
+        this.displayedSubagents = subagents || [];
+        (subagents || []).forEach(subagent => {
+            if (subagent.status === 'running' && !this.characterManager?.hasSubagent(subagent.id)) {
                 this.spawnSubagentCharacter(subagent);
             }
         });
     }
     
     spawnSubagentCharacter(subagent) {
-        const parentChar = this.characterManager.findCharacterByRole(this.getAgentRoleById(subagent.parentAgent));
+        const parentChar = this.characterManager?.findCharacterByRole(this.getAgentRoleById(subagent.parentAgent));
         if (parentChar) {
             const stagiairePos = {
                 x: parentChar.gridX + (Math.random() - 0.5) * 2,
                 y: parentChar.gridY + (Math.random() - 0.5) * 2
             };
-            this.characterManager.createStagiaire(subagent.id, subagent.name, stagiairePos);
+            this.characterManager?.createStagiaire(subagent.id, subagent.name, stagiairePos);
         }
     }
     
@@ -209,13 +209,13 @@ class GameBoyStateBridge {
     
     triggerMissionActivity(mission) {
         if (!mission.assignedTo) return;
-        mission.assignedTo.forEach(agentId => {
-            const character = this.characterManager.findCharacterByName(agentId) ||
-                            this.characterManager.characters.find(c => c.role.toLowerCase().includes(agentId));
+        (mission.assignedTo || []).forEach(agentId => {
+            const character = this.characterManager?.findCharacterByName(agentId) ||
+                            (this.characterManager?.characters || []).find(c => (c.role || '').toLowerCase().includes(agentId));
             if (character) {
                 if (Math.random() > 0.5) {
                     character.setState('going_to_meeting');
-                    character.showSpeechBubble(mission.title.split(' ')[0]);
+                    character.showSpeechBubble((mission.title || 'MISSION').split(' ')[0]);
                 } else {
                     character.setState('working_at_desk');
                 }
@@ -229,7 +229,7 @@ class GameBoyStateBridge {
     
     update(deltaTime) {
         this.eventTimer += deltaTime;
-        this.officeMap.updateAnimations(deltaTime);
+        this.officeMap?.updateAnimations(deltaTime);
         
         if (Date.now() - this.lastDataSync >= this.syncInterval) {
             this.syncWithFleetKitData();
@@ -260,15 +260,16 @@ class GameBoyStateBridge {
     }
     
     triggerCronAlarm(cron) {
-        this.officeMap.triggerPhoneRing();
+        this.officeMap?.triggerPhoneRing();
         
         if (window.PokemonUI) {
             window.PokemonUI.systemMessage(`${this._resolveObj('phone')} is ringing!\n${cron.name}`);
         }
         
-        const ownerChar = this.characterManager.findCharacterByName(cron.owner);
+        const ownerChar = this.characterManager?.findCharacterByName(cron?.owner);
         if (ownerChar) {
-            const phonePos = this.officeMap.locations.phoneAlarm;
+            const phonePos = this.officeMap?.locations?.phoneAlarm;
+            if (!phonePos) return;
             ownerChar.moveTo(phonePos.x, phonePos.y);
             ownerChar.showSpeechBubble(this._resolveObj('phone'));
             setTimeout(() => ownerChar.setState('working_at_desk'), 3000);
@@ -276,8 +277,8 @@ class GameBoyStateBridge {
     }
     
     triggerAgentActivity(agent) {
-        const character = this.characterManager.findCharacterByRole(agent.role) ||
-                        this.characterManager.findCharacterByName(agent.name);
+        const character = this.characterManager?.findCharacterByRole(agent.role) ||
+                        this.characterManager?.findCharacterByName(agent.name);
         if (character) {
             const activities = ['thinking', 'working_at_desk', 'searching_files'];
             character.setState(activities[Math.floor(Math.random() * activities.length)]);
@@ -320,7 +321,7 @@ class GameBoyStateBridge {
     
     // ── Public API ─────────────────────────────────────
     triggerGroupMeeting() {
-        const shuffled = [...this.characterManager.characters].sort(() => Math.random() - 0.5);
+        const shuffled = [...(this.characterManager?.characters || [])].sort(() => Math.random() - 0.5);
         const participants = shuffled.slice(0, 2 + Math.floor(Math.random() * 3));
         participants.forEach((char, index) => {
             setTimeout(() => char.setState('going_to_meeting'), index * 300);
@@ -333,18 +334,18 @@ class GameBoyStateBridge {
     }
     
     triggerCelebration() {
-        this.characterManager.triggerCelebration();
+        this.characterManager?.triggerCelebration();
     }
     
     triggerWhiteboardSession() {
-        const leadChar = this.characterManager.characters.find(c => c.canonicalId === 'hunter');
-        const missionBoard = this.officeMap.locations.missionBoard;
+        const leadChar = (this.characterManager?.characters || []).find(c => c.canonicalId === 'hunter');
+        const missionBoard = this.officeMap?.locations?.missionBoard;
         
         if (leadChar && missionBoard) {
             leadChar.moveTo(missionBoard.x, missionBoard.y);
             leadChar.showSpeechBubble(this._resolveObj('whiteboard'));
             
-            this.characterManager.characters.forEach((char, index) => {
+            (this.characterManager?.characters || []).forEach((char, index) => {
                 if (char !== leadChar) {
                     setTimeout(() => {
                         char.moveTo(missionBoard.x - 1 + index * 0.5, missionBoard.y + 1);
@@ -375,7 +376,7 @@ class GameBoyStateBridge {
         const agents = FleetKit.data.agents;
         const activities = {};
         agents.forEach(agent => {
-            const pokeName = this._resolveName(agent.id || agent.name, 'title');
+            const pokeName = this._resolveName(agent.id || agent.name || 'unknown', 'title');
             activities[pokeName] = {
                 status: (agent.status || 'idle').toUpperCase(),
                 task: agent.currentTask,

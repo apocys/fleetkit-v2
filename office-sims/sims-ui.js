@@ -132,7 +132,8 @@ class SimsUI {
         if (build) build.onclick = () => this._showModeTooltip('Build Mode: Redesign the office! (Coming soon)');
 
         // Click characters to select them
-        this.characterManager.characters.forEach((char, i) => {
+        (this.characterManager?.characters || []).forEach((char, i) => {
+            if (!char?.container) return;
             char.container.interactive = true;
             char.container.cursor = 'pointer';
             char.container.on('pointerdown', () => this._selectAgent(i));
@@ -151,16 +152,18 @@ class SimsUI {
     // ── Agent selection ─────────────────────────────────
 
     _selectAgent(index) {
-        const chars = this.characterManager.characters;
+        const chars = this.characterManager?.characters || [];
+        if (!chars.length) return;
         if (index < 0) index = chars.length - 1;
         if (index >= chars.length) index = 0;
         this.selectedAgent = index;
 
         const char = chars[index];
+        if (!char) return;
         const nameEl = document.getElementById('simsAgentName');
         const roleEl = document.getElementById('simsAgentRole');
-        if (nameEl) nameEl.textContent = char.title || char.name;
-        if (roleEl) roleEl.textContent = char.role;
+        if (nameEl) nameEl.textContent = char.title || char.name || 'Agent';
+        if (roleEl) roleEl.textContent = char.role || 'Unknown';
 
         this._renderPortrait(char);
         this._syncNeeds();
@@ -190,7 +193,7 @@ class SimsUI {
         // Character portrait (pixel art face)
         const skin = '#ffdbb5';
         const hair = '#4a3520';
-        const suit = '#' + char.suitColor.toString(16).padStart(6, '0');
+        const suit = '#' + (char.suitColor || 0x888888).toString(16).padStart(6, '0');
 
         // Background glow
         ctx.fillStyle = suit;
@@ -251,16 +254,16 @@ class SimsUI {
 
         // Energy = memory/uptime remaining (inverse of usage)
         this.needs.Energy = Math.max(5, Math.min(100,
-            100 - (metrics.memoryUsage || 0.3) * 100
+            100 - (metrics.memoryUsage ?? 0.3) * 100
         ));
 
         // Fun = missions completed ratio
         const totalMissions = missions.length || 1;
-        const completed = missions.filter(m => m.status === 'completed' || m.progress >= 1).length;
+        const completed = missions.filter(m => m?.status === 'completed' || (m?.progress || 0) >= 1).length;
         this.needs.Fun = Math.max(5, Math.min(100, (completed / totalMissions) * 100 + 20));
 
         // Social = active sessions / agents talking
-        const activeSessions = metrics.sessionsActive || agents.filter(a => a.status === 'active').length;
+        const activeSessions = metrics.sessionsActive || agents.filter(a => a?.status === 'active').length;
         this.needs.Social = Math.max(5, Math.min(100, activeSessions * 18 + 10));
 
         // Hunger = API calls (more = fuller)
@@ -275,7 +278,7 @@ class SimsUI {
         this.needs.Bladder = Math.max(5, Math.min(100, 80 - Math.random() * 20));
 
         // Simoleons (fun metric: token usage as currency)
-        const simoleons = Math.max(0, 25000 - (metrics.tokensToday || 0));
+        const simoleons = Math.max(0, 25000 - (metrics.tokensToday ?? 0));
         const el = document.getElementById('simsSimoleons');
         if (el) el.textContent = `§ ${simoleons.toLocaleString()}`;
 

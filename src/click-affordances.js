@@ -45,8 +45,8 @@ window.ClickAffordances = (() => {
     if (document.getElementById('gameContainer')) return 'gameboy';
 
     // From OpenClawHelpers or FleetKitUX
-    if (window.OpenClawHelpers && OpenClawHelpers.theme) return OpenClawHelpers.theme;
-    if (window.FleetKitUX && FleetKitUX.theme) return FleetKitUX.theme;
+    if (window.OpenClawHelpers?.theme) return OpenClawHelpers.theme;
+    if (window.FleetKitUX?.theme) return FleetKitUX.theme;
 
     return 'gameboy';
   }
@@ -755,7 +755,7 @@ window.ClickAffordances = (() => {
    */
   function findCharAtCanvasPos(event, canvas) {
     const office = window.gameboyOffice;
-    if (!office || !office.characterManager) return null;
+    if (!office?.characterManager) return null;
 
     const rect = canvas.getBoundingClientRect();
     const scaleX = canvas.width / rect.width;
@@ -765,19 +765,19 @@ window.ClickAffordances = (() => {
     const canvasY = (event.clientY - rect.top) * scaleY;
 
     // The character container is offset: centered horizontally, y=180
-    const charContainerX = office.characterContainer ? office.characterContainer.x : (canvas.width / 2);
-    const charContainerY = office.characterContainer ? office.characterContainer.y : 180;
+    const charContainerX = office?.characterContainer?.x ?? (canvas.width / 2);
+    const charContainerY = office?.characterContainer?.y ?? 180;
 
     // Characters' screenX/Y are relative to the character container
-    const chars = office.characterManager.characters || [];
+    const chars = office?.characterManager?.characters || [];
     const hitRadius = 20; // Pixel hit radius around each character
 
     let closest = null;
     let closestDist = Infinity;
 
     for (const char of chars) {
-      const charScreenX = charContainerX + char.screenX;
-      const charScreenY = charContainerY + char.screenY;
+      const charScreenX = charContainerX + (char?.screenX || 0);
+      const charScreenY = charContainerY + (char?.screenY || 0);
 
       const dx = canvasX - charScreenX;
       const dy = canvasY - charScreenY;
@@ -790,10 +790,10 @@ window.ClickAffordances = (() => {
     }
 
     // Also check sub-agents
-    const subs = office.characterManager.subAgents || [];
+    const subs = office?.characterManager?.subAgents || [];
     for (const sub of subs) {
-      const subScreenX = charContainerX + sub.screenX;
-      const subScreenY = charContainerY + sub.screenY;
+      const subScreenX = charContainerX + (sub?.screenX || 0);
+      const subScreenY = charContainerY + (sub?.screenY || 0);
 
       const dx = canvasX - subScreenX;
       const dy = canvasY - subScreenY;
@@ -812,14 +812,14 @@ window.ClickAffordances = (() => {
    * Open agent detail card using OpenClawHelpers.
    */
   function openAgentDetail(agentId) {
-    if (window.OpenClawHelpers && typeof OpenClawHelpers.showAgentDetail === 'function') {
+    if (window.OpenClawHelpers?.showAgentDetail && typeof OpenClawHelpers.showAgentDetail === 'function') {
       // Try to find the full agent object from FleetKit data
       let agentObj = null;
-      if (typeof FleetKit !== 'undefined' && FleetKit.data && FleetKit.data.agents) {
+      if (typeof FleetKit !== 'undefined' && FleetKit?.data?.agents) {
         agentObj = FleetKit.data.agents.find(a =>
-          a.id === agentId ||
-          a.name?.toLowerCase() === agentId.toLowerCase() ||
-          a.canonical === agentId
+          a?.id === agentId ||
+          a?.name?.toLowerCase() === (agentId || '').toLowerCase() ||
+          a?.canonical === agentId
         );
       }
       OpenClawHelpers.showAgentDetail(agentObj || agentId);
@@ -1006,30 +1006,30 @@ window.ClickAffordances = (() => {
 
   function getActiveQuestCount() {
     // From FleetKit data
-    if (typeof FleetKit !== 'undefined' && FleetKit.data && FleetKit.data.missions) {
-      return FleetKit.data.missions.filter(m =>
-        m.status === 'running' || m.status === 'active' || m.status === 'pending'
+    if (typeof FleetKit !== 'undefined' && FleetKit?.data?.missions) {
+      return (FleetKit.data.missions || []).filter(m =>
+        m?.status === 'running' || m?.status === 'active' || m?.status === 'pending'
       ).length;
     }
     // From MissionController
-    if (typeof MissionController !== 'undefined' && MissionController.missions) {
-      return MissionController.missions.filter(m => m.status !== 'completed').length;
+    if (typeof MissionController !== 'undefined' && MissionController?.missions) {
+      return (MissionController.missions || []).filter(m => m?.status !== 'completed').length;
     }
     // From GameBoy state bridge
-    if (window.gameboyOffice && window.gameboyOffice.stateBridge) {
-      const status = window.gameboyOffice.stateBridge.getMissionStatus?.();
+    if (window.gameboyOffice?.stateBridge) {
+      const status = window.gameboyOffice.stateBridge?.getMissionStatus?.();
       if (status) {
-        return (status.active || []).length + (status.pending || []).length;
+        return (status?.active || []).length + (status?.pending || []).length;
       }
     }
     return 0;
   }
 
   function getTotalPoints() {
-    if (typeof FleetKitAchievements !== 'undefined') {
-      const stats = FleetKitAchievements.getStats?.();
-      if (stats && typeof stats.totalPoints === 'number') return stats.totalPoints;
-      if (stats && typeof stats.points === 'number') return stats.points;
+    if (typeof FleetKitAchievements !== 'undefined' && FleetKitAchievements?.getStats) {
+      const stats = FleetKitAchievements.getStats();
+      if (stats && typeof stats?.totalPoints === 'number') return stats.totalPoints;
+      if (stats && typeof stats?.points === 'number') return stats.points;
     }
     // Fallback: count from localStorage
     try {
@@ -1039,14 +1039,14 @@ window.ClickAffordances = (() => {
   }
 
   function getCurrentStreak() {
-    if (typeof FleetKitAchievements !== 'undefined') {
-      const stats = FleetKitAchievements.getStats?.();
-      if (stats && typeof stats.streak === 'number') return stats.streak;
-      if (stats && typeof stats.currentStreak === 'number') return stats.currentStreak;
+    if (typeof FleetKitAchievements !== 'undefined' && FleetKitAchievements?.getStats) {
+      const stats = FleetKitAchievements.getStats();
+      if (stats && typeof stats?.streak === 'number') return stats.streak;
+      if (stats && typeof stats?.currentStreak === 'number') return stats.currentStreak;
     }
     try {
       const stats = JSON.parse(localStorage.getItem('fleetkit-achievements-stats') || '{}');
-      return stats.streak || stats.currentStreak || 0;
+      return stats?.streak || stats?.currentStreak || 0;
     } catch { return 0; }
   }
 
@@ -1089,16 +1089,16 @@ window.ClickAffordances = (() => {
   }
 
   function startDemo() {
-    if (typeof MissionController !== 'undefined' && typeof MissionController.demo === 'function') {
+    if (typeof MissionController !== 'undefined' && typeof MissionController?.demo === 'function') {
       MissionController.demo();
       if (_demoBtn) _demoBtn.textContent = '⏸';
-    } else if (window.gameboyOffice) {
+    } else if (window.gameboyOffice?.triggerMeeting) {
       // Fallback: trigger some GameBoy activity
       window.gameboyOffice.triggerMeeting();
-      setTimeout(() => window.gameboyOffice.triggerCelebration(), 4000);
+      setTimeout(() => window.gameboyOffice?.triggerCelebration?.(), 4000);
     } else {
       // Show a toast about demo
-      if (window.OpenClawHelpers && OpenClawHelpers.showToast) {
+      if (window.OpenClawHelpers?.showToast) {
         OpenClawHelpers.showToast('🎬 Demo mode not available yet');
       }
     }
@@ -1110,7 +1110,7 @@ window.ClickAffordances = (() => {
     // Show only when idle (no active missions)
     const quests = getActiveQuestCount();
     const isRunning = typeof MissionController !== 'undefined' &&
-                      MissionController._demoRunning;
+                      MissionController?._demoRunning;
 
     if (quests > 0 || isRunning) {
       _demoBtn.style.display = 'none';

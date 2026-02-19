@@ -272,21 +272,21 @@ class SimsCharacter {
                 this.isWorking = true;
                 break;
             case 'going_to_meeting':
-                const mp = this.officeMap.getMeetingPositions();
+                const mp = this.officeMap?.getMeetingPositions() || [{ x: 6, y: 5 }];
                 const spot = mp[Math.floor(Math.random() * mp.length)];
                 this.moveTo(spot.x, spot.y);
                 break;
             case 'getting_coffee':
-                const cp = this.officeMap.locations.coffeeStation;
-                this.moveTo(cp.x, cp.y);
+                const cp = this.officeMap?.locations?.coffeeStation;
+                if (cp) this.moveTo(cp.x, cp.y);
                 break;
             case 'searching_files':
-                const fp = this.officeMap.locations.fileCabinets;
-                this.moveTo(fp.x, fp.y);
+                const fp = this.officeMap?.locations?.fileCabinets;
+                if (fp) this.moveTo(fp.x, fp.y);
                 break;
             case 'at_whiteboard':
-                const wb = this.officeMap.locations.missionBoard;
-                this.moveTo(wb.x + (Math.random() - 0.5), wb.y + 1);
+                const wb = this.officeMap?.locations?.missionBoard;
+                if (wb) this.moveTo(wb.x + (Math.random() - 0.5), wb.y + 1);
                 break;
             case 'thinking':
                 this.showSpeechBubble('...');
@@ -328,7 +328,7 @@ class SimsCharacter {
     }
 
     _updateScreenPos() {
-        const sp = this.officeMap.gridToScreen(this.gridX, this.gridY);
+        const sp = this.officeMap?.gridToScreen(this.gridX, this.gridY) || { x: 0, y: 0 };
         this.screenX = sp.x;
         this.screenY = sp.y;
 
@@ -439,10 +439,10 @@ class SimsCharacter {
 
         // Plumbob update
         this._updatePlumbobColor();
-        this.plumbob.update(dt);
+        this.plumbob?.update(dt);
 
         // Sprite direction
-        this.sprite.scale.x = this.direction;
+        if (this.sprite) this.sprite.scale.x = this.direction;
 
         this._updateScreenPos();
     }
@@ -468,7 +468,7 @@ class SimsCharacter {
                 color = 0x00ff88; break;
         }
 
-        this.plumbob.setColor(color);
+        this.plumbob?.setColor(color);
     }
 }
 
@@ -497,9 +497,10 @@ class SimsCharacterManager {
         ];
 
         defs.forEach(d => {
+            const deskLoc = this.officeMap?.locations?.[d.desk] || { x: 6, y: 5 };
             const char = new SimsCharacter(
                 d.id, d.role, d.color,
-                this.officeMap.locations[d.desk],
+                deskLoc,
                 this.officeMap, this.app
             );
             this.characters.push(char);
@@ -531,37 +532,39 @@ class SimsCharacterManager {
     }
 
     removeSubAgent(sub) {
+        if (!sub) return;
         const i = this.subAgents.indexOf(sub);
         if (i > -1) {
             this.subAgents.splice(i, 1);
-            this.container.removeChild(sub.container);
+            if (sub.container) this.container.removeChild(sub.container);
         }
     }
 
     findCharacterByRole(role) {
         if (!role) return null;
-        return this.characters.find(c =>
-            c.role.toLowerCase() === role.toLowerCase() ||
-            c.role.toLowerCase().includes(role.toLowerCase())
-        );
+        const roleStr = (role || '').toLowerCase();
+        return this.characters.find(c => {
+            const charRole = (c?.role || '').toLowerCase();
+            return charRole === roleStr || charRole.includes(roleStr);
+        });
     }
 
     findCharacterByName(name) {
         if (!name) return null;
-        const lower = name.toLowerCase();
-        return this.characters.find(c =>
-            c.canonicalId === lower ||
-            c.name.toLowerCase() === lower ||
-            c.name.toLowerCase().includes(lower)
-        );
+        const lower = (name || '').toLowerCase();
+        return this.characters.find(c => {
+            const charName = (c?.name || '').toLowerCase();
+            const charId = (c?.canonicalId || '').toLowerCase();
+            return charId === lower || charName === lower || charName.includes(lower);
+        });
     }
 
     hasSubagent(id) {
-        return this.subAgents.some(s => s.subagentId === id);
+        return this.subAgents.some(s => s?.subagentId === id);
     }
 
     getCharacterStates() {
-        return this.characters.map(c => `${c.title}: ${c.state}`).join(', ');
+        return this.characters.map(c => `${c?.title || c?.canonicalId || 'UNKNOWN'}: ${c?.state || 'unknown'}`).join(', ');
     }
 
     triggerCelebration() {

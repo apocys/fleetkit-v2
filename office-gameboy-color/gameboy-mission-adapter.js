@@ -99,8 +99,8 @@
     if (byName) return byName;
     const byRole = _charManager.findCharacterByRole(charId);
     if (byRole) return byRole;
-    const sub = _charManager.subAgents.find(s =>
-      s.subagentId === charId || s.name.toLowerCase() === String(charId).toLowerCase()
+    const sub = (_charManager.subAgents || []).find(s =>
+      s.subagentId === charId || (s.name || '').toLowerCase() === String(charId).toLowerCase()
     );
     return sub || null;
   }
@@ -198,7 +198,7 @@
 
     if (loc && _officeMap) {
       const screenPos = _officeMap.gridToScreen(loc.x, loc.y);
-      overlay.x = _app.screen.width / 2 + screenPos.x;
+      overlay.x = (_app?.screen?.width || 800) / 2 + screenPos.x;
       overlay.y = 150 + screenPos.y;
     }
 
@@ -845,8 +845,8 @@
         stagiaire.container.scale.set(0.7);
         stagiaire.carryDocument('TASK');
 
-        _charManager.subAgents.push(stagiaire);
-        _charManager.container.addChild(stagiaire.container);
+        (_charManager.subAgents = _charManager.subAgents || []).push(stagiaire);
+        _charManager.container?.addChild(stagiaire.container);
 
         console.log(`🎮 [MissionAdapter] Stagiaire spawned: ${name}`);
 
@@ -857,8 +857,8 @@
       removeSubAgent(charId) {
         if (!_charManager) return;
 
-        const sub = _charManager.subAgents.find(s =>
-          s.subagentId === charId || s.name.toLowerCase() === String(charId).toLowerCase()
+        const sub = (_charManager.subAgents || []).find(s =>
+          s.subagentId === charId || (s.name || '').toLowerCase() === String(charId).toLowerCase()
         );
 
         if (sub) {
@@ -914,7 +914,7 @@
       // ─── 15. getAgentIds ──────────────────────────────────────
       getAgentIds() {
         if (!_charManager) return ['hunter', 'forge', 'echo', 'atlas', 'sentinel'];
-        return _charManager.characters.map(c => c.name.toLowerCase());
+        return (_charManager.characters || []).map(c => (c.name || '').toLowerCase());
       },
 
       // ─── 16. getCeoId ─────────────────────────────────────────

@@ -34,21 +34,26 @@ class SimsEffects {
 
     _createDayNightOverlay() {
         this.dayNightOverlay = new PIXI.Graphics();
+        const w = this.app?.screen?.width || 900;
+        const h = this.app?.screen?.height || 560;
         this.dayNightOverlay.beginFill(0x001133, 0);
-        this.dayNightOverlay.drawRect(0, 0, this.app.screen.width, this.app.screen.height);
+        this.dayNightOverlay.drawRect(0, 0, w, h);
         this.dayNightOverlay.endFill();
-        this.container.addChild(this.dayNightOverlay);
+        this.container?.addChild(this.dayNightOverlay);
     }
 
     _updateDayNight(dt) {
+        if (!this.dayNightOverlay) return;
         this.dayNightTimer += dt * 0.00002; // Very slow cycle
         // Oscillate between 0 (day) and 0.12 (dusk)
         const nightAmount = Math.max(0, Math.sin(this.dayNightTimer) * 0.12);
+        const w = this.app?.screen?.width || 900;
+        const h = this.app?.screen?.height || 560;
 
         this.dayNightOverlay.clear();
         if (nightAmount > 0.01) {
             this.dayNightOverlay.beginFill(0x001133, nightAmount);
-            this.dayNightOverlay.drawRect(0, 0, this.app.screen.width, this.app.screen.height);
+            this.dayNightOverlay.drawRect(0, 0, w, h);
             this.dayNightOverlay.endFill();
         }
     }
@@ -56,6 +61,7 @@ class SimsEffects {
     // ── Thought Bubbles ─────────────────────────────────
 
     showThoughtBubble(character, icon) {
+        if (!character) return;
         const bubble = new PIXI.Container();
 
         // Cloud shape
@@ -76,7 +82,7 @@ class SimsEffects {
         cloud.lineStyle(0);
 
         // Icon text
-        const iconText = new PIXI.Text(icon, {
+        const iconText = new PIXI.Text(icon || '💭', {
             fontSize: 14,
             fill: 0x333333,
         });
@@ -87,8 +93,8 @@ class SimsEffects {
         bubble.addChild(iconText);
 
         // Position above character
-        const sp = this.officeMap.gridToScreen(character.gridX, character.gridY);
-        bubble.x = this.app.screen.width / 2 + sp.x;
+        const sp = this.officeMap?.gridToScreen(character.gridX, character.gridY) || { x: 0, y: 0 };
+        bubble.x = (this.app?.screen?.width || 900) / 2 + sp.x;
         bubble.y = 30 + sp.y;
 
         bubble._lifetime = 3000;
@@ -129,8 +135,10 @@ class SimsEffects {
         if (!window.SIMS_PHRASES) return;
 
         const categories = Object.keys(SIMS_PHRASES);
+        if (!categories.length) return;
         const cat = categories[Math.floor(Math.random() * categories.length)];
         const phrases = SIMS_PHRASES[cat];
+        if (!phrases?.length) return;
 
         const phraseA = phrases[Math.floor(Math.random() * phrases.length)];
         charA.showSpeechBubble(phraseA);
@@ -142,8 +150,8 @@ class SimsEffects {
         }, 1500);
 
         // Show interaction indicators
-        const spA = this.officeMap.gridToScreen(charA.gridX, charA.gridY);
-        const midX = this.app.screen.width / 2 + spA.x;
+        const spA = this.officeMap?.gridToScreen(charA.gridX, charA.gridY) || { x: 0, y: 0 };
+        const midX = (this.app?.screen?.width || 900) / 2 + spA.x;
         const midY = 60 + spA.y;
 
         const indicators = ['+Social', '💬', '+Friendship'];
@@ -154,8 +162,9 @@ class SimsEffects {
     // ── Mood Change Indicator ───────────────────────────
 
     showMoodChange(character, delta) {
-        const sp = this.officeMap.gridToScreen(character.gridX, character.gridY);
-        const x = this.app.screen.width / 2 + sp.x;
+        if (!character) return;
+        const sp = this.officeMap?.gridToScreen(character.gridX, character.gridY) || { x: 0, y: 0 };
+        const x = (this.app?.screen?.width || 900) / 2 + sp.x;
         const y = 50 + sp.y;
 
         if (delta > 0) {
@@ -212,9 +221,7 @@ class SimsEffects {
             this.simlishTimer = 0;
             this.nextSimlish = 12000 + Math.random() * 18000;
             // Trigger through state bridge if available
-            if (window.simsOffice?.stateBridge) {
-                window.simsOffice.stateBridge._triggerRandomEvent();
-            }
+            window.simsOffice?.stateBridge?._triggerRandomEvent();
         }
     }
 }

@@ -227,7 +227,7 @@
 
     _bindEvents() {
       if (this._eventsBound) return;
-      if (typeof FleetKit === 'undefined' || !FleetKit.on) {
+      if (typeof FleetKit === 'undefined' || !FleetKit?.on) {
         this._log('FleetKit not available — skipping event binding');
         return;
       }
@@ -253,13 +253,13 @@
 
     _emitPhase(missionId, phase, data) {
       this._log(`Phase: ${phase}`, data || '');
-      if (typeof FleetKit !== 'undefined' && FleetKit.emit) {
+      if (typeof FleetKit !== 'undefined' && FleetKit?.emit) {
         FleetKit.emit('mc:phase', { missionId, phase, data });
       }
     },
 
     _emitState() {
-      if (typeof FleetKit !== 'undefined' && FleetKit.emit) {
+      if (typeof FleetKit !== 'undefined' && FleetKit?.emit) {
         FleetKit.emit('mc:state', { state: this.getState() });
       }
     },
@@ -358,11 +358,11 @@
 
       // Build mission object
       const m = {
-        id: mission.id || uid('mission'),
-        text: mission.text || mission.title || 'New Mission',
-        description: mission.description || mission.text || '',
-        assignedTo: mission.assignedTo || this._agents(),
-        priority: mission.priority || 'normal',
+        id: mission?.id || uid('mission'),
+        text: mission?.text || mission?.title || 'New Mission',
+        description: mission?.description || mission?.text || '',
+        assignedTo: mission?.assignedTo || this._agents(),
+        priority: mission?.priority || 'normal',
         status: 'starting',
         progress: 0,
         startedAt: Date.now(),
@@ -595,7 +595,7 @@
       await Promise.all(scatterPromises);
 
       // Start working animations and show progress bars
-      for (const agentId of m.assignedTo) {
+      for (const agentId of (m?.assignedTo || [])) {
         await this._anim(agentId, 'working');
         this._progress(agentId, 0);
       }
@@ -619,7 +619,7 @@
         m.progress = pct / 100;
 
         // Update progress bars for all assigned agents
-        for (const agentId of m.assignedTo) {
+        for (const agentId of (m?.assignedTo || [])) {
           this._progress(agentId, pct);
         }
 
@@ -643,7 +643,7 @@
       this._emitPhase(m.id, 'completion');
 
       // Hide progress bars
-      for (const agentId of m.assignedTo) {
+      for (const agentId of (m?.assignedTo || [])) {
         this._hideProgress(agentId);
       }
 
@@ -655,7 +655,7 @@
       await this._celebrate(allAgents);
 
       // Celebration bubbles
-      for (const agentId of m.assignedTo) {
+      for (const agentId of (m?.assignedTo || [])) {
         this._bubble(agentId, pickRandom(CELEBRATION_BUBBLES), 2500);
         await wait(200, this.config.animationSpeed, signal);
       }
@@ -909,28 +909,28 @@
     // ── External event handlers ───────────────────────────────────
 
     _handleMissionProgress(data) {
-      if (!data || !data.missionId) return;
+      if (!data?.missionId) return;
       const m = this._activeMissions.get(data.missionId);
       if (!m) return;
 
-      const pct = Math.round((data.progress || data.newProgress || 0) * 100);
+      const pct = Math.round((data?.progress || data?.newProgress || 0) * 100);
       m.progress = pct / 100;
 
       // Update progress bars
-      if (data.agent) {
+      if (data?.agent) {
         this._progress(data.agent, pct);
         if (pct % 25 === 0) {
           this._bubble(data.agent, getProgressBubble(pct), 2000);
         }
       } else {
-        for (const agentId of m.assignedTo) {
+        for (const agentId of (m.assignedTo || [])) {
           this._progress(agentId, pct);
         }
       }
     },
 
     _handleMissionComplete(data) {
-      if (!data || !data.missionId) return;
+      if (!data?.missionId) return;
       const m = this._activeMissions.get(data.missionId);
       if (m) {
         m.status = 'completed';
@@ -939,7 +939,7 @@
     },
 
     _handleSubAgentComplete(data) {
-      if (!data || !data.id) return;
+      if (!data?.id) return;
       this.completeSubAgent(data.id, data.result);
     },
 
@@ -961,7 +961,7 @@
       m.status = 'cancelled';
 
       // Clean up progress bars
-      for (const agentId of m.assignedTo) {
+      for (const agentId of (m?.assignedTo || [])) {
         this._hideProgress(agentId);
         this._anim(agentId, 'idle');
       }
@@ -1202,7 +1202,7 @@
   // Auto-bind events when FleetKit is available
   if (typeof document !== 'undefined') {
     const tryBind = () => {
-      if (typeof FleetKit !== 'undefined' && FleetKit.on) {
+      if (typeof FleetKit !== 'undefined' && FleetKit?.on) {
         MissionController._bindEvents();
       }
     };

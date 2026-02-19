@@ -225,7 +225,7 @@ class GameBoyVirtualOffice {
         this.screenTimer += deltaTime;
         
         // Update systems
-        this.characterManager.update(deltaTime);
+        this.characterManager?.update(deltaTime);
         this.stateBridge?.update(deltaTime);
         
         // Update GameBoy effects
@@ -291,9 +291,12 @@ class GameBoyVirtualOffice {
     addInteractivity() {
         this.app.stage.interactive = true;
         this.app.stage.on('pointerdown', (event) => {
-            const globalPos = event.data.global;
-            const localPos = this.characterContainer.toLocal(globalPos);
-            const gridPos = this.officeMap.screenToGrid(localPos.x, localPos.y);
+            const globalPos = event.data?.global;
+            if (!globalPos) return;
+            const localPos = this.characterContainer?.toLocal(globalPos);
+            if (!localPos) return;
+            const gridPos = this.officeMap?.screenToGrid(localPos.x, localPos.y);
+            if (!gridPos) return;
             
             const gridX = Math.floor(gridPos.x);
             const gridY = Math.floor(gridPos.y);
@@ -301,7 +304,7 @@ class GameBoyVirtualOffice {
             console.log(`🎮 Clicked grid: ${gridX}, ${gridY}`);
             
             // Check if clicking on special elements
-            Object.keys(this.officeMap.locations).forEach(key => {
+            Object.keys(this.officeMap?.locations || {}).forEach(key => {
                 const loc = this.officeMap.locations[key];
                 if (loc.x === gridX && loc.y === gridY) {
                     this.handleLocationClick(key, loc);
@@ -310,12 +313,14 @@ class GameBoyVirtualOffice {
             });
             
             // Move random character to clicked location
-            if (this.officeMap.isWalkable(gridX, gridY)) {
-                const randomChar = this.characterManager.characters[
-                    Math.floor(Math.random() * this.characterManager.characters.length)
+            if (this.officeMap?.isWalkable(gridX, gridY)) {
+                const chars = this.characterManager?.characters || [];
+                if (chars.length === 0) return;
+                const randomChar = chars[
+                    Math.floor(Math.random() * chars.length)
                 ];
-                randomChar.moveTo(gridX, gridY);
-                randomChar.showSpeechBubble("MOVING");
+                randomChar?.moveTo(gridX, gridY);
+                randomChar?.showSpeechBubble("MOVING");
             }
         });
         
@@ -364,9 +369,9 @@ class GameBoyVirtualOffice {
     
     getOfficeStatus() {
         return {
-            characters: this.characterManager.characters.length,
+            characters: this.characterManager?.characters?.length || 0,
             fps: this.fps,
-            activities: this.characterManager.getCharacterStates(),
+            activities: this.characterManager?.getCharacterStates() || '',
             missions: this.stateBridge?.getMissionStatus() || { active: 0, queued: 0, activeMissions: [] },
             systemInfo: {
                 mode: 'GameBoy Color Retro',
@@ -384,7 +389,7 @@ class GameBoyVirtualOffice {
                 // Spawn extra sub-agents
                 for (let i = 0; i < 5; i++) {
                     setTimeout(() => {
-                        this.characterManager.spawnSubAgent('CHEAT MODE');
+                        this.characterManager?.spawnSubAgent('CHEAT MODE');
                     }, i * 500);
                 }
                 console.log('🎮 KONAMI CODE: Extra agents spawned!');
@@ -392,7 +397,7 @@ class GameBoyVirtualOffice {
                 
             case 'matrix':
                 // Make everyone move in formation
-                this.characterManager.characters.forEach((char, index) => {
+                (this.characterManager?.characters || []).forEach((char, index) => {
                     setTimeout(() => {
                         const x = 8 + (index - 2);
                         char.moveTo(x, 6);
@@ -404,7 +409,7 @@ class GameBoyVirtualOffice {
                 
             case 'speed':
                 // Increase all animation speeds
-                this.characterManager.characters.forEach(char => {
+                (this.characterManager?.characters || []).forEach(char => {
                     char.moveSpeed *= 2;
                 });
                 console.log('🎮 SPEED CODE: Double speed mode!');
@@ -413,7 +418,7 @@ class GameBoyVirtualOffice {
             case 'rainbow':
                 // Cycle through GBC colors
                 const gbcColors = [0xD4A853, 0x4A90D9, 0xC0392B, 0x9B59B6, 0x53868B, 0x5CB85C];
-                this.characterManager.characters.forEach((char, index) => {
+                (this.characterManager?.characters || []).forEach((char, index) => {
                     setTimeout(() => {
                         char.color = gbcColors[index % gbcColors.length];
                         char.createGameBoySprite();
@@ -427,7 +432,7 @@ class GameBoyVirtualOffice {
     // Save/Load state (future feature)
     saveOfficeState() {
         const state = {
-            characters: this.characterManager.characters.map(c => ({
+            characters: (this.characterManager?.characters || []).map(c => ({
                 name: c.name,
                 x: c.gridX,
                 y: c.gridY,

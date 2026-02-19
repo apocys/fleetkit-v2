@@ -21,25 +21,25 @@
 
     const META_CONFIG = {
         gameboy: {
-            title: 'FleetKit — GameBoy Office 🎮',
+            title: 'SpawnKit — GameBoy Office 🎮',
             description: 'Watch your AI agents work in a retro pixel office. Press Start to begin!',
             themeColor: '#9BBB0F',
             ogImage: generateOgImage('gameboy')
         },
         cyberpunk: {
-            title: 'FleetKit — Cyber Command Center 🌃',
+            title: 'SpawnKit — Cyber Command Center 🌃',
             description: 'AI agents in a neon-lit command center. Hack the future.',
             themeColor: '#00ffff',
             ogImage: generateOgImage('cyberpunk')
         },
         executive: {
-            title: 'FleetKit — Executive Boardroom 🏢',
+            title: 'SpawnKit — Executive Boardroom 🏢',
             description: 'Your AI C-suite in a premium corporate office. Business runs itself.',
             themeColor: '#c9a876',
             ogImage: generateOgImage('executive')
         },
         selector: {
-            title: 'FleetKit — Your AI Executive Team',
+            title: 'SpawnKit — Your AI Executive Team',
             description: 'Watch your AI agents work in a virtual office. GameBoy, Cyberpunk, or Executive style.',
             themeColor: '#00ffff',
             ogImage: generateOgImage('selector')
@@ -54,22 +54,22 @@
         const configs = {
             gameboy: {
                 bg: '#0F380F', accent: '#9BBB0F', sub: '#8BAC0F',
-                title: 'FLEETKIT', subtitle: 'GAMEBOY OFFICE',
+                title: 'SPAWNKIT', subtitle: 'GAMEBOY OFFICE',
                 font: 'monospace'
             },
             cyberpunk: {
                 bg: '#0a0a0f', accent: '#00ffff', sub: '#ff00ff',
-                title: 'FLEETKIT', subtitle: 'CYBER_CMD',
+                title: 'SPAWNKIT', subtitle: 'CYBER_CMD',
                 font: 'monospace'
             },
             executive: {
                 bg: '#1a1510', accent: '#c9a876', sub: '#8b6914',
-                title: 'FleetKit', subtitle: 'Executive Suite',
+                title: 'SpawnKit', subtitle: 'Executive Suite',
                 font: 'Georgia, serif'
             },
             selector: {
                 bg: '#0a0a0a', accent: '#ffffff', sub: '#888888',
-                title: 'FleetKit v2', subtitle: 'Choose Your Theme',
+                title: 'SpawnKit v2', subtitle: 'Choose Your Theme',
                 font: 'sans-serif'
             }
         };
@@ -111,7 +111,7 @@
         setMeta('property', 'og:image', config.ogImage);
         setMeta('property', 'og:image:width', '1200');
         setMeta('property', 'og:image:height', '630');
-        setMeta('property', 'og:site_name', 'FleetKit');
+        setMeta('property', 'og:site_name', 'SpawnKit');
 
         // Twitter Card
         setMeta('name', 'twitter:card', 'summary_large_image');

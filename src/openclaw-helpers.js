@@ -1438,10 +1438,10 @@ window.OpenClawHelpers = (() => {
     if (_agentDetailEl) _agentDetailEl.remove();
 
     const names = window.FleetKitNames;
-    const themeInfo = names ? names[_theme]?.[agent.id] : null;
-    const displayName = themeInfo?.name || agent.name;
-    const roleTitle = themeInfo?.title || `${agent.name}, ${agent.role}`;
-    const emoji = themeInfo?.emoji || agent.emoji || '🤖';
+    const themeInfo = names?.[_theme]?.[agent?.id] || null;
+    const displayName = themeInfo?.name || agent?.name || 'Unknown';
+    const roleTitle = themeInfo?.title || `${agent?.name || 'Unknown'}, ${agent?.role || 'Agent'}`;
+    const emoji = themeInfo?.emoji || agent?.emoji || '🤖';
 
     // Agent specialties based on ID
     const specialties = {
@@ -1453,7 +1453,7 @@ window.OpenClawHelpers = (() => {
     };
 
     // Time since last seen
-    const lastSeen = agent.lastSeen ? timeSince(new Date(agent.lastSeen)) : 'Unknown';
+    const lastSeen = agent?.lastSeen ? timeSince(new Date(agent.lastSeen)) : 'Unknown';
 
     _agentDetailEl = document.createElement('div');
     _agentDetailEl.className = 'oc-overlay';
@@ -1476,11 +1476,11 @@ window.OpenClawHelpers = (() => {
       <div class="oc-agent-avatar">${emoji}</div>
       <div class="oc-agent-info">
         <h3>${escapeHtml(roleTitle)}</h3>
-        <div class="oc-agent-role">${escapeHtml(themeInfo?.role || agent.role)}</div>
+        <div class="oc-agent-role">${escapeHtml(themeInfo?.role || agent?.role || '')}</div>
       </div>
       <div class="oc-status-badge">
         <span class="oc-status-dot"></span>
-        ${escapeHtml(formatStatus(agent.status))}
+        ${escapeHtml(formatStatus(agent?.status))}
       </div>
     `;
     header.appendChild(agentHeader);
@@ -1491,7 +1491,7 @@ window.OpenClawHelpers = (() => {
     body.className = 'oc-panel-body';
 
     // Current task
-    if (agent.currentTask) {
+    if (agent?.currentTask) {
       const taskSection = document.createElement('div');
       const taskLabel = document.createElement('div');
       taskLabel.className = 'oc-form-label';
@@ -1513,11 +1513,11 @@ window.OpenClawHelpers = (() => {
       <div class="oc-stat-grid">
         <div class="oc-stat-item">
           <span class="oc-stat-label">Energy used</span>
-          <span class="oc-stat-value">${formatNumber(agent.tokensUsed || 0)}</span>
+          <span class="oc-stat-value">${formatNumber(agent?.tokensUsed || 0)}</span>
         </div>
         <div class="oc-stat-item">
           <span class="oc-stat-label">API calls</span>
-          <span class="oc-stat-value">${agent.apiCalls || 0}</span>
+          <span class="oc-stat-value">${agent?.apiCalls || 0}</span>
         </div>
         <div class="oc-stat-item">
           <span class="oc-stat-label">Last active</span>
@@ -1525,13 +1525,13 @@ window.OpenClawHelpers = (() => {
         </div>
         <div class="oc-stat-item">
           <span class="oc-stat-label">Missions</span>
-          <span class="oc-stat-value">${countAgentMissions(agent.id)}</span>
+          <span class="oc-stat-value">${countAgentMissions(agent?.id)}</span>
         </div>
       </div>
     `;
 
     // Specialties
-    const tags = specialties[agent.id] || ['#general'];
+    const tags = specialties[agent?.id] || ['#general'];
     const tagsDiv = document.createElement('div');
     tagsDiv.innerHTML = `<div class="oc-divider"></div><div class="oc-section-label">🏆 Specialties</div>`;
     const tagsContainer = document.createElement('div');
@@ -1599,8 +1599,8 @@ window.OpenClawHelpers = (() => {
 
     // If given an ID string, look up in FleetKit.data
     if (typeof agentIdOrObj === 'string') {
-      if (typeof FleetKit !== 'undefined' && FleetKit.data && FleetKit.data.agents) {
-        agent = FleetKit.data.agents.find(a => a.id === agentIdOrObj);
+      if (typeof FleetKit !== 'undefined' && FleetKit?.data?.agents) {
+        agent = FleetKit.data.agents.find(a => a?.id === agentIdOrObj);
       }
       if (!agent) {
         agent = { id: agentIdOrObj, name: agentIdOrObj, role: 'Unknown', status: 'offline' };
@@ -1641,16 +1641,16 @@ window.OpenClawHelpers = (() => {
   function updateStatusBar() {
     if (!_statusBarEl) return;
 
-    const data = (typeof FleetKit !== 'undefined' && FleetKit.data) ? FleetKit.data : null;
+    const data = (typeof FleetKit !== 'undefined' && FleetKit?.data) ? FleetKit.data : null;
     if (!data) {
       _statusBarEl.innerHTML = '<span class="oc-status-segment">⏳ Loading team data...</span>';
       return;
     }
 
-    const activeAgents = data.agents ? data.agents.filter(a => a.status !== 'offline').length : 0;
-    const totalAgents = data.agents ? data.agents.length : 0;
-    const activeMissions = data.missions ? data.missions.filter(m => m.status === 'in_progress').length : 0;
-    const apiCalls = data.metrics ? data.metrics.apiCallsToday : 0;
+    const activeAgents = data?.agents ? data.agents.filter(a => a?.status !== 'offline').length : 0;
+    const totalAgents = data?.agents?.length || 0;
+    const activeMissions = data?.missions ? data.missions.filter(m => m?.status === 'in_progress').length : 0;
+    const apiCalls = data?.metrics?.apiCallsToday || 0;
 
     // Get streak & rank from achievements
     let streakText = '';

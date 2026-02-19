@@ -470,6 +470,7 @@ class SimsVirtualOffice {
         PIXI.BaseTexture.defaultOptions.scaleMode = PIXI.SCALE_MODES.NEAREST;
 
         const container = document.getElementById('gameContainer');
+        if (!container) { console.warn('🏠 Sims: #gameContainer not found'); return; }
         container.appendChild(this.app.view);
         this.app.view.style.imageRendering = 'pixelated';
 
@@ -511,7 +512,7 @@ class SimsVirtualOffice {
         }
 
         setTimeout(() => {
-            if (this.stateBridge) this.stateBridge.triggerWhiteboardSession();
+            this.stateBridge?.triggerWhiteboardSession();
         }, 4000);
     }
 
@@ -520,9 +521,9 @@ class SimsVirtualOffice {
         const dt = now - this.lastTime;
         this.lastTime = now;
 
-        this.characterManager.update(dt);
-        this.stateBridge.update(dt);
-        this.officeMap.updateAnimations(dt);
+        this.characterManager?.update(dt);
+        this.stateBridge?.update(dt);
+        this.officeMap?.updateAnimations(dt);
 
         if (this.simsEffects) this.simsEffects.update(dt);
         if (this.simsUI) this.simsUI.update(dt);
@@ -534,13 +535,13 @@ class SimsVirtualOffice {
     }
 
     // Public API
-    triggerMeeting()    { this.stateBridge.triggerGroupMeeting(); }
-    triggerCelebration(){ this.stateBridge.triggerCelebration(); }
-    triggerWhiteboard() { this.stateBridge.triggerWhiteboardSession(); }
+    triggerMeeting()    { this.stateBridge?.triggerGroupMeeting(); }
+    triggerCelebration(){ this.stateBridge?.triggerCelebration(); }
+    triggerWhiteboard() { this.stateBridge?.triggerWhiteboardSession(); }
 
     getOfficeStatus() {
         return {
-            characters: this.characterManager.characters.length,
+            characters: this.characterManager?.characters?.length || 0,
             fps: this.fps,
             theme: 'sims',
         };

@@ -459,7 +459,7 @@
 
   function _playAchievementSound() {
     // Try to use MissionController's sound system
-    if (typeof MissionController !== 'undefined' && MissionController.config?.soundEffects && MissionController._theme?.playSound) {
+    if (typeof MissionController !== 'undefined' && MissionController?.config?.soundEffects && MissionController?._theme?.playSound) {
       try { MissionController._theme.playSound('achievement'); } catch {}
       return;
     }
@@ -662,7 +662,7 @@
     let favAgent = '—';
     if (_stats.agentMissions && Object.keys(_stats.agentMissions).length) {
       const sorted = Object.entries(_stats.agentMissions).sort((a, b) => b[1] - a[1]);
-      favAgent = sorted[0][0];
+      favAgent = sorted?.[0]?.[0] || '—';
     }
 
     // Current session uptime
@@ -933,7 +933,7 @@
     showToast(achievement);
 
     // Emit event
-    if (typeof FleetKit !== 'undefined' && FleetKit.emit) {
+    if (typeof FleetKit !== 'undefined' && FleetKit?.emit) {
       FleetKit.emit('achievement:unlocked', { achievement, total: _unlocked.size });
     }
 
@@ -958,7 +958,7 @@
   // ═══════════════════════════════════════════════════════════════
 
   function bindFleetKitEvents() {
-    if (typeof FleetKit === 'undefined' || !FleetKit.on) return;
+    if (typeof FleetKit === 'undefined' || !FleetKit?.on) return;
 
     // Mission complete → track stats + achievements
     FleetKit.on('mission:complete', (data) => {
@@ -973,18 +973,18 @@
       }
 
       // Track agents involved
-      if (data && data.assignedTo) {
+      if (data?.assignedTo) {
         const agents = Array.isArray(data.assignedTo) ? data.assignedTo : [data.assignedTo];
-        agents.forEach(agentId => {
+        (agents || []).forEach(agentId => {
           _agentsInvolved.add(agentId);
           _stats.agentMissions[agentId] = (_stats.agentMissions[agentId] || 0) + 1;
         });
       }
 
       // Update favorite agent
-      if (Object.keys(_stats.agentMissions).length) {
-        _stats.favoriteAgent = Object.entries(_stats.agentMissions)
-          .sort((a, b) => b[1] - a[1])[0][0];
+      if (_stats.agentMissions && Object.keys(_stats.agentMissions).length) {
+        const sorted = Object.entries(_stats.agentMissions).sort((a, b) => b[1] - a[1]);
+        _stats.favoriteAgent = sorted?.[0]?.[0] || null;
       }
 
       persist();
@@ -1000,7 +1000,7 @@
 
     // Theme switch → track for theme_explorer
     FleetKit.on('theme:changed', (data) => {
-      if (data && data.theme) {
+      if (data?.theme) {
         _themesVisited.add(data.theme);
         persist();
         if (_themesVisited.size >= 3) unlock('theme_explorer');
@@ -1112,7 +1112,7 @@
 
   function bindCoffeeTracking() {
     // Listen for coffee station interactions
-    if (typeof FleetKit !== 'undefined' && FleetKit.on) {
+    if (typeof FleetKit !== 'undefined' && FleetKit?.on) {
       FleetKit.on('coffee:visit', () => {
         _coffeeCount++;
         saveJSON(KEYS.coffeeCount, _coffeeCount);
@@ -1132,7 +1132,7 @@
 
   function bindSoundTracking() {
     // When sound is enabled, unlock audiophile
-    if (typeof FleetKit !== 'undefined' && FleetKit.on) {
+    if (typeof FleetKit !== 'undefined' && FleetKit?.on) {
       FleetKit.on('sound:enabled', () => {
         unlock('sound_on');
       });
@@ -1140,7 +1140,7 @@
 
     // Also check MissionController config
     const checkSound = () => {
-      if (typeof MissionController !== 'undefined' && MissionController.config?.soundEffects) {
+      if (typeof MissionController !== 'undefined' && MissionController?.config?.soundEffects) {
         unlock('sound_on');
       }
     };

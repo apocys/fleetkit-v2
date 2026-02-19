@@ -7,11 +7,11 @@
  * and crafts contextual, emoji-rich titles that make the browser tab alive.
  * 
  * Title patterns:
- *   Idle:         "FleetKit — GameBoy Office 🎮"
- *   Mission:      "⚡ Mission: Build Landing Page — FleetKit"
- *   Meeting:      "🤝 Team Meeting — FleetKit"
- *   Celebrating:  "🎉 Mission Complete! — FleetKit"
- *   Boot:         "🔄 Booting FleetKit..."
+ *   Idle:         "SpawnKit — GameBoy Office 🎮"
+ *   Mission:      "⚡ Mission: Build Landing Page — SpawnKit"
+ *   Meeting:      "🤝 Team Meeting — SpawnKit"
+ *   Celebrating:  "🎉 Mission Complete! — SpawnKit"
+ *   Boot:         "🔄 Booting SpawnKit..."
  * 
  * @author Atlas (COO) — Visual Polish Layer
  */
@@ -22,10 +22,10 @@
     // ── Theme-specific idle titles ─────────────────────────────────
 
     const IDLE_TITLES = {
-        gameboy:   'FleetKit — GameBoy Office 🎮',
-        cyberpunk: 'FleetKit — Cyber Command 🌃',
-        executive: 'FleetKit — Executive Suite 🏢',
-        selector:  'FleetKit — Choose Your Theme ✨'
+        gameboy:   'SpawnKit — GameBoy Office 🎮',
+        cyberpunk: 'SpawnKit — Cyber Command 🌃',
+        executive: 'SpawnKit — Executive Suite 🏢',
+        selector:  'SpawnKit — Choose Your Theme ✨'
     };
 
     // ── State → title mapping ──────────────────────────────────────
@@ -48,20 +48,20 @@
         switch (currentState) {
             case 'mission':
                 return missionName 
-                    ? `⚡ Mission: ${truncate(missionName, 30)} — FleetKit`
-                    : '⚡ Mission Active — FleetKit';
+                    ? `⚡ Mission: ${truncate(missionName, 30)} — SpawnKit`
+                    : '⚡ Mission Active — SpawnKit';
             
             case 'meeting':
-                return '🤝 Team Meeting — FleetKit';
+                return '🤝 Team Meeting — SpawnKit';
             
             case 'celebrating':
-                return '🎉 Mission Complete! — FleetKit';
+                return '🎉 Mission Complete! — SpawnKit';
             
             case 'boot':
-                return '🔄 Booting FleetKit...';
+                return '🔄 Booting SpawnKit...';
             
             case 'error':
-                return '⚠️ Alert — FleetKit';
+                return '⚠️ Alert — SpawnKit';
             
             case 'idle':
             default:
@@ -87,7 +87,7 @@
                 blinkState = !blinkState;
                 const prefix = blinkState ? '⚡' : '💫';
                 const name = missionName ? truncate(missionName, 30) : 'Active';
-                document.title = `${prefix} Mission: ${name} — FleetKit`;
+                document.title = `${prefix} Mission: ${name} — SpawnKit`;
             }, 2000);
         }
     }

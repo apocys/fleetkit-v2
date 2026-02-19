@@ -280,7 +280,8 @@ class GameBoyCharacter {
     }
     
     updateScreenPosition() {
-        const screenPos = this.officeMap.gridToScreen(this.gridX, this.gridY);
+        const screenPos = this.officeMap?.gridToScreen(this.gridX, this.gridY);
+        if (!screenPos) return;
         this.screenX = screenPos.x;
         this.screenY = screenPos.y;
         
@@ -410,7 +411,8 @@ class GameBoyCharacter {
     }
     
     goToMeeting() {
-        const meetingPos = this.officeMap.locations.meetingRoom;
+        const meetingPos = this.officeMap?.locations?.meetingRoom;
+        if (!meetingPos) return;
         const ox = Math.random() * 2 - 1;
         const oy = Math.random() * 2 - 1;
         this.moveTo(meetingPos.x + ox, meetingPos.y + oy);
@@ -418,14 +420,16 @@ class GameBoyCharacter {
     }
     
     goToCoffee() {
-        const coffeePos = this.officeMap.locations.coffeeStation;
+        const coffeePos = this.officeMap?.locations?.coffeeStation;
+        if (!coffeePos) return;
         this.moveTo(coffeePos.x, coffeePos.y);
         // Use Pokémon object name
         this.showSpeechBubble(resolveGBObject('coffee'));
     }
     
     searchFiles() {
-        const filesPos = this.officeMap.locations.fileCabinets;
+        const filesPos = this.officeMap?.locations?.fileCabinets;
+        if (!filesPos) return;
         this.moveTo(filesPos.x, filesPos.y);
         this.showSpeechBubble(resolveGBObject('cabinet'));
     }
@@ -606,12 +610,14 @@ class GameBoyCharacterManager {
             const emoji = resolveGB(data.id, 'emoji') || '⚡';
             const role = resolveGB(data.id, 'role') || data.id;
             
+            const deskLoc = this.officeMap?.locations?.[data.desk] || { x: 8, y: 6 };
+            
             const character = new GameBoyCharacter(
                 data.id,
                 role,
                 emoji,
                 data.color,
-                this.officeMap.locations[data.desk],
+                deskLoc,
                 this.officeMap
             );
             
@@ -674,9 +680,9 @@ class GameBoyCharacterManager {
     
     triggerMissionSequence(mission) {
         const hunter = this.characters.find(c => c.canonicalId === 'hunter');
-        const missionBoard = this.officeMap.locations.missionBoard;
+        const missionBoard = this.officeMap?.locations?.missionBoard;
         
-        if (hunter) {
+        if (hunter && missionBoard) {
             hunter.moveTo(missionBoard.x, missionBoard.y);
             hunter.showSpeechBubble("NEW QUEST!");
             
@@ -782,8 +788,8 @@ class GameBoyCharacterManager {
     findCharacterByRole(role) {
         if (!role) return null;
         return this.characters.find(char => 
-            char.role.toLowerCase() === role.toLowerCase() ||
-            char.role.toLowerCase().includes(role.toLowerCase())
+            (char.role || '').toLowerCase() === role.toLowerCase() ||
+            (char.role || '').toLowerCase().includes(role.toLowerCase())
         );
     }
     
@@ -792,8 +798,8 @@ class GameBoyCharacterManager {
         const lower = name.toLowerCase();
         return this.characters.find(char => 
             char.canonicalId === lower ||
-            char.name.toLowerCase() === lower ||
-            char.name.toLowerCase().includes(lower)
+            (char.name || '').toLowerCase() === lower ||
+            (char.name || '').toLowerCase().includes(lower)
         );
     }
     
