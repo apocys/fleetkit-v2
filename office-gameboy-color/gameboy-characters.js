@@ -714,7 +714,7 @@ class GameBoyCharacterManager {
         if (missionPanel) {
             missionPanel.innerHTML = `
                 <div class="mission-item">
-                    <div>${(mission.title || 'MISSION').toUpperCase()}</div>
+                    <div>${String(mission?.title || 'MISSION').toUpperCase()}</div>
                     <div class="hp-bar">
                         <div class="hp-fill hp-green" style="width: 10%"></div>
                     </div>
@@ -734,12 +734,14 @@ class GameBoyCharacterManager {
     }
     
     animateSubAgentWork(subAgent, agentIndex) {
+        if (!subAgent) return;
         const mainChars = this.characters;
         let currentTarget = 0;
         
         const moveToNextAgent = () => {
             if (currentTarget < mainChars.length) {
                 const targetChar = mainChars[currentTarget];
+                if (!targetChar) { currentTarget++; moveToNextAgent(); return; }
                 subAgent.moveTo(targetChar.gridX, targetChar.gridY + 1);
                 subAgent.showSpeechBubble("DELIVERING");
                 setTimeout(() => {
