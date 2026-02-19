@@ -63,6 +63,7 @@ class GameBoyStateBridge {
     
     updateAgentStatuses(agents) {
         (agents || []).forEach(agent => {
+            if (!agent) return;
             const character = this.characterManager?.findCharacterByRole(agent.role) ||
                             this.characterManager?.findCharacterByName(agent.name);
             
@@ -100,8 +101,8 @@ class GameBoyStateBridge {
         this.displayedMissions = (missions || []).slice(0, 3);
         this.updateMissionBoardUI();
         
-        missions.forEach(mission => {
-            if (mission.status === 'in_progress' && Math.random() > 0.8) {
+        (missions || []).forEach(mission => {
+            if (mission?.status === 'in_progress' && Math.random() > 0.8) {
                 this.triggerMissionActivity(mission);
             }
         });
@@ -110,13 +111,14 @@ class GameBoyStateBridge {
     updateSubagents(subagents) {
         this.displayedSubagents = subagents || [];
         (subagents || []).forEach(subagent => {
-            if (subagent.status === 'running' && !this.characterManager?.hasSubagent(subagent.id)) {
+            if (subagent?.status === 'running' && !this.characterManager?.hasSubagent(subagent.id)) {
                 this.spawnSubagentCharacter(subagent);
             }
         });
     }
     
     spawnSubagentCharacter(subagent) {
+        if (!subagent) return;
         const parentChar = this.characterManager?.findCharacterByRole(this.getAgentRoleById(subagent.parentAgent));
         if (parentChar) {
             const stagiairePos = {
@@ -129,8 +131,8 @@ class GameBoyStateBridge {
     
     getAgentRoleById(agentId) {
         if (!window.FleetKit?.data?.agents) return null;
-        const agent = FleetKit.data.agents.find(a => a.id === agentId);
-        return agent ? agent.role : null;
+        const agent = window.FleetKit.data.agents.find(a => a?.id === agentId);
+        return agent?.role || null;
     }
     
     formatTaskForSpeechBubble(task) {
@@ -171,13 +173,14 @@ class GameBoyStateBridge {
             `;
         } else {
             this.displayedMissions.forEach(mission => {
+                if (!mission) return;
                 const progressPercent = Math.round((mission.progress || 0) * 100);
                 const hpClass = progressPercent > 50 ? 'hp-green' : progressPercent > 25 ? 'hp-yellow' : progressPercent > 10 ? 'hp-orange' : 'hp-red';
                 
                 html += `
                     <div class="mission-item">
-                        <div>${(mission.title || 'UNKNOWN MISSION').toUpperCase()}</div>
-                        <div style="font-size: 5px; margin: 2px 0;">${mission.priority?.toUpperCase() || 'NORMAL'}</div>
+                        <div>${String(mission.title || 'UNKNOWN MISSION').toUpperCase()}</div>
+                        <div style="font-size: 5px; margin: 2px 0;">${String(mission.priority || 'NORMAL').toUpperCase()}</div>
                         <div class="hp-bar">
                             <div class="hp-fill ${hpClass}" style="width: ${progressPercent}%"></div>
                         </div>
@@ -190,6 +193,7 @@ class GameBoyStateBridge {
         if (this.displayedSubagents.length > 0) {
             html += `<div style="font-size: 6px; margin-top: 8px; color: ${css.teal};">PARTY:</div>`;
             this.displayedSubagents.forEach((subagent, i) => {
+                if (!subagent) return;
                 const pokeName = this._subAgentName(i);
                 const progressPercent = Math.round((subagent.progress || 0) * 100);
                 const hpClass = progressPercent > 50 ? 'hp-green' : progressPercent > 25 ? 'hp-yellow' : 'hp-orange';
@@ -208,14 +212,15 @@ class GameBoyStateBridge {
     }
     
     triggerMissionActivity(mission) {
-        if (!mission.assignedTo) return;
-        (mission.assignedTo || []).forEach(agentId => {
+        if (!mission?.assignedTo?.length) return;
+        mission.assignedTo.forEach(agentId => {
+            if (!agentId) return;
             const character = this.characterManager?.findCharacterByName(agentId) ||
-                            (this.characterManager?.characters || []).find(c => (c.role || '').toLowerCase().includes(agentId));
+                            (this.characterManager?.characters || []).find(c => (c?.role || '').toLowerCase().includes(String(agentId).toLowerCase()));
             if (character) {
                 if (Math.random() > 0.5) {
                     character.setState('going_to_meeting');
-                    character.showSpeechBubble((mission.title || 'MISSION').split(' ')[0]);
+                    character.showSpeechBubble(String(mission.title || 'MISSION').split(' ')[0] || 'MISSION');
                 } else {
                     character.setState('working_at_desk');
                 }
@@ -244,17 +249,19 @@ class GameBoyStateBridge {
     
     triggerRandomEvent() {
         if (!window.FleetKit?.data) return;
-        const data = FleetKit.data;
+        const data = window.FleetKit.data;
         
         const now = Date.now();
-        data.crons?.forEach(cron => {
-            if (cron.status === 'active' && cron.nextRun && now >= cron.nextRun) {
+        (data?.crons || []).forEach(cron => {
+            if (cron?.status === 'active' && cron.nextRun && now >= cron.nextRun) {
                 this.triggerCronAlarm(cron);
             }
         });
         
         if (Math.random() > 0.7) {
-            const randomAgent = data.agents?.[Math.floor(Math.random() * data.agents.length)];
+            const agents = data?.agents;
+            if (!agents?.length) return;
+            const randomAgent = agents[Math.floor(Math.random() * agents.length)];
             if (randomAgent) this.triggerAgentActivity(randomAgent);
         }
     }
@@ -263,7 +270,7 @@ class GameBoyStateBridge {
         this.officeMap?.triggerPhoneRing();
         
         if (window.PokemonUI) {
-            window.PokemonUI.systemMessage(`${this._resolveObj('phone')} is ringing!\n${cron.name}`);
+            window.PokemonUI.systemMessage(`${this._resolveObj('phone')} is ringing!\n${cron?.name || 'ALARM'}`);
         }
         
         const ownerChar = this.characterManager?.findCharacterByName(cron?.owner);
@@ -277,6 +284,7 @@ class GameBoyStateBridge {
     }
     
     triggerAgentActivity(agent) {
+        if (!agent) return;
         const character = this.characterManager?.findCharacterByRole(agent.role) ||
                         this.characterManager?.findCharacterByName(agent.name);
         if (character) {
@@ -294,7 +302,7 @@ class GameBoyStateBridge {
         this.syncWithFleetKitData();
         
         if (window.PokemonUI) {
-            window.PokemonUI.wildEncounterMission(data.title || 'NEW QUEST');
+            window.PokemonUI.wildEncounterMission(data?.title || 'NEW QUEST');
         }
         
         this.triggerWhiteboardSession();
@@ -302,7 +310,7 @@ class GameBoyStateBridge {
     
     handleMissionProgress(data) {
         this.updateMissionBoardUI();
-        if (data.newProgress >= 1.0) {
+        if (data?.newProgress >= 1.0) {
             this.triggerCelebration();
         }
     }
@@ -357,28 +365,29 @@ class GameBoyStateBridge {
     }
     
     getMissionStatus() {
-        if (!window.FleetKit?.data?.missions) return { active: 0, queued: 0, activeMissions: [] };
-        const missions = FleetKit.data.missions;
-        const activeMissions = missions.filter(m => m.status === 'in_progress');
+        const missions = window.FleetKit?.data?.missions || [];
+        if (!missions.length) return { active: 0, queued: 0, activeMissions: [] };
+        const activeMissions = missions.filter(m => m?.status === 'in_progress');
         return {
             active: activeMissions.length,
-            queued: missions.filter(m => m.status === 'pending').length,
+            queued: missions.filter(m => m?.status === 'pending').length,
             activeMissions: activeMissions.map(m => ({
-                title: m.title,
-                progress: Math.round((m.progress || 0) * 100),
-                priority: m.priority
+                title: m?.title || 'UNKNOWN',
+                progress: Math.round((m?.progress || 0) * 100),
+                priority: m?.priority
             }))
         };
     }
     
     getAgentStatus() {
-        if (!window.FleetKit?.data?.agents) return { activeAgents: 0, activities: {}, metrics: {} };
-        const agents = FleetKit.data.agents;
+        const agents = window.FleetKit?.data?.agents || [];
+        if (!agents.length) return { activeAgents: 0, activities: {}, metrics: {} };
         const activities = {};
         agents.forEach(agent => {
+            if (!agent) return;
             const pokeName = this._resolveName(agent.id || agent.name || 'unknown', 'title');
             activities[pokeName] = {
-                status: (agent.status || 'idle').toUpperCase(),
+                status: String(agent.status || 'idle').toUpperCase(),
                 task: agent.currentTask,
                 lastSeen: agent.lastSeen
             };
@@ -386,7 +395,7 @@ class GameBoyStateBridge {
         return {
             activeAgents: agents.length,
             activities: activities,
-            metrics: FleetKit.data.metrics || {}
+            metrics: window.FleetKit?.data?.metrics || {}
         };
     }
 }

@@ -193,7 +193,7 @@ class SimsUI {
         // Character portrait (pixel art face)
         const skin = '#ffdbb5';
         const hair = '#4a3520';
-        const suit = '#' + (char.suitColor || 0x888888).toString(16).padStart(6, '0');
+        const suit = '#' + (char?.suitColor ?? 0x888888).toString(16).padStart(6, '0');
 
         // Background glow
         ctx.fillStyle = suit;
@@ -247,27 +247,27 @@ class SimsUI {
         const data = window.FleetKit?.data;
         if (!data) return;
 
-        const metrics = data.metrics || {};
-        const agents = data.agents || [];
-        const missions = data.missions || [];
-        const events = data.events || [];
+        const metrics = data?.metrics || {};
+        const agents = data?.agents || [];
+        const missions = data?.missions || [];
+        const events = data?.events || [];
 
         // Energy = memory/uptime remaining (inverse of usage)
         this.needs.Energy = Math.max(5, Math.min(100,
-            100 - (metrics.memoryUsage ?? 0.3) * 100
+            100 - (metrics?.memoryUsage ?? 0.3) * 100
         ));
 
         // Fun = missions completed ratio
         const totalMissions = missions.length || 1;
-        const completed = missions.filter(m => m?.status === 'completed' || (m?.progress || 0) >= 1).length;
+        const completed = missions.filter(m => m?.status === 'completed' || ((m?.progress ?? 0) >= 1)).length;
         this.needs.Fun = Math.max(5, Math.min(100, (completed / totalMissions) * 100 + 20));
 
         // Social = active sessions / agents talking
-        const activeSessions = metrics.sessionsActive || agents.filter(a => a?.status === 'active').length;
+        const activeSessions = metrics?.sessionsActive || agents.filter(a => a?.status === 'active').length;
         this.needs.Social = Math.max(5, Math.min(100, activeSessions * 18 + 10));
 
         // Hunger = API calls (more = fuller)
-        const apiCalls = metrics.apiCallsToday || 0;
+        const apiCalls = metrics?.apiCallsToday || 0;
         this.needs.Hunger = Math.max(5, Math.min(100, Math.min(apiCalls / 2, 100)));
 
         // Hygiene = inverse of error rate
@@ -278,7 +278,7 @@ class SimsUI {
         this.needs.Bladder = Math.max(5, Math.min(100, 80 - Math.random() * 20));
 
         // Simoleons (fun metric: token usage as currency)
-        const simoleons = Math.max(0, 25000 - (metrics.tokensToday ?? 0));
+        const simoleons = Math.max(0, 25000 - (metrics?.tokensToday ?? 0));
         const el = document.getElementById('simsSimoleons');
         if (el) el.textContent = `§ ${simoleons.toLocaleString()}`;
 

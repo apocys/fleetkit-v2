@@ -48,11 +48,13 @@
                 container.style.transform = `scale(${scale.toFixed(3)})`;
                 container.style.transformOrigin = 'top center';
                 // Adjust wrapper to prevent layout shift
-                container.parentElement.style.height = `${Math.round(CANVAS_H * scale)}px`;
-                container.parentElement.style.overflow = 'visible';
+                if (container.parentElement) {
+                    container.parentElement.style.height = `${Math.round(CANVAS_H * scale)}px`;
+                    container.parentElement.style.overflow = 'visible';
+                }
             } else {
                 container.style.transform = '';
-                container.parentElement.style.height = '';
+                if (container.parentElement) container.parentElement.style.height = '';
             }
         }
         

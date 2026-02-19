@@ -633,7 +633,7 @@ window.ClickAffordances = (() => {
     // Fallback: dispatch keyboard event
     document.dispatchEvent(new KeyboardEvent('keydown', {
       key: key,
-      code: 'Key' + key.toUpperCase(),
+      code: 'Key' + (key || '').toUpperCase(),
       bubbles: true,
       cancelable: true,
     }));
@@ -816,7 +816,7 @@ window.ClickAffordances = (() => {
       // Try to find the full agent object from FleetKit data
       let agentObj = null;
       if (typeof FleetKit !== 'undefined' && FleetKit?.data?.agents) {
-        agentObj = FleetKit.data.agents.find(a =>
+        agentObj = (FleetKit.data.agents || []).find(a =>
           a?.id === agentId ||
           a?.name?.toLowerCase() === (agentId || '').toLowerCase() ||
           a?.canonical === agentId
@@ -1017,7 +1017,7 @@ window.ClickAffordances = (() => {
     }
     // From GameBoy state bridge
     if (window.gameboyOffice?.stateBridge) {
-      const status = window.gameboyOffice.stateBridge?.getMissionStatus?.();
+      const status = window.gameboyOffice?.stateBridge?.getMissionStatus?.();
       if (status) {
         return (status?.active || 0) + (status?.queued || 0);
       }
@@ -1094,7 +1094,7 @@ window.ClickAffordances = (() => {
       if (_demoBtn) _demoBtn.textContent = '⏸';
     } else if (window.gameboyOffice?.triggerMeeting) {
       // Fallback: trigger some GameBoy activity
-      window.gameboyOffice.triggerMeeting();
+      window.gameboyOffice?.triggerMeeting?.();
       setTimeout(() => window.gameboyOffice?.triggerCelebration?.(), 4000);
     } else {
       // Show a toast about demo

@@ -524,7 +524,7 @@ class SimsCharacterManager {
         sub.title = name;
         if (sub.nameLabel) sub.nameLabel.text = name;
         sub.container.scale.set(0.7);
-        sub.showSpeechBubble((task || 'WORKING').toUpperCase());
+        sub.showSpeechBubble(String(task || 'WORKING').toUpperCase());
 
         this.subAgents.push(sub);
         this.container.addChild(sub.container);

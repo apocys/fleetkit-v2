@@ -507,7 +507,7 @@
       const ceo = this._ceo();
       const whiteboardPos = this._objPos('whiteboard');
       const allAgents = this._agents();
-      const assigned = m.assignedTo;
+      const assigned = m.assignedTo || [];
 
       // CEO calls the team
       this._bubble(ceo, '📢 Team, gather up!', 2000);
@@ -552,7 +552,7 @@
       this._emitPhase(m.id, 'briefing');
 
       const ceo = this._ceo();
-      const assigned = m.assignedTo.filter(id => id !== ceo);
+      const assigned = (m.assignedTo || []).filter(id => id !== ceo);
 
       // CEO explains the mission
       this._bubble(ceo, `📋 Mission: ${this._truncate(m.text, 30)}`, 3000);
@@ -625,7 +625,7 @@
 
         // Occasional speech bubbles (not every step — that'd be annoying)
         if (step % 2 === 0 || step === totalSteps) {
-          const talker = pickRandom(m.assignedTo);
+          const talker = pickRandom(m.assignedTo || []);
           this._bubble(talker, getProgressBubble(pct), 2000);
         }
 

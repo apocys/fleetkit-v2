@@ -154,7 +154,7 @@ window.FleetKitBoot = (() => {
   };
 
   function drawPixelChar(ctx, char, x, y, scale, color) {
-    const data = PIXEL_FONT[char.toUpperCase()] || PIXEL_FONT[char];
+    const data = PIXEL_FONT[char?.toUpperCase?.()] || PIXEL_FONT[char];
     if (!data) return scale * 6;
     ctx.fillStyle = color;
     for (let col = 0; col < 5; col++) {
@@ -700,7 +700,7 @@ window.FleetKitBoot = (() => {
     // ── Step 7: WELCOME BACK ──
     addLine('', CP_GREEN);
     const userName = options.userName || 'OPERATOR';
-    await typeLine(`> ROOT@FLEET: WELCOME BACK, ${userName.toUpperCase()}.`, CP_CYAN, abbreviated ? 10 : 20);
+    await typeLine(`> ROOT@FLEET: WELCOME BACK, ${(userName || 'OPERATOR').toUpperCase()}.`, CP_CYAN, abbreviated ? 10 : 20);
     if (skipped()) { markSeen(); return; }
     await step(abbreviated ? 300 : 1000);
     if (skipped()) { markSeen(); return; }
@@ -1012,7 +1012,7 @@ window.FleetKitBoot = (() => {
             // Name
             ctx.font = `bold ${Math.max(10, Math.floor(cardW / 10))}px "Georgia", serif`;
             ctx.fillStyle = EX_WHITE;
-            ctx.fillText(agent.name, cx + cardW / 2, cardY + cardH * 0.6);
+            ctx.fillText(agent?.name || '', cx + cardW / 2, cardY + cardH * 0.6);
 
             // Role
             ctx.font = `${Math.max(8, Math.floor(cardW / 14))}px "Georgia", serif`;

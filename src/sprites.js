@@ -828,7 +828,7 @@ window.FleetKitSprites = {
     let frame = char.frames[frameName];
 
     // Auto-mirror walk_left from walk_right
-    if (!frame && frameName.startsWith('walk_left_')) {
+    if (!frame && frameName?.startsWith('walk_left_')) {
       const rightFrame = frameName.replace('walk_left_', 'walk_right_');
       frame = this.getMirroredFrame(char.frames[rightFrame]);
     }
@@ -872,8 +872,8 @@ window.FleetKitSprites = {
    * @returns {string[]}
    */
   getFrameNames(characterId) {
-    const char = this.characters[characterId];
-    if (!char) return [];
+    const char = this.characters?.[characterId];
+    if (!char?.frames) return [];
     const names = Object.keys(char.frames);
     // Add virtual walk_left frames
     names.forEach(name => {

@@ -716,18 +716,18 @@ window.FleetKitUX = (() => {
   function installErrorHandler() {
     window.addEventListener('error', (event) => {
       _errorCount++;
-      console.error('[FleetKitUX] Error caught:', event.message);
+      console.error('[FleetKitUX] Error caught:', event?.message);
 
       // Only show recovery screen after multiple critical errors
       // or a single fatal error that prevents rendering
       if (_errorCount >= MAX_ERRORS_BEFORE_SCREEN || isCriticalError(event)) {
-        showErrorScreen(event.message);
+        showErrorScreen(event?.message || 'Unknown error');
       }
     });
 
     window.addEventListener('unhandledrejection', (event) => {
       _errorCount++;
-      console.error('[FleetKitUX] Unhandled rejection:', event.reason);
+      console.error('[FleetKitUX] Unhandled rejection:', event?.reason);
 
       if (_errorCount >= MAX_ERRORS_BEFORE_SCREEN) {
         showErrorScreen(String(event.reason));

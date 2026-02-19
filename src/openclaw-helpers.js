@@ -1600,7 +1600,7 @@ window.OpenClawHelpers = (() => {
     // If given an ID string, look up in FleetKit.data
     if (typeof agentIdOrObj === 'string') {
       if (typeof FleetKit !== 'undefined' && FleetKit?.data?.agents) {
-        agent = FleetKit.data.agents.find(a => a?.id === agentIdOrObj);
+        agent = (FleetKit.data?.agents || []).find(a => a?.id === agentIdOrObj);
       }
       if (!agent) {
         agent = { id: agentIdOrObj, name: agentIdOrObj, role: 'Unknown', status: 'offline' };
@@ -2138,7 +2138,7 @@ window.OpenClawHelpers = (() => {
 
   function countAgentMissions(agentId) {
     if (typeof FleetKit === 'undefined' || !FleetKit?.data?.missions) return 0;
-    return (FleetKit.data.missions || []).filter(m => m?.assignedTo?.includes?.(agentId)).length;
+    return (FleetKit.data?.missions || []).filter(m => m?.assignedTo?.includes?.(agentId)).length;
   }
 
   // ══════════════════════════════════════════════════════════════

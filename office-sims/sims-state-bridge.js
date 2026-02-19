@@ -64,22 +64,23 @@ class SimsStateBridge {
     // ── Agent status mapping ────────────────────────────
 
     _updateAgentStatuses(agents) {
-        if (!agents) return;
+        if (!agents?.length) return;
         agents.forEach(agent => {
-            const char = this.characterManager?.findCharacterByRole(agent?.role) ||
-                         this.characterManager?.findCharacterByName(agent?.name);
+            if (!agent) return;
+            const char = this.characterManager?.findCharacterByRole(agent.role) ||
+                         this.characterManager?.findCharacterByName(agent.name);
             if (!char) return;
 
-            const newState = this._mapStatus(agent?.status, agent?.currentTask);
+            const newState = this._mapStatus(agent.status, agent.currentTask);
             char.setState(newState);
 
             // Mood mapping: more active = happier
-            if (agent?.status === 'active' || agent?.status === 'working') char.mood = 0.9;
-            else if (agent?.status === 'idle') char.mood = 0.5;
-            else if (agent?.status === 'error') char.mood = 0.1;
+            if (agent.status === 'active' || agent.status === 'working') char.mood = 0.9;
+            else if (agent.status === 'idle') char.mood = 0.5;
+            else if (agent.status === 'error') char.mood = 0.1;
             else char.mood = 0.7;
 
-            if (agent?.currentTask && Math.random() > 0.6) {
+            if (agent.currentTask && Math.random() > 0.6) {
                 char.showSpeechBubble(this._taskBubble(agent.currentTask));
             }
         });
@@ -112,10 +113,10 @@ class SimsStateBridge {
     // ── Mission mapping ─────────────────────────────────
 
     _updateMissions(missions) {
-        if (!missions) return;
+        if (!missions?.length) return;
         this.displayedMissions = missions.slice(0, 4);
         this._updateMissionUI();
-        missions.forEach(m => {
+        (missions || []).forEach(m => {
             if (m?.status === 'in_progress' && Math.random() > 0.8) {
                 this._triggerMissionActivity(m);
             }
@@ -131,8 +132,8 @@ class SimsStateBridge {
     }
 
     _triggerMissionActivity(mission) {
-        if (!mission?.assignedAgents) return;
-        mission.assignedAgents.forEach(agentId => {
+        if (!mission?.assignedAgents?.length) return;
+        (mission.assignedAgents || []).forEach(agentId => {
             const char = this.characterManager?.findCharacterByName(agentId);
             if (char) {
                 char.setState(Math.random() > 0.5 ? 'at_whiteboard' : 'working_at_desk');
@@ -143,19 +144,21 @@ class SimsStateBridge {
     // ── Subagent mapping ────────────────────────────────
 
     _updateSubagents(subagents) {
-        if (!subagents) return;
+        if (!subagents?.length) return;
         this.displayedSubagents = subagents;
         subagents.forEach(sa => {
-            if (sa?.status === 'running' && !this.characterManager?.hasSubagent(sa?.id)) {
+            if (!sa) return;
+            if (sa.status === 'running' && !this.characterManager?.hasSubagent(sa.id)) {
                 this._spawnSubagentCharacter(sa);
             }
         });
     }
 
     _spawnSubagentCharacter(sa) {
-        const parent = this.characterManager?.findCharacterByRole(this._getAgentRoleById(sa?.parentAgent));
+        if (!sa) return;
+        const parent = this.characterManager?.findCharacterByRole(this._getAgentRoleById(sa.parentAgent));
         if (parent) {
-            this.characterManager.createStagiaire(
+            this.characterManager?.createStagiaire(
                 sa.id, sa.name,
                 { x: parent.gridX + (Math.random() - 0.5) * 2, y: parent.gridY + (Math.random() - 0.5) * 2 }
             );
@@ -183,7 +186,7 @@ class SimsStateBridge {
 
     _handleMissionProgress(data) {
         this._updateMissionUI();
-        if (data?.newProgress >= 1.0) this.triggerCelebration();
+        if ((data?.newProgress ?? 0) >= 1.0) this.triggerCelebration();
     }
 
     _handleSubagentSpawn(data) { this._syncFleetKitData(); }
@@ -191,7 +194,8 @@ class SimsStateBridge {
 
     _handleCronTrigger(data) {
         this.officeMap?.triggerPhoneRing();
-        const owner = this.characterManager?.findCharacterByName(data?.owner);
+        if (!data) return;
+        const owner = this.characterManager?.findCharacterByName(data.owner);
         if (owner) {
             const pp = this.officeMap?.locations?.phoneAlarm;
             if (pp) {
@@ -280,11 +284,12 @@ class SimsStateBridge {
         const roll = Math.random();
         if (roll > 0.7) {
             // Random agent activity
-            const agents = FleetKit.data?.agents;
+            const agents = window.FleetKit?.data?.agents;
             if (agents?.length) {
                 const agent = agents[Math.floor(Math.random() * agents.length)];
-                const char = this.characterManager?.findCharacterByRole(agent?.role) ||
-                             this.characterManager?.findCharacterByName(agent?.name);
+                if (!agent) return;
+                const char = this.characterManager?.findCharacterByRole(agent.role) ||
+                             this.characterManager?.findCharacterByName(agent.name);
                 if (char) {
                     const states = ['thinking', 'working_at_desk', 'chatting', 'getting_coffee'];
                     char.setState(states[Math.floor(Math.random() * states.length)]);
@@ -307,8 +312,8 @@ class SimsStateBridge {
     // ── Status API ──────────────────────────────────────
 
     getMissionStatus() {
-        if (!window.FleetKit?.data?.missions) return { active: 0, queued: 0 };
-        const m = window.FleetKit.data.missions;
+        const m = window.FleetKit?.data?.missions;
+        if (!m?.length) return { active: 0, queued: 0 };
         return {
             active: m.filter(x => x?.status === 'in_progress' || x?.status === 'active').length,
             queued: m.filter(x => x?.status === 'pending').length,

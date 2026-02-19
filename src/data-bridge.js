@@ -119,14 +119,16 @@
             await fetchLiveData();
         } else {
             // Demo mode: simulate minor updates
-            FleetKit.data.agents.forEach(agent => {
+            (FleetKit.data?.agents || []).forEach(agent => {
                 if (Math.random() > 0.7) {
-                    agent.tokensUsed += Math.floor(Math.random() * 100);
-                    agent.apiCalls += Math.floor(Math.random() * 5);
+                    agent.tokensUsed = (agent.tokensUsed || 0) + Math.floor(Math.random() * 100);
+                    agent.apiCalls = (agent.apiCalls || 0) + Math.floor(Math.random() * 5);
                 }
             });
-            FleetKit.data.metrics.tokensToday += Math.floor(Math.random() * 50);
-            FleetKit.data.metrics.apiCallsToday += Math.floor(Math.random() * 3);
+            if (FleetKit.data?.metrics) {
+                FleetKit.data.metrics.tokensToday = (FleetKit.data.metrics.tokensToday || 0) + Math.floor(Math.random() * 50);
+                FleetKit.data.metrics.apiCallsToday = (FleetKit.data.metrics.apiCallsToday || 0) + Math.floor(Math.random() * 3);
+            }
         }
         FleetKit.emit('data:refresh', FleetKit.data);
     };
@@ -162,25 +164,25 @@
             if (hasElectronAPI) {
                 return await global.fleetkitAPI.getSessions();
             }
-            return { sessions: FleetKit.data.agents.concat(FleetKit.data.subagents) };
+            return { sessions: (FleetKit.data?.agents || []).concat(FleetKit.data?.subagents || []) };
         },
         getCrons: async function() {
             if (hasElectronAPI) {
                 return await global.fleetkitAPI.getCrons();
             }
-            return { crons: FleetKit.data.crons };
+            return { crons: FleetKit.data?.crons || [] };
         },
         getAgentInfo: async function(agentId) {
             if (hasElectronAPI) {
                 return await global.fleetkitAPI.getAgentInfo(agentId);
             }
-            return FleetKit.data.agents.find(a => a.id === agentId) || null;
+            return (FleetKit.data?.agents || []).find(a => a?.id === agentId) || null;
         },
         getMemory: async function() {
             if (hasElectronAPI) {
                 return await global.fleetkitAPI.getMemory();
             }
-            return FleetKit.data.memory;
+            return FleetKit.data?.memory || null;
         },
         sendMission: async function(task) {
             if (hasElectronAPI) {
@@ -196,6 +198,7 @@
                 startTime: new Date().toISOString(),
                 priority: 'normal'
             };
+            if (!FleetKit.data.missions) FleetKit.data.missions = [];
             FleetKit.data.missions.push(mission);
             FleetKit.emit('mission:new', mission);
             return mission;

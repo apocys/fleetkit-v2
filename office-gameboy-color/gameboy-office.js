@@ -62,6 +62,7 @@ class GameBoyVirtualOffice {
         
         // Add canvas to DOM
         const container = document.getElementById('gameContainer');
+        if (!container) { console.warn('🎮 GBC: #gameContainer not found'); return; }
         container.appendChild(this.app.view);
         
         // Apply GameBoy screen styling
@@ -267,7 +268,7 @@ class GameBoyVirtualOffice {
             }
             
             if (activeElement && this.characterManager) {
-                activeElement.textContent = `AGENTS: ${this.characterManager.characters.length}`;
+                activeElement.textContent = `AGENTS: ${this.characterManager.characters?.length || 0}`;
             }
             
             if (activitiesElement && this.characterManager) {
@@ -277,9 +278,9 @@ class GameBoyVirtualOffice {
     }
     
     getShortStatus() {
-        if (!this.characterManager) return 'LOADING';
+        if (!this.characterManager?.characters?.length) return 'LOADING';
         
-        const states = this.characterManager.characters.map(c => c.state);
+        const states = this.characterManager.characters.map(c => c?.state || 'idle');
         const working = states.filter(s => s.includes('working')).length;
         const meeting = states.filter(s => s.includes('meeting')).length;
         const coffee = states.filter(s => s.includes('coffee')).length;
@@ -291,7 +292,7 @@ class GameBoyVirtualOffice {
     addInteractivity() {
         this.app.stage.interactive = true;
         this.app.stage.on('pointerdown', (event) => {
-            const globalPos = event.data?.global;
+            const globalPos = event?.data?.global ?? event?.global;
             if (!globalPos) return;
             const localPos = this.characterContainer?.toLocal(globalPos);
             if (!localPos) return;
@@ -304,8 +305,9 @@ class GameBoyVirtualOffice {
             console.log(`🎮 Clicked grid: ${gridX}, ${gridY}`);
             
             // Check if clicking on special elements
-            Object.keys(this.officeMap?.locations || {}).forEach(key => {
-                const loc = this.officeMap.locations[key];
+            const locations = this.officeMap?.locations || {};
+            Object.keys(locations).forEach(key => {
+                const loc = locations[key];
                 if (loc.x === gridX && loc.y === gridY) {
                     this.handleLocationClick(key, loc);
                     return;
@@ -410,7 +412,7 @@ class GameBoyVirtualOffice {
             case 'speed':
                 // Increase all animation speeds
                 (this.characterManager?.characters || []).forEach(char => {
-                    char.moveSpeed *= 2;
+                    if (char) char.moveSpeed *= 2;
                 });
                 console.log('🎮 SPEED CODE: Double speed mode!');
                 break;
@@ -419,9 +421,10 @@ class GameBoyVirtualOffice {
                 // Cycle through GBC colors
                 const gbcColors = [0xD4A853, 0x4A90D9, 0xC0392B, 0x9B59B6, 0x53868B, 0x5CB85C];
                 (this.characterManager?.characters || []).forEach((char, index) => {
+                    if (!char) return;
                     setTimeout(() => {
                         char.color = gbcColors[index % gbcColors.length];
-                        char.createGameBoySprite();
+                        char.createGameBoySprite?.();
                     }, index * 300);
                 });
                 console.log('🎮 RAINBOW CODE: Color cycle mode!');
@@ -433,10 +436,10 @@ class GameBoyVirtualOffice {
     saveOfficeState() {
         const state = {
             characters: (this.characterManager?.characters || []).map(c => ({
-                name: c.name,
-                x: c.gridX,
-                y: c.gridY,
-                state: c.state
+                name: c?.name || 'UNKNOWN',
+                x: c?.gridX ?? 0,
+                y: c?.gridY ?? 0,
+                state: c?.state || 'idle'
             })),
             missions: this.stateBridge?.getMissionStatus?.()?.activeMissions || [],
             timestamp: Date.now()

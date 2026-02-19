@@ -1,897 +1,228 @@
 /**
- * FleetKit v2 — SpawnKit Dashboard Controller
- * ═════════════════════════════════════════════
- *
- * Central orchestrator for the SpawnKit dashboard. Manages theme selection,
- * agent roster (with XP/leveling), mission board, sidebar state, and
- * iframe postMessage communication with active theme views.
- *
- * Integrates with:
- *   - FleetKit (data-bridge) event bus
- *   - FleetKitAchievements (unlock checks on mission complete)
- *   - MissionController (animation triggers)
- *   - theme-switcher (theme map + navigation)
- *
- * All state persisted to localStorage under `spawnkit-*` keys.
- *
- * API: window.SpawnKitDashboard.{init, selectTheme, toggleSidebar, ...}
- *
- * @author Forge (CTO)
- * @version 2.0.0
+ * SpawnKit Dashboard Controller
+ * Central logic: themes, agent CRUD, XP/levels, missions, sidebar, iframe comms, events.
+ * All localStorage in try/catch. All public methods validate inputs. Null-safe throughout.
+ * @module SpawnKitDashboard
+ * @version 3.0.0
  */
-
-(function (global) {
+(function (root) {
   'use strict';
 
-  // ═══════════════════════════════════════════════════════════════
-  // ─── CONSTANTS ────────────────────────────────────────────────
-  // ═══════════════════════════════════════════════════════════════
-
-  /** localStorage key map */
-  var STORAGE_KEYS = {
-    theme: 'spawnkit-theme',
-    agents: 'spawnkit-agents',
-    missions: 'spawnkit-missions',
-    sidebar: 'spawnkit-sidebar'
-  };
-
-  /** Theme registry — id → metadata */
+  var STORAGE_KEY = 'spawnkit-state';
   var THEMES = {
-    gameboy: {
-      id: 'gameboy',
-      name: 'Pixel',
-      path: '../office-gameboy/index.html',
-      emoji: '🎮',
-      color: '#9BBB0F'
-    },
-    'gameboy-color': {
-      id: 'gameboy-color',
-      name: 'Pixel Color',
-      path: '../office-gameboy-color/index.html',
-      emoji: '🌈',
-      color: '#53868B'
-    },
-    sims: {
-      id: 'sims',
-      name: 'The Sims',
-      path: '../office-sims/index.html',
-      emoji: '💎',
-      color: '#E2C275'
-    }
+    'gameboy':       { name: 'GameBoy',       path: './office-gameboy/index.html',       emoji: '🎮', accent: '#9BBB0F' },
+    'gameboy-color': { name: 'GameBoy Color', path: './office-gameboy-color/index.html', emoji: '🌈', accent: '#53868B' },
+    'sims':          { name: 'The Sims',      path: './office-sims/index.html',          emoji: '💎', accent: '#E2C275' }
   };
+  var XP_K = 50, MAX_AG = 20, MAX_MI = 100, MAX_N = 64, MAX_D = 256, PFX = 'spawnkit:';
+  var _s = { theme: null, sidebarOpen: false, agents: [], missions: [], visited: false };
+  var _h = {}, _iframe = null, _th = [], _ml = null, _init = false;
 
-  /** Default agent roster */
-  var DEFAULT_AGENTS = [
-    { id: 'atlas', name: 'Atlas', role: 'COO', emoji: '📊', sprite: 'atlas.png', xp: 0, level: 1 },
-    { id: 'forge', name: 'Forge', role: 'CTO', emoji: '🔨', sprite: 'forge.png', xp: 0, level: 1 },
-    { id: 'echo',  name: 'Echo',  role: 'CMO', emoji: '📢', sprite: 'echo.png',  xp: 0, level: 1 }
-  ];
+  // ── Helpers ──
+  function clip(s, n) { return typeof s === 'string' ? s.slice(0, n) : ''; }
+  function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+  function isS(v) { return typeof v === 'string' && v.length > 0; }
+  function isN(v) { return typeof v === 'number' && !isNaN(v); }
 
-  /** Mission status enum */
-  var MISSION_STATUS = {
-    PENDING: 'pending',
-    ACTIVE: 'active',
-    COMPLETED: 'completed',
-    FAILED: 'failed'
-  };
-
-  /** Maximum lengths for input validation */
-  var MAX_NAME_LENGTH = 64;
-  var MAX_TITLE_LENGTH = 200;
-  var MAX_AGENTS = 20;
-  var MAX_MISSIONS = 100;
-
-  // ═══════════════════════════════════════════════════════════════
-  // ─── STORAGE HELPERS ──────────────────────────────────────────
-  // ═══════════════════════════════════════════════════════════════
-
-  /**
-   * Read a JSON value from localStorage.
-   * @param {string} key - Storage key.
-   * @param {*} fallback - Value to return on failure or missing key.
-   * @returns {*} Parsed value or fallback.
-   */
-  function storageGet(key, fallback) {
+  // ── Persistence ──
+  /** @returns {boolean} True if save succeeded */
+  function save() {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ theme: _s.theme, sidebarOpen: _s.sidebarOpen, agents: _s.agents, missions: _s.missions, visited: _s.visited })); A.emit('state:save', {}); return true; }
+    catch (_) { return false; }
+  }
+  /** @returns {boolean} True if load succeeded */
+  function load() {
     try {
-      var raw = localStorage.getItem(key);
-      if (raw === null || raw === undefined) return fallback;
-      return JSON.parse(raw);
-    } catch (_e) {
-      return fallback;
-    }
+      var r = localStorage.getItem(STORAGE_KEY); if (!r) return false;
+      var d = JSON.parse(r); if (!d || typeof d !== 'object') return false;
+      if (isS(d.theme) && THEMES[d.theme]) _s.theme = d.theme;
+      if (typeof d.sidebarOpen === 'boolean') _s.sidebarOpen = d.sidebarOpen;
+      if (typeof d.visited === 'boolean') _s.visited = d.visited;
+      if (Array.isArray(d.agents)) { _s.agents = []; for (var i = 0; i < d.agents.length && i < MAX_AG; i++) { var a = valAg(d.agents[i]); if (a) _s.agents.push(a); } }
+      if (Array.isArray(d.missions)) { _s.missions = []; for (var j = 0; j < d.missions.length && j < MAX_MI; j++) { var m = valMi(d.missions[j]); if (m) _s.missions.push(m); } }
+      A.emit('state:load', {}); return true;
+    } catch (_) { return false; }
   }
 
-  /**
-   * Write a JSON value to localStorage.
-   * @param {string} key - Storage key.
-   * @param {*} value - Value to serialize.
-   */
-  function storageSet(key, value) {
-    try {
-      localStorage.setItem(key, JSON.stringify(value));
-    } catch (_e) {
-      // Quota exceeded or private browsing — silently ignore
-    }
+  // ── Validation ──
+  function valAg(r) {
+    if (!r || typeof r !== 'object' || !isS(r.name)) return null;
+    return { id: isS(r.id) ? clip(r.id, MAX_N) : uid(), name: clip(r.name, MAX_N), role: clip(r.role || 'Agent', MAX_N), sprite: clip(r.sprite || '🤖', 128), xp: isN(r.xp) ? Math.max(0, Math.floor(r.xp)) : 0 };
+  }
+  function valMi(r) {
+    if (!r || typeof r !== 'object' || !isS(r.title)) return null;
+    return { id: isS(r.id) ? clip(r.id, MAX_N) : uid(), title: clip(r.title, MAX_D), desc: clip(r.desc || '', MAX_D), assignee: isS(r.assignee) ? clip(r.assignee, MAX_N) : null, status: r.status === 'done' ? 'done' : 'active', reward: isN(r.reward) ? Math.max(0, Math.floor(r.reward)) : 50, createdAt: isS(r.createdAt) ? r.createdAt : new Date().toISOString(), completedAt: isS(r.completedAt) ? r.completedAt : null };
+  }
+  function findAg(id) { for (var i = 0; i < _s.agents.length; i++) if (_s.agents[i].id === id) return i; return -1; }
+  function cp(o) { return Object.assign({}, o); }
+  function agSnap() { return _s.agents.map(cp); }
+  function miSnap() { return _s.missions.map(cp); }
+
+  // ── XP / Levels ──
+  /** @param {number} xp @returns {number} Level (min 1). Curve: threshold(L)=50·L·(L-1) */
+  function getLevel(xp) { if (!isN(xp) || xp < 0) return 1; return Math.max(1, Math.floor((1 + Math.sqrt(1 + xp / (XP_K / 4))) / 2)); }
+  /** @param {number} xp @returns {{ level:number, current:number, needed:number, percent:number }} */
+  function getLevelProgress(xp) {
+    if (!isN(xp) || xp < 0) xp = 0;
+    var l = getLevel(xp), lo = XP_K * l * (l - 1), hi = XP_K * (l + 1) * l, cur = xp - lo, need = hi - lo;
+    return { level: l, current: cur, needed: need, percent: need > 0 ? Math.round(cur / need * 100) : 100 };
   }
 
-  /**
-   * Read a plain string from localStorage.
-   * @param {string} key - Storage key.
-   * @param {string} fallback - Default value.
-   * @returns {string}
-   */
-  function storageGetString(key, fallback) {
-    try {
-      var val = localStorage.getItem(key);
-      return val !== null ? val : fallback;
-    } catch (_e) {
-      return fallback;
-    }
-  }
-
-  /**
-   * Write a plain string to localStorage.
-   * @param {string} key - Storage key.
-   * @param {string} value - String to store.
-   */
-  function storageSetString(key, value) {
-    try {
-      localStorage.setItem(key, value);
-    } catch (_e) {
-      // silent
-    }
-  }
-
-  // ═══════════════════════════════════════════════════════════════
-  // ─── EVENT HELPERS ────────────────────────────────────────────
-  // ═══════════════════════════════════════════════════════════════
-
-  /**
-   * Emit an event through FleetKit bus if available, otherwise dispatch
-   * a CustomEvent on document.
-   * @param {string} eventName - Event name.
-   * @param {Object} data - Event payload.
-   */
-  function emitEvent(eventName, data) {
-    if (typeof FleetKit !== 'undefined' && typeof FleetKit.emit === 'function') {
-      FleetKit.emit(eventName, data);
-    }
-    if (typeof document !== 'undefined' && typeof CustomEvent === 'function') {
-      document.dispatchEvent(new CustomEvent('spawnkit:' + eventName, { detail: data }));
-    }
-  }
-
-  // ═══════════════════════════════════════════════════════════════
-  // ─── UID HELPER ───────────────────────────────────────────────
-  // ═══════════════════════════════════════════════════════════════
-
-  /**
-   * Generate a short unique identifier.
-   * @param {string} [prefix='sk'] - ID prefix.
-   * @returns {string}
-   */
-  function uid(prefix) {
-    return (prefix || 'sk') + '_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 6);
-  }
-
-  // ═══════════════════════════════════════════════════════════════
-  // ─── XP / LEVELING ────────────────────────────────────────────
-  // ═══════════════════════════════════════════════════════════════
-
-  /**
-   * Calculate the level for a given XP total.
-   * Curve: threshold(n) = 50 * n * (n - 1).
-   *   Level 1: 0, Level 2: 100, Level 3: 300, Level 4: 600, Level 5: 1000 …
-   *
-   * @param {number} xp - Total experience points.
-   * @returns {number} Current level (1-based, minimum 1).
-   */
-  function getLevel(xp) {
-    if (typeof xp !== 'number' || isNaN(xp) || xp < 0) return 1;
-    // Solve 50*n*(n-1) <= xp  →  n <= (1 + sqrt(1 + xp/12.5)) / 2
-    var n = Math.floor((1 + Math.sqrt(1 + xp / 12.5)) / 2);
-    return Math.max(1, n);
-  }
-
-  /**
-   * XP required to reach a given level.
-   * @param {number} level - Target level.
-   * @returns {number} XP threshold.
-   */
-  function xpForLevel(level) {
-    if (typeof level !== 'number' || level < 2) return 0;
-    return 50 * level * (level - 1);
-  }
-
-  // ═══════════════════════════════════════════════════════════════
-  // ─── INTERNAL STATE ───────────────────────────────────────────
-  // ═══════════════════════════════════════════════════════════════
-
-  var _state = {
-    currentTheme: 'gameboy',
-    sidebarOpen: true,
-    agents: [],
-    missions: []
-  };
-
-  /** Reference to the active theme iframe element (set by consumer) */
-  var _themeIframe = null;
-
-  /** Allowed origins for postMessage validation */
-  var _allowedOrigins = [];
-
-  /** Whether init() has been called */
-  var _initialized = false;
-
-  /** Bound message handler reference (for cleanup) */
-  var _messageHandler = null;
-
-  // ═══════════════════════════════════════════════════════════════
-  // ─── PERSISTENCE ──────────────────────────────────────────────
-  // ═══════════════════════════════════════════════════════════════
-
-  /** Persist agents array to localStorage. */
-  function persistAgents() {
-    storageSet(STORAGE_KEYS.agents, _state.agents);
-  }
-
-  /** Persist missions array to localStorage. */
-  function persistMissions() {
-    storageSet(STORAGE_KEYS.missions, _state.missions);
-  }
-
-  /** Persist theme string to localStorage. */
-  function persistTheme() {
-    storageSetString(STORAGE_KEYS.theme, _state.currentTheme);
-  }
-
-  /** Persist sidebar boolean to localStorage. */
-  function persistSidebar() {
-    storageSetString(STORAGE_KEYS.sidebar, _state.sidebarOpen ? 'true' : 'false');
-  }
-
-  // ═══════════════════════════════════════════════════════════════
-  // ─── VALIDATION ───────────────────────────────────────────────
-  // ═══════════════════════════════════════════════════════════════
-
-  /**
-   * Validate and sanitize an agent object.
-   * @param {Object} agent - Raw agent data.
-   * @returns {Object|null} Sanitized agent or null if invalid.
-   */
-  function validateAgent(agent) {
-    if (!agent || typeof agent !== 'object') return null;
-    if (typeof agent.id !== 'string' || agent.id.length === 0) return null;
-    if (typeof agent.name !== 'string' || agent.name.length === 0) return null;
-
-    return {
-      id: agent.id.slice(0, MAX_NAME_LENGTH),
-      name: agent.name.slice(0, MAX_NAME_LENGTH),
-      role: typeof agent.role === 'string' ? agent.role.slice(0, MAX_NAME_LENGTH) : 'Agent',
-      emoji: typeof agent.emoji === 'string' ? agent.emoji.slice(0, 8) : '🤖',
-      sprite: typeof agent.sprite === 'string' ? agent.sprite.slice(0, 128) : '',
-      xp: typeof agent.xp === 'number' && !isNaN(agent.xp) ? Math.max(0, Math.floor(agent.xp)) : 0,
-      level: typeof agent.level === 'number' && !isNaN(agent.level) ? Math.max(1, Math.floor(agent.level)) : 1
-    };
-  }
-
-  /**
-   * Validate and sanitize a mission object.
-   * @param {Object} mission - Raw mission data.
-   * @returns {Object|null} Sanitized mission or null if invalid.
-   */
-  function validateMission(mission) {
-    if (!mission || typeof mission !== 'object') return null;
-    if (typeof mission.title !== 'string' || mission.title.length === 0) return null;
-
-    var validStatuses = [MISSION_STATUS.PENDING, MISSION_STATUS.ACTIVE, MISSION_STATUS.COMPLETED, MISSION_STATUS.FAILED];
-    var status = validStatuses.indexOf(mission.status) !== -1 ? mission.status : MISSION_STATUS.PENDING;
-
-    return {
-      id: typeof mission.id === 'string' ? mission.id.slice(0, MAX_NAME_LENGTH) : uid('mission'),
-      title: mission.title.slice(0, MAX_TITLE_LENGTH),
-      status: status,
-      reward: typeof mission.reward === 'number' && !isNaN(mission.reward) ? Math.max(0, Math.floor(mission.reward)) : 50,
-      assignedTo: Array.isArray(mission.assignedTo) ? mission.assignedTo.filter(function (id) { return typeof id === 'string'; }).slice(0, MAX_AGENTS) : [],
-      createdAt: typeof mission.createdAt === 'string' ? mission.createdAt : new Date().toISOString(),
-      completedAt: typeof mission.completedAt === 'string' ? mission.completedAt : null
-    };
-  }
-
-  // ═══════════════════════════════════════════════════════════════
-  // ─── IFRAME COMMUNICATION ─────────────────────────────────────
-  // ═══════════════════════════════════════════════════════════════
-
-  /**
-   * Send a postMessage to the active theme iframe.
-   * @param {Object} msg - Message payload. Wrapped in spawnkit:sync envelope.
-   */
+  // ── Iframe comms ──
+  /** @param {Object} msg Payload to send to theme iframe */
   function postToTheme(msg) {
-    if (!_themeIframe || typeof _themeIframe.contentWindow === 'undefined') return;
-    if (!msg || typeof msg !== 'object') return;
-
-    var envelope = {
-      type: 'spawnkit:sync',
-      payload: msg
-    };
-
-    try {
-      _themeIframe.contentWindow.postMessage(envelope, '*');
-    } catch (_e) {
-      // Cross-origin or iframe not ready — silent
-    }
+    if (!_iframe || !msg || typeof msg !== 'object') return;
+    try { _iframe.contentWindow && _iframe.contentWindow.postMessage({ type: PFX + 'sync', payload: msg }, '*'); } catch (_) {}
+  }
+  function onMsg(e) {
+    var d = e && e.data; if (!d || typeof d !== 'object' || typeof d.type !== 'string' || d.type.indexOf(PFX) !== 0) return;
+    for (var i = 0; i < _th.length; i++) { try { _th[i](d.payload || d, e); } catch (_) {} }
+    var p = d.payload; if (!p || typeof p !== 'object') return;
+    if (p.action === 'getAgents') postToTheme({ action: 'agentSync', agents: agSnap() });
+    if (p.action === 'getState') A.syncState();
+    if (p.action === 'awardXP' && p.agentId) A.awardXP(p.agentId, p.amount);
   }
 
-  /**
-   * Push full agent state to the active theme iframe.
-   */
-  function syncAgentsToTheme() {
-    postToTheme({
-      action: 'agentSync',
-      data: { agents: _state.agents.slice() }
-    });
-  }
-
-  /**
-   * Handle incoming postMessage from theme iframes.
-   * @param {MessageEvent} event - Browser message event.
-   */
-  function handleThemeMessage(event) {
-    // Origin validation
-    if (_allowedOrigins.length > 0) {
-      var originAllowed = false;
-      for (var i = 0; i < _allowedOrigins.length; i++) {
-        if (event.origin === _allowedOrigins[i]) {
-          originAllowed = true;
-          break;
-        }
-      }
-      // Also allow same-origin
-      if (!originAllowed && event.origin !== location.origin) return;
-    }
-
-    var data = event.data;
-    if (!data || typeof data !== 'object') return;
-    if (data.type !== 'spawnkit:request') return;
-
-    var payload = data.payload;
-    if (!payload || typeof payload !== 'object') return;
-
-    switch (payload.action) {
-      case 'getAgents':
-        postToTheme({ action: 'agentSync', data: { agents: _state.agents.slice() } });
-        break;
-      case 'getState':
-        postToTheme({ action: 'stateSync', data: SpawnKitDashboard.getState() });
-        break;
-      case 'awardXP':
-        if (payload.data && typeof payload.data.agentId === 'string' && typeof payload.data.amount === 'number') {
-          SpawnKitDashboard.awardXP(payload.data.agentId, payload.data.amount);
-        }
-        break;
-      default:
-        break;
-    }
-  }
-
-  // ═══════════════════════════════════════════════════════════════
-  // ─── PUBLIC API ───────────────────────────────────────────────
-  // ═══════════════════════════════════════════════════════════════
-
-  var SpawnKitDashboard = {
-
-    // ── Initialization ──────────────────────────────────────────
-
-    /**
-     * Initialize the dashboard controller. Loads persisted state from
-     * localStorage, sets up the iframe message listener, and emits
-     * initial events.
-     *
-     * @param {Object} [options] - Configuration overrides.
-     * @param {HTMLIFrameElement} [options.iframe] - Reference to the theme iframe element.
-     * @param {string[]} [options.allowedOrigins] - Whitelist of origins for postMessage.
-     * @param {string} [options.defaultTheme] - Default theme ID if none persisted.
-     * @returns {Object} The initial state snapshot.
-     */
-    init: function init(options) {
-      var opts = options || {};
-
-      // Set iframe reference
-      if (opts.iframe && opts.iframe.contentWindow) {
-        _themeIframe = opts.iframe;
-      }
-
-      // Set allowed origins
-      if (Array.isArray(opts.allowedOrigins)) {
-        _allowedOrigins = opts.allowedOrigins.filter(function (o) { return typeof o === 'string'; });
-      }
-
-      // Load theme
-      var savedTheme = storageGetString(STORAGE_KEYS.theme, opts.defaultTheme || 'gameboy');
-      _state.currentTheme = THEMES[savedTheme] ? savedTheme : 'gameboy';
-
-      // Load sidebar
-      var savedSidebar = storageGetString(STORAGE_KEYS.sidebar, 'true');
-      _state.sidebarOpen = savedSidebar !== 'false';
-
-      // Load agents
-      _state.agents = SpawnKitDashboard.loadAgents();
-
-      // Load missions
-      _state.missions = SpawnKitDashboard.loadMissions();
-
-      // Bind message listener
-      if (typeof window !== 'undefined' && !_messageHandler) {
-        _messageHandler = handleThemeMessage;
-        window.addEventListener('message', _messageHandler);
-      }
-
-      _initialized = true;
-
-      console.log('[SpawnKitDashboard] Initialized — theme:', _state.currentTheme, '| agents:', _state.agents.length, '| missions:', _state.missions.length);
-
-      return SpawnKitDashboard.getState();
+  // ── Public API ──
+  var A = {
+    /** Initialize dashboard. Load state, setup listeners, detect first visit.
+     * @param {Object} [opts] @param {HTMLIFrameElement} [opts.iframe] @param {string} [opts.defaultTheme]
+     * @returns {{ theme:string, agents:number, missions:number, firstVisit:boolean }} */
+    init: function (opts) {
+      if (_init) return A.getState();
+      opts = opts && typeof opts === 'object' ? opts : {};
+      if (opts.iframe && opts.iframe.contentWindow) _iframe = opts.iframe;
+      load();
+      if (!_s.theme) _s.theme = (isS(opts.defaultTheme) && THEMES[opts.defaultTheme]) ? opts.defaultTheme : 'gameboy';
+      var fv = !_s.visited; if (fv) { _s.visited = true; save(); }
+      if (typeof window !== 'undefined' && !_ml) { _ml = onMsg; window.addEventListener('message', _ml); }
+      _init = true; A.emit('init', { firstVisit: fv });
+      return { theme: _s.theme, agents: _s.agents.length, missions: _s.missions.length, firstVisit: fv };
+    },
+    /** Tear down listeners and references. */
+    destroy: function () {
+      if (_ml && typeof window !== 'undefined') { window.removeEventListener('message', _ml); _ml = null; }
+      _iframe = null; _th = []; _h = {}; _init = false;
     },
 
-    // ── Theme Management ────────────────────────────────────────
+    // ── Theme ──
+    /** Select a theme: save + load iframe. @param {string} id @returns {boolean} */
+    selectTheme: function (id) {
+      if (!isS(id) || !THEMES[id]) return false;
+      var prev = _s.theme; _s.theme = id; save();
+      if (_iframe) { try { _iframe.src = THEMES[id].path; } catch (_) {} }
+      A.emit('theme:change', { id: id, name: THEMES[id].name, previous: prev }); return true;
+    },
+    /** Switch theme without full reload (no loading overlay). @param {string} id @returns {boolean} */
+    switchTheme: function (id) {
+      if (!isS(id) || !THEMES[id] || _s.theme === id) return false;
+      var prev = _s.theme; _s.theme = id; save();
+      if (_iframe) { try { _iframe.contentWindow.location.replace(THEMES[id].path); } catch (_) { try { _iframe.src = THEMES[id].path; } catch (_2) {} } }
+      A.emit('theme:switch', { id: id, name: THEMES[id].name, previous: prev }); return true;
+    },
+    /** @returns {string|null} Active theme ID */
+    getCurrentTheme: function () { return _s.theme || null; },
+    /** @param {string} id @returns {string|null} Iframe URL path */
+    getThemePath: function (id) { return (isS(id) && THEMES[id]) ? THEMES[id].path : null; },
 
-    /**
-     * Switch the active theme. Persists the choice, emits `themeChanged`,
-     * and notifies the iframe.
-     *
-     * @param {string} themeId - Theme identifier (e.g. 'gameboy', 'sims').
-     * @returns {boolean} True if theme was changed, false if invalid or same.
-     */
-    selectTheme: function selectTheme(themeId) {
-      if (typeof themeId !== 'string') return false;
-      if (!THEMES[themeId]) return false;
-      if (themeId === _state.currentTheme) return false;
+    // ── Sidebar ──
+    /** Toggle sidebar. @returns {boolean} New open state */
+    toggleSidebar: function () { _s.sidebarOpen = !_s.sidebarOpen; save(); A.emit('sidebar:toggle', { open: _s.sidebarOpen }); return _s.sidebarOpen; },
+    /** @returns {boolean} */
+    isSidebarOpen: function () { return !!_s.sidebarOpen; },
 
-      var oldTheme = _state.currentTheme;
-      _state.currentTheme = themeId;
-      persistTheme();
-
-      var eventData = {
-        themeId: themeId,
-        themeName: THEMES[themeId].name,
-        previousTheme: oldTheme
-      };
-
-      emitEvent('themeChanged', eventData);
-      postToTheme({ action: 'themeChanged', data: eventData });
-
-      // Integrate with global theme-switcher if available
-      if (typeof global.switchTheme === 'function') {
-        global.switchTheme(themeId);
-      }
-
-      return true;
+    // ── Agents ──
+    /** @returns {Object[]} All agents (copies) */
+    getAgents: function () { return agSnap(); },
+    /** @param {string} id @returns {Object|null} Agent copy */
+    getAgent: function (id) { if (!isS(id)) return null; var i = findAg(id); return i >= 0 ? cp(_s.agents[i]) : null; },
+    /** Create agent. @param {{ name:string, role?:string, sprite?:string }} data @returns {Object|null} */
+    addAgent: function (data) {
+      if (_s.agents.length >= MAX_AG) return null;
+      var a = valAg(data); if (!a) return null;
+      if (findAg(a.id) >= 0) return null;
+      _s.agents.push(a); save();
+      A.emit('agent:add', { agent: cp(a) }); postToTheme({ action: 'agentSync', agents: agSnap() }); return cp(a);
+    },
+    /** Partial update. @param {string} id @param {Object} patch @returns {Object|null} */
+    updateAgent: function (id, patch) {
+      if (!isS(id) || !patch || typeof patch !== 'object') return null;
+      var i = findAg(id); if (i < 0) return null;
+      var a = _s.agents[i];
+      if (isS(patch.name)) a.name = clip(patch.name, MAX_N);
+      if (isS(patch.role)) a.role = clip(patch.role, MAX_N);
+      if (isS(patch.sprite)) a.sprite = clip(patch.sprite, 128);
+      save(); A.emit('agent:update', { agent: cp(a) }); postToTheme({ action: 'agentSync', agents: agSnap() }); return cp(a);
+    },
+    /** @param {string} id @returns {boolean} */
+    removeAgent: function (id) {
+      if (!isS(id)) return false; var i = findAg(id); if (i < 0) return false;
+      _s.agents.splice(i, 1); save(); A.emit('agent:remove', { id: id }); postToTheme({ action: 'agentSync', agents: agSnap() }); return true;
     },
 
-    /**
-     * Get the current theme metadata.
-     * @returns {Object} Theme object with id, name, path, emoji, color.
-     */
-    getCurrentTheme: function getCurrentTheme() {
-      return Object.assign({}, THEMES[_state.currentTheme] || THEMES.gameboy);
+    // ── XP / Levels ──
+    /** Award XP to agent. @param {string} agentId @param {number} amount @returns {Object|null} */
+    awardXP: function (agentId, amount) {
+      if (!isS(agentId) || !isN(amount) || amount <= 0) return null;
+      var i = findAg(agentId); if (i < 0) return null;
+      var a = _s.agents[i], oldL = getLevel(a.xp);
+      a.xp += Math.floor(amount); var newL = getLevel(a.xp); save();
+      if (newL > oldL) { A.emit('agent:levelup', { agent: cp(a), oldLevel: oldL, newLevel: newL }); postToTheme({ action: 'agentLevelUp', agent: cp(a), oldLevel: oldL, newLevel: newL }); }
+      A.emit('agent:update', { agent: cp(a) }); return cp(a);
     },
-
-    /**
-     * Get all available themes.
-     * @returns {Object} Map of themeId → theme metadata.
-     */
-    getThemes: function getThemes() {
-      var copy = {};
-      for (var key in THEMES) {
-        if (THEMES.hasOwnProperty(key)) {
-          copy[key] = Object.assign({}, THEMES[key]);
-        }
-      }
-      return copy;
-    },
-
-    // ── Sidebar ─────────────────────────────────────────────────
-
-    /**
-     * Toggle the sidebar open/closed state. Persists and emits `sidebarToggled`.
-     *
-     * @returns {boolean} The new sidebar state (true = open).
-     */
-    toggleSidebar: function toggleSidebar() {
-      _state.sidebarOpen = !_state.sidebarOpen;
-      persistSidebar();
-
-      var eventData = { open: _state.sidebarOpen };
-      emitEvent('sidebarToggled', eventData);
-      postToTheme({ action: 'sidebarToggled', data: eventData });
-
-      return _state.sidebarOpen;
-    },
-
-    // ── Agent Management ────────────────────────────────────────
-
-    /**
-     * Load agents from localStorage or return the default roster.
-     * Recalculates levels from stored XP to ensure consistency.
-     *
-     * @returns {Object[]} Array of agent objects.
-     */
-    loadAgents: function loadAgents() {
-      var saved = storageGet(STORAGE_KEYS.agents, null);
-
-      if (Array.isArray(saved) && saved.length > 0) {
-        var agents = [];
-        for (var i = 0; i < saved.length && i < MAX_AGENTS; i++) {
-          var valid = validateAgent(saved[i]);
-          if (valid) {
-            // Recalculate level from XP to ensure consistency
-            valid.level = getLevel(valid.xp);
-            agents.push(valid);
-          }
-        }
-        if (agents.length > 0) {
-          _state.agents = agents;
-          return agents;
-        }
-      }
-
-      // Return deep copy of defaults
-      _state.agents = DEFAULT_AGENTS.map(function (a) { return Object.assign({}, a); });
-      persistAgents();
-      return _state.agents;
-    },
-
-    /**
-     * Add a new agent to the roster. Persists and emits `agentUpdated`.
-     *
-     * @param {Object} agentData - Agent data. Must include `id` and `name`.
-     * @returns {Object|null} The added agent, or null if invalid/duplicate/at capacity.
-     */
-    addAgent: function addAgent(agentData) {
-      if (_state.agents.length >= MAX_AGENTS) return null;
-
-      var agent = validateAgent(agentData);
-      if (!agent) return null;
-
-      // Check for duplicate ID
-      for (var i = 0; i < _state.agents.length; i++) {
-        if (_state.agents[i].id === agent.id) return null;
-      }
-
-      agent.level = getLevel(agent.xp);
-      _state.agents.push(agent);
-      persistAgents();
-
-      emitEvent('agentUpdated', { agents: _state.agents.slice() });
-      syncAgentsToTheme();
-
-      return Object.assign({}, agent);
-    },
-
-    /**
-     * Remove an agent from the roster by ID. Persists and emits `agentUpdated`.
-     *
-     * @param {string} agentId - ID of the agent to remove.
-     * @returns {boolean} True if removed, false if not found.
-     */
-    removeAgent: function removeAgent(agentId) {
-      if (typeof agentId !== 'string') return false;
-
-      var index = -1;
-      for (var i = 0; i < _state.agents.length; i++) {
-        if (_state.agents[i].id === agentId) {
-          index = i;
-          break;
-        }
-      }
-      if (index === -1) return false;
-
-      _state.agents.splice(index, 1);
-      persistAgents();
-
-      emitEvent('agentUpdated', { agents: _state.agents.slice() });
-      syncAgentsToTheme();
-
-      return true;
-    },
-
-    /**
-     * Find an agent by ID.
-     *
-     * @param {string} agentId - Agent ID.
-     * @returns {Object|null} Agent copy or null.
-     */
-    getAgent: function getAgent(agentId) {
-      if (typeof agentId !== 'string') return null;
-      for (var i = 0; i < _state.agents.length; i++) {
-        if (_state.agents[i].id === agentId) {
-          return Object.assign({}, _state.agents[i]);
-        }
-      }
-      return null;
-    },
-
-    // ── XP & Leveling ───────────────────────────────────────────
-
-    /**
-     * Award XP to an agent. Automatically recalculates level and emits
-     * `agentLevelUp` if the agent crosses a level threshold.
-     *
-     * @param {string} agentId - ID of the agent.
-     * @param {number} amount - XP to award (must be positive).
-     * @returns {Object|null} Updated agent copy, or null if not found / invalid amount.
-     */
-    awardXP: function awardXP(agentId, amount) {
-      if (typeof agentId !== 'string') return null;
-      if (typeof amount !== 'number' || isNaN(amount) || amount <= 0) return null;
-
-      var agent = null;
-      for (var i = 0; i < _state.agents.length; i++) {
-        if (_state.agents[i].id === agentId) {
-          agent = _state.agents[i];
-          break;
-        }
-      }
-      if (!agent) return null;
-
-      var oldLevel = agent.level;
-      agent.xp += Math.floor(amount);
-      agent.level = getLevel(agent.xp);
-
-      persistAgents();
-
-      // Emit agent update
-      emitEvent('agentUpdated', { agents: _state.agents.slice() });
-
-      // Check for level-up
-      if (agent.level > oldLevel) {
-        var levelUpData = {
-          agent: Object.assign({}, agent),
-          oldLevel: oldLevel,
-          newLevel: agent.level
-        };
-        emitEvent('agentLevelUp', levelUpData);
-        postToTheme({ action: 'agentLevelUp', data: levelUpData });
-      }
-
-      syncAgentsToTheme();
-
-      return Object.assign({}, agent);
-    },
-
-    /**
-     * Calculate level from XP. Pure utility function.
-     *
-     * @param {number} xp - Experience points.
-     * @returns {number} Level (1-based).
-     */
+    /** @param {number} xp @returns {number} */
     getLevel: getLevel,
+    /** @param {number} xp @returns {{ level:number, current:number, needed:number, percent:number }} */
+    getLevelProgress: getLevelProgress,
 
-    /**
-     * Get the XP threshold for a given level.
-     *
-     * @param {number} level - Target level.
-     * @returns {number} XP required to reach that level.
-     */
-    xpForLevel: xpForLevel,
-
-    // ── Mission Board ───────────────────────────────────────────
-
-    /**
-     * Load missions from localStorage or return an empty array.
-     *
-     * @returns {Object[]} Array of mission objects.
-     */
-    loadMissions: function loadMissions() {
-      var saved = storageGet(STORAGE_KEYS.missions, null);
-
-      if (Array.isArray(saved)) {
-        var missions = [];
-        for (var i = 0; i < saved.length && i < MAX_MISSIONS; i++) {
-          var valid = validateMission(saved[i]);
-          if (valid) missions.push(valid);
+    // ── Missions ──
+    /** @returns {Object[]} All missions (copies) */
+    getMissions: function () { return miSnap(); },
+    /** Create mission. @param {{ title:string, desc?:string, assignee?:string }} data @returns {Object|null} */
+    createMission: function (data) {
+      if (_s.missions.length >= MAX_MI || !data || typeof data !== 'object') return null;
+      var m = valMi({ id: uid(), title: data.title, desc: data.desc, assignee: data.assignee, reward: data.reward, createdAt: new Date().toISOString() });
+      if (!m) return null; m.status = 'active';
+      _s.missions.push(m); save(); A.emit('mission:create', { mission: cp(m) }); postToTheme({ action: 'missionUpdate', mission: cp(m), type: 'created' }); return cp(m);
+    },
+    /** Complete mission, award XP to assignee. @param {string} id @returns {Object|null} */
+    completeMission: function (id) {
+      if (!isS(id)) return null;
+      for (var i = 0; i < _s.missions.length; i++) {
+        if (_s.missions[i].id === id && _s.missions[i].status !== 'done') {
+          var m = _s.missions[i]; m.status = 'done'; m.completedAt = new Date().toISOString();
+          var xp = 0; if (isS(m.assignee)) { var r = A.awardXP(m.assignee, m.reward); if (r) xp = m.reward; }
+          save(); A.emit('mission:complete', { mission: cp(m), xpAwarded: xp }); postToTheme({ action: 'missionUpdate', mission: cp(m), type: 'completed' }); return cp(m);
         }
-        _state.missions = missions;
-        return missions;
-      }
-
-      _state.missions = [];
-      return _state.missions;
+      } return null;
     },
 
-    /**
-     * Create a new mission and add it to the board. Persists and emits `missionCreated`.
-     *
-     * @param {Object} missionData - Mission data. Must include `title`.
-     * @param {string} missionData.title - Mission title.
-     * @param {number} [missionData.reward=50] - XP reward on completion.
-     * @param {string[]} [missionData.assignedTo] - Agent IDs.
-     * @returns {Object|null} The created mission, or null if invalid/at capacity.
-     */
-    createMission: function createMission(missionData) {
-      if (_state.missions.length >= MAX_MISSIONS) return null;
-
-      var raw = Object.assign({}, missionData, { id: uid('mission'), createdAt: new Date().toISOString() });
-      var mission = validateMission(raw);
-      if (!mission) return null;
-
-      mission.status = MISSION_STATUS.ACTIVE;
-      _state.missions.push(mission);
-      persistMissions();
-
-      emitEvent('missionCreated', { mission: Object.assign({}, mission) });
-      postToTheme({ action: 'missionUpdate', data: { mission: Object.assign({}, mission), type: 'created' } });
-
-      // Trigger MissionController animation if available
-      if (typeof MissionController !== 'undefined' && typeof MissionController.executeMission === 'function') {
-        MissionController.executeMission({
-          id: mission.id,
-          text: mission.title,
-          assignedTo: mission.assignedTo,
-          priority: 'normal'
-        });
-      }
-
-      return Object.assign({}, mission);
-    },
-
-    /**
-     * Complete a mission. Awards XP to assigned agents, checks achievements,
-     * persists and emits `missionComplete`.
-     *
-     * @param {string} missionId - ID of the mission to complete.
-     * @returns {Object|null} The completed mission, or null if not found / already done.
-     */
-    completeMission: function completeMission(missionId) {
-      if (typeof missionId !== 'string') return null;
-
-      var mission = null;
-      for (var i = 0; i < _state.missions.length; i++) {
-        if (_state.missions[i].id === missionId) {
-          mission = _state.missions[i];
-          break;
-        }
-      }
-      if (!mission) return null;
-      if (mission.status === MISSION_STATUS.COMPLETED) return null;
-
-      mission.status = MISSION_STATUS.COMPLETED;
-      mission.completedAt = new Date().toISOString();
-      persistMissions();
-
-      // Award XP to assigned agents
-      var xpAwarded = {};
-      var reward = mission.reward || 50;
-      for (var j = 0; j < mission.assignedTo.length; j++) {
-        var result = SpawnKitDashboard.awardXP(mission.assignedTo[j], reward);
-        if (result) {
-          xpAwarded[mission.assignedTo[j]] = reward;
-        }
-      }
-
-      var eventData = {
-        mission: Object.assign({}, mission),
-        xpAwarded: xpAwarded,
-        assignedTo: mission.assignedTo.slice()
-      };
-
-      emitEvent('missionComplete', eventData);
-      postToTheme({ action: 'missionUpdate', data: { mission: Object.assign({}, mission), type: 'completed' } });
-
-      // Notify achievements system via FleetKit bus
-      emitEvent('mission:complete', {
-        missionId: mission.id,
-        assignedTo: mission.assignedTo.slice()
-      });
-
-      return Object.assign({}, mission);
-    },
-
-    /**
-     * Get a mission by ID.
-     *
-     * @param {string} missionId - Mission ID.
-     * @returns {Object|null} Mission copy or null.
-     */
-    getMission: function getMission(missionId) {
-      if (typeof missionId !== 'string') return null;
-      for (var i = 0; i < _state.missions.length; i++) {
-        if (_state.missions[i].id === missionId) {
-          return Object.assign({}, _state.missions[i]);
-        }
-      }
-      return null;
-    },
-
-    // ── iframe Communication ────────────────────────────────────
-
-    /**
-     * Send a message to the active theme iframe.
-     *
-     * @param {Object} msg - Message payload. Wrapped in `{ type: 'spawnkit:sync', payload: msg }`.
-     */
+    // ── Iframe Communication ──
+    /** @param {Object} msg */
     postToTheme: postToTheme,
+    /** Register handler for theme messages. @param {Function} handler */
+    onThemeMessage: function (handler) { if (typeof handler === 'function') _th.push(handler); },
+    /** Push full state to theme iframe. */
+    syncState: function () { postToTheme({ action: 'stateSync', theme: _s.theme, agents: agSnap(), missions: miSnap() }); },
 
-    /**
-     * Push the full agent roster to the active theme iframe.
-     */
-    syncAgentsToTheme: syncAgentsToTheme,
+    // ── Persistence (public) ──
+    /** Save state to localStorage. @returns {boolean} */
+    save: save,
+    /** Load state from localStorage. @returns {boolean} */
+    load: load,
 
-    /**
-     * Set or update the iframe reference used for postMessage communication.
-     *
-     * @param {HTMLIFrameElement} iframe - The iframe element.
-     */
-    setIframe: function setIframe(iframe) {
-      if (iframe && typeof iframe === 'object' && iframe.contentWindow) {
-        _themeIframe = iframe;
-      }
-    },
+    // ── Event Emitter ──
+    /** @param {string} event @param {Function} handler */
+    on: function (event, handler) { if (!isS(event) || typeof handler !== 'function') return; if (!_h[event]) _h[event] = []; _h[event].push(handler); },
+    /** @param {string} event @param {Function} handler */
+    off: function (event, handler) { if (!isS(event) || !_h[event]) return; _h[event] = _h[event].filter(function (f) { return f !== handler; }); },
+    /** @param {string} event @param {*} [data] */
+    emit: function (event, data) { if (!isS(event) || !_h[event]) return; var l = _h[event].slice(); for (var i = 0; i < l.length; i++) { try { l[i](data); } catch (_) {} } },
 
-    // ── State Access ────────────────────────────────────────────
-
-    /**
-     * Get a full snapshot of the current dashboard state.
-     *
-     * @returns {Object} Deep-ish copy of the state.
-     */
-    getState: function getState() {
-      return {
-        currentTheme: _state.currentTheme,
-        sidebarOpen: _state.sidebarOpen,
-        agents: _state.agents.map(function (a) { return Object.assign({}, a); }),
-        missions: _state.missions.map(function (m) { return Object.assign({}, m); }),
-        initialized: _initialized,
-        themeCount: Object.keys(THEMES).length,
-        themeMeta: SpawnKitDashboard.getCurrentTheme()
-      };
-    },
-
-    // ── Cleanup ─────────────────────────────────────────────────
-
-    /**
-     * Remove event listeners and reset internal references. Call when
-     * tearing down the dashboard (e.g. page unload, SPA navigation).
-     */
-    destroy: function destroy() {
-      if (_messageHandler && typeof window !== 'undefined') {
-        window.removeEventListener('message', _messageHandler);
-        _messageHandler = null;
-      }
-      _themeIframe = null;
-      _allowedOrigins = [];
-      _initialized = false;
-    }
+    /** Full state snapshot. @returns {Object} */
+    getState: function () { return { theme: _s.theme, sidebarOpen: _s.sidebarOpen, agents: agSnap(), missions: miSnap(), visited: _s.visited, initialized: _init }; }
   };
 
-  // ═══════════════════════════════════════════════════════════════
-  // ─── EXPOSE GLOBALLY ──────────────────────────────────────────
-  // ═══════════════════════════════════════════════════════════════
-
-  global.SpawnKitDashboard = SpawnKitDashboard;
-
-  // ═══════════════════════════════════════════════════════════════
-  // ─── AUTO-INITIALIZE ──────────────────────────────────────────
-  // ═══════════════════════════════════════════════════════════════
-
-  if (typeof document !== 'undefined') {
-    var autoInit = function () {
-      // Only auto-init if not already initialized (consumer may call init() manually)
-      if (!_initialized) {
-        SpawnKitDashboard.init();
-      }
-    };
-
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', autoInit);
-    } else {
-      autoInit();
-    }
-  }
-
-})(typeof window !== 'undefined' ? window : (typeof global !== 'undefined' ? global : this));
-
-// Export for Node.js / module bundlers
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = (typeof window !== 'undefined') ? window.SpawnKitDashboard : SpawnKitDashboard;
-}
+  root.SpawnKitDashboard = A;
+  if (typeof module !== 'undefined' && module.exports) module.exports = A;
+})(typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : this));

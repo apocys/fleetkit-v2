@@ -7,13 +7,9 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&display=swap');
 
-        /* ═══════════════════════════════════════════
-           RESET & BASE
-           ═══════════════════════════════════════════ */
         * { margin: 0; padding: 0; box-sizing: border-box; }
-
         :root {
-            --bg-dark: #0a0a0a;
+            --bg-dark: #0a0a0f;
             --bg-card: rgba(20, 20, 20, 0.85);
             --text-primary: #e0e0e0;
             --text-secondary: #aaa;
@@ -37,7 +33,6 @@
         }
 
         /* ═══════════════════════════════════════════
-           STARFIELD BACKGROUND
            ═══════════════════════════════════════════ */
         .starfield {
             position: fixed;
@@ -63,7 +58,6 @@
         }
 
         /* ═══════════════════════════════════════════
-           THEME SELECTOR SCREEN
            ═══════════════════════════════════════════ */
         #themeSelector {
             position: fixed;
@@ -76,7 +70,7 @@
             gap: 32px;
             padding: 24px;
             overflow-y: auto;
-            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
+            background: linear-gradient(135deg, #0a0a0f 0%, #1a1a2a 100%);
             transition: opacity 0.5s ease, visibility 0.5s ease;
         }
         #themeSelector.hidden {
@@ -107,7 +101,7 @@
         .selector-tagline {
             margin-top: 10px;
             font-size: clamp(0.85rem, 2vw, 1.1rem);
-            color: #ccc;
+            color: rgba(255,255,255,0.7);
         }
         .selector-subtitle {
             margin-top: 20px;
@@ -154,6 +148,10 @@
             border-color: var(--border-hover);
             box-shadow: 0 16px 40px rgba(0,0,0,0.4);
         }
+        .theme-card:active {
+            transform: translateY(-2px) scale(0.98);
+            transition-duration: 0.1s;
+        }
         .theme-card:focus-visible {
             outline: 2px solid var(--accent-cyan);
             outline-offset: 4px;
@@ -185,6 +183,122 @@
             line-height: 1.5;
             margin-bottom: 18px;
             min-height: 36px;
+        }
+
+        /* Animated preview area */
+        .card-preview {
+            width: 100%;
+            height: 80px;
+            border-radius: 8px;
+            margin-bottom: 14px;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.06);
+        }
+
+        /* GameBoy preview: scrolling pixel grid */
+        .theme-card[data-theme="gameboy"] .card-preview {
+            background: #306230;
+        }
+        .theme-card[data-theme="gameboy"] .card-preview::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-image:
+                linear-gradient(0deg, rgba(15,56,15,0.3) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(15,56,15,0.3) 1px, transparent 1px);
+            background-size: 8px 8px;
+            animation: gridScroll 4s linear infinite;
+        }
+        .theme-card[data-theme="gameboy"] .card-preview::after {
+            content: '▶ ■ ■ ▶';
+            position: absolute;
+            bottom: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.7rem;
+            color: #9BBB0F;
+            letter-spacing: 6px;
+            animation: pixelBlink 1.5s step-end infinite;
+        }
+        @keyframes gridScroll {
+            from { background-position: 0 0; }
+            to { background-position: 8px 8px; }
+        }
+        @keyframes pixelBlink {
+            0%, 80% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        /* GameBoy Color preview: rainbow wave */
+        .theme-card[data-theme="gameboy-color"] .card-preview {
+            background: linear-gradient(135deg, #1a0a2a, #2a1a4a);
+        }
+        .theme-card[data-theme="gameboy-color"] .card-preview::before {
+            content: '';
+            position: absolute;
+            inset: -50%;
+            background: conic-gradient(
+                from 0deg,
+                #ff6688, #66ccff, #88ff66, #ffcc44, #ff6688
+            );
+            opacity: 0.15;
+            animation: colorSpin 6s linear infinite;
+        }
+        .theme-card[data-theme="gameboy-color"] .card-preview::after {
+            content: '● ● ●';
+            position: absolute;
+            bottom: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.8rem;
+            background: linear-gradient(90deg, #ff6688, #66ccff, #88ff66);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: 8px;
+            animation: colorPulse 2s ease-in-out infinite;
+        }
+        @keyframes colorSpin {
+            to { transform: rotate(360deg); }
+        }
+        @keyframes colorPulse {
+            0%, 100% { opacity: 1; transform: translateX(-50%) scale(1); }
+            50% { opacity: 0.6; transform: translateX(-50%) scale(1.1); }
+        }
+
+        /* The Sims preview: plumbob float */
+        .theme-card[data-theme="sims"] .card-preview {
+            background: linear-gradient(180deg, #1a3a4a, #0d2030);
+        }
+        .theme-card[data-theme="sims"] .card-preview::before {
+            content: '◆';
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 1.4rem;
+            color: #00cc00;
+            text-shadow: 0 0 12px rgba(0,204,0,0.6), 0 0 24px rgba(0,204,0,0.3);
+            animation: plumbobFloat 2.5s ease-in-out infinite;
+        }
+        .theme-card[data-theme="sims"] .card-preview::after {
+            content: '';
+            position: absolute;
+            bottom: 12px;
+            left: 15%;
+            right: 15%;
+            height: 4px;
+            background: linear-gradient(90deg,
+                #00cc00 0%, #00cc00 60%,
+                rgba(255,255,255,0.1) 60%, rgba(255,255,255,0.1) 100%
+            );
+            border-radius: 2px;
+        }
+        @keyframes plumbobFloat {
+            0%, 100% { transform: translateX(-50%) translateY(0) rotate(0deg); }
+            25% { transform: translateX(-50%) translateY(-6px) rotate(5deg); }
+            75% { transform: translateX(-50%) translateY(-6px) rotate(-5deg); }
         }
 
         /* Color swatch bar */
@@ -228,12 +342,31 @@
             min-width: 140px;
         }
         .card-btn:hover { background: rgba(255,255,255,0.18); border-color: rgba(255,255,255,0.35); }
+
+        /* Shortcut badge on card */
+        .card-shortcut {
+            position: absolute;
+            top: 10px;
+            right: 12px;
+            width: 24px;
+            height: 24px;
+            border-radius: 6px;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.12);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            opacity: 0;
+            transition: opacity var(--transition-smooth);
+        }
+        .theme-card:hover .card-shortcut { opacity: 1; }
         .theme-card[data-theme="gameboy"]      .card-btn:hover { background: #9BBB0F; border-color: #9BBB0F; color: #0F380F; }
         .theme-card[data-theme="gameboy-color"] .card-btn:hover { background: #ff6688; border-color: #ff6688; color: #1a0a2a; }
         .theme-card[data-theme="sims"]          .card-btn:hover { background: #00cc00; border-color: #00cc00; color: #1a3a4a; }
 
         /* ═══════════════════════════════════════════
-           LOADING OVERLAY
            ═══════════════════════════════════════════ */
         #loadingOverlay {
             position: fixed;
@@ -263,10 +396,14 @@
             color: var(--accent-cyan);
             text-transform: uppercase;
             letter-spacing: 2px;
+            animation: labelPulse 2s ease-in-out infinite;
+        }
+        @keyframes labelPulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
         }
 
         /* ═══════════════════════════════════════════
-           OFFICE IFRAME
            ═══════════════════════════════════════════ */
         #officeFrame {
             position: fixed;
@@ -281,7 +418,6 @@
         #officeFrame.active { display: block; }
 
         /* ═══════════════════════════════════════════
-           HAMBURGER BUTTON
            ═══════════════════════════════════════════ */
         #menuBtn {
             position: fixed;
@@ -338,7 +474,6 @@
         #menuBtn:hover::after { opacity: 1; }
 
         /* ═══════════════════════════════════════════
-           SIDEBAR (DESKTOP)
            ═══════════════════════════════════════════ */
         #sidebar {
             position: fixed;
@@ -406,7 +541,13 @@
             display: flex;
             flex-direction: column;
             gap: 12px;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255,255,255,0.1) transparent;
         }
+        .sidebar-body::-webkit-scrollbar { width: 6px; }
+        .sidebar-body::-webkit-scrollbar-track { background: transparent; }
+        .sidebar-body::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+        .sidebar-body::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
 
         .sidebar-section-label {
             font-size: 0.65rem;
@@ -414,6 +555,33 @@
             text-transform: uppercase;
             letter-spacing: 2px;
             margin-top: 8px;
+        }
+
+        /* Mission stats */
+        .mission-stats {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 4px;
+        }
+        .stat-card {
+            flex: 1;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 8px;
+            padding: 10px 12px;
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: var(--accent-cyan);
+        }
+        .stat-label {
+            font-size: 0.62rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 2px;
         }
 
         /* Agent list items */
@@ -521,7 +689,6 @@
         .switch-theme-btn:hover { background: rgba(255,255,255,0.08); color: var(--text-primary); }
 
         /* ═══════════════════════════════════════════
-           FIRST-VISIT TOOLTIP OVERLAY
            ═══════════════════════════════════════════ */
         #welcomeTooltip {
             position: fixed;
@@ -568,7 +735,6 @@
         .tooltip-dismiss:hover { background: #33ffff; }
 
         /* ═══════════════════════════════════════════
-           MOBILE BOTTOM SHEET (< 768px)
            ═══════════════════════════════════════════ */
         @media (max-width: 767px) {
             .cards-grid {
@@ -606,6 +772,100 @@
             margin: 10px auto 0;
             flex-shrink: 0;
         }
+
+        /* ═══════════════════════════════════════════
+           HELP OVERLAY
+           ═══════════════════════════════════════════ */
+        #helpOverlay {
+            position: fixed;
+            inset: 0;
+            z-index: 600;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(6px);
+        }
+        #helpOverlay.active { display: flex; }
+        .help-box {
+            background: rgba(15,15,25,0.97);
+            border: 1px solid var(--accent-cyan);
+            border-radius: 16px;
+            padding: 32px 40px;
+            max-width: 420px;
+            width: 90vw;
+            animation: tooltipIn 0.35s ease;
+        }
+        .help-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: var(--accent-cyan);
+            text-align: center;
+        }
+        .help-row {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .help-row:last-child { border-bottom: none; }
+        .help-key {
+            min-width: 48px;
+            text-align: center;
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 6px;
+            padding: 6px 10px;
+            font-size: 0.78rem;
+            font-weight: 500;
+            color: var(--accent-cyan);
+            flex-shrink: 0;
+        }
+        .help-desc {
+            font-size: 0.82rem;
+            color: var(--text-secondary);
+        }
+        .help-close {
+            display: block;
+            margin: 24px auto 0;
+            min-height: var(--btn-min);
+            min-width: 120px;
+            background: var(--accent-cyan);
+            color: #000;
+            border: none;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background var(--transition-smooth);
+        }
+        .help-close:hover { background: #33ffff; }
+
+        /* ═══════════════════════════════════════════
+           FOOTER
+           ═══════════════════════════════════════════ */
+        .selector-footer {
+            z-index: 1;
+            margin-top: 32px;
+            text-align: center;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            letter-spacing: 1px;
+            opacity: 0;
+            animation: fadeInUp 0.8s ease 0.8s forwards;
+        }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .selector-footer .footer-hint {
+            margin-top: 6px;
+            color: rgba(255,255,255,0.25);
+            font-size: 0.65rem;
+        }
     </style>
 </head>
 <body>
@@ -638,30 +898,55 @@
     <div class="cards-grid" id="cardsGrid">
         <!-- GameBoy -->
         <div class="theme-card" data-theme="gameboy" tabindex="0" role="button" aria-label="Enter GameBoy Office">
+            <span class="card-shortcut">1</span>
             <div class="card-emoji">🎮</div>
             <div class="card-name">GameBoy</div>
             <div class="card-desc">Pixel quests and 8-bit charm. Your agents explore a retro green world.</div>
+            <div class="card-preview"></div>
             <div class="card-swatch"></div>
             <button class="card-btn">Enter Office</button>
         </div>
 
         <!-- GameBoy Color -->
         <div class="theme-card" data-theme="gameboy-color" tabindex="0" role="button" aria-label="Enter GameBoy Color Office">
+            <span class="card-shortcut">2</span>
             <div class="card-emoji">🌈</div>
             <div class="card-name">GameBoy Color</div>
             <div class="card-desc">Same retro soul, now in vivid color. Upgraded pixels, same heart.</div>
+            <div class="card-preview"></div>
             <div class="card-swatch"></div>
             <button class="card-btn">Enter Office</button>
         </div>
 
         <!-- The Sims -->
         <div class="theme-card" data-theme="sims" tabindex="0" role="button" aria-label="Enter The Sims Office">
+            <span class="card-shortcut">3</span>
             <div class="card-emoji">💎</div>
             <div class="card-name">The Sims</div>
             <div class="card-desc">Isometric nostalgia with need bars and plumbobs. It's 2000 again.</div>
+            <div class="card-preview"></div>
             <div class="card-swatch"></div>
             <button class="card-btn">Enter Office</button>
         </div>
+    </div>
+
+    <div class="selector-footer">
+        Powered by SpawnKit • Built with OpenClaw
+        <div class="footer-hint">Press <strong>?</strong> for keyboard shortcuts</div>
+    </div>
+</div>
+
+<!-- ═══ HELP OVERLAY ═══ -->
+<div id="helpOverlay">
+    <div class="help-box">
+        <div class="help-title">⌨️ Keyboard Shortcuts</div>
+        <div class="help-row"><span class="help-key">?</span><span class="help-desc">Show this help</span></div>
+        <div class="help-row"><span class="help-key">1</span><span class="help-desc">Enter GameBoy office</span></div>
+        <div class="help-row"><span class="help-key">2</span><span class="help-desc">Enter GameBoy Color office</span></div>
+        <div class="help-row"><span class="help-key">3</span><span class="help-desc">Enter The Sims office</span></div>
+        <div class="help-row"><span class="help-key">Tab</span><span class="help-desc">Toggle team sidebar</span></div>
+        <div class="help-row"><span class="help-key">Esc</span><span class="help-desc">Close sidebar or overlay</span></div>
+        <button class="help-close" id="helpClose">Got it!</button>
     </div>
 </div>
 
@@ -692,6 +977,10 @@
         <button class="sidebar-close" aria-label="Close menu">&times;</button>
     </div>
     <div class="sidebar-body" id="sidebarBody">
+        <div class="sidebar-section-label">Overview</div>
+        <div id="missionStats" class="mission-stats">
+            <!-- Populated by JS -->
+        </div>
         <div class="sidebar-section-label">Agents</div>
         <div id="agentList">
             <!-- Populated by JS -->
@@ -713,9 +1002,9 @@
 
     // ─── Config ─────────────────────────────────────
     var THEMES = {
-        'gameboy':       { name: 'GameBoy',       path: './office-gameboy/index.html',       emoji: '🎮' },
-        'gameboy-color': { name: 'GameBoy Color', path: './office-gameboy-color/index.html', emoji: '🌈' },
-        'sims':          { name: 'The Sims',      path: './office-sims/index.html',          emoji: '💎' }
+        'gameboy':       { name: 'GameBoy',       path: './office-gameboy/index.html',       emoji: '🎮', loadMsg: 'Booting up pixels\u2026' },
+        'gameboy-color': { name: 'GameBoy Color', path: './office-gameboy-color/index.html', emoji: '🌈', loadMsg: 'Painting the rainbow\u2026' },
+        'sims':          { name: 'The Sims',      path: './office-sims/index.html',          emoji: '💎', loadMsg: 'Building your world\u2026' }
     };
 
     var STORAGE = {
@@ -788,7 +1077,7 @@
         safeSet(STORAGE.theme, themeId);
 
         var t = THEMES[themeId];
-        $loadingLabel.textContent = 'Loading ' + t.name + ' Office\u2026';
+        $loadingLabel.textContent = t.loadMsg || ('Loading ' + t.name + ' Office\u2026');
         $loading.classList.add('active');
 
         setTimeout(function() {
@@ -939,6 +1228,35 @@
         });
     }
 
+    // ─── Mission stats ────────────────────────────────
+    function renderMissionStats() {
+        var $stats = document.getElementById('missionStats');
+        while ($stats.firstChild) $stats.removeChild($stats.firstChild);
+
+        var stats = [
+            { value: AGENTS.length, label: 'Agents' },
+            { value: '3', label: 'Missions' },
+            { value: '✓', label: 'Online' }
+        ];
+
+        stats.forEach(function(s) {
+            var card = document.createElement('div');
+            card.className = 'stat-card';
+
+            var val = document.createElement('div');
+            val.className = 'stat-value';
+            val.textContent = s.value;
+            card.appendChild(val);
+
+            var lbl = document.createElement('div');
+            lbl.className = 'stat-label';
+            lbl.textContent = s.label;
+            card.appendChild(lbl);
+
+            $stats.appendChild(card);
+        });
+    }
+
     // ─── Create agent (placeholder) ─────────────────
     $createBtn.addEventListener('click', function() {
         // Show a brief feedback
@@ -964,9 +1282,59 @@
         // Don't clear localStorage — let them pick a new one
     });
 
+    // ─── Help overlay ───────────────────────────────
+    var $helpOverlay = document.getElementById('helpOverlay');
+    var $helpClose   = document.getElementById('helpClose');
+
+    function openHelp() { $helpOverlay.classList.add('active'); }
+    function closeHelp() { $helpOverlay.classList.remove('active'); }
+
+    $helpClose.addEventListener('click', closeHelp);
+    $helpOverlay.addEventListener('click', function(e) {
+        if (e.target === $helpOverlay) closeHelp();
+    });
+
+    // ─── Keyboard shortcuts ─────────────────────────
+    var THEME_KEYS = { '1': 'gameboy', '2': 'gameboy-color', '3': 'sims' };
+
+    document.addEventListener('keydown', function(e) {
+        // Don't intercept when typing in an input
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+        // ? → help overlay
+        if (e.key === '?' || (e.key === '/' && e.shiftKey)) {
+            e.preventDefault();
+            if ($helpOverlay.classList.contains('active')) closeHelp();
+            else openHelp();
+            return;
+        }
+
+        // Escape → close help or sidebar
+        if (e.key === 'Escape') {
+            if ($helpOverlay.classList.contains('active')) { closeHelp(); return; }
+            if (sidebarOpen) { closeSidebar(); return; }
+            return;
+        }
+
+        // Tab → toggle sidebar (only when office is loaded)
+        if (e.key === 'Tab' && currentTheme && $frame.classList.contains('active')) {
+            e.preventDefault();
+            toggleSidebar();
+            return;
+        }
+
+        // 1/2/3 → theme selection (only on selector screen)
+        if (THEME_KEYS[e.key] && !$selector.classList.contains('hidden')) {
+            e.preventDefault();
+            selectTheme(THEME_KEYS[e.key]);
+            return;
+        }
+    });
+
     // ─── Init ───────────────────────────────────────
     function init() {
         renderAgents();
+        renderMissionStats();
 
         // Check for saved theme
         var saved = safeGet(STORAGE.theme);
