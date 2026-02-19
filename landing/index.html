@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FleetKit — Your AI Team, Visualized</title>
+<meta name="description" content="Watch your AI agents work in a virtual office. GameBoy nostalgia meets cutting-edge AI. One-click missions, achievements, chiptune audio.">
+<meta property="og:title" content="FleetKit — Your AI Team, Visualized">
+<meta property="og:description" content="Watch your AI agents work in a virtual office. GameBoy nostalgia meets cutting-edge AI.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://apocys.github.io/fleetkit-v2/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="FleetKit — Your AI Team, Visualized">
+<meta name="twitter:description" content="Watch your AI agents work in a virtual office. GameBoy nostalgia meets cutting-edge AI.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%236366f1'/%3E%3Ctext x='16' y='23' text-anchor='middle' font-family='monospace' font-size='18' font-weight='bold' fill='white'%3EF%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+--bg:#0a0a0f;--bg2:#12121a;--bg3:#1a1a2e;--surface:#16161f;--surface2:#1e1e2e;
+--text:#e2e2ef;--text2:#a0a0b8;--text3:#6b6b80;
+--accent:#6366f1;--accent2:#818cf8;--accent-glow:rgba(99,102,241,.25);
+--green:#9bbc0f;--green2:#0f380f;--green-glow:rgba(155,188,15,.3);
+--cyber-pink:#ff2d55;--cyber-blue:#00d4ff;
+--radius:12px;--radius-lg:20px;
+--font-body:'Inter',system-ui,-apple-system,sans-serif;
+--font-pixel:'Press Start 2P',monospace;
+--transition:all .3s cubic-bezier(.4,0,.2,1);
+}
+[data-theme="light"]{
+--bg:#f5f5f7;--bg2:#eeeef0;--bg3:#e5e5ea;--surface:#fff;--surface2:#f0f0f5;
+--text:#1a1a2e;--text2:#4a4a5e;--text3:#8888a0;
+}
+html{scroll-behavior:smooth;font-size:16px}
+body{font-family:var(--font-body);background:var(--bg);color:var(--text);line-height:1.6;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+a{color:var(--accent2);text-decoration:none;transition:var(--transition)}
+a:hover{color:var(--accent)}
+
+/* === PARTICLE CANVAS === */
+#particles{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none}
+
+/* === NAV === */
+.nav{position:fixed;top:0;left:0;right:0;z-index:1000;padding:1rem 2rem;display:flex;align-items:center;justify-content:space-between;transition:var(--transition);backdrop-filter:blur(0px)}
+.nav.scrolled{background:rgba(10,10,15,.85);backdrop-filter:blur(16px);border-bottom:1px solid rgba(99,102,241,.1);padding:.75rem 2rem}
+.nav-logo{font-family:var(--font-pixel);font-size:.75rem;color:var(--green);letter-spacing:2px;display:flex;align-items:center;gap:.5rem}
+.nav-logo .dot{width:8px;height:8px;background:var(--green);border-radius:50%;animation:pulse-dot 2s ease infinite}
+.nav-links{display:flex;align-items:center;gap:2rem}
+.nav-links a{color:var(--text2);font-size:.875rem;font-weight:500;transition:var(--transition)}
+.nav-links a:hover{color:var(--text)}
+.nav-cta{background:var(--accent);color:#fff!important;padding:.5rem 1.25rem;border-radius:8px;font-weight:600;font-size:.8rem}
+.nav-cta:hover{background:var(--accent2);transform:translateY(-1px)}
+.theme-toggle{background:none;border:1px solid var(--text3);color:var(--text2);width:36px;height:36px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1rem;transition:var(--transition)}
+.theme-toggle:hover{border-color:var(--accent);color:var(--accent)}
+.mobile-menu-btn{display:none;background:none;border:none;color:var(--text);font-size:1.5rem;cursor:pointer}
+
+/* === SECTIONS === */
+section{position:relative;z-index:1}
+.container{max-width:1200px;margin:0 auto;padding:0 2rem}
+
+/* === HERO === */
+.hero{min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:6rem 2rem 4rem;position:relative}
+.hero-content{max-width:800px}
+.hero-badge{display:inline-flex;align-items:center;gap:.5rem;background:var(--surface);border:1px solid rgba(99,102,241,.2);padding:.4rem 1rem;border-radius:100px;font-size:.75rem;color:var(--text2);margin-bottom:2rem}
+.hero-badge .badge-dot{width:6px;height:6px;background:var(--green);border-radius:50%;animation:pulse-dot 2s ease infinite}
+.hero-title{font-family:var(--font-pixel);font-size:clamp(2rem,6vw,4rem);line-height:1.3;margin-bottom:1.5rem;min-height:1.3em}
+.hero-title .letter{display:inline-block;opacity:0;transform:translateY(20px);animation:letterIn .4s forwards}
+.hero-title .letter.space{width:.3em}
+.hero-subtitle{font-size:clamp(1rem,2.5vw,1.35rem);color:var(--text2);margin-bottom:.75rem;font-weight:500}
+.hero-desc{font-size:clamp(.9rem,2vw,1.1rem);color:var(--text3);margin-bottom:2.5rem;max-width:600px;margin-left:auto;margin-right:auto}
+.hero-ctas{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:.5rem;padding:.875rem 2rem;border-radius:10px;font-weight:600;font-size:1rem;cursor:pointer;border:none;transition:var(--transition);text-decoration:none}
+.btn-primary{background:var(--accent);color:#fff;box-shadow:0 4px 24px var(--accent-glow)}
+.btn-primary:hover{background:var(--accent2);transform:translateY(-2px);box-shadow:0 8px 32px var(--accent-glow)}
+.btn-secondary{background:var(--surface2);color:var(--text);border:1px solid rgba(255,255,255,.08)}
+.btn-secondary:hover{border-color:var(--accent);background:var(--surface)}
+.hero-social-proof{margin-top:2.5rem;display:flex;align-items:center;justify-content:center;gap:.75rem;color:var(--text3);font-size:.85rem}
+.avatar-stack{display:flex}
+.avatar-stack span{width:28px;height:28px;border-radius:50%;border:2px solid var(--bg);margin-left:-8px;display:flex;align-items:center;justify-content:center;font-size:.7rem;background:var(--surface2)}
+.avatar-stack span:first-child{margin-left:0}
+.avatar-stack span:nth-child(1){background:#6366f1}
+.avatar-stack span:nth-child(2){background:#06b6d4}
+.avatar-stack span:nth-child(3){background:#8b5cf6}
+.avatar-stack span:nth-child(4){background:#ec4899}
+
+/* === SCROLL INDICATOR === */
+.scroll-indicator{position:absolute;bottom:2rem;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:.5rem;color:var(--text3);font-size:.7rem;letter-spacing:2px;animation:float 3s ease-in-out infinite}
+.scroll-indicator .arrow{width:20px;height:20px;border-right:2px solid var(--text3);border-bottom:2px solid var(--text3);transform:rotate(45deg);animation:scrollArrow 2s ease infinite}
+
+/* === DEMO SECTION === */
+.demo{padding:6rem 0;background:var(--bg2)}
+.section-label{font-family:var(--font-pixel);font-size:.6rem;color:var(--green);text-transform:uppercase;letter-spacing:4px;text-align:center;margin-bottom:1rem}
+.section-title{font-family:var(--font-pixel);font-size:clamp(1rem,3vw,1.5rem);text-align:center;margin-bottom:.75rem;line-height:1.5}
+.section-desc{text-align:center;color:var(--text2);max-width:550px;margin:0 auto 3rem;font-size:1rem}
+.demo-tabs{display:flex;justify-content:center;gap:.75rem;margin-bottom:2rem;flex-wrap:wrap}
+.demo-tab{padding:.6rem 1.5rem;border-radius:100px;border:1px solid rgba(255,255,255,.08);background:var(--surface);color:var(--text2);cursor:pointer;font-size:.85rem;font-weight:500;transition:var(--transition)}
+.demo-tab:hover{border-color:var(--accent)}
+.demo-tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.demo-screen{max-width:900px;margin:0 auto;border-radius:var(--radius-lg);overflow:hidden;border:1px solid rgba(255,255,255,.06);box-shadow:0 24px 80px rgba(0,0,0,.4);position:relative}
+.demo-titlebar{height:36px;background:rgba(0,0,0,.4);display:flex;align-items:center;padding:0 12px;gap:6px}
+.demo-titlebar span{width:10px;height:10px;border-radius:50%;background:#333}
+.demo-titlebar span:nth-child(1){background:#ff5f56}
+.demo-titlebar span:nth-child(2){background:#ffbd2e}
+.demo-titlebar span:nth-child(3){background:#27ca40}
+.demo-viewport{aspect-ratio:16/9;position:relative;overflow:hidden}
+
+/* GameBoy Theme */
+.theme-gameboy{background:#0f380f}
+.theme-gameboy .office-grid{display:grid;grid-template-columns:repeat(8,1fr);grid-template-rows:repeat(5,1fr);gap:2px;padding:16px;height:100%;position:relative}
+.theme-gameboy .desk{background:#306230;border-radius:3px;position:relative;display:flex;align-items:center;justify-content:center}
+.theme-gameboy .desk.occupied::after{content:'';width:60%;height:60%;background:#9bbc0f;border-radius:2px;animation:agentBlink 3s ease infinite}
+.theme-gameboy .meeting-room{grid-column:span 2;grid-row:span 2;background:#0f380f;border:2px solid #306230;border-radius:4px;display:flex;align-items:center;justify-content:center;font-family:var(--font-pixel);font-size:.4rem;color:#9bbc0f}
+.theme-gameboy .hallway{background:#1a4a1a}
+.theme-gameboy .agent-sprite{position:absolute;width:12px;height:12px;background:#9bbc0f;border-radius:1px}
+.theme-gameboy .status-bar{position:absolute;bottom:0;left:0;right:0;height:28px;background:#0f380f;border-top:2px solid #306230;display:flex;align-items:center;padding:0 12px;gap:12px;font-family:var(--font-pixel);font-size:.35rem;color:#9bbc0f}
+.theme-gameboy .status-bar .blink{animation:textBlink 1s step-end infinite}
+
+/* Cyberpunk Theme */
+.theme-cyberpunk{background:#0a0014}
+.theme-cyberpunk .office-grid{display:grid;grid-template-columns:repeat(6,1fr);grid-template-rows:repeat(4,1fr);gap:3px;padding:16px;height:100%;position:relative}
+.theme-cyberpunk .node{background:linear-gradient(135deg,#1a0033,#0d001a);border:1px solid rgba(0,212,255,.15);border-radius:6px;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
+.theme-cyberpunk .node::before{content:'';position:absolute;inset:0;background:linear-gradient(180deg,transparent 50%,rgba(0,212,255,.03) 50%);background-size:100% 4px;pointer-events:none;animation:scanlines 8s linear infinite}
+.theme-cyberpunk .node.active{border-color:var(--cyber-pink);box-shadow:0 0 15px rgba(255,45,85,.15)}
+.theme-cyberpunk .node.active::after{content:'●';color:var(--cyber-pink);font-size:.5rem;animation:pulse-dot 1.5s ease infinite}
+.theme-cyberpunk .holo-display{grid-column:span 3;background:linear-gradient(135deg,rgba(0,212,255,.05),rgba(255,45,85,.05));border:1px solid rgba(0,212,255,.2);border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:var(--font-pixel);font-size:.4rem;color:var(--cyber-blue)}
+.theme-cyberpunk .status-bar{position:absolute;bottom:0;left:0;right:0;height:28px;background:rgba(0,0,0,.6);border-top:1px solid rgba(0,212,255,.2);display:flex;align-items:center;padding:0 12px;gap:12px;font-family:var(--font-pixel);font-size:.35rem;color:var(--cyber-blue)}
+
+/* Executive Theme */
+.theme-executive{background:#1a1a24}
+.theme-executive .office-grid{display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(3,1fr);gap:8px;padding:20px;height:100%;position:relative}
+.theme-executive .room{background:linear-gradient(135deg,#222230,#1e1e2a);border:1px solid rgba(99,102,241,.1);border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:8px}
+.theme-executive .room .avatar{width:24px;height:24px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:.5rem;color:#fff;font-weight:700}
+.theme-executive .room .name{font-size:.4rem;color:var(--text2);font-family:var(--font-body)}
+.theme-executive .room .status-dot{width:6px;height:6px;border-radius:50%;background:#22c55e}
+.theme-executive .room.busy .status-dot{background:#ef4444}
+.theme-executive .room.meeting .status-dot{background:#f59e0b}
+.theme-executive .boardroom{grid-column:span 2;background:linear-gradient(135deg,#1e1e2e,#252535);border:1px solid rgba(99,102,241,.15);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:.55rem;color:var(--text2);font-weight:500}
+.theme-executive .status-bar{position:absolute;bottom:0;left:0;right:0;height:32px;background:rgba(26,26,36,.9);border-top:1px solid rgba(99,102,241,.1);display:flex;align-items:center;padding:0 16px;gap:16px;font-size:.55rem;color:var(--text2)}
+
+.demo-caption{text-align:center;margin-top:1.5rem;color:var(--text3);font-size:.9rem;font-style:italic}
+
+/* === FEATURES === */
+.features{padding:6rem 0}
+.features-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;margin-top:1rem}
+.feature-card{background:var(--surface);border:1px solid rgba(255,255,255,.05);border-radius:var(--radius);padding:2rem;transition:var(--transition)}
+.feature-card:hover{border-color:rgba(99,102,241,.2);transform:translateY(-4px);box-shadow:0 12px 40px rgba(0,0,0,.2)}
+.feature-icon{font-size:2rem;margin-bottom:1rem;display:block}
+.feature-title{font-family:var(--font-pixel);font-size:.65rem;margin-bottom:.75rem;line-height:1.6;color:var(--text)}
+.feature-desc{color:var(--text2);font-size:.925rem;line-height:1.6}
+
+/* === HOW IT WORKS === */
+.how-it-works{padding:6rem 0;background:var(--bg2)}
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:2rem;margin-top:1rem;position:relative}
+.steps::before{content:'';position:absolute;top:40px;left:16.66%;right:16.66%;height:2px;background:linear-gradient(90deg,var(--accent),var(--green),var(--accent));opacity:.3}
+.step{text-align:center;position:relative}
+.step-number{width:80px;height:80px;border-radius:50%;background:var(--surface);border:2px solid var(--accent);display:flex;align-items:center;justify-content:center;margin:0 auto 1.5rem;font-size:2rem;position:relative;z-index:1}
+.step-title{font-family:var(--font-pixel);font-size:.65rem;margin-bottom:.75rem;line-height:1.5}
+.step-desc{color:var(--text2);font-size:.925rem;line-height:1.6;max-width:280px;margin:0 auto}
+
+/* === PRICING === */
+.pricing{padding:6rem 0}
+.pricing-card{max-width:520px;margin:0 auto;background:var(--surface);border:2px solid rgba(99,102,241,.2);border-radius:var(--radius-lg);padding:3rem;text-align:center;position:relative;overflow:hidden}
+.pricing-card::before{content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;background:conic-gradient(from 0deg,transparent 0%,var(--accent-glow) 25%,transparent 50%);animation:rotateBorder 8s linear infinite;opacity:.3}
+.pricing-card-inner{position:relative;z-index:1}
+.pricing-name{font-family:var(--font-pixel);font-size:.7rem;color:var(--green);letter-spacing:2px;margin-bottom:1rem}
+.pricing-amount{font-size:3.5rem;font-weight:700;margin-bottom:.25rem}
+.pricing-amount span{font-size:1.25rem;color:var(--text2);font-weight:400}
+.pricing-period{color:var(--text3);font-size:.9rem;margin-bottom:.5rem}
+.pricing-tagline{color:var(--text2);font-size:.925rem;margin-bottom:2rem;line-height:1.6}
+.pricing-features{text-align:left;margin-bottom:2rem}
+.pricing-features li{list-style:none;padding:.5rem 0;color:var(--text);font-size:.925rem;display:flex;align-items:center;gap:.75rem;border-bottom:1px solid rgba(255,255,255,.03)}
+.pricing-features li:last-child{border-bottom:none}
+.pricing-features .check{color:var(--green);font-size:1rem;flex-shrink:0}
+.pricing-guarantee{color:var(--text3);font-size:.8rem;margin-top:1.25rem}
+.pricing-badge{position:absolute;top:1.25rem;right:-2rem;background:var(--green);color:var(--green2);font-family:var(--font-pixel);font-size:.45rem;padding:.4rem 2.5rem;transform:rotate(45deg);letter-spacing:1px}
+
+/* === TESTIMONIALS === */
+.testimonials{padding:6rem 0;background:var(--bg2)}
+.testimonials-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;margin-top:1rem}
+.testimonial-card{background:var(--surface);border:1px solid rgba(255,255,255,.05);border-radius:var(--radius);padding:2rem;transition:var(--transition)}
+.testimonial-card:hover{border-color:rgba(99,102,241,.15)}
+.testimonial-quote{color:var(--text);font-size:1rem;line-height:1.7;margin-bottom:1.5rem;font-style:italic}
+.testimonial-quote::before{content:'"';font-size:2rem;color:var(--accent);line-height:0;vertical-align:-.5rem;margin-right:.25rem}
+.testimonial-author{display:flex;align-items:center;gap:.75rem}
+.testimonial-avatar{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.85rem;font-weight:600;color:#fff}
+.testimonial-name{font-weight:600;font-size:.9rem}
+.testimonial-role{color:var(--text3);font-size:.8rem}
+
+/* === FINAL CTA === */
+.final-cta{padding:6rem 0;text-align:center}
+.final-cta .section-title{margin-bottom:.75rem}
+.final-cta .section-desc{margin-bottom:2rem}
+
+/* === FOOTER === */
+.footer{padding:3rem 0;border-top:1px solid rgba(255,255,255,.05);text-align:center}
+.footer-content{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem}
+.footer-brand{color:var(--text3);font-size:.85rem}
+.footer-links{display:flex;gap:2rem}
+.footer-links a{color:var(--text3);font-size:.85rem;transition:var(--transition)}
+.footer-links a:hover{color:var(--text)}
+.footer-powered{color:var(--text3);font-size:.75rem}
+
+/* === ANIMATIONS === */
+@keyframes letterIn{to{opacity:1;transform:translateY(0)}}
+@keyframes pulse-dot{0%,100%{opacity:1}50%{opacity:.4}}
+@keyframes float{0%,100%{transform:translate(-50%,0)}50%{transform:translate(-50%,-8px)}}
+@keyframes scrollArrow{0%{opacity:0;transform:rotate(45deg) translate(-4px,-4px)}50%{opacity:1}100%{opacity:0;transform:rotate(45deg) translate(4px,4px)}}
+@keyframes agentBlink{0%,90%,100%{opacity:1}95%{opacity:.3}}
+@keyframes textBlink{0%,100%{opacity:1}50%{opacity:0}}
+@keyframes scanlines{0%{background-position:0 0}100%{background-position:0 100%}}
+@keyframes rotateBorder{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+@keyframes fadeInUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
+
+/* === SCROLL ANIMATIONS === */
+.reveal{opacity:0;transform:translateY(30px);transition:opacity .7s cubic-bezier(.4,0,.2,1),transform .7s cubic-bezier(.4,0,.2,1)}
+.reveal.visible{opacity:1;transform:translateY(0)}
+.reveal-delay-1{transition-delay:.1s}
+.reveal-delay-2{transition-delay:.2s}
+.reveal-delay-3{transition-delay:.3s}
+.reveal-delay-4{transition-delay:.4s}
+.reveal-delay-5{transition-delay:.5s}
+
+/* === MOBILE === */
+@media(max-width:768px){
+  .nav-links{display:none;position:absolute;top:100%;left:0;right:0;background:var(--bg);padding:1rem 2rem;flex-direction:column;border-bottom:1px solid rgba(255,255,255,.05)}
+  .nav-links.open{display:flex}
+  .mobile-menu-btn{display:block}
+  .features-grid,.steps,.testimonials-grid{grid-template-columns:1fr}
+  .steps::before{display:none}
+  .hero{padding:5rem 1.5rem 3rem}
+  .hero-ctas{flex-direction:column;align-items:center}
+  .btn{width:100%;max-width:300px;justify-content:center}
+  .footer-content{flex-direction:column;text-align:center}
+  .demo-screen{border-radius:var(--radius)}
+  .pricing-card{padding:2rem}
+}
+@media(min-width:769px) and (max-width:1024px){
+  .features-grid{grid-template-columns:repeat(2,1fr)}
+  .testimonials-grid{grid-template-columns:repeat(2,1fr)}
+  .testimonials-grid .testimonial-card:last-child{grid-column:span 2;max-width:50%;margin:0 auto}
+}
+</style>
+</head>
+<body>
+
+<!-- Particle Canvas -->
+<canvas id="particles"></canvas>
+
+<!-- Navigation -->
+<nav class="nav" id="nav">
+  <a href="#" class="nav-logo">
+    <span class="dot"></span>
+    FLEETKIT
+  </a>
+  <button class="mobile-menu-btn" id="menuBtn" aria-label="Menu">☰</button>
+  <div class="nav-links" id="navLinks">
+    <a href="#demo">Demo</a>
+    <a href="#features">Features</a>
+    <a href="#how-it-works">How It Works</a>
+    <a href="#pricing">Pricing</a>
+    <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">🌙</button>
+    <a href="#pricing" class="nav-cta">Get FleetKit</a>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero" id="hero">
+  <div class="hero-content">
+    <div class="hero-badge">
+      <span class="badge-dot"></span>
+      Limited launch pricing — Join 127 early adopters
+    </div>
+    <h1 class="hero-title" id="heroTitle"></h1>
+    <p class="hero-subtitle">Your AI team, visualized.</p>
+    <p class="hero-desc">Watch your AI agents work in a virtual office.<br>GameBoy nostalgia meets cutting-edge AI.</p>
+    <div class="hero-ctas">
+      <a href="#demo" class="btn btn-primary">▶ See It In Action</a>
+      <a href="https://github.com/apocys/fleetkit-v2/releases/latest" class="btn btn-secondary">⬇ Download App</a>
+    </div>
+    <div class="hero-social-proof">
+      <div class="avatar-stack">
+        <span>A</span><span>K</span><span>M</span><span>+</span>
+      </div>
+      <span>Loved by developers &amp; AI enthusiasts</span>
+    </div>
+  </div>
+  <div class="scroll-indicator">
+    <span>SCROLL</span>
+    <div class="arrow"></div>
+  </div>
+</section>
+
+<!-- Live Demo -->
+<section class="demo" id="demo">
+  <div class="container">
+    <div class="reveal">
+      <p class="section-label">// LIVE PREVIEW</p>
+      <h2 class="section-title">See Your Office In Action</h2>
+      <p class="section-desc">Choose your style. All powered by the same AI engine.</p>
+    </div>
+    <div class="demo-tabs reveal">
+      <button class="demo-tab active" data-theme="gameboy">🎮 GameBoy</button>
+      <button class="demo-tab" data-theme="cyberpunk">🌃 Cyberpunk</button>
+      <button class="demo-tab" data-theme="executive">🏢 Executive</button>
+    </div>
+    <div class="demo-screen reveal reveal-delay-1">
+      <div class="demo-titlebar"><span></span><span></span><span></span></div>
+      <div class="demo-viewport" id="demoViewport">
+        <!-- GameBoy Theme (default) -->
+        <div class="theme-gameboy" id="themeGameboy" style="width:100%;height:100%;position:relative">
+          <div class="office-grid">
+            <div class="desk occupied"></div><div class="desk"></div><div class="hallway"></div>
+            <div class="meeting-room">MEETING<br>ROOM A</div>
+            <div class="desk occupied"></div><div class="desk"></div>
+            <div class="desk"></div><div class="desk occupied"></div><div class="hallway"></div>
+            <div class="desk occupied"></div><div class="desk"></div>
+            <div class="hallway"></div><div class="desk"></div><div class="desk occupied"></div>
+            <div class="meeting-room">SERVER<br>ROOM</div>
+            <div class="desk"></div><div class="hallway"></div>
+            <div class="desk occupied"></div><div class="desk"></div><div class="hallway"></div>
+            <div class="desk"></div><div class="desk occupied"></div>
+            <div class="hallway"></div><div class="desk occupied"></div><div class="desk"></div>
+            <div class="hallway"></div><div class="desk"></div><div class="desk"></div>
+            <div class="hallway"></div><div class="desk occupied"></div><div class="desk"></div>
+            <div class="hallway"></div>
+            <div class="desk"></div><div class="desk occupied"></div>
+          </div>
+          <div class="status-bar">
+            <span>► AGENTS: 7/10 ACTIVE</span>
+            <span>MISSION: <span class="blink">RUNNING</span></span>
+            <span>⚡ STREAK: 5</span>
+          </div>
+        </div>
+        <!-- Cyberpunk Theme (hidden) -->
+        <div class="theme-cyberpunk" id="themeCyberpunk" style="width:100%;height:100%;position:absolute;top:0;left:0;display:none">
+          <div class="office-grid">
+            <div class="node active"></div><div class="node"></div>
+            <div class="holo-display">◆ NEURAL LINK ACTIVE ◆</div>
+            <div class="node"></div>
+            <div class="node active"></div><div class="node"></div>
+            <div class="node"></div><div class="node active"></div>
+            <div class="node"></div><div class="node active"></div>
+            <div class="holo-display">⟐ MISSION QUEUE: 3 ⟐</div>
+            <div class="node"></div>
+            <div class="node active"></div><div class="node"></div>
+            <div class="node active"></div><div class="node"></div>
+            <div class="node"></div><div class="node active"></div>
+            <div class="node"></div><div class="node"></div>
+          </div>
+          <div class="status-bar">
+            <span>◈ NODES: 7 ONLINE</span>
+            <span>STATUS: <span class="blink" style="color:var(--cyber-pink)">SYNCING</span></span>
+            <span>◆ UPTIME: 99.7%</span>
+          </div>
+        </div>
+        <!-- Executive Theme (hidden) -->
+        <div class="theme-executive" id="themeExecutive" style="width:100%;height:100%;position:absolute;top:0;left:0;display:none">
+          <div class="office-grid">
+            <div class="room"><div class="avatar" style="background:#6366f1">S</div><div class="name">Sentinel</div><div class="status-dot"></div></div>
+            <div class="room busy"><div class="avatar" style="background:#ec4899">E</div><div class="name">Echo</div><div class="status-dot"></div></div>
+            <div class="boardroom">📊 Board Room — Sprint Review</div>
+            <div class="room"><div class="avatar" style="background:#06b6d4">A</div><div class="name">Archer</div><div class="status-dot"></div></div>
+            <div class="room meeting"><div class="avatar" style="background:#f59e0b">F</div><div class="name">Forge</div><div class="status-dot"></div></div>
+            <div class="room"><div class="avatar" style="background:#22c55e">V</div><div class="name">Vex</div><div class="status-dot"></div></div>
+            <div class="room busy"><div class="avatar" style="background:#8b5cf6">N</div><div class="name">Nova</div><div class="status-dot"></div></div>
+            <div class="boardroom">☕ Lounge — 3 agents</div>
+            <div class="room"><div class="avatar" style="background:#ef4444">R</div><div class="name">Rex</div><div class="status-dot"></div></div>
+            <div class="room"><div class="avatar" style="background:#14b8a6">Z</div><div class="name">Zen</div><div class="status-dot"></div></div>
+          </div>
+          <div class="status-bar">
+            <span>● 8 Online</span>
+            <span>Active Mission: Q4 Report</span>
+            <span>🏆 Streak: 12 days</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="demo-caption reveal reveal-delay-2">Five themes. One engine. Your choice.</p>
+    <div style="text-align:center;margin-top:2rem" class="reveal reveal-delay-3">
+      <a href="demo.html" target="_blank" rel="noopener" style="color:var(--accent);font-size:.9rem;text-decoration:none;opacity:.7;transition:opacity .2s" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=.7">▶ Watch 45-second animated demo →</a>
+    </div>
+  </div>
+</section>
+
+<!-- Features -->
+<section class="features" id="features">
+  <div class="container">
+    <div class="reveal">
+      <p class="section-label">// FEATURES</p>
+      <h2 class="section-title">Everything You Need. Nothing You Don't.</h2>
+      <p class="section-desc">Built for power users who care about craft.</p>
+    </div>
+    <div class="features-grid">
+      <div class="feature-card reveal reveal-delay-1">
+        <span class="feature-icon">🎮</span>
+        <h3 class="feature-title">Living Office</h3>
+        <p class="feature-desc">Watch your AI agents move, meet, and work in real-time. Every action is visualized.</p>
+      </div>
+      <div class="feature-card reveal reveal-delay-2">
+        <span class="feature-icon">⚡</span>
+        <h3 class="feature-title">One-Click Missions</h3>
+        <p class="feature-desc">Type what you need. Your team handles the rest. Mission system inspired by Pokémon quests.</p>
+      </div>
+      <div class="feature-card reveal reveal-delay-3">
+        <span class="feature-icon">🏆</span>
+        <h3 class="feature-title">Achievements</h3>
+        <p class="feature-desc">Streaks, badges, and stats. Stay motivated and track your progress over time.</p>
+      </div>
+      <div class="feature-card reveal reveal-delay-1">
+        <span class="feature-icon">⌨️</span>
+        <h3 class="feature-title">Keyboard-First</h3>
+        <p class="feature-desc">Spotlight-style command palette. Everything at your fingertips. Power user UX.</p>
+      </div>
+      <div class="feature-card reveal reveal-delay-2">
+        <span class="feature-icon">🎵</span>
+        <h3 class="feature-title">Chiptune Audio</h3>
+        <p class="feature-desc">Authentic 8-bit sounds and Pokémon-style FX. Every action has a satisfying click.</p>
+      </div>
+      <div class="feature-card reveal reveal-delay-3">
+        <span class="feature-icon">📱</span>
+        <h3 class="feature-title">Responsive</h3>
+        <p class="feature-desc">Works everywhere. Desktop to mobile. Electron app included for the full experience.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- How It Works -->
+<section class="how-it-works" id="how-it-works">
+  <div class="container">
+    <div class="reveal">
+      <p class="section-label">// HOW IT WORKS</p>
+      <h2 class="section-title">Three Steps. Zero Friction.</h2>
+      <p class="section-desc">From download to your first mission in under 60 seconds.</p>
+    </div>
+    <div class="steps">
+      <div class="step reveal reveal-delay-1">
+        <div class="step-number">📥</div>
+        <h3 class="step-title">Install</h3>
+        <p class="step-desc">Download. Open. Choose your theme. Done. No config files, no terminal commands.</p>
+      </div>
+      <div class="step reveal reveal-delay-2">
+        <div class="step-number">⚡</div>
+        <h3 class="step-title">Mission</h3>
+        <p class="step-desc">Press Q. Type what you need. Watch your team mobilize in real-time.</p>
+      </div>
+      <div class="step reveal reveal-delay-3">
+        <div class="step-number">🎉</div>
+        <h3 class="step-title">Results</h3>
+        <p class="step-desc">Agents complete tasks. You celebrate. Unlock achievements. Build streaks.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Pricing -->
+<section class="pricing" id="pricing">
+  <div class="container">
+    <div class="reveal">
+      <p class="section-label">// PRICING</p>
+      <h2 class="section-title">Simple. Fair. Forever.</h2>
+      <p class="section-desc">No subscriptions. No recurring fees. Pay once, own it forever.</p>
+    </div>
+    <div class="pricing-card reveal reveal-delay-1">
+      <div class="pricing-badge">LAUNCH</div>
+      <div class="pricing-card-inner">
+        <p class="pricing-name">FLEETKIT V2</p>
+        <p class="pricing-amount">$149 <span>one-time</span></p>
+        <p class="pricing-period">Pay once. Own forever.</p>
+        <p class="pricing-tagline">Free updates for life. No strings attached.</p>
+        <ul class="pricing-features">
+          <li><span class="check">✅</span> 3 Office Themes (GameBoy, Cyberpunk, Executive)</li>
+          <li><span class="check">✅</span> 15 Achievements &amp; Streak Tracking</li>
+          <li><span class="check">✅</span> Command Palette (Spotlight-style)</li>
+          <li><span class="check">✅</span> Chiptune Sound Effects</li>
+          <li><span class="check">✅</span> Pokémon-Style Mission System</li>
+          <li><span class="check">✅</span> Real-Time Agent Dashboard</li>
+          <li><span class="check">✅</span> Keyboard Shortcuts</li>
+          <li><span class="check">✅</span> Electron Desktop App</li>
+        </ul>
+        <a href="https://github.com/apocys/fleetkit-v2/releases" class="btn btn-primary" style="width:100%;justify-content:center;font-size:1.05rem;padding:1rem 2rem" target="_blank" rel="noopener">🚀 Get FleetKit — $149</a>
+        <p class="pricing-guarantee">🔒 30-day money-back guarantee. No questions asked.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Testimonials -->
+<section class="testimonials" id="testimonials">
+  <div class="container">
+    <div class="reveal">
+      <p class="section-label">// WHAT PEOPLE SAY</p>
+      <h2 class="section-title">What Beta Testers Say</h2>
+      <p class="section-desc">Real feedback from our early access program.</p>
+    </div>
+    <div class="testimonials-grid">
+      <div class="testimonial-card reveal reveal-delay-1">
+        <p class="testimonial-quote">I never thought I'd enjoy watching AI agents work this much. The GameBoy theme brings me back to childhood, but the productivity is very real.</p>
+        <div class="testimonial-author">
+          <div class="testimonial-avatar" style="background:#6366f1">JC</div>
+          <div>
+            <p class="testimonial-name">Beta Tester #1</p>
+            <p class="testimonial-role">Developer</p>
+          </div>
+        </div>
+      </div>
+      <div class="testimonial-card reveal reveal-delay-2">
+        <p class="testimonial-quote">The command palette is chef's kiss. Press Q, type a mission, and watch the magic. This is how AI tools should feel — fun and powerful.</p>
+        <div class="testimonial-author">
+          <div class="testimonial-avatar" style="background:#ec4899">SL</div>
+          <div>
+            <p class="testimonial-name">Beta Tester #2</p>
+            <p class="testimonial-role">Designer</p>
+          </div>
+        </div>
+      </div>
+      <div class="testimonial-card reveal reveal-delay-3">
+        <p class="testimonial-quote">Finally, an AI dashboard that doesn't look like a boring spreadsheet. The achievement system is addictive. 12-day streak and counting!</p>
+        <div class="testimonial-author">
+          <div class="testimonial-avatar" style="background:#06b6d4">MR</div>
+          <div>
+            <p class="testimonial-name">Beta Tester #3</p>
+            <p class="testimonial-role">Founder</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Final CTA -->
+<section class="final-cta">
+  <div class="container reveal">
+    <p class="section-label">// READY?</p>
+    <h2 class="section-title">Your AI Team Deserves<br>a Better Office.</h2>
+    <p class="section-desc">Join 127 people who already made AI work feel good.</p>
+    <a href="https://github.com/apocys/fleetkit-v2/releases" class="btn btn-primary" style="font-size:1.05rem;padding:1rem 2.5rem" target="_blank" rel="noopener">🚀 Get FleetKit — $149</a>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer class="footer">
+  <div class="container">
+    <div class="footer-content">
+      <p class="footer-brand">Built with obsession by the FleetKit team.</p>
+      <div class="footer-links">
+        <a href="https://github.com/apocys/fleetkit-v2">GitHub</a>
+        <a href="https://discord.gg/clawd">Discord</a>
+        <a href="https://github.com/apocys/fleetkit-v2/blob/main/README.md">Documentation</a>
+      </div>
+      <p class="footer-powered">Powered by <strong>OpenClaw</strong></p>
+    </div>
+  </div>
+</footer>
+
+<script>
+/* === PARTICLES === */
+(function(){
+  const c=document.getElementById('particles'),x=c.getContext('2d');
+  let w,h,particles=[];
+  function resize(){w=c.width=window.innerWidth;h=c.height=window.innerHeight}
+  resize();window.addEventListener('resize',resize);
+  class P{
+    constructor(){this.reset()}
+    reset(){
+      this.x=Math.random()*w;this.y=h+Math.random()*100;
+      this.s=Math.random()*3+1;this.speed=Math.random()*.5+.2;
+      this.o=Math.random()*.5+.1;this.flicker=Math.random()*100;
+    }
+    update(){
+      this.y-=this.speed;this.x+=Math.sin(this.flicker+=.01)*.3;
+      if(this.y<-10)this.reset();
+    }
+    draw(){
+      x.fillStyle=`rgba(155,188,15,${this.o+Math.sin(this.flicker)*.15})`;
+      x.fillRect(Math.round(this.x),Math.round(this.y),this.s,this.s);
+    }
+  }
+  const count=Math.min(60,Math.floor(w*h/20000));
+  for(let i=0;i<count;i++)particles.push(new P());
+  function loop(){
+    x.clearRect(0,0,w,h);
+    particles.forEach(p=>{p.update();p.draw()});
+    requestAnimationFrame(loop);
+  }
+  loop();
+})();
+
+/* === HERO TITLE ANIMATION === */
+(function(){
+  const title=document.getElementById('heroTitle');
+  const text='FLEETKIT';
+  text.split('').forEach((ch,i)=>{
+    const span=document.createElement('span');
+    span.className='letter'+(ch===' '?' space':'');
+    span.textContent=ch;
+    span.style.animationDelay=(.15+i*.08)+'s';
+    span.style.color=i<5?'var(--text)':'var(--green)';
+    title.appendChild(span);
+  });
+})();
+
+/* === STICKY NAV === */
+(function(){
+  const nav=document.getElementById('nav');
+  let ticking=false;
+  window.addEventListener('scroll',()=>{
+    if(!ticking){requestAnimationFrame(()=>{
+      nav.classList.toggle('scrolled',window.scrollY>50);
+      ticking=false;
+    });ticking=true;}
+  });
+})();
+
+/* === MOBILE MENU === */
+document.getElementById('menuBtn').addEventListener('click',()=>{
+  document.getElementById('navLinks').classList.toggle('open');
+});
+document.querySelectorAll('.nav-links a').forEach(a=>{
+  a.addEventListener('click',()=>document.getElementById('navLinks').classList.remove('open'));
+});
+
+/* === DEMO TABS === */
+(function(){
+  const tabs=document.querySelectorAll('.demo-tab');
+  const themes={
+    gameboy:document.getElementById('themeGameboy'),
+    cyberpunk:document.getElementById('themeCyberpunk'),
+    executive:document.getElementById('themeExecutive')
+  };
+  tabs.forEach(tab=>{
+    tab.addEventListener('click',()=>{
+      tabs.forEach(t=>t.classList.remove('active'));
+      tab.classList.add('active');
+      const sel=tab.dataset.theme;
+      Object.entries(themes).forEach(([k,el])=>{
+        el.style.display=k===sel?'block':'none';
+        if(k===sel)el.style.position='relative';
+        else el.style.position='absolute';
+      });
+    });
+  });
+})();
+
+/* === SCROLL REVEAL === */
+(function(){
+  const obs=new IntersectionObserver((entries)=>{
+    entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('visible');obs.unobserve(e.target)}});
+  },{threshold:.1,rootMargin:'0px 0px -40px 0px'});
+  document.querySelectorAll('.reveal').forEach(el=>obs.observe(el));
+})();
+
+/* === THEME TOGGLE === */
+(function(){
+  const btn=document.getElementById('themeToggle');
+  const html=document.documentElement;
+  btn.addEventListener('click',()=>{
+    const isDark=html.getAttribute('data-theme')==='dark';
+    html.setAttribute('data-theme',isDark?'light':'dark');
+    btn.textContent=isDark?'☀️':'🌙';
+  });
+})();
+
+/* === SMOOTH SCROLL FOR ANCHOR LINKS === */
+document.querySelectorAll('a[href^="#"]').forEach(a=>{
+  a.addEventListener('click',e=>{
+    const target=document.querySelector(a.getAttribute('href'));
+    if(target){e.preventDefault();target.scrollIntoView({behavior:'smooth',block:'start'});}
+  });
+});
+</script>
+</body>
+</html>

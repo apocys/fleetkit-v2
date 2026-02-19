@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>FleetKit — GameBoy Theme</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:1200px;height:630px;overflow:hidden;font-family:'Press Start 2P',monospace}
+body{background:#0f380f;color:#9bbc0f;position:relative}
+
+/* CRT scanlines */
+body::after{content:'';position:absolute;top:0;left:0;width:100%;height:100%;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.12) 2px,rgba(0,0,0,0.12) 4px);
+  pointer-events:none;z-index:50}
+
+/* HUD */
+#hud{position:absolute;top:16px;left:20px;right:20px;display:flex;justify-content:space-between;font-size:10px;
+  color:#8bac0f;z-index:10}
+#hud .hearts{color:#9bbc0f}
+
+/* Quest Board */
+#quest-board{position:absolute;top:60px;right:24px;width:280px;background:#1a4a1a;
+  border:3px solid #8bac0f;border-radius:4px;padding:14px;z-index:10}
+#quest-board h3{font-size:9px;margin-bottom:10px;color:#9bbc0f;text-shadow:0 0 6px #8bac0f}
+.quest{font-size:7px;padding:6px 8px;margin-bottom:6px;background:#0f380f;border:1px solid #306230;border-radius:2px;
+  display:flex;justify-content:space-between;align-items:center}
+.quest .status{color:#8bac0f;font-size:6px}
+.quest.active{border-color:#9bbc0f;background:#1a4a1a}
+.quest.active .status{color:#9bbc0f}
+
+/* Floor */
+#floor{position:absolute;bottom:0;left:0;width:100%;height:200px;
+  background:repeating-linear-gradient(90deg,#306230 0px,#306230 58px,#0f380f 58px,#0f380f 60px);
+  border-top:3px solid #8bac0f}
+
+/* Desks */
+.desk{position:absolute;bottom:205px;width:80px;height:40px;background:#306230;
+  border:2px solid #8bac0f;border-radius:3px}
+.desk::before{content:'';position:absolute;top:-12px;left:50%;transform:translateX(-50%);
+  width:40px;height:12px;background:#306230;border:2px solid #8bac0f;border-bottom:0;border-radius:3px 3px 0 0}
+.desk:nth-child(1){left:60px}.desk:nth-child(2){left:200px}.desk:nth-child(3){left:340px}
+.desk:nth-child(4){left:480px}.desk:nth-child(5){left:620px}
+
+/* Agents */
+.agent{position:absolute;bottom:250px;z-index:5}
+.agent-head{width:20px;height:20px;background:#9bbc0f;border-radius:4px;margin:0 auto 2px;position:relative}
+.agent-head::before,.agent-head::after{content:'';position:absolute;top:6px;width:4px;height:4px;background:#0f380f;border-radius:1px}
+.agent-head::before{left:4px}.agent-head::after{right:4px}
+.agent-torso{width:24px;height:16px;margin:0 auto;border-radius:2px}
+.agent-legs{display:flex;justify-content:center;gap:4px;margin-top:1px}
+.agent-leg{width:8px;height:10px;background:#306230;border-radius:0 0 2px 2px}
+.agent-name{font-size:7px;text-align:center;margin-top:4px;color:#9bbc0f;text-shadow:0 0 4px #8bac0f}
+.agent:nth-child(1){left:68px}.agent:nth-child(1) .agent-torso{background:#7b9b0f}
+.agent:nth-child(2){left:208px}.agent:nth-child(2) .agent-torso{background:#5b8b2f}
+.agent:nth-child(3){left:348px}.agent:nth-child(3) .agent-torso{background:#9bbc0f}
+.agent:nth-child(4){left:488px}.agent:nth-child(4) .agent-torso{background:#6ba30f}
+.agent:nth-child(5){left:628px}.agent:nth-child(5) .agent-torso{background:#4b7b0f}
+
+/* Speech bubbles */
+.speech{position:absolute;bottom:300px;background:#1a4a1a;border:1px solid #8bac0f;border-radius:8px;
+  padding:5px 10px;font-size:6px;white-space:nowrap;color:#9bbc0f}
+.speech::after{content:'';position:absolute;bottom:-5px;left:12px;border:5px solid transparent;border-top-color:#8bac0f}
+.speech:nth-child(1){left:48px}.speech:nth-child(2){left:188px}.speech:nth-child(3){left:328px}
+
+/* Mini-map */
+#minimap{position:absolute;bottom:24px;right:24px;width:120px;height:80px;background:#1a4a1a;
+  border:2px solid #8bac0f;border-radius:3px;z-index:10;padding:8px}
+#minimap::before{content:'MAP';position:absolute;top:-10px;left:8px;font-size:6px;background:#0f380f;padding:0 4px;color:#8bac0f}
+.mini-dot{position:absolute;width:4px;height:4px;background:#9bbc0f;border-radius:50%;
+  animation:miniPulse 1.5s ease infinite}
+@keyframes miniPulse{0%,100%{opacity:1}50%{opacity:0.4}}
+
+/* Branding */
+#brand{position:absolute;top:16px;left:50%;transform:translateX(-50%);font-size:18px;
+  color:#9bbc0f;text-shadow:0 0 12px #8bac0f,0 0 24px rgba(139,188,15,0.3);letter-spacing:6px;z-index:10}
+
+/* Notification */
+#notif{position:absolute;top:60px;left:24px;background:#1a4a1a;border:2px solid #9bbc0f;
+  border-radius:6px;padding:10px 16px;z-index:10}
+#notif h4{font-size:8px;color:#9bbc0f;margin-bottom:4px}
+#notif p{font-size:6px;color:#8bac0f}
+</style>
+</head>
+<body>
+<div id="brand">FLEETKIT</div>
+<div id="hud">
+  <span>LVL 12 <span class="hearts">❤️❤️❤️</span></span>
+  <span>FLEET: 5/5 ACTIVE</span>
+  <span>⭐ 2,847 XP</span>
+  <span>💰 $12.4K saved</span>
+</div>
+
+<div id="notif">
+  <h4>📋 Active Mission</h4>
+  <p>"Build landing page" — 73% complete</p>
+</div>
+
+<div id="quest-board">
+  <h3>📜 QUEST BOARD</h3>
+  <div class="quest active"><span>🔥 Build landing page</span><span class="status">IN PROGRESS</span></div>
+  <div class="quest"><span>📊 Analyze Q3 metrics</span><span class="status">QUEUED</span></div>
+  <div class="quest"><span>✉️ Draft newsletter</span><span class="status">QUEUED</span></div>
+  <div class="quest"><span>✅ Deploy API v2.3</span><span class="status">DONE +15pt</span></div>
+</div>
+
+<div id="floor"></div>
+<div class="desk"></div><div class="desk"></div><div class="desk"></div><div class="desk"></div><div class="desk"></div>
+
+<div class="speech">Deploying! 🚀</div>
+<div class="speech">Looks good ✨</div>
+<div class="speech">On it! 💪</div>
+
+<div class="agent"><div class="agent-head"></div><div class="agent-torso"></div><div class="agent-legs"><div class="agent-leg"></div><div class="agent-leg"></div></div><div class="agent-name">TRADER</div></div>
+<div class="agent"><div class="agent-head"></div><div class="agent-torso"></div><div class="agent-legs"><div class="agent-leg"></div><div class="agent-leg"></div></div><div class="agent-name">HACKER</div></div>
+<div class="agent"><div class="agent-head"></div><div class="agent-torso"></div><div class="agent-legs"><div class="agent-leg"></div><div class="agent-leg"></div></div><div class="agent-name">BARD</div></div>
+<div class="agent"><div class="agent-head"></div><div class="agent-torso"></div><div class="agent-legs"><div class="agent-leg"></div><div class="agent-leg"></div></div><div class="agent-name">SCRIBE</div></div>
+<div class="agent"><div class="agent-head"></div><div class="agent-torso"></div><div class="agent-legs"><div class="agent-leg"></div><div class="agent-leg"></div></div><div class="agent-name">WATCHER</div></div>
+
+<div id="minimap">
+  <div class="mini-dot" style="top:20px;left:20px"></div>
+  <div class="mini-dot" style="top:30px;left:40px;animation-delay:0.3s"></div>
+  <div class="mini-dot" style="top:25px;left:60px;animation-delay:0.6s"></div>
+  <div class="mini-dot" style="top:35px;left:80px;animation-delay:0.9s"></div>
+  <div class="mini-dot" style="top:20px;left:95px;animation-delay:1.2s"></div>
+</div>
+</body>
+</html>

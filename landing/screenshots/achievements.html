@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>FleetKit — Achievements</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Inter:wght@400;500;600;700&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:1200px;height:630px;overflow:hidden;font-family:'Inter',sans-serif}
+body{background:linear-gradient(135deg,#0a0a1a,#1a0a2e,#0a1a2e);color:#e0e0e0;position:relative;overflow:hidden}
+
+/* Particle bg */
+body::before{content:'';position:absolute;width:100%;height:100%;
+  background:radial-gradient(circle at 20% 30%,rgba(240,224,0,0.06),transparent 40%),
+  radial-gradient(circle at 80% 60%,rgba(255,45,117,0.06),transparent 40%),
+  radial-gradient(circle at 50% 90%,rgba(0,240,255,0.06),transparent 40%);pointer-events:none}
+
+/* Brand */
+#brand{position:absolute;top:20px;right:28px;font-family:'Press Start 2P',monospace;font-size:11px;
+  color:#f0e000;text-shadow:0 0 8px rgba(240,224,0,0.4);letter-spacing:3px;z-index:10}
+
+/* Main toast */
+#toast{position:absolute;top:40px;left:50%;transform:translateX(-50%);width:580px;
+  background:linear-gradient(135deg,rgba(45,27,78,0.95),rgba(27,45,78,0.95));
+  border:2px solid #f0e000;border-radius:16px;padding:32px 40px;text-align:center;
+  box-shadow:0 0 60px rgba(240,224,0,0.15),0 20px 40px rgba(0,0,0,0.3);z-index:10}
+#toast h1{font-family:'Press Start 2P',monospace;font-size:22px;color:#f0e000;
+  text-shadow:0 0 20px rgba(240,224,0,0.5);margin-bottom:12px}
+#toast p{font-size:14px;color:rgba(255,255,255,0.7);margin-bottom:8px}
+#toast .xp{font-family:'Press Start 2P',monospace;font-size:16px;color:#00f0ff;
+  text-shadow:0 0 12px rgba(0,240,255,0.4)}
+
+/* Streak */
+#streak-card{position:absolute;top:220px;left:60px;width:300px;
+  background:rgba(26,26,46,0.9);border:1px solid rgba(255,107,53,0.3);border-radius:12px;
+  padding:24px;z-index:10}
+#streak-card h3{font-family:'Press Start 2P',monospace;font-size:14px;color:#ff6b35;
+  text-shadow:0 0 10px rgba(255,107,53,0.4);margin-bottom:16px}
+.streak-days{display:flex;gap:8px;margin-bottom:16px}
+.streak-day{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;
+  font-size:10px;font-weight:700}
+.streak-day.lit{background:linear-gradient(135deg,#ff6b35,#ff2d75);color:#fff;
+  box-shadow:0 0 12px rgba(255,107,53,0.4)}
+.streak-day.unlit{background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.1)}
+.streak-msg{font-size:11px;color:rgba(255,255,255,0.5)}
+
+/* XP Progress */
+#xp-card{position:absolute;top:220px;right:60px;width:300px;
+  background:rgba(26,26,46,0.9);border:1px solid rgba(0,240,255,0.3);border-radius:12px;
+  padding:24px;z-index:10}
+#xp-card h3{font-size:11px;color:rgba(0,240,255,0.7);text-transform:uppercase;letter-spacing:1.5px;
+  margin-bottom:16px;font-weight:600}
+#xp-card .level{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px}
+#xp-card .level h2{font-family:'Press Start 2P',monospace;font-size:24px;color:#00f0ff;
+  text-shadow:0 0 15px rgba(0,240,255,0.4)}
+#xp-card .level span{font-size:12px;color:rgba(255,255,255,0.4)}
+.xp-bar{width:100%;height:20px;background:rgba(255,255,255,0.08);border-radius:10px;overflow:hidden;margin-bottom:8px}
+.xp-fill{height:100%;width:95%;background:linear-gradient(90deg,#00f0ff,#ff2d75);border-radius:10px;
+  position:relative}
+.xp-fill::after{content:'';position:absolute;top:0;left:0;right:0;height:50%;
+  background:linear-gradient(180deg,rgba(255,255,255,0.3),transparent);border-radius:10px 10px 0 0}
+.xp-text{font-size:10px;color:rgba(255,255,255,0.4);text-align:right}
+
+/* Achievement badges */
+#badges{position:absolute;bottom:40px;left:60px;right:60px;z-index:10}
+#badges h3{font-size:10px;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:1.5px;
+  margin-bottom:16px;font-weight:600}
+.badge-row{display:flex;gap:16px}
+.badge{width:100px;text-align:center;padding:16px 8px;background:rgba(26,26,46,0.9);
+  border:1px solid rgba(255,255,255,0.1);border-radius:12px;transition:all 0.3s}
+.badge.unlocked{border-color:rgba(240,224,0,0.3);box-shadow:0 0 20px rgba(240,224,0,0.1)}
+.badge .icon{font-size:28px;margin-bottom:6px;display:block}
+.badge .name{font-size:8px;font-weight:600;color:rgba(255,255,255,0.7);margin-bottom:2px}
+.badge .desc{font-size:7px;color:rgba(255,255,255,0.3)}
+.badge.locked{opacity:0.4}
+.badge.locked .icon{filter:grayscale(1)}
+
+/* Confetti particles (static for screenshot) */
+.confetti{position:absolute;border-radius:2px;z-index:20}
+.c1{width:8px;height:8px;background:#ff2d75;top:30px;left:120px;transform:rotate(45deg)}
+.c2{width:6px;height:12px;background:#00f0ff;top:60px;right:180px;transform:rotate(-20deg)}
+.c3{width:10px;height:6px;background:#f0e000;top:20px;right:350px;transform:rotate(30deg)}
+.c4{width:6px;height:6px;background:#8b00ff;top:80px;left:300px;transform:rotate(-60deg);border-radius:50%}
+.c5{width:8px;height:4px;background:#00ff88;top:50px;left:500px;transform:rotate(15deg)}
+.c6{width:12px;height:6px;background:#ff6b35;top:10px;left:700px;transform:rotate(-40deg)}
+.c7{width:6px;height:10px;background:#ff2d75;top:70px;right:400px;transform:rotate(70deg)}
+.c8{width:8px;height:8px;background:#00f0ff;top:25px;left:900px;transform:rotate(-15deg);border-radius:50%}
+.c9{width:4px;height:8px;background:#f0e000;top:90px;left:150px;transform:rotate(50deg)}
+.c10{width:10px;height:4px;background:#8b00ff;top:45px;right:100px;transform:rotate(-25deg)}
+
+/* Stats overlay */
+#stats-overlay{position:absolute;top:400px;left:50%;transform:translateX(-50%);display:flex;gap:32px;z-index:10}
+.stat{text-align:center}
+.stat-val{font-family:'Press Start 2P',monospace;font-size:20px;margin-bottom:4px}
+.stat-label{font-size:9px;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:1px}
+.stat:nth-child(1) .stat-val{color:#f0e000}.stat:nth-child(2) .stat-val{color:#ff2d75}
+.stat:nth-child(3) .stat-val{color:#00f0ff}.stat:nth-child(4) .stat-val{color:#00ff88}
+</style>
+</head>
+<body>
+<div id="brand">FLEETKIT</div>
+
+<!-- Confetti -->
+<div class="confetti c1"></div><div class="confetti c2"></div><div class="confetti c3"></div>
+<div class="confetti c4"></div><div class="confetti c5"></div><div class="confetti c6"></div>
+<div class="confetti c7"></div><div class="confetti c8"></div><div class="confetti c9"></div>
+<div class="confetti c10"></div>
+
+<!-- Main Toast -->
+<div id="toast">
+  <h1>🏆 QUEST COMPLETE!</h1>
+  <p>Landing page deployed successfully</p>
+  <span class="xp">+20 XP • +$2.4K value</span>
+</div>
+
+<!-- Streak -->
+<div id="streak-card">
+  <h3>🔥 5-Day Streak!</h3>
+  <div class="streak-days">
+    <div class="streak-day lit">M</div>
+    <div class="streak-day lit">T</div>
+    <div class="streak-day lit">W</div>
+    <div class="streak-day lit">T</div>
+    <div class="streak-day lit">F</div>
+    <div class="streak-day unlit">S</div>
+    <div class="streak-day unlit">S</div>
+  </div>
+  <div class="streak-msg">Complete Saturday to earn 🔥 WEEKLY BONUS (+50 XP)</div>
+</div>
+
+<!-- XP -->
+<div id="xp-card">
+  <h3>Experience Points</h3>
+  <div class="level">
+    <h2>LVL 12</h2>
+    <span>153 XP to next level</span>
+  </div>
+  <div class="xp-bar"><div class="xp-fill"></div></div>
+  <div class="xp-text">2,847 / 3,000 XP</div>
+</div>
+
+<!-- Stats -->
+<div id="stats-overlay">
+  <div class="stat"><div class="stat-val">283</div><div class="stat-label">Tasks Done</div></div>
+  <div class="stat"><div class="stat-val">94.2%</div><div class="stat-label">Efficiency</div></div>
+  <div class="stat"><div class="stat-val">$12.4K</div><div class="stat-label">Value</div></div>
+  <div class="stat"><div class="stat-val">47</div><div class="stat-label">Quests</div></div>
+</div>
+
+<!-- Badges -->
+<div id="badges">
+  <h3>Recent Achievements</h3>
+  <div class="badge-row">
+    <div class="badge unlocked"><span class="icon">🏆</span><span class="name">Quest Master</span><span class="desc">Complete 10 quests</span></div>
+    <div class="badge unlocked"><span class="icon">🔥</span><span class="name">On Fire</span><span class="desc">5-day streak</span></div>
+    <div class="badge unlocked"><span class="icon">⚡</span><span class="name">Speed Demon</span><span class="desc">Sub-5min task</span></div>
+    <div class="badge unlocked"><span class="icon">🎯</span><span class="name">Sharpshooter</span><span class="desc">100% accuracy</span></div>
+    <div class="badge unlocked"><span class="icon">💰</span><span class="name">Value Creator</span><span class="desc">$10K+ generated</span></div>
+    <div class="badge unlocked"><span class="icon">🛡️</span><span class="name">Guardian</span><span class="desc">99.9% uptime</span></div>
+    <div class="badge unlocked"><span class="icon">🎨</span><span class="name">Creative</span><span class="desc">50 content tasks</span></div>
+    <div class="badge locked"><span class="icon">👑</span><span class="name">Fleet King</span><span class="desc">Reach Level 20</span></div>
+    <div class="badge locked"><span class="icon">🌟</span><span class="name">Legendary</span><span class="desc">500 tasks done</span></div>
+    <div class="badge locked"><span class="icon">🔮</span><span class="name">Oracle</span><span class="desc">30-day streak</span></div>
+  </div>
+</div>
+</body>
+</html>

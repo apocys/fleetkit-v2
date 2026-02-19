@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>FleetKit — Executive Theme</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:1200px;height:630px;overflow:hidden;font-family:'Inter',sans-serif}
+body{background:#0f0f1a;color:#e2e8f0;position:relative}
+
+/* Subtle gradient */
+body::before{content:'';position:absolute;top:0;left:0;width:100%;height:100%;
+  background:radial-gradient(ellipse at 30% 20%,rgba(212,168,83,0.06),transparent 60%),
+  radial-gradient(ellipse at 80% 80%,rgba(99,102,241,0.06),transparent 60%);pointer-events:none}
+
+/* Brand */
+#brand{position:absolute;top:24px;left:32px;display:flex;align-items:center;gap:10px;z-index:10}
+#brand span{font-size:13px;font-weight:700;letter-spacing:3px;color:#d4a853}
+#brand small{font-size:9px;color:rgba(212,168,83,0.5);font-weight:400;letter-spacing:1px}
+
+/* Top nav */
+#nav{position:absolute;top:24px;right:32px;display:flex;gap:20px;font-size:11px;color:rgba(226,232,240,0.5);z-index:10}
+#nav span{cursor:pointer;transition:color 0.3s}
+#nav span.active{color:#d4a853}
+
+/* Main content grid */
+#grid{position:absolute;top:72px;left:32px;right:32px;bottom:24px;display:grid;
+  grid-template-columns:280px 1fr 280px;grid-template-rows:1fr 1fr;gap:16px}
+
+/* Cards */
+.card{background:rgba(26,26,46,0.8);border:1px solid rgba(212,168,83,0.12);border-radius:12px;
+  padding:20px;position:relative;overflow:hidden}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(212,168,83,0.3),transparent)}
+.card h3{font-size:11px;font-weight:600;color:rgba(226,232,240,0.6);text-transform:uppercase;
+  letter-spacing:1.5px;margin-bottom:16px}
+
+/* Team roster */
+#team{grid-row:1/3}
+.member{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.05)}
+.member:last-child{border:none}
+.avatar{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px}
+.member:nth-child(2) .avatar{background:rgba(99,102,241,0.15);border:1px solid rgba(99,102,241,0.3)}
+.member:nth-child(3) .avatar{background:rgba(212,168,83,0.15);border:1px solid rgba(212,168,83,0.3)}
+.member:nth-child(4) .avatar{background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.3)}
+.member:nth-child(5) .avatar{background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3)}
+.member:nth-child(6) .avatar{background:rgba(168,85,247,0.15);border:1px solid rgba(168,85,247,0.3)}
+.member-info{flex:1}
+.member-info h4{font-size:12px;font-weight:600;color:#e2e8f0;margin-bottom:2px}
+.member-info p{font-size:9px;color:rgba(226,232,240,0.4)}
+.member-badge{font-size:8px;padding:3px 8px;border-radius:6px;font-weight:500}
+.badge-online{background:rgba(16,185,129,0.15);color:#10b981}.badge-busy{background:rgba(239,68,68,0.15);color:#ef4444}
+
+/* KPI Dashboard */
+#kpis{grid-column:2;display:grid;grid-template-columns:1fr 1fr;gap:12px;align-content:start}
+.kpi{text-align:center;padding:16px}
+.kpi-value{font-size:28px;font-weight:700;margin-bottom:4px}
+.kpi-label{font-size:9px;color:rgba(226,232,240,0.4);text-transform:uppercase;letter-spacing:1px}
+.kpi-change{font-size:9px;margin-top:4px;display:flex;align-items:center;justify-content:center;gap:4px}
+.kpi-up{color:#10b981}.kpi-down{color:#ef4444}
+.kpi:nth-child(2) .kpi-value{color:#d4a853}.kpi:nth-child(3) .kpi-value{color:#6366f1}
+.kpi:nth-child(4) .kpi-value{color:#10b981}.kpi:nth-child(5) .kpi-value{color:#f59e0b}
+
+/* Chart area */
+#chart-area{grid-column:2;position:relative}
+#chart-area svg{width:100%;height:100%}
+.chart-line{fill:none;stroke:#d4a853;stroke-width:2;opacity:0.8}
+.chart-area{fill:url(#goldGrad);opacity:0.2}
+.chart-dot{fill:#d4a853;r:4}
+.chart-grid{stroke:rgba(255,255,255,0.05);stroke-width:1}
+
+/* Activity feed */
+#activity{grid-row:1/3}
+.activity-item{padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.04);font-size:10px;
+  color:rgba(226,232,240,0.6);line-height:1.6}
+.activity-item strong{color:#e2e8f0}
+.activity-item .time{font-size:8px;color:rgba(226,232,240,0.3);display:block;margin-top:2px}
+.activity-dot{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:6px;vertical-align:middle}
+.dot-green{background:#10b981}.dot-gold{background:#d4a853}.dot-blue{background:#6366f1}.dot-red{background:#ef4444}
+</style>
+</head>
+<body>
+<div id="brand">
+  <span>FLEETKIT</span>
+  <small>EXECUTIVE SUITE</small>
+</div>
+<div id="nav">
+  <span class="active">Dashboard</span>
+  <span>Missions</span>
+  <span>Analytics</span>
+  <span>Settings</span>
+</div>
+
+<div id="grid">
+  <!-- Team Roster -->
+  <div class="card" id="team">
+    <h3>Fleet Roster</h3>
+    <div class="member"><div class="avatar">📈</div><div class="member-info"><h4>Trader</h4><p>Market analysis • 47 tasks completed</p></div><span class="member-badge badge-online">Online</span></div>
+    <div class="member"><div class="avatar">💻</div><div class="member-info"><h4>Hacker</h4><p>Engineering • 92 tasks completed</p></div><span class="member-badge badge-busy">Busy</span></div>
+    <div class="member"><div class="avatar">✍️</div><div class="member-info"><h4>Bard</h4><p>Content creation • 63 tasks completed</p></div><span class="member-badge badge-online">Online</span></div>
+    <div class="member"><div class="avatar">📝</div><div class="member-info"><h4>Scribe</h4><p>Documentation • 81 tasks completed</p></div><span class="member-badge badge-online">Online</span></div>
+    <div class="member"><div class="avatar">👁️</div><div class="member-info"><h4>Watcher</h4><p>Monitoring • 99.9% uptime</p></div><span class="member-badge badge-online">Online</span></div>
+  </div>
+
+  <!-- KPI Dashboard -->
+  <div class="card" id="kpis">
+    <h3>Key Performance</h3>
+    <div class="kpi"><div class="kpi-value">94.2%</div><div class="kpi-label">Fleet Efficiency</div><div class="kpi-change kpi-up">↑ 3.1% vs last week</div></div>
+    <div class="kpi"><div class="kpi-value">$12.4K</div><div class="kpi-label">Value Generated</div><div class="kpi-change kpi-up">↑ $2.1K this month</div></div>
+    <div class="kpi"><div class="kpi-value">283</div><div class="kpi-label">Tasks Completed</div><div class="kpi-change kpi-up">↑ 12% vs avg</div></div>
+    <div class="kpi"><div class="kpi-value">2,847</div><div class="kpi-label">Total XP</div><div class="kpi-change kpi-up">↑ 340 this week</div></div>
+  </div>
+
+  <!-- Chart -->
+  <div class="card" id="chart-area">
+    <h3>Productivity Trend (30 Days)</h3>
+    <svg viewBox="0 0 560 160">
+      <defs><linearGradient id="goldGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#d4a853"/><stop offset="100%" stop-color="transparent"/></linearGradient></defs>
+      <line class="chart-grid" x1="0" y1="40" x2="560" y2="40"/><line class="chart-grid" x1="0" y1="80" x2="560" y2="80"/>
+      <line class="chart-grid" x1="0" y1="120" x2="560" y2="120"/>
+      <path class="chart-area" d="M0,140 L0,120 40,100 80,110 120,80 160,90 200,60 240,70 280,40 320,50 360,30 400,45 440,25 480,35 520,20 560,15 560,140Z"/>
+      <path class="chart-line" d="M0,120 40,100 80,110 120,80 160,90 200,60 240,70 280,40 320,50 360,30 400,45 440,25 480,35 520,20 560,15"/>
+      <circle class="chart-dot" cx="560" cy="15"/><circle class="chart-dot" cx="520" cy="20"/><circle class="chart-dot" cx="480" cy="35"/>
+    </svg>
+  </div>
+
+  <!-- Activity Feed -->
+  <div class="card" id="activity">
+    <h3>Activity Feed</h3>
+    <div class="activity-item"><span class="activity-dot dot-green"></span><strong>Hacker</strong> deployed landing page v2.3<span class="time">2 min ago</span></div>
+    <div class="activity-item"><span class="activity-dot dot-gold"></span><strong>Trader</strong> completed market analysis<span class="time">8 min ago</span></div>
+    <div class="activity-item"><span class="activity-dot dot-blue"></span><strong>Bard</strong> submitted copy draft for review<span class="time">14 min ago</span></div>
+    <div class="activity-item"><span class="activity-dot dot-green"></span>🏆 Achievement: <strong>5-day streak</strong> unlocked<span class="time">1 hour ago</span></div>
+    <div class="activity-item"><span class="activity-dot dot-red"></span><strong>Watcher</strong> flagged API latency spike<span class="time">2 hours ago</span></div>
+    <div class="activity-item"><span class="activity-dot dot-gold"></span><strong>Scribe</strong> updated API docs (section 4/7)<span class="time">3 hours ago</span></div>
+    <div class="activity-item"><span class="activity-dot dot-green"></span>Mission complete: <strong>Newsletter draft</strong> +15 XP<span class="time">4 hours ago</span></div>
+  </div>
+</div>
+</body>
+</html>

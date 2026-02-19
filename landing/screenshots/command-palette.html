@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>FleetKit — Command Palette</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;500;600&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:1200px;height:630px;overflow:hidden;font-family:'Inter',sans-serif}
+body{background:#0a0a1a;color:#e0e0e0;display:flex;align-items:center;justify-content:center;position:relative}
+
+/* Backdrop blur effect */
+body::before{content:'';position:absolute;top:0;left:0;width:100%;height:100%;
+  background:radial-gradient(ellipse at 50% 40%,rgba(0,240,255,0.08),transparent 50%),
+  radial-gradient(ellipse at 30% 70%,rgba(255,45,117,0.05),transparent 50%);pointer-events:none}
+
+/* Dimmed office behind */
+#office-bg{position:absolute;top:0;left:0;width:100%;height:100%;opacity:0.15;
+  background:repeating-linear-gradient(90deg,rgba(0,240,255,0.1) 0px,rgba(0,240,255,0.1) 1px,transparent 1px,transparent 60px),
+  repeating-linear-gradient(0deg,rgba(0,240,255,0.1) 0px,rgba(0,240,255,0.1) 1px,transparent 1px,transparent 60px)}
+
+/* Brand */
+#brand{position:absolute;top:24px;right:32px;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;
+  color:#00f0ff;letter-spacing:3px;opacity:0.6;z-index:10}
+
+/* Command palette */
+#palette{width:680px;background:rgba(16,16,42,0.98);border:1px solid rgba(0,240,255,0.3);
+  border-radius:16px;box-shadow:0 0 80px rgba(0,240,255,0.15),0 24px 48px rgba(0,0,0,0.5);
+  overflow:hidden;position:relative;z-index:5}
+#palette::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,#00f0ff,transparent)}
+
+/* Header */
+#p-header{padding:16px 20px;display:flex;align-items:center;gap:10px;border-bottom:1px solid rgba(0,240,255,0.1)}
+#p-header kbd{background:rgba(0,240,255,0.12);color:#00f0ff;padding:4px 10px;border-radius:6px;
+  font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;border:1px solid rgba(0,240,255,0.3)}
+#p-header span{font-size:13px;color:rgba(255,255,255,0.4)}
+
+/* Input */
+#p-input{padding:20px 24px;display:flex;align-items:center;gap:12px}
+#p-input .icon{font-size:20px;opacity:0.5}
+#p-input .text{font-family:'JetBrains Mono',monospace;font-size:18px;color:#fff}
+#p-input .cursor{display:inline-block;width:2px;height:22px;background:#00f0ff;
+  animation:blink 0.7s step-end infinite;vertical-align:text-bottom;margin-left:2px}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+
+/* Suggestions */
+#p-suggestions{padding:0 12px 12px}
+.sug{padding:12px 16px;border-radius:10px;display:flex;align-items:center;gap:12px;
+  margin-bottom:4px;transition:all 0.2s}
+.sug .sug-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px}
+.sug .sug-text{flex:1}
+.sug .sug-text h4{font-size:13px;font-weight:500;color:rgba(255,255,255,0.8);margin-bottom:2px}
+.sug .sug-text p{font-size:10px;color:rgba(255,255,255,0.35)}
+.sug .sug-key{font-family:'JetBrains Mono',monospace;font-size:9px;color:rgba(255,255,255,0.3);
+  padding:3px 8px;background:rgba(255,255,255,0.05);border-radius:4px}
+.sug.active{background:rgba(0,240,255,0.08);border:1px solid rgba(0,240,255,0.2)}
+.sug.active h4{color:#00f0ff}
+.sug:not(.active){border:1px solid transparent}
+.sug:nth-child(1) .sug-icon{background:rgba(255,45,117,0.15)}
+.sug:nth-child(2) .sug-icon{background:rgba(0,240,255,0.15)}
+.sug:nth-child(3) .sug-icon{background:rgba(240,224,0,0.15)}
+.sug:nth-child(4) .sug-icon{background:rgba(139,0,255,0.15)}
+.sug:nth-child(5) .sug-icon{background:rgba(0,255,136,0.15)}
+
+/* Footer */
+#p-footer{padding:12px 20px;border-top:1px solid rgba(0,240,255,0.08);display:flex;justify-content:space-between;
+  align-items:center;font-size:10px;color:rgba(255,255,255,0.25)}
+#p-footer .keys kbd{background:rgba(255,255,255,0.08);padding:2px 6px;border-radius:3px;margin:0 2px;
+  font-family:'JetBrains Mono',monospace;font-size:9px}
+
+/* Agent reactions below palette */
+#reactions{position:absolute;bottom:60px;left:50%;transform:translateX(-50%);display:flex;gap:24px;z-index:5}
+.react{background:rgba(16,16,42,0.9);border:1px solid rgba(255,255,255,0.15);border-radius:12px;
+  padding:8px 16px;font-size:11px;color:rgba(255,255,255,0.7);backdrop-filter:blur(8px);position:relative}
+.react::after{content:'';position:absolute;top:-6px;left:50%;transform:translateX(-50%);
+  border:6px solid transparent;border-bottom-color:rgba(255,255,255,0.15)}
+.react:nth-child(1){color:#ff2d75}.react:nth-child(2){color:#00f0ff}.react:nth-child(3){color:#f0e000}
+
+/* Hotkey hint */
+#hotkey{position:absolute;top:24px;left:32px;font-size:10px;color:rgba(255,255,255,0.3);z-index:10;
+  display:flex;align-items:center;gap:8px}
+#hotkey kbd{background:rgba(255,255,255,0.08);padding:3px 8px;border-radius:4px;
+  font-family:'JetBrains Mono',monospace;border:1px solid rgba(255,255,255,0.1)}
+</style>
+</head>
+<body>
+<div id="office-bg"></div>
+<div id="brand">FLEETKIT</div>
+<div id="hotkey"><kbd>Q</kbd> to open command palette</div>
+
+<div id="palette">
+  <div id="p-header">
+    <kbd>Q</kbd>
+    <span>Command Palette — type a command or mission</span>
+  </div>
+  <div id="p-input">
+    <span class="icon">🔍</span>
+    <span class="text">Build a landing page for our product</span>
+    <span class="cursor"></span>
+  </div>
+  <div id="p-suggestions">
+    <div class="sug active">
+      <div class="sug-icon">🚀</div>
+      <div class="sug-text"><h4>Launch Mission: Build landing page</h4><p>Assigns to HACKER + BARD • Est. 12 min • HIGH priority</p></div>
+      <span class="sug-key">Enter</span>
+    </div>
+    <div class="sug">
+      <div class="sug-icon">📋</div>
+      <div class="sug-text"><h4>Create Quest: Landing page tasks</h4><p>Break down into subtasks with checkpoints</p></div>
+      <span class="sug-key">⌘ Q</span>
+    </div>
+    <div class="sug">
+      <div class="sug-icon">📊</div>
+      <div class="sug-text"><h4>Analyze: Current landing page performance</h4><p>Run TRADER analysis on existing page metrics</p></div>
+      <span class="sug-key">⌘ A</span>
+    </div>
+    <div class="sug">
+      <div class="sug-icon">🎨</div>
+      <div class="sug-text"><h4>Design: Landing page wireframe</h4><p>Generate layout options with BARD</p></div>
+      <span class="sug-key">⌘ D</span>
+    </div>
+    <div class="sug">
+      <div class="sug-icon">✅</div>
+      <div class="sug-text"><h4>Review: Previous landing page versions</h4><p>Show deployment history and A/B results</p></div>
+      <span class="sug-key">⌘ R</span>
+    </div>
+  </div>
+  <div id="p-footer">
+    <span class="keys"><kbd>↑↓</kbd> navigate  <kbd>Enter</kbd> select  <kbd>Esc</kbd> close</span>
+    <span>5 agents ready</span>
+  </div>
+</div>
+
+<div id="reactions">
+  <div class="react">TRADER: Ready to analyze 📈</div>
+  <div class="react">HACKER: Standing by 💻</div>
+  <div class="react">BARD: Copy ideas loading... ✍️</div>
+</div>
+</body>
+</html>

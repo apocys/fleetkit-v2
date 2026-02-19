@@ -1,0 +1,990 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FleetKit — Your AI Team, Visualized</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
+            color: #e0e0e0;
+            font-family: 'JetBrains Mono', monospace;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow-x: hidden;
+            overflow-y: auto;
+            position: relative;
+            padding: 40px 20px;
+        }
+        
+        /* Animated background stars */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 200%;
+            background-image: 
+                radial-gradient(circle at 25% 25%, rgba(255,255,255,0.1) 1px, transparent 1px),
+                radial-gradient(circle at 75% 75%, rgba(255,255,255,0.05) 1px, transparent 1px),
+                radial-gradient(circle at 50% 10%, rgba(0,255,255,0.1) 1px, transparent 1px);
+            background-size: 100px 100px, 150px 150px, 200px 200px;
+            animation: starfield 60s linear infinite;
+            pointer-events: none;
+            z-index: 0;
+        }
+        
+        @keyframes starfield {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(-100px); }
+        }
+
+        /* ─── VALUE PROPOSITION ─── */
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            z-index: 10;
+            position: relative;
+        }
+        
+        .logo {
+            font-size: 3.2rem;
+            font-weight: 600;
+            background: linear-gradient(45deg, #00ffff, #ff00ff, #ffff00);
+            background-size: 300% 300%;
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: gradientShift 3s ease-in-out infinite alternate;
+            letter-spacing: 6px;
+        }
+        
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 100% 50%; }
+        }
+        
+        .tagline {
+            font-size: 1.15rem;
+            color: #ccc;
+            margin-top: 12px;
+            font-weight: 400;
+        }
+        
+        .value-prop {
+            font-size: 0.85rem;
+            color: #777;
+            margin-top: 14px;
+            line-height: 1.6;
+            max-width: 480px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .choose-label {
+            font-size: 0.9rem;
+            color: #999;
+            margin-top: 28px;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+        }
+        
+        /* ─── THEME CARDS ─── */
+        .theme-selector {
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+            z-index: 10;
+            position: relative;
+        }
+        
+        .theme-card {
+            background: rgba(20, 20, 20, 0.8);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            width: 280px;
+            padding: 25px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .theme-card::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(45deg, transparent, transparent);
+            border-radius: 12px;
+            z-index: -1;
+            transition: all 0.3s ease;
+        }
+        
+        .theme-card.gameboy::before {
+            background: linear-gradient(45deg, #9BBB0F, #306230);
+        }
+        
+        .theme-card.cyberpunk::before {
+            background: linear-gradient(45deg, #00ffff, #ff00ff);
+        }
+        
+        .theme-card.executive::before {
+            background: linear-gradient(45deg, #c9a876, #8b6914);
+        }
+        
+        .theme-card.gameboy[data-theme="gameboy-color"]::before {
+            background: linear-gradient(135deg, #ff6688, #66ccff, #88ff66);
+        }
+
+        .theme-card.sims::before {
+            background: linear-gradient(45deg, #00ff00, #1a3a4a);
+        }
+        
+        .theme-card:hover {
+            transform: translateY(-10px) scale(1.02);
+            border-color: rgba(255, 255, 255, 0.3);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+        
+        .theme-card:hover::before {
+            opacity: 1;
+        }
+        
+        .theme-emoji {
+            font-size: 3.2rem;
+            margin-bottom: 14px;
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        .theme-name {
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+        
+        .theme-description {
+            font-size: 0.8rem;
+            color: #aaa;
+            margin-bottom: 18px;
+            line-height: 1.5;
+        }
+
+        /* ─── MINI PREVIEW BOXES ─── */
+        .mini-preview {
+            width: 200px;
+            height: 100px;
+            border-radius: 6px;
+            margin-bottom: 18px;
+            overflow: hidden;
+            position: relative;
+            font-size: 6px;
+            line-height: 1.3;
+        }
+
+        /* GameBoy preview — green pixel office */
+        .preview-gameboy {
+            background: #0F380F;
+            border: 2px solid #306230;
+            padding: 6px;
+            image-rendering: pixelated;
+        }
+        .preview-gameboy .gb-floor {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 30%;
+            background: repeating-linear-gradient(
+                90deg,
+                #306230 0px, #306230 10px,
+                #0F380F 10px, #0F380F 20px
+            );
+        }
+        .preview-gameboy .gb-agent {
+            position: absolute;
+            width: 12px;
+            height: 16px;
+            background: #9BBB0F;
+            border-radius: 3px 3px 0 0;
+        }
+        .preview-gameboy .gb-agent::after {
+            content: '';
+            position: absolute;
+            top: 3px;
+            left: 2px;
+            width: 3px;
+            height: 2px;
+            background: #0F380F;
+            box-shadow: 5px 0 0 #0F380F;
+        }
+        .preview-gameboy .gb-agent:nth-child(1) { left: 15px; bottom: 30%; }
+        .preview-gameboy .gb-agent:nth-child(2) { left: 55px; bottom: 30%; }
+        .preview-gameboy .gb-agent:nth-child(3) { left: 95px; bottom: 30%; }
+        .preview-gameboy .gb-desk {
+            position: absolute;
+            width: 20px;
+            height: 8px;
+            background: #8BAC0F;
+            bottom: 30%;
+        }
+        .preview-gameboy .gb-desk:nth-child(4) { left: 32px; }
+        .preview-gameboy .gb-desk:nth-child(5) { left: 72px; }
+        .preview-gameboy .gb-desk:nth-child(6) { left: 120px; }
+        .preview-gameboy .gb-quest {
+            position: absolute;
+            top: 6px;
+            left: 6px;
+            color: #9BBB0F;
+            font-family: monospace;
+            font-size: 7px;
+            letter-spacing: 0.5px;
+        }
+        .preview-gameboy .gb-quest-icon {
+            position: absolute;
+            top: 4px;
+            right: 8px;
+            font-size: 14px;
+        }
+
+        /* Cyberpunk preview — neon terminal */
+        .preview-cyberpunk {
+            background: #0a0012;
+            border: 1px solid #ff00ff44;
+            padding: 6px 8px;
+            font-family: monospace;
+            color: #00ffff;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            box-shadow: inset 0 0 20px rgba(255,0,255,0.1);
+        }
+        .preview-cyberpunk .cp-line {
+            white-space: nowrap;
+            overflow: hidden;
+            font-size: 7px;
+            opacity: 0.9;
+        }
+        .preview-cyberpunk .cp-line .cp-name { color: #ff00ff; }
+        .preview-cyberpunk .cp-line .cp-status { color: #00ff88; }
+        .preview-cyberpunk .cp-line .cp-data { color: #ffff00; }
+        .preview-cyberpunk .cp-header {
+            color: #ff00ff;
+            font-size: 7px;
+            border-bottom: 1px solid #ff00ff33;
+            padding-bottom: 2px;
+            margin-bottom: 2px;
+            letter-spacing: 1px;
+        }
+        .preview-cyberpunk .cp-cursor {
+            display: inline-block;
+            width: 4px;
+            height: 7px;
+            background: #00ffff;
+            animation: blink 1s step-end infinite;
+            margin-left: 2px;
+            vertical-align: middle;
+        }
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+        .preview-cyberpunk .cp-scanline {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 2px,
+                rgba(0,0,0,0.15) 2px,
+                rgba(0,0,0,0.15) 4px
+            );
+            pointer-events: none;
+        }
+
+        /* Executive preview — boardroom */
+        .preview-executive {
+            background: linear-gradient(180deg, #1a1510 0%, #2c2416 100%);
+            border: 1px solid #c9a87644;
+            padding: 6px;
+            position: relative;
+        }
+        .preview-executive .ex-table {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100px;
+            height: 36px;
+            background: linear-gradient(135deg, #5a4a2a, #3d3219);
+            border-radius: 20px;
+            border: 1px solid #c9a87655;
+        }
+        .preview-executive .ex-chair {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: #8b6914;
+            border-radius: 50%;
+            border: 1px solid #c9a87666;
+        }
+        .preview-executive .ex-chair:nth-child(2) { top: 12px; left: 30px; }
+        .preview-executive .ex-chair:nth-child(3) { top: 12px; left: 80px; }
+        .preview-executive .ex-chair:nth-child(4) { top: 12px; left: 130px; }
+        .preview-executive .ex-chair:nth-child(5) { bottom: 12px; left: 30px; }
+        .preview-executive .ex-chair:nth-child(6) { bottom: 12px; left: 80px; }
+        .preview-executive .ex-chair:nth-child(7) { bottom: 12px; left: 130px; }
+        .preview-executive .ex-kpi {
+            position: absolute;
+            top: 4px;
+            right: 6px;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .preview-executive .ex-kpi-bar {
+            width: 30px;
+            height: 3px;
+            background: rgba(201,168,118,0.3);
+            border-radius: 1px;
+            overflow: hidden;
+        }
+        .preview-executive .ex-kpi-bar::after {
+            content: '';
+            display: block;
+            height: 100%;
+            border-radius: 1px;
+            background: #c9a876;
+        }
+        .preview-executive .ex-kpi-bar:nth-child(1)::after { width: 80%; }
+        .preview-executive .ex-kpi-bar:nth-child(2)::after { width: 60%; }
+        .preview-executive .ex-kpi-bar:nth-child(3)::after { width: 90%; }
+        .preview-executive .ex-label {
+            position: absolute;
+            top: 4px;
+            left: 6px;
+            color: #c9a876;
+            font-size: 6px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            opacity: 0.7;
+        }
+
+        .color-preview {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            margin-bottom: 18px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .gameboy .color-preview {
+            background: linear-gradient(90deg, #0F380F, #306230, #8BAC0F, #9BBB0F);
+        }
+        
+        .cyberpunk .color-preview {
+            background: linear-gradient(90deg, #000000, #ff00ff, #00ffff, #ffff00);
+        }
+        
+        .executive .color-preview {
+            background: linear-gradient(90deg, #2c2416, #5a4a2a, #8b6914, #c9a876);
+        }
+        
+        .color-preview::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            animation: shimmer 2s ease-in-out infinite;
+        }
+        
+        @keyframes shimmer {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+        
+        .select-button {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            color: #e0e0e0;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: auto;
+            font-size: 0.85rem;
+        }
+        
+        .select-button:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.4);
+            color: #ffffff;
+        }
+        
+        .gameboy .select-button:hover {
+            background: #9BBB0F;
+            border-color: #9BBB0F;
+            color: #0F380F;
+        }
+        
+        .cyberpunk .select-button:hover {
+            background: #00ffff;
+            border-color: #00ffff;
+            color: #000000;
+        }
+        
+        .executive .select-button:hover {
+            background: #c9a876;
+            border-color: #c9a876;
+            color: #2c2416;
+        }
+
+        /* ─── HOW IT WORKS ─── */
+        .how-it-works {
+            z-index: 10;
+            position: relative;
+            margin-top: 50px;
+            text-align: center;
+            max-width: 520px;
+        }
+
+        .how-it-works-title {
+            font-size: 0.75rem;
+            color: #555;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            margin-bottom: 20px;
+        }
+
+        .how-steps {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            text-align: left;
+        }
+
+        .how-step {
+            display: flex;
+            align-items: baseline;
+            gap: 12px;
+            font-size: 0.8rem;
+            color: #777;
+            line-height: 1.5;
+        }
+
+        .how-step .step-num {
+            color: #555;
+            font-weight: 600;
+            min-width: 16px;
+        }
+
+        .how-step .step-arrow {
+            color: #444;
+        }
+
+        .how-step em {
+            font-style: normal;
+            color: #999;
+        }
+
+        .how-help {
+            margin-top: 18px;
+            font-size: 0.7rem;
+            color: #444;
+            letter-spacing: 1px;
+        }
+
+        /* ─── FOOTER ─── */
+        .footer {
+            z-index: 10;
+            position: relative;
+            margin-top: 40px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .replay-link {
+            font-size: 0.75rem;
+            color: #555;
+            cursor: pointer;
+            transition: color 0.3s ease;
+            background: none;
+            border: none;
+            font-family: 'JetBrains Mono', monospace;
+            letter-spacing: 0.5px;
+        }
+
+        .replay-link:hover {
+            color: #00ffff;
+        }
+
+        .footer-text {
+            font-size: 0.65rem;
+            color: #333;
+            letter-spacing: 1px;
+        }
+
+        /* ─── LOADING SCREEN ─── */
+        .loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            flex-direction: column;
+        }
+        
+        .loading.active {
+            display: flex;
+        }
+        
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-top: 3px solid #00ffff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .loading-text {
+            color: #00ffff;
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        
+        /* ─── RESPONSIVE ─── */
+        @media (max-width: 768px) {
+            .theme-selector {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .theme-card {
+                width: 300px;
+            }
+            
+            .mini-preview {
+                width: 220px;
+                height: 110px;
+            }
+
+            .logo {
+                font-size: 2.2rem;
+            }
+
+            .tagline {
+                font-size: 1rem;
+            }
+
+            .how-steps {
+                padding: 0 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- ─── HEADER / VALUE PROPOSITION ─── -->
+    <div class="header">
+        <div class="logo">FLEETKIT</div>
+        <div class="tagline">Your AI team, visualized.</div>
+        <div class="value-prop">
+            Watch your AI agents work, collaborate, and complete<br>
+            missions in a living virtual office.
+        </div>
+        <div class="choose-label">Choose your office style</div>
+    </div>
+    
+    <!-- ─── THEME CARDS ─── -->
+    <div class="theme-selector">
+        <!-- GameBoy Theme -->
+        <div class="theme-card gameboy" data-theme="gameboy">
+            <div class="theme-emoji">🎮</div>
+            <div class="theme-name">GameBoy</div>
+            <div class="theme-description">Pokémon vibes. Your agents go on pixel quests with 8-bit music.</div>
+            
+            <!-- Mini preview: pixel office -->
+            <div class="mini-preview preview-gameboy">
+                <div class="gb-quest">▸ MISSION: Deploy API</div>
+                <div class="gb-quest-icon">⚔️</div>
+                <div class="gb-agent"></div>
+                <div class="gb-agent"></div>
+                <div class="gb-agent"></div>
+                <div class="gb-desk"></div>
+                <div class="gb-desk"></div>
+                <div class="gb-desk"></div>
+                <div class="gb-floor"></div>
+            </div>
+
+            <div class="color-preview"></div>
+            <button class="select-button">Enter Office</button>
+        </div>
+        
+        <!-- GameBoy Color Theme -->
+        <div class="theme-card gameboy" data-theme="gameboy-color">
+            <div class="theme-emoji">🌈</div>
+            <div class="theme-name">GameBoy Color</div>
+            <div class="theme-description">Full-color pixel art upgrade. Same Pokémon soul, now in vivid RGB.</div>
+            
+            <!-- Mini preview: colorful pixel office -->
+            <div class="mini-preview preview-gameboy" style="background:#2a1a3a;">
+                <div class="gb-quest" style="background:rgba(255,100,200,0.3);border-color:rgba(255,100,200,0.5);color:#ff88cc;">▸ QUEST: Color Shift</div>
+                <div class="gb-quest-icon">🌟</div>
+                <div class="gb-agent" style="background:#ff6688;"></div>
+                <div class="gb-agent" style="background:#66ccff;"></div>
+                <div class="gb-agent" style="background:#88ff66;"></div>
+                <div class="gb-desk" style="background:#8866cc;"></div>
+                <div class="gb-desk" style="background:#8866cc;"></div>
+                <div class="gb-desk" style="background:#8866cc;"></div>
+                <div class="gb-floor" style="background:#1a0a2a;"></div>
+            </div>
+
+            <div class="color-preview"></div>
+            <button class="select-button">Enter Office</button>
+        </div>
+        
+        <!-- Cyberpunk Theme -->
+        <div class="theme-card cyberpunk" data-theme="cyberpunk">
+            <div class="theme-emoji">🌃</div>
+            <div class="theme-name">Cyberpunk</div>
+            <div class="theme-description">Hacker aesthetic. Neon terminals, live data feeds, dark mode everything.</div>
+            
+            <!-- Mini preview: neon terminal -->
+            <div class="mini-preview preview-cyberpunk">
+                <div class="cp-header">◈ FLEET TERMINAL v2.0</div>
+                <div class="cp-line"><span class="cp-name">NOVA</span> <span class="cp-status">● ACTIVE</span> — researching</div>
+                <div class="cp-line"><span class="cp-name">CIPHER</span> <span class="cp-status">● ACTIVE</span> — coding</div>
+                <div class="cp-line"><span class="cp-name">SENTINEL</span> <span class="cp-status">● IDLE</span> — monitoring</div>
+                <div class="cp-line"><span class="cp-name">ATLAS</span> <span class="cp-status">● ACTIVE</span> — deploying</div>
+                <div class="cp-line"><span class="cp-data">▸ missions: 12 ✓  3 ◌</span></div>
+                <div class="cp-line"><span class="cp-data">▸ uptime: 48:22:07</span><span class="cp-cursor"></span></div>
+                <div class="cp-scanline"></div>
+            </div>
+
+            <div class="color-preview"></div>
+            <button class="select-button">Enter Office</button>
+        </div>
+        
+        <!-- Executive Theme -->
+        <div class="theme-card executive" data-theme="executive">
+            <div class="theme-emoji">🏢</div>
+            <div class="theme-name">Executive</div>
+            <div class="theme-description">Luxury boardroom. Your AI C-suite with real-time KPI dashboards.</div>
+            
+            <!-- Mini preview: boardroom -->
+            <div class="mini-preview preview-executive">
+                <div class="ex-label">Q4 Board Meeting</div>
+                <div class="ex-table"></div>
+                <div class="ex-chair"></div>
+                <div class="ex-chair"></div>
+                <div class="ex-chair"></div>
+                <div class="ex-chair"></div>
+                <div class="ex-chair"></div>
+                <div class="ex-chair"></div>
+                <div class="ex-kpi">
+                    <div class="ex-kpi-bar"></div>
+                    <div class="ex-kpi-bar"></div>
+                    <div class="ex-kpi-bar"></div>
+                </div>
+            </div>
+
+            <div class="color-preview"></div>
+            <button class="select-button">Enter Office</button>
+        </div>
+
+        <div class="theme-card sims" data-theme="sims">
+            <div class="theme-emoji">💎</div>
+            <div class="theme-name">The Sims</div>
+            <div class="theme-description">Isometric office nostalgia. Plumbobs, needs bars, and Simlish — it's 2000 again.</div>
+            
+            <!-- Mini preview: Sims-style -->
+            <div class="mini-preview" style="background:#f0e0c0;overflow:hidden;position:relative;">
+                <div style="position:absolute;top:4px;left:50%;transform:translateX(-50%);font-size:9px;color:#2a2a2a;">🏠 Office</div>
+                <div style="position:absolute;top:18px;left:50%;transform:translateX(-50%);">
+                    <div style="width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-bottom:8px solid #00ff00;margin:0 auto;"></div>
+                    <div style="width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:8px solid #00cc00;margin:0 auto;"></div>
+                    <div style="width:8px;height:12px;background:#8833aa;margin:2px auto;border-radius:1px;"></div>
+                </div>
+                <div style="position:absolute;bottom:0;left:0;right:0;height:22px;background:linear-gradient(180deg,#2a4858,#1a3a4a);display:flex;align-items:center;padding:0 6px;gap:4px;">
+                    <div style="width:12px;height:12px;background:#1a3a4a;border:1px solid #5a8898;border-radius:2px;"></div>
+                    <div style="flex:1;display:flex;flex-direction:column;gap:1px;">
+                        <div style="height:3px;background:#00cc00;border-radius:1px;width:80%;"></div>
+                        <div style="height:3px;background:#cccc00;border-radius:1px;width:50%;"></div>
+                        <div style="height:3px;background:#cc0000;border-radius:1px;width:30%;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="color-preview"></div>
+            <button class="select-button">Enter Office</button>
+        </div>
+    </div>
+
+    <!-- ─── HOW IT WORKS ─── -->
+    <div class="how-it-works">
+        <div class="how-it-works-title">How It Works</div>
+        <div class="how-steps">
+            <div class="how-step">
+                <span class="step-num">1.</span>
+                <span><em>Pick a theme</em> <span class="step-arrow">→</span> Your office loads with 5 AI agents</span>
+            </div>
+            <div class="how-step">
+                <span class="step-num">2.</span>
+                <span><em>Send missions</em> <span class="step-arrow">→</span> Press <strong>Q</strong> or click the <strong>+</strong> button</span>
+            </div>
+            <div class="how-step">
+                <span class="step-num">3.</span>
+                <span><em>Watch &amp; earn</em> <span class="step-arrow">→</span> Agents work, you unlock achievements</span>
+            </div>
+        </div>
+        <div class="how-help">Powered by OpenClaw &nbsp;|&nbsp; Press <strong>?</strong> for help anytime</div>
+    </div>
+
+    <!-- ─── FOOTER ─── -->
+    <div class="footer">
+        <button class="replay-link" id="replayBtn">🎬 Replay intro animation</button>
+        <div class="footer-text">Built with ❤️ and obsession • Powered by OpenClaw • v2.0</div>
+    </div>
+    
+    <!-- Loading Screen -->
+    <div class="loading" id="loading">
+        <div class="spinner"></div>
+        <div class="loading-text" id="loadingText">Initializing Theme...</div>
+    </div>
+    
+    <!-- FleetKit v2 Visual Polish Layer -->
+    <script src="favicon.js"></script>
+    <script src="meta-tags.js"></script>
+    <script src="page-title.js"></script>
+    <script src="responsive.js"></script>
+    <script src="transitions.js"></script>
+    
+    <script>
+        // Theme configuration
+        const themes = {
+            gameboy: {
+                name: 'GameBoy',
+                path: '../office-gameboy/index.html',
+                emoji: '🎮'
+            },
+            'gameboy-color': {
+                name: 'GameBoy Color',
+                path: '../office-gameboy-color/index.html',
+                emoji: '🌈'
+            },
+            cyberpunk: {
+                name: 'Cyberpunk',
+                path: '../office-cyberpunk/index.html',
+                emoji: '🌃'
+            },
+            executive: {
+                name: 'Executive',
+                path: '../office-executive/index.html',
+                emoji: '🏢'
+            },
+            sims: {
+                name: 'The Sims',
+                path: '../office-sims/index.html',
+                emoji: '💎'
+            }
+        };
+        
+        // Initialize theme selector
+        document.addEventListener('DOMContentLoaded', function() {
+            const themeCards = document.querySelectorAll('.theme-card');
+            const loading = document.getElementById('loading');
+            const loadingText = document.getElementById('loadingText');
+            
+            // ?reset clears saved theme (escape hatch)
+            if (new URLSearchParams(window.location.search).has('reset')) {
+                localStorage.removeItem('fleetkit-theme');
+            }
+            
+            // Check if a theme was previously selected
+            const savedTheme = localStorage.getItem('fleetkit-theme');
+            if (savedTheme && themes[savedTheme]) {
+                // Auto-redirect to saved theme with a brief flash
+                showLoading(`Loading ${themes[savedTheme].name} Office...`);
+                setTimeout(() => {
+                    redirectToTheme(savedTheme);
+                }, 800);
+                return;
+            }
+            
+            // Add click handlers to theme cards
+            themeCards.forEach(card => {
+                const button = card.querySelector('.select-button');
+                const theme = card.dataset.theme;
+                
+                // Add click handler to entire card
+                card.addEventListener('click', (e) => {
+                    if (e.target !== button) {
+                        button.click();
+                    }
+                });
+                
+                // Add click handler to button
+                button.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    selectTheme(theme);
+                });
+                
+                // Add keyboard support
+                card.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        selectTheme(theme);
+                    }
+                });
+                
+                // Make cards focusable
+                card.setAttribute('tabindex', '0');
+            });
+            
+            // Entrance animation for cards
+            setTimeout(() => {
+                themeCards.forEach((card, index) => {
+                    card.style.opacity = '0';
+                    card.style.transform = 'translateY(50px)';
+                    card.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+                    
+                    setTimeout(() => {
+                        card.style.opacity = '1';
+                        card.style.transform = 'translateY(0)';
+                    }, index * 200);
+                });
+            }, 100);
+
+            // Replay intro animation button
+            document.getElementById('replayBtn').addEventListener('click', () => {
+                localStorage.setItem('fleetkit-boot-seen', 'false');
+                localStorage.removeItem('fleetkit-theme');
+                window.location.reload();
+            });
+        });
+        
+        function selectTheme(themeId) {
+            if (!themes[themeId]) return;
+            
+            const theme = themes[themeId];
+            
+            // Save theme to localStorage
+            localStorage.setItem('fleetkit-theme', themeId);
+            
+            // Show loading animation
+            showLoading(`Loading ${theme.name} Office...`);
+            
+            // Add a brief delay for the loading animation
+            setTimeout(() => {
+                redirectToTheme(themeId);
+            }, 1500);
+        }
+        
+        function showLoading(text) {
+            const loading = document.getElementById('loading');
+            const loadingText = document.getElementById('loadingText');
+            
+            loadingText.textContent = text;
+            loading.classList.add('active');
+        }
+        
+        function redirectToTheme(themeId) {
+            const theme = themes[themeId];
+            if (theme) {
+                // Pass ?boot=true to trigger cinematic boot sequence
+                const separator = theme.path.includes('?') ? '&' : '?';
+                window.location.href = theme.path + separator + 'boot=true';
+            }
+        }
+        
+        // Easter egg — hue rotate on 10 clicks
+        let clickCount = 0;
+        document.addEventListener('click', () => {
+            clickCount++;
+            if (clickCount === 10) {
+                document.body.style.filter = 'hue-rotate(180deg)';
+                setTimeout(() => {
+                    document.body.style.filter = 'none';
+                }, 1000);
+                clickCount = 0;
+            }
+        });
+        
+        // Konami code easter egg
+        let konamiCode = [];
+        const konami = [38, 38, 40, 40, 37, 39, 37, 39, 66, 65]; // ↑↑↓↓←→←→BA
+        
+        document.addEventListener('keydown', (e) => {
+            konamiCode.push(e.keyCode);
+            if (konamiCode.length > konami.length) {
+                konamiCode.shift();
+            }
+            
+            if (konamiCode.join(',') === konami.join(',')) {
+                // Activate secret mode
+                document.body.style.animation = 'gradientShift 2s infinite';
+                document.body.style.background = 'linear-gradient(45deg, #ff0000, #00ff00, #0000ff, #ffff00)';
+                document.body.style.backgroundSize = '400% 400%';
+                
+                setTimeout(() => {
+                    document.body.style.animation = '';
+                    document.body.style.background = 'linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%)';
+                }, 3000);
+                
+                konamiCode = [];
+            }
+        });
+    </script>
+</body>
+</html>

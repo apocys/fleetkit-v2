@@ -1,0 +1,66 @@
+<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- FK gradient -->
+    <linearGradient id="fkGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6366f1"/>
+      <stop offset="100%" stop-color="#06b6d4"/>
+    </linearGradient>
+    <!-- Subtle highlight gradient for depth -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#131330"/>
+      <stop offset="100%" stop-color="#0a0a1a"/>
+    </linearGradient>
+    <!-- Glow filter for letters -->
+    <filter id="textGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="4" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <!-- Pixel grid pattern -->
+    <pattern id="pixelGrid" width="8" height="8" patternUnits="userSpaceOnUse">
+      <rect width="8" height="8" fill="none"/>
+      <rect x="0" y="0" width="7" height="7" fill="none" stroke="#ffffff" stroke-width="0.15" opacity="0.08"/>
+    </pattern>
+    <!-- Rounded square clip -->
+    <clipPath id="roundedSquare">
+      <rect x="4" y="4" width="248" height="248" rx="48" ry="48"/>
+    </clipPath>
+  </defs>
+
+  <!-- Rounded square background -->
+  <rect x="4" y="4" width="248" height="248" rx="48" ry="48" fill="url(#bgGrad)"/>
+
+  <!-- Subtle border -->
+  <rect x="4" y="4" width="248" height="248" rx="48" ry="48" fill="none" stroke="#2a2a4a" stroke-width="1"/>
+
+  <!-- Pixel grid overlay -->
+  <rect x="4" y="4" width="248" height="248" rx="48" ry="48" fill="url(#pixelGrid)" clip-path="url(#roundedSquare)"/>
+
+  <!-- Decorative corner accents -->
+  <line x1="36" y1="52" x2="52" y2="52" stroke="url(#fkGrad)" stroke-width="1.5" opacity="0.4"/>
+  <line x1="36" y1="52" x2="36" y2="68" stroke="url(#fkGrad)" stroke-width="1.5" opacity="0.4"/>
+  <line x1="204" y1="52" x2="220" y2="52" stroke="url(#fkGrad)" stroke-width="1.5" opacity="0.4"/>
+  <line x1="220" y1="52" x2="220" y2="68" stroke="url(#fkGrad)" stroke-width="1.5" opacity="0.4"/>
+  <line x1="36" y1="204" x2="36" y2="188" stroke="url(#fkGrad)" stroke-width="1.5" opacity="0.4"/>
+  <line x1="36" y1="204" x2="52" y2="204" stroke="url(#fkGrad)" stroke-width="1.5" opacity="0.4"/>
+  <line x1="220" y1="204" x2="220" y2="188" stroke="url(#fkGrad)" stroke-width="1.5" opacity="0.4"/>
+  <line x1="204" y1="204" x2="220" y2="204" stroke="url(#fkGrad)" stroke-width="1.5" opacity="0.4"/>
+
+  <!-- FK monogram with glow -->
+  <g filter="url(#textGlow)">
+    <!-- F -->
+    <text x="72" y="168" font-family="'SF Pro Display', 'Helvetica Neue', Arial, sans-serif" font-size="108" font-weight="700" fill="url(#fkGrad)" letter-spacing="-4">F</text>
+    <!-- K -->
+    <text x="142" y="168" font-family="'SF Pro Display', 'Helvetica Neue', Arial, sans-serif" font-size="108" font-weight="700" fill="url(#fkGrad)" letter-spacing="-4">K</text>
+  </g>
+
+  <!-- Subtle scan line effect -->
+  <g opacity="0.03" clip-path="url(#roundedSquare)">
+    <line x1="0" y1="60" x2="256" y2="60" stroke="#fff" stroke-width="0.5"/>
+    <line x1="0" y1="100" x2="256" y2="100" stroke="#fff" stroke-width="0.5"/>
+    <line x1="0" y1="140" x2="256" y2="140" stroke="#fff" stroke-width="0.5"/>
+    <line x1="0" y1="180" x2="256" y2="180" stroke="#fff" stroke-width="0.5"/>
+  </g>
+</svg>

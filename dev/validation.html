@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FleetKit v2 - Validation Test</title>
+    <style>
+        body {
+            font-family: 'Monaco', monospace;
+            background: #1a1a1a;
+            color: #00ff00;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .test-section {
+            border: 1px solid #333;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+        }
+        .pass { color: #00ff00; }
+        .fail { color: #ff0000; }
+        .info { color: #00ffff; }
+        pre {
+            background: #000;
+            padding: 10px;
+            border-radius: 3px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>FleetKit v2 - System Validation</h1>
+    
+    <div class="test-section">
+        <h2>1. Data Bridge Test</h2>
+        <div id="dataBridgeTest">Loading...</div>
+    </div>
+    
+    <div class="test-section">
+        <h2>2. Theme System Test</h2>
+        <div id="themeSystemTest">Loading...</div>
+    </div>
+    
+    <div class="test-section">
+        <h2>3. Event System Test</h2>
+        <div id="eventSystemTest">Loading...</div>
+    </div>
+    
+    <div class="test-section">
+        <h2>4. Data Structure Validation</h2>
+        <div id="dataValidationTest">Loading...</div>
+    </div>
+    
+    <div class="test-section">
+        <h2>5. Live Data Preview</h2>
+        <div id="dataPreview">Loading...</div>
+    </div>
+
+    <!-- Include the data bridge -->
+    <script src="data-bridge.js"></script>
+    <script src="theme-switcher.js"></script>
+    
+    <script>
+        // Validation tests
+        document.addEventListener('DOMContentLoaded', function() {
+            // Wait for data bridge to initialize
+            setTimeout(runTests, 500);
+        });
+        
+        function runTests() {
+            testDataBridge();
+            testThemeSystem(); 
+            testEventSystem();
+            testDataStructure();
+            showDataPreview();
+        }
+        
+        function testDataBridge() {
+            const results = [];
+            
+            // Check if FleetKit exists
+            if (typeof FleetKit !== 'undefined') {
+                results.push('<span class="pass">✅ FleetKit global object exists</span>');
+            } else {
+                results.push('<span class="fail">❌ FleetKit global object missing</span>');
+                return;
+            }
+            
+            // Check data structure
+            if (FleetKit.data) {
+                results.push('<span class="pass">✅ FleetKit.data available</span>');
+                
+                const requiredKeys = ['agents', 'subagents', 'missions', 'crons', 'metrics', 'events'];
+                requiredKeys.forEach(key => {
+                    if (FleetKit.data[key]) {
+                        results.push(`<span class="pass">✅ FleetKit.data.${key} exists</span>`);
+                    } else {
+                        results.push(`<span class="fail">❌ FleetKit.data.${key} missing</span>`);
+                    }
+                });
+            } else {
+                results.push('<span class="fail">❌ FleetKit.data not available</span>');
+            }
+            
+            // Check API functions
+            if (FleetKit.api) {
+                results.push('<span class="pass">✅ FleetKit.api available</span>');
+            } else {
+                results.push('<span class="fail">❌ FleetKit.api missing</span>');
+            }
+            
+            document.getElementById('dataBridgeTest').innerHTML = results.join('<br>');
+        }
+        
+        function testThemeSystem() {
+            const results = [];
+            
+            // Check theme switcher functions
+            if (typeof initThemeSwitcher === 'function') {
+                results.push('<span class="pass">✅ initThemeSwitcher function available</span>');
+            } else {
+                results.push('<span class="fail">❌ initThemeSwitcher function missing</span>');
+            }
+            
+            if (typeof switchTheme === 'function') {
+                results.push('<span class="pass">✅ switchTheme function available</span>');
+            } else {
+                results.push('<span class="fail">❌ switchTheme function missing</span>');
+            }
+            
+            // Check localStorage theme
+            const savedTheme = localStorage.getItem('fleetkit-theme');
+            if (savedTheme) {
+                results.push(`<span class="info">ℹ️ Saved theme: ${savedTheme}</span>`);
+            } else {
+                results.push('<span class="info">ℹ️ No saved theme (first run)</span>');
+            }
+            
+            document.getElementById('themeSystemTest').innerHTML = results.join('<br>');
+        }
+        
+        function testEventSystem() {
+            const results = [];
+            
+            // Check event functions
+            if (typeof FleetKit.on === 'function') {
+                results.push('<span class="pass">✅ FleetKit.on function available</span>');
+            } else {
+                results.push('<span class="fail">❌ FleetKit.on function missing</span>');
+            }
+            
+            if (typeof FleetKit.emit === 'function') {
+                results.push('<span class="pass">✅ FleetKit.emit function available</span>');
+            } else {
+                results.push('<span class="fail">❌ FleetKit.emit function missing</span>');
+            }
+            
+            // Test event listening
+            let eventReceived = false;
+            FleetKit.on('test:event', () => {
+                eventReceived = true;
+            });
+            
+            FleetKit.emit('test:event', { test: true });
+            
+            if (eventReceived) {
+                results.push('<span class="pass">✅ Event system working</span>');
+            } else {
+                results.push('<span class="fail">❌ Event system not working</span>');
+            }
+            
+            document.getElementById('eventSystemTest').innerHTML = results.join('<br>');
+        }
+        
+        function testDataStructure() {
+            const results = [];
+            
+            if (!FleetKit.data) {
+                results.push('<span class="fail">❌ No data to validate</span>');
+                document.getElementById('dataValidationTest').innerHTML = results.join('<br>');
+                return;
+            }
+            
+            // Validate agents
+            if (Array.isArray(FleetKit.data.agents)) {
+                results.push(`<span class="pass">✅ ${FleetKit.data.agents.length} agents loaded</span>`);
+                
+                const requiredAgentFields = ['id', 'name', 'role', 'status', 'emoji'];
+                const agent = FleetKit.data.agents[0];
+                if (agent) {
+                    requiredAgentFields.forEach(field => {
+                        if (agent[field]) {
+                            results.push(`<span class="pass">✅ Agent.${field} present</span>`);
+                        } else {
+                            results.push(`<span class="fail">❌ Agent.${field} missing</span>`);
+                        }
+                    });
+                }
+            } else {
+                results.push('<span class="fail">❌ Agents not an array</span>');
+            }
+            
+            // Validate missions
+            if (Array.isArray(FleetKit.data.missions)) {
+                results.push(`<span class="pass">✅ ${FleetKit.data.missions.length} missions loaded</span>`);
+            } else {
+                results.push('<span class="fail">❌ Missions not an array</span>');
+            }
+            
+            // Validate metrics
+            if (FleetKit.data.metrics && typeof FleetKit.data.metrics === 'object') {
+                const metricCount = Object.keys(FleetKit.data.metrics).length;
+                results.push(`<span class="pass">✅ ${metricCount} metrics loaded</span>`);
+            } else {
+                results.push('<span class="fail">❌ Metrics not an object</span>');
+            }
+            
+            document.getElementById('dataValidationTest').innerHTML = results.join('<br>');
+        }
+        
+        function showDataPreview() {
+            if (!FleetKit.data) {
+                document.getElementById('dataPreview').innerHTML = '<span class="fail">No data available</span>';
+                return;
+            }
+            
+            const preview = `
+                <div class="info">
+                    <strong>Agents:</strong> ${FleetKit.data.agents.length} (${FleetKit.data.agents.filter(a => a.status === 'active').length} active)<br>
+                    <strong>Subagents:</strong> ${FleetKit.data.subagents.length} (${FleetKit.data.subagents.filter(s => s.status === 'running').length} running)<br>
+                    <strong>Missions:</strong> ${FleetKit.data.missions.length} (${FleetKit.data.missions.filter(m => m.status === 'in_progress').length} in progress)<br>
+                    <strong>Crons:</strong> ${FleetKit.data.crons.length} (${FleetKit.data.crons.filter(c => c.status === 'active').length} active)<br>
+                    <strong>Tokens Today:</strong> ${FleetKit.data.metrics.tokensToday.toLocaleString()}<br>
+                    <strong>API Calls Today:</strong> ${FleetKit.data.metrics.apiCallsToday.toLocaleString()}<br>
+                    <strong>System Uptime:</strong> ${FleetKit.data.metrics.uptime}
+                </div>
+                
+                <h3>Sample Agent Data:</h3>
+                <pre>${JSON.stringify(FleetKit.data.agents[0], null, 2)}</pre>
+                
+                <h3>Sample Mission Data:</h3>
+                <pre>${JSON.stringify(FleetKit.data.missions[0], null, 2)}</pre>
+            `;
+            
+            document.getElementById('dataPreview').innerHTML = preview;
+        }
+        
+        // Add some real-time updates to show the system working
+        FleetKit.on('data:refresh', () => {
+            const timestamp = new Date().toLocaleTimeString();
+            console.log(`[${timestamp}] Data refreshed automatically`);
+        });
+        
+        // Show console instructions
+        console.log('🚀 FleetKit v2 Validation System');
+        console.log('Try these commands:');
+        console.log('  FleetKit.data.agents - View all agents');
+        console.log('  FleetKit.data.missions - View all missions');
+        console.log('  FleetKit.emit("test", {data: "hello"}) - Emit test event');
+        console.log('  FleetKit.refresh() - Manually refresh data');
+    </script>
+</body>
+</html>
