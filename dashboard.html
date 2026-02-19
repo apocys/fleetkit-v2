@@ -1,998 +1,991 @@
-<!-- ITERATION LOG
-Loop 1: Initial dashboard build — theme selector + iframe loader + sidebar
--->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SpawnKit — Your AI Office</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SpawnKit — Your AI Team Dashboard</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&display=swap');
 
-        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        /* ═══════════════════════════════════════════
+           RESET & BASE
+           ═══════════════════════════════════════════ */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         :root {
             --bg-dark: #0a0a0a;
             --bg-card: rgba(20, 20, 20, 0.85);
             --text-primary: #e0e0e0;
-            --text-muted: #888;
+            --text-secondary: #aaa;
+            --text-muted: #666;
+            --border-subtle: rgba(255,255,255,0.1);
+            --border-hover: rgba(255,255,255,0.3);
             --accent-cyan: #00ffff;
-            --accent-pink: #ff00ff;
-            --accent-green: #22cc44;
-            --sidebar-width: 320px;
-            --sidebar-bg: rgba(10, 10, 10, 0.92);
+            --accent-magenta: #ff00ff;
+            --sidebar-bg: rgba(10,10,20,0.92);
+            --sidebar-width: 300px;
+            --btn-min: 48px;
+            --transition-smooth: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        body {
-            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
-            color: var(--text-primary);
-            font-family: 'JetBrains Mono', monospace;
-            min-height: 100vh;
+        html, body {
+            height: 100%;
             overflow: hidden;
+            font-family: 'JetBrains Mono', monospace;
+            background: var(--bg-dark);
+            color: var(--text-primary);
         }
 
-        /* ════════════════════════════════════════════
-           THEME SELECTOR (full-screen, first visit)
-           ════════════════════════════════════════════ */
-        #theme-selector {
-            position: fixed; inset: 0;
-            display: flex; flex-direction: column;
-            align-items: center; justify-content: center;
-            z-index: 900;
-            overflow-y: auto;
-            padding: 40px 20px;
-            transition: opacity 0.5s ease, transform 0.5s ease;
+        /* ═══════════════════════════════════════════
+           STARFIELD BACKGROUND
+           ═══════════════════════════════════════════ */
+        .starfield {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
         }
-        #theme-selector.hidden {
-            opacity: 0; transform: scale(0.95);
+        .starfield::before {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 200%;
+            background-image:
+                radial-gradient(circle, rgba(255,255,255,0.12) 1px, transparent 1px),
+                radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1px),
+                radial-gradient(circle, rgba(0,255,255,0.08) 1px, transparent 1px);
+            background-size: 80px 80px, 130px 130px, 200px 200px;
+            animation: drift 60s linear infinite;
+        }
+        @keyframes drift {
+            from { transform: translateY(0); }
+            to   { transform: translateY(-80px); }
+        }
+
+        /* ═══════════════════════════════════════════
+           THEME SELECTOR SCREEN
+           ═══════════════════════════════════════════ */
+        #themeSelector {
+            position: fixed;
+            inset: 0;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 32px;
+            padding: 24px;
+            overflow-y: auto;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
+            transition: opacity 0.5s ease, visibility 0.5s ease;
+        }
+        #themeSelector.hidden {
+            opacity: 0;
+            visibility: hidden;
             pointer-events: none;
         }
 
-        /* Animated starfield background */
-        #theme-selector::before {
-            content: '';
-            position: fixed; top: 0; left: 0;
-            width: 100%; height: 200%;
-            background-image:
-                radial-gradient(circle at 25% 25%, rgba(255,255,255,0.1) 1px, transparent 1px),
-                radial-gradient(circle at 75% 75%, rgba(255,255,255,0.05) 1px, transparent 1px),
-                radial-gradient(circle at 50% 10%, rgba(0,255,255,0.08) 1px, transparent 1px);
-            background-size: 100px 100px, 150px 150px, 200px 200px;
-            animation: starfield 60s linear infinite;
-            pointer-events: none; z-index: -1;
+        .selector-header {
+            text-align: center;
+            z-index: 1;
         }
-        @keyframes starfield {
-            0% { transform: translateY(0); }
-            100% { transform: translateY(-100px); }
-        }
-
-        .sel-header { text-align: center; margin-bottom: 36px; z-index: 1; }
-        .sel-logo {
-            font-size: 3rem; font-weight: 700;
-            background: linear-gradient(45deg, #00ffff, #ff00ff, #ffff00);
+        .selector-logo {
+            font-size: clamp(2rem, 5vw, 3.2rem);
+            font-weight: 600;
+            background: linear-gradient(45deg, var(--accent-cyan), var(--accent-magenta), #ffff00);
             background-size: 300% 300%;
-            -webkit-background-clip: text; background-clip: text;
+            -webkit-background-clip: text;
+            background-clip: text;
             -webkit-text-fill-color: transparent;
             animation: gradShift 3s ease-in-out infinite alternate;
-            letter-spacing: 5px;
+            letter-spacing: 6px;
         }
         @keyframes gradShift {
-            0% { background-position: 0% 50%; }
+            0%   { background-position: 0% 50%; }
             100% { background-position: 100% 50%; }
         }
-        .sel-tagline { font-size: 1.05rem; color: #ccc; margin-top: 10px; }
-        .sel-subtitle {
-            font-size: 0.8rem; color: #666; margin-top: 18px;
-            text-transform: uppercase; letter-spacing: 3px;
+        .selector-tagline {
+            margin-top: 10px;
+            font-size: clamp(0.85rem, 2vw, 1.1rem);
+            color: #ccc;
+        }
+        .selector-subtitle {
+            margin-top: 20px;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 3px;
         }
 
-        /* Card grid */
-        .sel-cards {
-            display: flex; gap: 28px; flex-wrap: wrap;
-            justify-content: center; z-index: 1;
+        /* Cards grid */
+        .cards-grid {
+            display: flex;
+            gap: 24px;
+            flex-wrap: wrap;
+            justify-content: center;
+            z-index: 1;
+            max-width: 960px;
         }
-        .sel-card {
+
+        .theme-card {
             background: var(--bg-card);
-            border: 2px solid rgba(255,255,255,0.1);
-            border-radius: 14px;
-            width: 280px; padding: 24px;
-            display: flex; flex-direction: column;
-            align-items: center; text-align: center;
+            border: 2px solid var(--border-subtle);
+            border-radius: 12px;
+            width: 280px;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
             cursor: pointer;
-            transition: all 0.35s ease;
-            backdrop-filter: blur(12px);
-            position: relative; overflow: hidden;
-            opacity: 0; transform: translateY(40px);
+            transition: transform var(--transition-smooth), border-color var(--transition-smooth), box-shadow var(--transition-smooth);
+            backdrop-filter: blur(10px);
+            position: relative;
+            opacity: 0;
+            transform: translateY(40px);
         }
-        .sel-card.visible { opacity: 1; transform: translateY(0); }
-        .sel-card::before {
-            content: '';
-            position: absolute; inset: -2px;
-            border-radius: 14px; z-index: -1;
-            opacity: 0; transition: opacity 0.35s ease;
+        .theme-card.visible {
+            opacity: 1;
+            transform: translateY(0);
+            transition: opacity 0.6s ease, transform 0.6s ease, border-color var(--transition-smooth), box-shadow var(--transition-smooth);
         }
-        .sel-card:hover {
+        .theme-card:hover {
             transform: translateY(-8px) scale(1.02);
-            border-color: rgba(255,255,255,0.3);
-            box-shadow: 0 20px 50px rgba(0,0,0,0.4);
+            border-color: var(--border-hover);
+            box-shadow: 0 16px 40px rgba(0,0,0,0.4);
         }
-        .sel-card:hover::before { opacity: 1; }
+        .theme-card:focus-visible {
+            outline: 2px solid var(--accent-cyan);
+            outline-offset: 4px;
+        }
 
-        .sel-card[data-theme="gameboy"]::before { background: linear-gradient(45deg, #9BBB0F, #306230); }
-        .sel-card[data-theme="gameboy-color"]::before { background: linear-gradient(135deg, #ff6688, #66ccff, #88ff66); }
-        .sel-card[data-theme="sims"]::before { background: linear-gradient(45deg, #00ff00, #1a3a4a); }
+        /* Per-theme glow on hover */
+        .theme-card[data-theme="gameboy"]:hover       { border-color: #9BBB0F; box-shadow: 0 12px 32px rgba(155,187,15,0.2); }
+        .theme-card[data-theme="gameboy-color"]:hover  { border-color: #ff6688; box-shadow: 0 12px 32px rgba(255,102,136,0.2); }
+        .theme-card[data-theme="sims"]:hover           { border-color: #00ff00; box-shadow: 0 12px 32px rgba(0,255,0,0.15); }
 
-        .sel-emoji { font-size: 3rem; margin-bottom: 12px; animation: floatEmoji 3s ease-in-out infinite; }
-        @keyframes floatEmoji {
+        .card-emoji {
+            font-size: 3rem;
+            margin-bottom: 12px;
+            animation: bobble 3s ease-in-out infinite;
+        }
+        @keyframes bobble {
             0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-8px); }
-        }
-        .sel-name { font-size: 1.35rem; font-weight: 600; margin-bottom: 6px; }
-        .sel-desc { font-size: 0.78rem; color: #aaa; margin-bottom: 16px; line-height: 1.5; }
-
-        /* Mini previews */
-        .mini-preview {
-            width: 210px; height: 105px;
-            border-radius: 6px; margin-bottom: 16px;
-            overflow: hidden; position: relative;
-            image-rendering: pixelated;
+            50%      { transform: translateY(-8px); }
         }
 
-        /* GameBoy preview */
-        .prev-gb { background: #0F380F; border: 2px solid #306230; }
-        .prev-gb .gb-label { position: absolute; top: 5px; left: 6px; color: #9BBB0F; font-size: 7px; font-family: monospace; }
-        .prev-gb .gb-icon { position: absolute; top: 4px; right: 6px; font-size: 12px; }
-        .prev-gb .gb-floor { position: absolute; bottom: 0; left: 0; right: 0; height: 28%; background: repeating-linear-gradient(90deg, #306230 0px, #306230 10px, #0F380F 10px, #0F380F 20px); }
-        .prev-gb .gb-agent { position: absolute; width: 12px; height: 16px; background: #9BBB0F; border-radius: 3px 3px 0 0; bottom: 28%; }
-        .prev-gb .gb-agent::after { content: ''; position: absolute; top: 3px; left: 2px; width: 3px; height: 2px; background: #0F380F; box-shadow: 5px 0 0 #0F380F; }
-        .prev-gb .gb-agent:nth-child(3) { left: 20px; }
-        .prev-gb .gb-agent:nth-child(4) { left: 60px; }
-        .prev-gb .gb-agent:nth-child(5) { left: 100px; }
-        .prev-gb .gb-desk { position: absolute; width: 18px; height: 7px; background: #8BAC0F; bottom: 28%; }
-        .prev-gb .gb-desk:nth-child(6) { left: 38px; }
-        .prev-gb .gb-desk:nth-child(7) { left: 78px; }
-        .prev-gb .gb-desk:nth-child(8) { left: 126px; }
-
-        /* GameBoy Color preview */
-        .prev-gbc { background: #1a0a2a; border: 2px solid #6644aa; }
-        .prev-gbc .gbc-label { position: absolute; top: 5px; left: 6px; color: #ff88cc; font-size: 7px; font-family: monospace; }
-        .prev-gbc .gbc-icon { position: absolute; top: 4px; right: 6px; font-size: 12px; }
-        .prev-gbc .gbc-floor { position: absolute; bottom: 0; left: 0; right: 0; height: 28%; background: #1a0a2a; }
-        .prev-gbc .gbc-agent { position: absolute; width: 12px; height: 16px; border-radius: 3px 3px 0 0; bottom: 28%; }
-        .prev-gbc .gbc-agent::after { content: ''; position: absolute; top: 3px; left: 2px; width: 3px; height: 2px; background: #1a0a2a; box-shadow: 5px 0 0 #1a0a2a; }
-        .prev-gbc .gbc-agent:nth-child(3) { left: 20px; background: #ff6688; }
-        .prev-gbc .gbc-agent:nth-child(4) { left: 60px; background: #66ccff; }
-        .prev-gbc .gbc-agent:nth-child(5) { left: 100px; background: #88ff66; }
-        .prev-gbc .gbc-desk { position: absolute; width: 18px; height: 7px; background: #8866cc; bottom: 28%; }
-        .prev-gbc .gbc-desk:nth-child(6) { left: 38px; }
-        .prev-gbc .gbc-desk:nth-child(7) { left: 78px; }
-        .prev-gbc .gbc-desk:nth-child(8) { left: 126px; }
-
-        /* Sims preview */
-        .prev-sims { background: #e8d8b8; border: 2px solid #b8a888; position: relative; }
-        .prev-sims .sims-title { position: absolute; top: 4px; left: 50%; transform: translateX(-50%); font-size: 8px; color: #2a2a2a; font-family: monospace; }
-        .prev-sims .plumbob { position: absolute; top: 16px; left: 50%; transform: translateX(-50%); }
-        .prev-sims .plumbob-top { width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent; border-bottom: 8px solid #00ff00; margin: 0 auto; animation: plumbobPulse 2s ease-in-out infinite; }
-        .prev-sims .plumbob-bot { width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent; border-top: 8px solid #00cc00; margin: 0 auto; }
-        .prev-sims .plumbob-body { width: 8px; height: 12px; background: #8833aa; margin: 2px auto; border-radius: 1px; }
-        @keyframes plumbobPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
-        .prev-sims .sims-bar-area { position: absolute; bottom: 0; left: 0; right: 0; height: 22px; background: linear-gradient(180deg, #2a4858, #1a3a4a); display: flex; align-items: center; padding: 0 6px; gap: 4px; }
-        .prev-sims .sims-bars { flex: 1; display: flex; flex-direction: column; gap: 1px; }
-        .prev-sims .sims-bars div { height: 3px; border-radius: 1px; }
-        .prev-sims .sims-bars div:nth-child(1) { background: #00cc00; width: 80%; }
-        .prev-sims .sims-bars div:nth-child(2) { background: #cccc00; width: 50%; }
-        .prev-sims .sims-bars div:nth-child(3) { background: #cc0000; width: 30%; }
-
-        /* Color bar */
-        .sel-colors {
-            width: 100%; height: 5px;
-            border-radius: 3px; margin-bottom: 16px;
-            position: relative; overflow: hidden;
+        .card-name {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 6px;
         }
-        .sel-card[data-theme="gameboy"] .sel-colors { background: linear-gradient(90deg, #0F380F, #306230, #8BAC0F, #9BBB0F); }
-        .sel-card[data-theme="gameboy-color"] .sel-colors { background: linear-gradient(90deg, #ff6688, #66ccff, #88ff66, #ffcc44); }
-        .sel-card[data-theme="sims"] .sel-colors { background: linear-gradient(90deg, #00ff00, #ffcc00, #ff6644, #8833aa); }
-        .sel-colors::after {
-            content: ''; position: absolute; top: 0; left: -100%;
-            width: 100%; height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.35), transparent);
-            animation: shimmer 2.2s ease-in-out infinite;
+        .card-desc {
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+            margin-bottom: 18px;
+            min-height: 36px;
         }
-        @keyframes shimmer { 0% { left: -100%; } 100% { left: 100%; } }
 
-        /* Enter button */
-        .sel-btn {
+        /* Color swatch bar */
+        .card-swatch {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            margin-bottom: 18px;
+            position: relative;
+            overflow: hidden;
+        }
+        .card-swatch::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            animation: shimmer 2s ease-in-out infinite;
+        }
+        @keyframes shimmer {
+            from { transform: translateX(-100%); }
+            to   { transform: translateX(100%); }
+        }
+        .theme-card[data-theme="gameboy"]      .card-swatch { background: linear-gradient(90deg, #0F380F, #306230, #8BAC0F, #9BBB0F); }
+        .theme-card[data-theme="gameboy-color"] .card-swatch { background: linear-gradient(90deg, #ff6688, #66ccff, #88ff66, #ffcc44); }
+        .theme-card[data-theme="sims"]          .card-swatch { background: linear-gradient(90deg, #1a3a4a, #5a8898, #00cc00, #d4aa44); }
+
+        .card-btn {
             background: rgba(255,255,255,0.08);
-            border: 2px solid rgba(255,255,255,0.2);
+            border: 2px solid rgba(255,255,255,0.15);
             color: var(--text-primary);
             padding: 12px 28px;
-            border-radius: 8px;
-            font-family: 'JetBrains Mono', monospace;
-            font-weight: 600; font-size: 0.85rem;
+            border-radius: 6px;
+            font-family: inherit;
+            font-weight: 500;
+            font-size: 0.85rem;
             cursor: pointer;
-            transition: all 0.3s ease;
-            text-transform: uppercase; letter-spacing: 1.5px;
-            min-height: 48px; min-width: 160px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: background var(--transition-smooth), border-color var(--transition-smooth), color var(--transition-smooth);
+            min-height: var(--btn-min);
+            min-width: 140px;
         }
-        .sel-btn:hover { background: rgba(255,255,255,0.18); border-color: rgba(255,255,255,0.4); }
-        .sel-card[data-theme="gameboy"] .sel-btn:hover { background: #9BBB0F; border-color: #9BBB0F; color: #0F380F; }
-        .sel-card[data-theme="gameboy-color"] .sel-btn:hover { background: #66ccff; border-color: #66ccff; color: #1a0a2a; }
-        .sel-card[data-theme="sims"] .sel-btn:hover { background: #00cc00; border-color: #00cc00; color: #1a3a4a; }
+        .card-btn:hover { background: rgba(255,255,255,0.18); border-color: rgba(255,255,255,0.35); }
+        .theme-card[data-theme="gameboy"]      .card-btn:hover { background: #9BBB0F; border-color: #9BBB0F; color: #0F380F; }
+        .theme-card[data-theme="gameboy-color"] .card-btn:hover { background: #ff6688; border-color: #ff6688; color: #1a0a2a; }
+        .theme-card[data-theme="sims"]          .card-btn:hover { background: #00cc00; border-color: #00cc00; color: #1a3a4a; }
 
-        /* ════════════════════════════════════════════
-           OFFICE VIEW (iframe + sidebar)
-           ════════════════════════════════════════════ */
-        #office-view {
-            position: fixed; inset: 0;
-            display: none; z-index: 100;
-        }
-        #office-view.active { display: block; }
-
-        #theme-iframe {
-            width: 100%; height: 100%;
-            border: none; background: #000;
-        }
-
-        /* Loading overlay */
-        #loader {
-            position: fixed; inset: 0;
+        /* ═══════════════════════════════════════════
+           LOADING OVERLAY
+           ═══════════════════════════════════════════ */
+        #loadingOverlay {
+            position: fixed;
+            inset: 0;
+            z-index: 200;
             background: rgba(0,0,0,0.92);
-            display: none; z-index: 950;
+            display: none;
             flex-direction: column;
-            align-items: center; justify-content: center;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
         }
-        #loader.active { display: flex; }
-        .loader-spinner {
-            width: 48px; height: 48px;
+        #loadingOverlay.active { display: flex; }
+
+        .spinner {
+            width: 48px;
+            height: 48px;
             border: 3px solid rgba(255,255,255,0.1);
             border-top-color: var(--accent-cyan);
             border-radius: 50%;
-            animation: spin 0.9s linear infinite;
-            margin-bottom: 18px;
+            animation: spin 0.8s linear infinite;
         }
         @keyframes spin { to { transform: rotate(360deg); } }
-        .loader-text {
-            color: var(--accent-cyan); font-size: 0.95rem;
-            text-transform: uppercase; letter-spacing: 2px;
+
+        .loading-label {
+            font-size: 0.9rem;
+            color: var(--accent-cyan);
+            text-transform: uppercase;
+            letter-spacing: 2px;
         }
 
-        /* Hamburger menu button */
-        #menu-btn {
-            position: fixed; top: 12px; left: 12px;
-            width: 48px; height: 48px;
-            background: rgba(10,10,10,0.75);
-            border: 1px solid rgba(255,255,255,0.15);
-            border-radius: 10px;
-            cursor: pointer; z-index: 600;
+        /* ═══════════════════════════════════════════
+           OFFICE IFRAME
+           ═══════════════════════════════════════════ */
+        #officeFrame {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+            z-index: 10;
             display: none;
-            align-items: center; justify-content: center;
-            flex-direction: column; gap: 5px;
-            transition: all 0.3s ease;
-            backdrop-filter: blur(8px);
+            background: var(--bg-dark);
         }
-        #menu-btn.visible { display: flex; }
-        #menu-btn:hover { background: rgba(30,30,30,0.9); border-color: rgba(255,255,255,0.3); }
-        #menu-btn span {
-            display: block; width: 22px; height: 2px;
-            background: var(--text-primary);
-            transition: all 0.3s ease;
-            border-radius: 1px;
-        }
-        #menu-btn.open span:nth-child(1) { transform: rotate(45deg) translate(5px, 5px); }
-        #menu-btn.open span:nth-child(2) { opacity: 0; }
-        #menu-btn.open span:nth-child(3) { transform: rotate(-45deg) translate(5px, -5px); }
+        #officeFrame.active { display: block; }
 
-        /* ════════════════════════════════════════════
-           SIDEBAR
-           ════════════════════════════════════════════ */
+        /* ═══════════════════════════════════════════
+           HAMBURGER BUTTON
+           ═══════════════════════════════════════════ */
+        #menuBtn {
+            position: fixed;
+            top: 12px;
+            left: 12px;
+            z-index: 500;
+            width: var(--btn-min);
+            height: var(--btn-min);
+            border-radius: 10px;
+            border: none;
+            background: rgba(20,20,30,0.85);
+            backdrop-filter: blur(8px);
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 5px;
+            padding: 0;
+            transition: background var(--transition-smooth), transform var(--transition-smooth);
+            box-shadow: 0 2px 12px rgba(0,0,0,0.4);
+        }
+        #menuBtn.visible { display: flex; }
+        #menuBtn:hover { background: rgba(40,40,60,0.95); transform: scale(1.08); }
+        #menuBtn .bar {
+            width: 22px;
+            height: 2px;
+            background: var(--text-primary);
+            border-radius: 2px;
+            transition: transform var(--transition-smooth), opacity var(--transition-smooth);
+        }
+        #menuBtn.open .bar:nth-child(1) { transform: rotate(45deg) translate(5px, 5px); }
+        #menuBtn.open .bar:nth-child(2) { opacity: 0; }
+        #menuBtn.open .bar:nth-child(3) { transform: rotate(-45deg) translate(5px, -5px); }
+
+        /* Tooltip for menu button */
+        #menuBtn::after {
+            content: attr(aria-label);
+            position: absolute;
+            left: calc(100% + 8px);
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(20,20,30,0.9);
+            color: var(--text-secondary);
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            font-family: inherit;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+        }
+        #menuBtn:hover::after { opacity: 1; }
+
+        /* ═══════════════════════════════════════════
+           SIDEBAR (DESKTOP)
+           ═══════════════════════════════════════════ */
         #sidebar {
-            position: fixed; top: 0; left: -340px;
-            width: var(--sidebar-width); height: 100%;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: var(--sidebar-width);
+            height: 100%;
+            z-index: 400;
             background: var(--sidebar-bg);
             backdrop-filter: blur(16px);
             border-right: 1px solid rgba(255,255,255,0.08);
-            z-index: 500;
-            transition: left 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-            overflow-y: auto; overflow-x: hidden;
-            display: flex; flex-direction: column;
-            padding: 20px 16px 30px;
-        }
-        #sidebar.open { left: 0; }
-
-        /* Sidebar backdrop for mobile */
-        #sidebar-backdrop {
-            position: fixed; inset: 0;
-            background: rgba(0,0,0,0.5);
-            z-index: 490;
-            opacity: 0; pointer-events: none;
-            transition: opacity 0.35s ease;
-        }
-        #sidebar-backdrop.visible { opacity: 1; pointer-events: auto; }
-
-        .sb-section { margin-bottom: 24px; }
-        .sb-title {
-            font-size: 0.65rem; color: #555;
-            text-transform: uppercase; letter-spacing: 3px;
-            margin-bottom: 12px; padding-left: 4px;
-        }
-
-        /* Theme switcher */
-        .sb-theme-row {
-            display: flex; align-items: center;
-            gap: 10px; padding: 10px 12px;
-            background: rgba(255,255,255,0.04);
-            border-radius: 8px; cursor: pointer;
-            transition: background 0.2s ease;
-            min-height: 48px;
-        }
-        .sb-theme-row:hover { background: rgba(255,255,255,0.08); }
-        .sb-theme-row .sb-theme-emoji { font-size: 1.3rem; }
-        .sb-theme-row .sb-theme-name { font-size: 0.85rem; flex: 1; }
-        .sb-theme-row .sb-gear { font-size: 1rem; color: #555; transition: transform 0.3s, color 0.3s; }
-        .sb-theme-row:hover .sb-gear { transform: rotate(60deg); color: #aaa; }
-
-        /* Theme picker dropdown */
-        .sb-theme-picker {
-            max-height: 0; overflow: hidden;
-            transition: max-height 0.35s ease;
-        }
-        .sb-theme-picker.open { max-height: 200px; }
-        .sb-theme-option {
-            display: flex; align-items: center; gap: 10px;
-            padding: 10px 16px;
-            cursor: pointer; font-size: 0.8rem;
-            border-radius: 6px;
-            transition: background 0.2s ease;
-            min-height: 44px;
-        }
-        .sb-theme-option:hover { background: rgba(255,255,255,0.06); }
-        .sb-theme-option.active { background: rgba(0,255,255,0.08); color: var(--accent-cyan); }
-
-        /* Agent list */
-        .sb-agent {
-            display: flex; align-items: center; gap: 10px;
-            padding: 10px 12px;
-            background: rgba(255,255,255,0.03);
-            border-radius: 8px;
-            margin-bottom: 6px;
-            cursor: pointer;
-            transition: background 0.2s ease;
-            min-height: 52px;
-        }
-        .sb-agent:hover { background: rgba(255,255,255,0.07); }
-        .sb-agent-sprite {
-            width: 32px; height: 32px;
-            background: rgba(255,255,255,0.08);
-            border-radius: 6px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 1.2rem;
-            image-rendering: pixelated;
-        }
-        .sb-agent-info { flex: 1; min-width: 0; }
-        .sb-agent-name { font-size: 0.8rem; font-weight: 600; }
-        .sb-agent-status { font-size: 0.65rem; color: #777; margin-top: 2px; }
-        .sb-agent-level { font-size: 0.65rem; color: var(--accent-cyan); white-space: nowrap; }
-
-        /* XP bar */
-        .sb-xp-bar {
-            width: 100%; height: 3px;
-            background: rgba(255,255,255,0.08);
-            border-radius: 2px; margin-top: 4px;
+            transform: translateX(-100%);
+            transition: transform var(--transition-smooth);
+            display: flex;
+            flex-direction: column;
             overflow: hidden;
         }
-        .sb-xp-fill {
-            height: 100%; border-radius: 2px;
-            background: var(--accent-cyan);
-            transition: width 0.5s ease;
+        #sidebar.open { transform: translateX(0); }
+
+        /* Backdrop overlay when sidebar open */
+        #sidebarBackdrop {
+            position: fixed;
+            inset: 0;
+            z-index: 350;
+            background: rgba(0,0,0,0.4);
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity var(--transition-smooth), visibility var(--transition-smooth);
+        }
+        #sidebarBackdrop.visible { opacity: 1; visibility: visible; }
+
+        .sidebar-header {
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            min-height: 60px;
+        }
+        .sidebar-title {
+            font-size: 1rem;
+            font-weight: 600;
+            letter-spacing: 1px;
+        }
+        .sidebar-close {
+            width: var(--btn-min);
+            height: var(--btn-min);
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            font-size: 1.4rem;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: background var(--transition-smooth), color var(--transition-smooth);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .sidebar-close:hover { background: rgba(255,255,255,0.08); color: var(--text-primary); }
+
+        .sidebar-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
         }
 
-        /* Agent details (expanded) */
-        .sb-agent-details {
-            max-height: 0; overflow: hidden;
-            transition: max-height 0.35s ease;
-            padding: 0 12px;
+        .sidebar-section-label {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-top: 8px;
         }
-        .sb-agent-details.open { max-height: 200px; padding-top: 8px; padding-bottom: 8px; }
-        .sb-agent-details p { font-size: 0.7rem; color: #777; line-height: 1.6; margin-bottom: 4px; }
-        .sb-agent-details .detail-label { color: #555; }
+
+        /* Agent list items */
+        .agent-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background var(--transition-smooth);
+            min-height: var(--btn-min);
+        }
+        .agent-item:hover { background: rgba(255,255,255,0.06); }
+
+        .agent-sprite {
+            width: 36px;
+            height: 36px;
+            border-radius: 6px;
+            background: rgba(255,255,255,0.08);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            flex-shrink: 0;
+        }
+
+        .agent-info {
+            flex: 1;
+            min-width: 0;
+        }
+        .agent-name {
+            font-size: 0.82rem;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .agent-role {
+            font-size: 0.68rem;
+            color: var(--text-muted);
+        }
+
+        .agent-level-bar {
+            width: 100%;
+            height: 4px;
+            background: rgba(255,255,255,0.08);
+            border-radius: 2px;
+            margin-top: 4px;
+            overflow: hidden;
+        }
+        .agent-level-fill {
+            height: 100%;
+            border-radius: 2px;
+            transition: width 0.6s ease;
+        }
+
+        /* Agent detail expand */
+        .agent-detail {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height var(--transition-smooth), padding var(--transition-smooth);
+            padding: 0 12px;
+            font-size: 0.72rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+        .agent-detail.expanded {
+            max-height: 200px;
+            padding: 8px 12px 12px;
+        }
 
         /* Create agent button */
-        .sb-create-btn {
-            display: flex; align-items: center; justify-content: center;
-            gap: 8px;
-            width: 100%; min-height: 48px;
-            background: rgba(34,204,68,0.12);
-            border: 2px dashed rgba(34,204,68,0.3);
-            border-radius: 10px;
-            color: var(--accent-green);
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.85rem; font-weight: 600;
+        .create-agent-btn {
+            min-height: var(--btn-min);
+            border: 2px dashed rgba(100,255,100,0.3);
+            background: transparent;
+            color: #66ff66;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 0.82rem;
             cursor: pointer;
-            transition: all 0.3s ease;
-            margin-top: 6px;
+            transition: background var(--transition-smooth), border-color var(--transition-smooth);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
         }
-        .sb-create-btn:hover {
-            background: rgba(34,204,68,0.2);
-            border-color: rgba(34,204,68,0.5);
-            transform: scale(1.02);
-        }
-        .sb-create-btn .plus { font-size: 1.4rem; }
+        .create-agent-btn:hover { background: rgba(100,255,100,0.08); border-color: rgba(100,255,100,0.5); }
 
-        /* Mission board */
-        .sb-mission {
-            display: flex; align-items: center; gap: 10px;
-            padding: 10px 12px;
-            background: rgba(255,255,255,0.03);
+        /* Switch theme button */
+        .switch-theme-btn {
+            min-height: var(--btn-min);
+            border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.04);
+            color: var(--text-secondary);
             border-radius: 8px;
-            margin-bottom: 6px;
-            min-height: 44px;
-        }
-        .sb-mission-icon { font-size: 1rem; }
-        .sb-mission-text { font-size: 0.75rem; flex: 1; }
-        .sb-mission-badge {
-            font-size: 0.6rem; padding: 2px 8px;
-            border-radius: 10px; font-weight: 600;
-        }
-        .badge-active { background: rgba(0,255,255,0.15); color: var(--accent-cyan); }
-        .badge-done { background: rgba(34,204,68,0.15); color: var(--accent-green); }
-        .badge-pending { background: rgba(255,255,0,0.12); color: #cccc44; }
-
-        /* Achievements */
-        .sb-achievement {
-            display: flex; align-items: center; gap: 10px;
-            padding: 8px 12px;
-            background: rgba(255,255,255,0.03);
-            border-radius: 8px;
-            margin-bottom: 6px;
-            min-height: 44px;
-        }
-        .sb-ach-icon { font-size: 1.1rem; }
-        .sb-ach-info { flex: 1; }
-        .sb-ach-name { font-size: 0.75rem; font-weight: 500; }
-        .sb-ach-desc { font-size: 0.6rem; color: #555; margin-top: 2px; }
-        .sb-ach-locked { opacity: 0.35; }
-
-        /* Tooltip for first visit */
-        .tooltip {
-            position: fixed;
-            background: rgba(0,255,255,0.12);
-            border: 1px solid rgba(0,255,255,0.3);
-            border-radius: 8px;
-            padding: 10px 16px;
+            font-family: inherit;
             font-size: 0.75rem;
-            color: var(--accent-cyan);
-            z-index: 700;
-            opacity: 0;
-            transition: opacity 0.4s ease, transform 0.4s ease;
-            pointer-events: none;
-            max-width: 220px;
-            line-height: 1.5;
+            cursor: pointer;
+            transition: background var(--transition-smooth), color var(--transition-smooth);
+            margin-top: auto;
+            padding: 12px;
         }
-        .tooltip.show { opacity: 1; pointer-events: auto; }
-        .tooltip::after {
-            content: ''; position: absolute;
-            width: 8px; height: 8px;
-            background: rgba(0,255,255,0.12);
-            border-right: 1px solid rgba(0,255,255,0.3);
-            border-bottom: 1px solid rgba(0,255,255,0.3);
-            transform: rotate(-45deg);
-            bottom: -5px; left: 20px;
-        }
+        .switch-theme-btn:hover { background: rgba(255,255,255,0.08); color: var(--text-primary); }
 
-        /* ════════════════════════════════════════════
-           MOBILE (bottom sheet sidebar)
-           ════════════════════════════════════════════ */
-        @media (max-width: 700px) {
-            .sel-cards { flex-direction: column; align-items: center; }
-            .sel-card { width: 92vw; max-width: 340px; }
-            .sel-logo { font-size: 2.2rem; }
+        /* ═══════════════════════════════════════════
+           FIRST-VISIT TOOLTIP OVERLAY
+           ═══════════════════════════════════════════ */
+        #welcomeTooltip {
+            position: fixed;
+            inset: 0;
+            z-index: 150;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0,0,0,0.6);
+        }
+        #welcomeTooltip.active { display: flex; }
+        .tooltip-box {
+            background: rgba(20,20,30,0.95);
+            border: 1px solid var(--accent-cyan);
+            border-radius: 12px;
+            padding: 28px 36px;
+            text-align: center;
+            max-width: 380px;
+            animation: tooltipIn 0.4s ease;
+        }
+        @keyframes tooltipIn {
+            from { opacity: 0; transform: scale(0.9) translateY(16px); }
+            to   { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        .tooltip-text {
+            font-size: 0.9rem;
+            line-height: 1.6;
+            margin-bottom: 20px;
+            color: var(--text-primary);
+        }
+        .tooltip-dismiss {
+            min-height: var(--btn-min);
+            min-width: 120px;
+            background: var(--accent-cyan);
+            color: #000;
+            border: none;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background var(--transition-smooth);
+        }
+        .tooltip-dismiss:hover { background: #33ffff; }
+
+        /* ═══════════════════════════════════════════
+           MOBILE BOTTOM SHEET (< 768px)
+           ═══════════════════════════════════════════ */
+        @media (max-width: 767px) {
+            .cards-grid {
+                flex-direction: column;
+                align-items: center;
+            }
+            .theme-card { width: min(300px, 90vw); }
 
             #sidebar {
-                top: auto; bottom: -100%; left: 0;
-                width: 100%; height: 75vh;
+                top: auto;
+                bottom: 0;
+                left: 0;
+                width: 100%;
+                height: auto;
+                max-height: 60vh;
                 border-right: none;
                 border-top: 1px solid rgba(255,255,255,0.08);
-                border-radius: 18px 18px 0 0;
-                transition: bottom 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+                border-radius: 16px 16px 0 0;
+                transform: translateY(100%);
             }
-            #sidebar.open { bottom: 0; left: 0; }
+            #sidebar.open { transform: translateY(0); }
 
-            #menu-btn { top: auto; bottom: 12px; left: 50%; transform: translateX(-50%); }
-            #menu-btn.open { bottom: calc(75vh + 12px); }
+            .drag-handle {
+                display: block !important;
+            }
+        }
+
+        /* Desktop: hide drag handle */
+        .drag-handle {
+            display: none;
+            width: 40px;
+            height: 5px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 3px;
+            margin: 10px auto 0;
+            flex-shrink: 0;
         }
     </style>
 </head>
 <body>
 
+<!-- Starfield background -->
+<div class="starfield"></div>
+
+<!-- ═══ FIRST-VISIT TOOLTIP ═══ -->
+<div id="welcomeTooltip">
+    <div class="tooltip-box">
+        <div class="tooltip-text">
+            👋 Welcome to SpawnKit!<br><br>
+            Pick your favorite office style below.<br>
+            Your AI team is waiting inside.
+        </div>
+        <button class="tooltip-dismiss" id="dismissTooltip">Got it!</button>
+    </div>
+</div>
+
 <!-- ═══ THEME SELECTOR ═══ -->
-<div id="theme-selector">
-    <div class="sel-header">
-        <div class="sel-logo">SPAWNKIT</div>
-        <div class="sel-tagline">Your AI team, visualized.</div>
-        <div class="sel-subtitle">Pick your office style</div>
+<div id="themeSelector">
+    <div class="starfield"></div>
+
+    <div class="selector-header">
+        <div class="selector-logo">SPAWNKIT</div>
+        <div class="selector-tagline">Your AI team, visualized.</div>
+        <div class="selector-subtitle">Choose your office style</div>
     </div>
 
-    <div class="sel-cards">
+    <div class="cards-grid" id="cardsGrid">
         <!-- GameBoy -->
-        <div class="sel-card" data-theme="gameboy">
-            <div class="sel-emoji">🎮</div>
-            <div class="sel-name">GameBoy</div>
-            <div class="sel-desc">Classic green pixel quests.<br>Like Pokémon, but it's your team!</div>
-            <div class="mini-preview prev-gb">
-                <div class="gb-label">▸ QUEST: Ship Feature</div>
-                <div class="gb-icon">⚔️</div>
-                <div class="gb-agent"></div>
-                <div class="gb-agent"></div>
-                <div class="gb-agent"></div>
-                <div class="gb-desk"></div>
-                <div class="gb-desk"></div>
-                <div class="gb-desk"></div>
-                <div class="gb-floor"></div>
-            </div>
-            <div class="sel-colors"></div>
-            <button class="sel-btn">Enter Office</button>
+        <div class="theme-card" data-theme="gameboy" tabindex="0" role="button" aria-label="Enter GameBoy Office">
+            <div class="card-emoji">🎮</div>
+            <div class="card-name">GameBoy</div>
+            <div class="card-desc">Pixel quests and 8-bit charm. Your agents explore a retro green world.</div>
+            <div class="card-swatch"></div>
+            <button class="card-btn">Enter Office</button>
         </div>
 
         <!-- GameBoy Color -->
-        <div class="sel-card" data-theme="gameboy-color">
-            <div class="sel-emoji">🌈</div>
-            <div class="sel-name">GameBoy Color</div>
-            <div class="sel-desc">Same Pokémon soul, now in full<br>vivid RGB pixel art!</div>
-            <div class="mini-preview prev-gbc">
-                <div class="gbc-label">▸ QUEST: Color Shift</div>
-                <div class="gbc-icon">🌟</div>
-                <div class="gbc-agent"></div>
-                <div class="gbc-agent"></div>
-                <div class="gbc-agent"></div>
-                <div class="gbc-desk"></div>
-                <div class="gbc-desk"></div>
-                <div class="gbc-desk"></div>
-                <div class="gbc-floor"></div>
-            </div>
-            <div class="sel-colors"></div>
-            <button class="sel-btn">Enter Office</button>
+        <div class="theme-card" data-theme="gameboy-color" tabindex="0" role="button" aria-label="Enter GameBoy Color Office">
+            <div class="card-emoji">🌈</div>
+            <div class="card-name">GameBoy Color</div>
+            <div class="card-desc">Same retro soul, now in vivid color. Upgraded pixels, same heart.</div>
+            <div class="card-swatch"></div>
+            <button class="card-btn">Enter Office</button>
         </div>
 
         <!-- The Sims -->
-        <div class="sel-card" data-theme="sims">
-            <div class="sel-emoji">💎</div>
-            <div class="sel-name">The Sims</div>
-            <div class="sel-desc">Isometric office with plumbobs<br>and needs bars — it's 2000 again!</div>
-            <div class="mini-preview prev-sims">
-                <div class="sims-title">🏠 Office</div>
-                <div class="plumbob">
-                    <div class="plumbob-top"></div>
-                    <div class="plumbob-bot"></div>
-                    <div class="plumbob-body"></div>
-                </div>
-                <div class="sims-bar-area">
-                    <div class="sims-bars"><div></div><div></div><div></div></div>
-                </div>
-            </div>
-            <div class="sel-colors"></div>
-            <button class="sel-btn">Enter Office</button>
+        <div class="theme-card" data-theme="sims" tabindex="0" role="button" aria-label="Enter The Sims Office">
+            <div class="card-emoji">💎</div>
+            <div class="card-name">The Sims</div>
+            <div class="card-desc">Isometric nostalgia with need bars and plumbobs. It's 2000 again.</div>
+            <div class="card-swatch"></div>
+            <button class="card-btn">Enter Office</button>
         </div>
     </div>
 </div>
 
-<!-- ═══ OFFICE VIEW ═══ -->
-<div id="office-view">
-    <iframe id="theme-iframe" title="Office Theme"></iframe>
+<!-- ═══ LOADING OVERLAY ═══ -->
+<div id="loadingOverlay">
+    <div class="spinner"></div>
+    <div class="loading-label" id="loadingLabel">Loading office...</div>
 </div>
 
-<!-- ═══ HAMBURGER BUTTON ═══ -->
-<button id="menu-btn" aria-label="Open menu">
-    <span></span><span></span><span></span>
+<!-- ═══ OFFICE IFRAME ═══ -->
+<iframe id="officeFrame" title="SpawnKit Office"></iframe>
+
+<!-- ═══ HAMBURGER MENU BUTTON ═══ -->
+<button id="menuBtn" aria-label="Open menu">
+    <span class="bar"></span>
+    <span class="bar"></span>
+    <span class="bar"></span>
 </button>
 
 <!-- ═══ SIDEBAR BACKDROP ═══ -->
-<div id="sidebar-backdrop"></div>
+<div id="sidebarBackdrop"></div>
 
 <!-- ═══ SIDEBAR ═══ -->
-<nav id="sidebar">
-    <!-- Theme Switcher -->
-    <div class="sb-section">
-        <div class="sb-title">Office Style</div>
-        <div class="sb-theme-row" id="sb-theme-toggle">
-            <span class="sb-theme-emoji" id="sb-cur-emoji">🎮</span>
-            <span class="sb-theme-name" id="sb-cur-name">GameBoy</span>
-            <span class="sb-gear">⚙️</span>
-        </div>
-        <div class="sb-theme-picker" id="sb-theme-picker">
-            <div class="sb-theme-option" data-theme="gameboy"><span>🎮</span> GameBoy</div>
-            <div class="sb-theme-option" data-theme="gameboy-color"><span>🌈</span> GameBoy Color</div>
-            <div class="sb-theme-option" data-theme="sims"><span>💎</span> The Sims</div>
-        </div>
+<div id="sidebar">
+    <div class="drag-handle"></div>
+    <div class="sidebar-header">
+        <div class="sidebar-title">🧠 Your Team</div>
+        <button class="sidebar-close" aria-label="Close menu">&times;</button>
     </div>
-
-    <!-- Agents -->
-    <div class="sb-section">
-        <div class="sb-title">Your Team</div>
-        <div id="agent-list"></div>
-        <button class="sb-create-btn" id="create-agent-btn">
-            <span class="plus">+</span> Add Team Member
+    <div class="sidebar-body" id="sidebarBody">
+        <div class="sidebar-section-label">Agents</div>
+        <div id="agentList">
+            <!-- Populated by JS -->
+        </div>
+        <button class="create-agent-btn" id="createAgentBtn">
+            <span style="font-size:1.2rem;">+</span> Create Agent
         </button>
+        <button class="switch-theme-btn" id="switchThemeBtn">🎨 Switch Office Style</button>
     </div>
-
-    <!-- Missions -->
-    <div class="sb-section">
-        <div class="sb-title">Mission Board</div>
-        <div id="mission-list"></div>
-    </div>
-
-    <!-- Achievements -->
-    <div class="sb-section">
-        <div class="sb-title">Achievements</div>
-        <div id="achievement-list"></div>
-    </div>
-</nav>
-
-<!-- ═══ LOADING OVERLAY ═══ -->
-<div id="loader">
-    <div class="loader-spinner"></div>
-    <div class="loader-text" id="loader-text">Opening your office…</div>
 </div>
 
-<!-- ═══ TOOLTIP ═══ -->
-<div class="tooltip" id="tooltip"></div>
-
 <script>
-(function () {
+/* ═══════════════════════════════════════════════════════
+   SpawnKit Dashboard — Main Controller
+   Zero innerHTML with user data. textContent only.
+   ═══════════════════════════════════════════════════════ */
+(function() {
     'use strict';
 
-    /* ─── CONFIG ─── */
-    const THEMES = {
-        gameboy:        { name: 'GameBoy',       emoji: '🎮', path: './office-gameboy/index.html' },
-        'gameboy-color':{ name: 'GameBoy Color', emoji: '🌈', path: './office-gameboy-color/index.html' },
-        sims:           { name: 'The Sims',      emoji: '💎', path: './office-sims/index.html' }
+    // ─── Config ─────────────────────────────────────
+    var THEMES = {
+        'gameboy':       { name: 'GameBoy',       path: './office-gameboy/index.html',       emoji: '🎮' },
+        'gameboy-color': { name: 'GameBoy Color', path: './office-gameboy-color/index.html', emoji: '🌈' },
+        'sims':          { name: 'The Sims',      path: './office-sims/index.html',          emoji: '💎' }
     };
 
-    const DEFAULT_AGENTS = [
-        { id: 'a1', name: 'Nova',     sprite: '🧙', level: 5,  xp: 72, maxXp: 100, status: 'Researching…' },
-        { id: 'a2', name: 'Cipher',   sprite: '🤖', level: 3,  xp: 40, maxXp: 80,  status: 'Writing code' },
-        { id: 'a3', name: 'Sentinel', sprite: '🛡️', level: 7,  xp: 88, maxXp: 120, status: 'On watch' },
-        { id: 'a4', name: 'Atlas',    sprite: '🗺️', level: 2,  xp: 15, maxXp: 60,  status: 'Idle' },
-        { id: 'a5', name: 'Spark',    sprite: '⚡', level: 4,  xp: 55, maxXp: 90,  status: 'Brainstorming' }
+    var STORAGE = {
+        theme:   'spawnkit-dashboard-theme',
+        sidebar: 'spawnkit-dashboard-sidebar',
+        visited: 'spawnkit-dashboard-visited'
+    };
+
+    // Sample agents (static data — no user input)
+    var AGENTS = [
+        { id: 'nova',     name: 'Nova',     role: 'Researcher',  emoji: '🔬', level: 0.8,  color: '#00ffff' },
+        { id: 'cipher',   name: 'Cipher',   role: 'Developer',   emoji: '💻', level: 0.65, color: '#ff00ff' },
+        { id: 'sentinel', name: 'Sentinel', role: 'Guardian',    emoji: '🛡️', level: 0.9,  color: '#ffff00' },
+        { id: 'atlas',    name: 'Atlas',    role: 'Navigator',   emoji: '🗺️', level: 0.5,  color: '#ff6644' },
+        { id: 'spark',    name: 'Spark',    role: 'Creative',    emoji: '✨', level: 0.35, color: '#66ff66' }
     ];
 
-    const MISSIONS = [
-        { icon: '⚔️', text: 'Build the landing page',    badge: 'active' },
-        { icon: '🔍', text: 'Research competitor tools',  badge: 'done' },
-        { icon: '📦', text: 'Prepare launch checklist',   badge: 'pending' }
-    ];
+    // ─── DOM refs ───────────────────────────────────
+    var $selector      = document.getElementById('themeSelector');
+    var $cardsGrid     = document.getElementById('cardsGrid');
+    var $loading       = document.getElementById('loadingOverlay');
+    var $loadingLabel  = document.getElementById('loadingLabel');
+    var $frame         = document.getElementById('officeFrame');
+    var $menuBtn       = document.getElementById('menuBtn');
+    var $sidebar       = document.getElementById('sidebar');
+    var $backdrop      = document.getElementById('sidebarBackdrop');
+    var $agentList     = document.getElementById('agentList');
+    var $createBtn     = document.getElementById('createAgentBtn');
+    var $switchBtn     = document.getElementById('switchThemeBtn');
+    var $sidebarClose  = document.querySelector('.sidebar-close');
+    var $welcomeTooltip = document.getElementById('welcomeTooltip');
+    var $dismissTooltip = document.getElementById('dismissTooltip');
 
-    const ACHIEVEMENTS = [
-        { icon: '🏆', name: 'First Steps',     desc: 'Open your office for the first time', locked: false },
-        { icon: '⭐', name: 'Team Builder',    desc: 'Have 5 team members',                 locked: false },
-        { icon: '🚀', name: 'Mission Master',  desc: 'Complete 10 missions',                locked: true },
-        { icon: '🎨', name: 'Style Shifter',   desc: 'Try all 3 office styles',             locked: true }
-    ];
+    // ─── State ──────────────────────────────────────
+    var currentTheme = null;
+    var sidebarOpen  = false;
+    var expandedAgent = null;
 
-    /* ─── ELEMENTS ─── */
-    const $ = id => document.getElementById(id);
-    const selectorEl   = $('theme-selector');
-    const officeEl     = $('office-view');
-    const iframeEl     = $('theme-iframe');
-    const loaderEl     = $('loader');
-    const loaderText   = $('loader-text');
-    const menuBtn      = $('menu-btn');
-    const sidebarEl    = $('sidebar');
-    const backdropEl   = $('sidebar-backdrop');
-    const themePicker  = $('sb-theme-picker');
-    const themeToggle  = $('sb-theme-toggle');
-    const curEmoji     = $('sb-cur-emoji');
-    const curName      = $('sb-cur-name');
-    const agentListEl  = $('agent-list');
-    const missionListEl= $('mission-list');
-    const achListEl    = $('achievement-list');
-    const tooltipEl    = $('tooltip');
-
-    let currentTheme = null;
-    let sidebarOpen  = false;
-    let pickerOpen   = false;
-    let expandedAgent = null;
-    let firstVisitTooltipShown = false;
-
-    /* ─── LOCAL STORAGE HELPERS ─── */
-    function loadAgents() {
-        try { return JSON.parse(localStorage.getItem('spawnkit-agents')) || null; }
-        catch { return null; }
+    // ─── Helpers ────────────────────────────────────
+    function safeGet(key) {
+        try { return localStorage.getItem(key); } catch(e) { return null; }
     }
-    function saveAgents(agents) {
-        localStorage.setItem('spawnkit-agents', JSON.stringify(agents));
-    }
-    function getAgents() {
-        return loadAgents() || [...DEFAULT_AGENTS];
+    function safeSet(key, val) {
+        try { localStorage.setItem(key, val); } catch(e) { /* quota or private */ }
     }
 
-    /* ─── INIT ─── */
-    function init() {
-        const saved = localStorage.getItem('spawnkit-theme');
-
-        if (saved && THEMES[saved]) {
-            // Returning visitor — go straight to office
-            selectorEl.classList.add('hidden');
-            loadTheme(saved);
-        } else {
-            // First visit — show selector with entrance animation
-            animateCards();
-        }
-
-        // Wire up sidebar controls
-        menuBtn.addEventListener('click', toggleSidebar);
-        backdropEl.addEventListener('click', closeSidebar);
-        themeToggle.addEventListener('click', togglePicker);
-        $('create-agent-btn').addEventListener('click', createAgent);
-
-        // Wire up selector cards
-        document.querySelectorAll('.sel-card').forEach(card => {
-            const btn = card.querySelector('.sel-btn');
-            card.addEventListener('click', e => { if (e.target !== btn) btn.click(); });
-            btn.addEventListener('click', e => {
-                e.stopPropagation();
-                selectTheme(card.dataset.theme);
-            });
-        });
-
-        // Wire up theme picker options
-        document.querySelectorAll('.sb-theme-option').forEach(opt => {
-            opt.addEventListener('click', () => switchTheme(opt.dataset.theme));
-        });
-
-        // Render sidebar data
-        renderAgents();
-        renderMissions();
-        renderAchievements();
+    // ─── Welcome tooltip ────────────────────────────
+    function maybeShowWelcome() {
+        if (safeGet(STORAGE.visited)) return;
+        $welcomeTooltip.classList.add('active');
     }
 
-    /* ─── CARD ENTRANCE ANIMATION ─── */
-    function animateCards() {
-        const cards = document.querySelectorAll('.sel-card');
-        cards.forEach((card, i) => {
-            setTimeout(() => card.classList.add('visible'), 200 + i * 180);
-        });
-    }
-
-    /* ─── THEME SELECTION (from selector screen) ─── */
-    function selectTheme(themeId) {
-        if (!THEMES[themeId]) return;
-        localStorage.setItem('spawnkit-theme', themeId);
-        // Track for "Style Shifter" achievement
-        trackThemeVisit(themeId);
-        // Fade out selector
-        selectorEl.classList.add('hidden');
-        setTimeout(() => { selectorEl.style.display = 'none'; }, 500);
-        loadTheme(themeId);
-    }
-
-    /* ─── LOAD THEME INTO IFRAME ─── */
-    function loadTheme(themeId) {
-        const theme = THEMES[themeId];
-        if (!theme) return;
-        currentTheme = themeId;
-
-        // Show loader
-        loaderText.textContent = `Opening ${theme.name} office…`;
-        loaderEl.classList.add('active');
-
-        // Update sidebar current theme
-        curEmoji.textContent = theme.emoji;
-        curName.textContent = theme.name;
-        updatePickerActive(themeId);
-
-        // Load iframe
-        iframeEl.src = theme.path;
-        iframeEl.onload = () => {
-            setTimeout(() => {
-                loaderEl.classList.remove('active');
-                officeEl.classList.add('active');
-                menuBtn.classList.add('visible');
-                // Show tooltip on first visit
-                if (!localStorage.getItem('spawnkit-tooltip-seen')) {
-                    showFirstVisitTooltip();
-                }
-            }, 600);
-        };
-        // Fallback: hide loader after 5s even if iframe doesn't fire load
-        setTimeout(() => {
-            if (loaderEl.classList.contains('active')) {
-                loaderEl.classList.remove('active');
-                officeEl.classList.add('active');
-                menuBtn.classList.add('visible');
-            }
-        }, 5000);
-    }
-
-    /* ─── SWITCH THEME (from sidebar) ─── */
-    function switchTheme(themeId) {
-        if (!THEMES[themeId] || themeId === currentTheme) return;
-        localStorage.setItem('spawnkit-theme', themeId);
-        trackThemeVisit(themeId);
-        closeSidebar();
-        pickerOpen = false;
-        themePicker.classList.remove('open');
-        loadTheme(themeId);
-    }
-
-    /* ─── SIDEBAR ─── */
-    function toggleSidebar() {
-        sidebarOpen ? closeSidebar() : openSidebar();
-    }
-    function openSidebar() {
-        sidebarOpen = true;
-        sidebarEl.classList.add('open');
-        menuBtn.classList.add('open');
-        backdropEl.classList.add('visible');
-        localStorage.setItem('spawnkit-sidebar', 'open');
-    }
-    function closeSidebar() {
-        sidebarOpen = false;
-        sidebarEl.classList.remove('open');
-        menuBtn.classList.remove('open');
-        backdropEl.classList.remove('visible');
-        localStorage.setItem('spawnkit-sidebar', 'closed');
-    }
-
-    /* ─── THEME PICKER ─── */
-    function togglePicker() {
-        pickerOpen = !pickerOpen;
-        themePicker.classList.toggle('open', pickerOpen);
-    }
-    function updatePickerActive(themeId) {
-        document.querySelectorAll('.sb-theme-option').forEach(opt => {
-            opt.classList.toggle('active', opt.dataset.theme === themeId);
-        });
-    }
-
-    /* ─── AGENTS ─── */
-    function renderAgents() {
-        const agents = getAgents();
-        agentListEl.innerHTML = '';
-        agents.forEach(agent => {
-            const row = document.createElement('div');
-            row.className = 'sb-agent';
-            row.innerHTML = `
-                <div class="sb-agent-sprite">${agent.sprite}</div>
-                <div class="sb-agent-info">
-                    <div class="sb-agent-name">${agent.name}</div>
-                    <div class="sb-agent-status">${agent.status}</div>
-                    <div class="sb-xp-bar"><div class="sb-xp-fill" style="width:${Math.round(agent.xp / agent.maxXp * 100)}%"></div></div>
-                </div>
-                <div class="sb-agent-level">Lv.${agent.level}</div>
-            `;
-            const details = document.createElement('div');
-            details.className = 'sb-agent-details';
-            details.id = 'details-' + agent.id;
-            details.innerHTML = `
-                <p><span class="detail-label">Experience:</span> ${agent.xp} / ${agent.maxXp}</p>
-                <p><span class="detail-label">Doing:</span> ${agent.status}</p>
-                <p><span class="detail-label">Joined:</span> Today</p>
-            `;
-            row.addEventListener('click', () => {
-                if (expandedAgent === agent.id) {
-                    details.classList.remove('open');
-                    expandedAgent = null;
-                } else {
-                    // Close previous
-                    if (expandedAgent) {
-                        const prev = document.getElementById('details-' + expandedAgent);
-                        if (prev) prev.classList.remove('open');
-                    }
-                    details.classList.add('open');
-                    expandedAgent = agent.id;
-                }
-            });
-            agentListEl.appendChild(row);
-            agentListEl.appendChild(details);
-        });
-    }
-
-    function createAgent() {
-        const agents = getAgents();
-        const sprites = ['🐱', '🐶', '🦊', '🐸', '🐼', '🦉', '🐙', '🦄', '🐲', '🤡'];
-        const names = ['Pixel', 'Glitch', 'Byte', 'Luna', 'Rex', 'Chip', 'Bloom', 'Echo', 'Dash', 'Fern'];
-        const statuses = ['Ready to help!', 'Just arrived', 'Warming up…', 'Standing by'];
-        const newAgent = {
-            id: 'a' + Date.now(),
-            name: names[Math.floor(Math.random() * names.length)],
-            sprite: sprites[Math.floor(Math.random() * sprites.length)],
-            level: 1,
-            xp: 0,
-            maxXp: 50,
-            status: statuses[Math.floor(Math.random() * statuses.length)]
-        };
-        agents.push(newAgent);
-        saveAgents(agents);
-        renderAgents();
-    }
-
-    /* ─── MISSIONS ─── */
-    function renderMissions() {
-        missionListEl.innerHTML = '';
-        MISSIONS.forEach(m => {
-            const el = document.createElement('div');
-            el.className = 'sb-mission';
-            el.innerHTML = `
-                <span class="sb-mission-icon">${m.icon}</span>
-                <span class="sb-mission-text">${m.text}</span>
-                <span class="sb-mission-badge badge-${m.badge}">${m.badge === 'done' ? '✓ Done' : m.badge === 'active' ? '● Active' : '◌ Soon'}</span>
-            `;
-            missionListEl.appendChild(el);
-        });
-    }
-
-    /* ─── ACHIEVEMENTS ─── */
-    function renderAchievements() {
-        achListEl.innerHTML = '';
-        ACHIEVEMENTS.forEach(a => {
-            const el = document.createElement('div');
-            el.className = 'sb-achievement' + (a.locked ? ' sb-ach-locked' : '');
-            el.innerHTML = `
-                <span class="sb-ach-icon">${a.locked ? '🔒' : a.icon}</span>
-                <div class="sb-ach-info">
-                    <div class="sb-ach-name">${a.name}</div>
-                    <div class="sb-ach-desc">${a.desc}</div>
-                </div>
-            `;
-            achListEl.appendChild(el);
-        });
-    }
-
-    /* ─── TRACK THEME VISITS (achievement) ─── */
-    function trackThemeVisit(themeId) {
-        let visited = [];
-        try { visited = JSON.parse(localStorage.getItem('spawnkit-themes-visited')) || []; } catch {}
-        if (!visited.includes(themeId)) {
-            visited.push(themeId);
-            localStorage.setItem('spawnkit-themes-visited', JSON.stringify(visited));
-        }
-        // Unlock "Style Shifter" if all 3 visited
-        if (visited.length >= 3) {
-            const ach = ACHIEVEMENTS.find(a => a.name === 'Style Shifter');
-            if (ach) ach.locked = false;
-            renderAchievements();
-        }
-    }
-
-    /* ─── FIRST-VISIT TOOLTIP ─── */
-    function showFirstVisitTooltip() {
-        if (firstVisitTooltipShown) return;
-        firstVisitTooltipShown = true;
-        tooltipEl.textContent = '👋 Tap this button anytime to see your team, switch styles, or check missions!';
-        const btnRect = menuBtn.getBoundingClientRect();
-        // Position tooltip near hamburger
-        const isMobile = window.innerWidth <= 700;
-        if (isMobile) {
-            tooltipEl.style.bottom = (window.innerHeight - btnRect.top + 10) + 'px';
-            tooltipEl.style.left = '50%';
-            tooltipEl.style.transform = 'translateX(-50%)';
-            tooltipEl.style.top = 'auto';
-        } else {
-            tooltipEl.style.top = (btnRect.bottom + 10) + 'px';
-            tooltipEl.style.left = (btnRect.left) + 'px';
-        }
-        tooltipEl.classList.add('show');
-        setTimeout(() => {
-            tooltipEl.classList.remove('show');
-            localStorage.setItem('spawnkit-tooltip-seen', '1');
-        }, 5000);
-        // Also dismiss on click anywhere
-        document.addEventListener('click', function dismiss() {
-            tooltipEl.classList.remove('show');
-            localStorage.setItem('spawnkit-tooltip-seen', '1');
-            document.removeEventListener('click', dismiss);
-        }, { once: true });
-    }
-
-    /* ─── KEYBOARD SHORTCUT ─── */
-    document.addEventListener('keydown', e => {
-        if (e.key === 'Escape' && sidebarOpen) closeSidebar();
-        if (e.key === 'm' && !sidebarOpen && officeEl.classList.contains('active')) openSidebar();
+    $dismissTooltip.addEventListener('click', function() {
+        $welcomeTooltip.classList.remove('active');
+        safeSet(STORAGE.visited, 'true');
     });
 
-    /* ─── GO ─── */
-    document.addEventListener('DOMContentLoaded', init);
+    // ─── Card entrance animation ────────────────────
+    function animateCards() {
+        var cards = $cardsGrid.querySelectorAll('.theme-card');
+        cards.forEach(function(card, i) {
+            setTimeout(function() { card.classList.add('visible'); }, 150 * i);
+        });
+    }
+
+    // ─── Theme selection ────────────────────────────
+    function selectTheme(themeId) {
+        if (!THEMES[themeId]) return;
+        currentTheme = themeId;
+        safeSet(STORAGE.theme, themeId);
+
+        var t = THEMES[themeId];
+        $loadingLabel.textContent = 'Loading ' + t.name + ' Office\u2026';
+        $loading.classList.add('active');
+
+        setTimeout(function() {
+            loadOffice(themeId);
+        }, 600);
+    }
+
+    function loadOffice(themeId) {
+        var t = THEMES[themeId];
+        if (!t) return;
+
+        $frame.src = t.path;
+        $frame.classList.add('active');
+        $selector.classList.add('hidden');
+
+        $frame.addEventListener('load', function onLoad() {
+            $frame.removeEventListener('load', onLoad);
+            $loading.classList.remove('active');
+            $menuBtn.classList.add('visible');
+        });
+
+        // Fallback: hide loading after 8s even if load event doesn't fire
+        setTimeout(function() {
+            $loading.classList.remove('active');
+            $menuBtn.classList.add('visible');
+        }, 8000);
+    }
+
+    // ─── Card click handlers ────────────────────────
+    $cardsGrid.addEventListener('click', function(e) {
+        var card = e.target.closest('.theme-card');
+        if (!card) return;
+        selectTheme(card.getAttribute('data-theme'));
+    });
+    $cardsGrid.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+            var card = e.target.closest('.theme-card');
+            if (!card) return;
+            e.preventDefault();
+            selectTheme(card.getAttribute('data-theme'));
+        }
+    });
+
+    // ─── Sidebar ────────────────────────────────────
+    function openSidebar() {
+        sidebarOpen = true;
+        $sidebar.classList.add('open');
+        $backdrop.classList.add('visible');
+        $menuBtn.classList.add('open');
+        safeSet(STORAGE.sidebar, 'open');
+    }
+
+    function closeSidebar() {
+        sidebarOpen = false;
+        $sidebar.classList.remove('open');
+        $backdrop.classList.remove('visible');
+        $menuBtn.classList.remove('open');
+        safeSet(STORAGE.sidebar, 'closed');
+    }
+
+    function toggleSidebar() {
+        if (sidebarOpen) closeSidebar(); else openSidebar();
+    }
+
+    $menuBtn.addEventListener('click', toggleSidebar);
+    $backdrop.addEventListener('click', closeSidebar);
+    $sidebarClose.addEventListener('click', closeSidebar);
+
+    // Close sidebar on Escape
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && sidebarOpen) closeSidebar();
+    });
+
+    // ─── Populate agent list ────────────────────────
+    function renderAgents() {
+        // Clear list
+        while ($agentList.firstChild) $agentList.removeChild($agentList.firstChild);
+
+        AGENTS.forEach(function(agent) {
+            // Item container
+            var item = document.createElement('div');
+            item.className = 'agent-item';
+            item.setAttribute('tabindex', '0');
+            item.setAttribute('role', 'button');
+            item.setAttribute('aria-label', agent.name + ', ' + agent.role);
+
+            // Sprite
+            var sprite = document.createElement('div');
+            sprite.className = 'agent-sprite';
+            sprite.textContent = agent.emoji;
+            item.appendChild(sprite);
+
+            // Info
+            var info = document.createElement('div');
+            info.className = 'agent-info';
+
+            var nameEl = document.createElement('div');
+            nameEl.className = 'agent-name';
+            nameEl.textContent = agent.name;
+            info.appendChild(nameEl);
+
+            var roleEl = document.createElement('div');
+            roleEl.className = 'agent-role';
+            roleEl.textContent = agent.role;
+            info.appendChild(roleEl);
+
+            var barOuter = document.createElement('div');
+            barOuter.className = 'agent-level-bar';
+            var barFill = document.createElement('div');
+            barFill.className = 'agent-level-fill';
+            barFill.style.width = Math.round(agent.level * 100) + '%';
+            barFill.style.background = agent.color;
+            barOuter.appendChild(barFill);
+            info.appendChild(barOuter);
+
+            item.appendChild(info);
+
+            // Detail section (expandable)
+            var detail = document.createElement('div');
+            detail.className = 'agent-detail';
+            detail.id = 'detail-' + agent.id;
+            detail.textContent = agent.name + ' is your ' + agent.role.toLowerCase()
+                + '. Level progress: ' + Math.round(agent.level * 100) + '%.';
+
+            $agentList.appendChild(item);
+            $agentList.appendChild(detail);
+
+            // Toggle expand
+            function toggleDetail() {
+                var isExpanded = detail.classList.contains('expanded');
+                // Collapse any other
+                if (expandedAgent && expandedAgent !== detail) {
+                    expandedAgent.classList.remove('expanded');
+                }
+                if (isExpanded) {
+                    detail.classList.remove('expanded');
+                    expandedAgent = null;
+                } else {
+                    detail.classList.add('expanded');
+                    expandedAgent = detail;
+                }
+            }
+
+            item.addEventListener('click', toggleDetail);
+            item.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleDetail(); }
+            });
+        });
+    }
+
+    // ─── Create agent (placeholder) ─────────────────
+    $createBtn.addEventListener('click', function() {
+        // Show a brief feedback
+        $createBtn.textContent = '✅ Coming soon!';
+        setTimeout(function() {
+            $createBtn.textContent = '';
+            var span = document.createElement('span');
+            span.style.fontSize = '1.2rem';
+            span.textContent = '+';
+            $createBtn.appendChild(span);
+            $createBtn.appendChild(document.createTextNode(' Create Agent'));
+        }, 1500);
+    });
+
+    // ─── Switch theme ───────────────────────────────
+    $switchBtn.addEventListener('click', function() {
+        closeSidebar();
+        $frame.classList.remove('active');
+        $frame.src = 'about:blank';
+        $selector.classList.remove('hidden');
+        $menuBtn.classList.remove('visible');
+        currentTheme = null;
+        // Don't clear localStorage — let them pick a new one
+    });
+
+    // ─── Init ───────────────────────────────────────
+    function init() {
+        renderAgents();
+
+        // Check for saved theme
+        var saved = safeGet(STORAGE.theme);
+        if (saved && THEMES[saved]) {
+            selectTheme(saved);
+        } else {
+            // First visit flow
+            animateCards();
+            maybeShowWelcome();
+        }
+    }
+
+    // Kick off
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+
 })();
 </script>
 </body>
