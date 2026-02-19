@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FleetKit — Your AI Team, Visualized</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=JetBrains+Mono:wght@400;700&display=swap');
+:root{
+  --gb-dark:#0f380f;--gb-mid:#306230;--gb-light:#8bac0f;--gb-lightest:#9bbc0f;
+  --cyber-bg:#0a0a1a;--cyber-pink:#ff2d75;--cyber-cyan:#00f0ff;--cyber-yellow:#f0e000;
+  --exec-bg:#1a1a2e;--exec-gold:#d4a853;--exec-slate:#e2e8f0;
+}
+html,body{width:100%;height:100%;overflow:hidden;background:#000;font-family:'Press Start 2P',monospace}
+#stage{position:relative;width:100%;height:100%;overflow:hidden}
+
+/* CRT Effect */
+#crt-overlay{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:100}
+#crt-overlay::before{content:'';position:absolute;top:0;left:0;width:100%;height:100%;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.15) 2px,rgba(0,0,0,0.15) 4px);z-index:100}
+#crt-overlay::after{content:'';position:absolute;top:0;left:0;width:100%;height:100%;
+  background:radial-gradient(ellipse at center,transparent 60%,rgba(0,0,0,0.4) 100%);z-index:100}
+
+/* Scene containers */
+.scene{position:absolute;top:0;left:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;
+  opacity:0;transition:opacity 0.8s ease;pointer-events:none;flex-direction:column}
+.scene.active{opacity:1;pointer-events:auto}
+
+/* ===== SCENE 1: BOOT ===== */
+#scene1{background:var(--gb-dark);color:var(--gb-lightest);text-align:center}
+#boot-text{font-size:clamp(10px,2.5vw,18px);line-height:2.2;white-space:pre;text-shadow:0 0 10px var(--gb-light)}
+#boot-text .line{opacity:0;transform:translateY(8px);transition:opacity 0.3s,transform 0.3s}
+#boot-text .line.show{opacity:1;transform:translateY(0)}
+#progress-bar{margin-top:16px;font-size:clamp(8px,2vw,14px);opacity:0;transition:opacity 0.4s}
+#progress-bar.show{opacity:1}
+#press-start{margin-top:24px;font-size:clamp(12px,3vw,20px);opacity:0;animation:none}
+#press-start.show{opacity:1;animation:blink 0.8s step-end infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+
+/* ===== SCENE 2: OFFICE ===== */
+#scene2{background:var(--gb-dark);flex-direction:column;gap:0;padding:0}
+#office-container{position:relative;width:100%;height:100%;overflow:hidden}
+#office-floor{position:absolute;bottom:0;left:0;width:100%;height:35%;
+  background:repeating-linear-gradient(90deg,var(--gb-mid) 0px,var(--gb-mid) 48px,var(--gb-dark) 48px,var(--gb-dark) 50px);
+  border-top:3px solid var(--gb-light)}
+.desk{position:absolute;bottom:36%;width:clamp(40px,8vw,60px);height:clamp(24px,4vw,32px);
+  background:var(--gb-mid);border:2px solid var(--gb-light);border-radius:2px}
+.desk::after{content:'';position:absolute;top:-8px;left:50%;transform:translateX(-50%);
+  width:clamp(20px,4vw,30px);height:8px;background:var(--gb-mid);border:1px solid var(--gb-light);border-bottom:0;border-radius:2px 2px 0 0}
+.desk:nth-child(1){left:8%}.desk:nth-child(2){left:26%}.desk:nth-child(3){left:44%}.desk:nth-child(4){left:62%}.desk:nth-child(5){left:78%}
+
+.agent{position:absolute;bottom:calc(36% + 34px);opacity:0;transform:translateY(40px);transition:all 0.6s cubic-bezier(.34,1.56,.64,1)}
+.agent.entered{opacity:1;transform:translateY(0)}
+.agent-body{width:clamp(16px,3vw,24px);height:clamp(24px,4.5vw,36px);position:relative;margin:0 auto}
+.agent-head{width:clamp(12px,2.2vw,18px);height:clamp(12px,2.2vw,18px);background:var(--gb-lightest);
+  border-radius:3px;margin:0 auto 2px;position:relative}
+.agent-head::before,.agent-head::after{content:'';position:absolute;top:4px;width:3px;height:3px;background:var(--gb-dark);border-radius:1px}
+.agent-head::before{left:3px}.agent-head::after{right:3px}
+.agent-torso{width:clamp(14px,2.6vw,20px);height:clamp(10px,1.8vw,14px);background:var(--gb-light);
+  margin:0 auto;border-radius:1px}
+.agent-name{font-size:clamp(5px,1.1vw,8px);color:var(--gb-lightest);text-align:center;margin-top:4px;
+  white-space:nowrap;text-shadow:0 0 6px var(--gb-light);letter-spacing:0.5px}
+.agent:nth-child(1) .agent-torso{background:#7b9b0f}
+.agent:nth-child(2) .agent-torso{background:#5b8b2f}
+.agent:nth-child(3) .agent-torso{background:#9bbc0f}
+.agent:nth-child(4) .agent-torso{background:#6ba30f}
+.agent:nth-child(5) .agent-torso{background:#4b7b0f}
+
+#team-ready{position:absolute;bottom:8%;left:50%;transform:translateX(-50%);
+  font-size:clamp(10px,2.2vw,16px);color:var(--gb-lightest);background:var(--gb-mid);
+  padding:clamp(8px,1.5vw,14px) clamp(16px,3vw,28px);border:2px solid var(--gb-light);border-radius:4px;
+  opacity:0;transition:opacity 0.6s;text-shadow:0 0 8px var(--gb-light);white-space:nowrap}
+#team-ready.show{opacity:1}
+#office-hud{position:absolute;top:12px;left:12px;right:12px;display:flex;justify-content:space-between;
+  font-size:clamp(6px,1.3vw,10px);color:var(--gb-lightest);opacity:0;transition:opacity 0.4s}
+#office-hud.show{opacity:0.7}
+
+/* ===== SCENE 3: MISSION ===== */
+#scene3{background:linear-gradient(180deg,#0a0a1a 0%,#121230 100%);flex-direction:column;gap:20px}
+#cmd-palette{width:min(90%,600px);background:#16162a;border:2px solid var(--cyber-cyan);border-radius:12px;
+  box-shadow:0 0 30px rgba(0,240,255,0.2),inset 0 0 30px rgba(0,240,255,0.05);overflow:hidden}
+#cmd-header{padding:12px 16px;border-bottom:1px solid rgba(0,240,255,0.2);display:flex;align-items:center;gap:8px;
+  font-size:clamp(8px,1.5vw,12px);color:var(--cyber-cyan)}
+#cmd-header kbd{background:rgba(0,240,255,0.15);padding:2px 8px;border-radius:4px;border:1px solid rgba(0,240,255,0.3);
+  font-family:'Press Start 2P',monospace;font-size:clamp(6px,1.2vw,10px)}
+#cmd-input{padding:16px;font-family:'JetBrains Mono',monospace;font-size:clamp(10px,2vw,16px);
+  color:#fff;position:relative}
+#cmd-cursor{display:inline-block;width:2px;height:1.2em;background:var(--cyber-cyan);
+  animation:blink 0.6s step-end infinite;vertical-align:text-bottom;margin-left:2px}
+#cmd-suggestions{padding:0 16px 12px;opacity:0;transition:opacity 0.4s}
+#cmd-suggestions.show{opacity:1}
+.suggestion{padding:8px 12px;font-family:'JetBrains Mono',monospace;font-size:clamp(7px,1.3vw,11px);
+  color:rgba(255,255,255,0.5);border-radius:6px;margin-top:4px;transition:all 0.3s}
+.suggestion.highlight{background:rgba(0,240,255,0.1);color:var(--cyber-cyan);border-left:3px solid var(--cyber-cyan);padding-left:12px}
+#launch-btn{margin:0 16px 16px;padding:12px;text-align:center;background:linear-gradient(135deg,var(--cyber-pink),#8b00ff);
+  border-radius:8px;font-family:'Press Start 2P',monospace;font-size:clamp(8px,1.5vw,12px);color:#fff;
+  opacity:0;transform:scale(0.95);transition:all 0.4s;cursor:pointer}
+#launch-btn.show{opacity:1;transform:scale(1);box-shadow:0 0 20px rgba(255,45,117,0.4)}
+#launch-btn.glow{animation:btnGlow 1s ease infinite}
+@keyframes btnGlow{0%,100%{box-shadow:0 0 20px rgba(255,45,117,0.4)}50%{box-shadow:0 0 40px rgba(255,45,117,0.7),0 0 60px rgba(139,0,255,0.3)}}
+
+#agent-reactions{position:absolute;bottom:10%;left:50%;transform:translateX(-50%);display:flex;gap:clamp(12px,3vw,24px)}
+.bubble{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:12px;
+  padding:8px 14px;font-size:clamp(7px,1.3vw,11px);color:#fff;opacity:0;transform:translateY(16px);
+  transition:all 0.4s cubic-bezier(.34,1.56,.64,1);white-space:nowrap;backdrop-filter:blur(4px)}
+.bubble.show{opacity:1;transform:translateY(0)}
+.bubble::after{content:'';position:absolute;bottom:-6px;left:50%;transform:translateX(-50%);
+  border:6px solid transparent;border-top-color:rgba(255,255,255,0.2)}
+
+/* ===== SCENE 4: ACHIEVEMENT ===== */
+#scene4{background:linear-gradient(135deg,#1a0a2e,#0a1a2e);flex-direction:column;gap:20px}
+#toast{background:linear-gradient(135deg,#2d1b4e,#1b2d4e);border:2px solid var(--cyber-yellow);
+  border-radius:12px;padding:clamp(12px,2.5vw,24px) clamp(20px,4vw,40px);
+  box-shadow:0 0 40px rgba(240,224,0,0.15);text-align:center;
+  transform:translateX(120%);transition:transform 0.6s cubic-bezier(.34,1.56,.64,1);max-width:90%}
+#toast.show{transform:translateX(0)}
+#toast h2{font-size:clamp(12px,2.5vw,20px);color:var(--cyber-yellow);margin-bottom:8px;
+  text-shadow:0 0 12px rgba(240,224,0,0.5)}
+#toast p{font-size:clamp(8px,1.5vw,14px);color:rgba(255,255,255,0.8)}
+
+#streak{font-size:clamp(14px,3vw,24px);color:#ff6b35;opacity:0;transform:scale(0.5);
+  transition:all 0.5s cubic-bezier(.34,1.56,.64,1);text-shadow:0 0 15px rgba(255,107,53,0.5)}
+#streak.show{opacity:1;transform:scale(1)}
+
+#xp-bar-container{width:min(80%,400px);height:clamp(16px,2.5vw,24px);background:rgba(255,255,255,0.1);
+  border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,0.2)}
+#xp-bar{height:100%;width:0%;background:linear-gradient(90deg,var(--cyber-cyan),var(--cyber-pink));
+  border-radius:12px;transition:width 2s cubic-bezier(.25,.46,.45,.94);position:relative}
+#xp-bar::after{content:'';position:absolute;top:0;left:0;right:0;height:50%;
+  background:linear-gradient(180deg,rgba(255,255,255,0.3),transparent);border-radius:12px 12px 0 0}
+#xp-label{font-size:clamp(6px,1.2vw,10px);color:rgba(255,255,255,0.6);margin-top:6px;text-align:center}
+
+/* Confetti */
+.confetti{position:absolute;width:8px;height:8px;opacity:0}
+@keyframes confettiFall{0%{transform:translateY(-100vh) rotate(0deg);opacity:1}
+  100%{transform:translateY(100vh) rotate(720deg);opacity:0}}
+
+/* ===== SCENE 5: CTA ===== */
+#scene5{background:linear-gradient(135deg,var(--gb-dark),#0a1a0a);flex-direction:column;gap:clamp(12px,3vw,24px);text-align:center}
+#cta-logo{font-size:clamp(24px,6vw,48px);color:var(--gb-lightest);letter-spacing:8px;
+  text-shadow:0 0 30px var(--gb-light),0 0 60px rgba(139,188,15,0.3);
+  opacity:0;transform:scale(0.8);transition:all 1s cubic-bezier(.34,1.56,.64,1)}
+#cta-logo.show{opacity:1;transform:scale(1)}
+#cta-tagline{font-size:clamp(8px,1.8vw,14px);color:rgba(155,188,15,0.8);opacity:0;transition:opacity 0.8s;
+  line-height:2;font-family:'JetBrains Mono','Press Start 2P',monospace}
+#cta-tagline.show{opacity:1}
+#cta-price{font-size:clamp(10px,2.2vw,18px);color:var(--gb-lightest);opacity:0;transition:opacity 0.8s}
+#cta-price.show{opacity:1}
+#cta-price span{color:var(--cyber-cyan);font-size:clamp(14px,3vw,24px)}
+#cta-btn{display:inline-block;padding:clamp(10px,2vw,16px) clamp(24px,5vw,48px);
+  background:linear-gradient(135deg,var(--gb-light),#6ba30f);border:3px solid var(--gb-lightest);
+  border-radius:8px;font-family:'Press Start 2P',monospace;font-size:clamp(10px,2vw,16px);
+  color:var(--gb-dark);cursor:pointer;opacity:0;transform:translateY(20px);
+  transition:all 0.6s cubic-bezier(.34,1.56,.64,1);text-decoration:none}
+#cta-btn.show{opacity:1;transform:translateY(0);animation:ctaPulse 2s ease infinite}
+@keyframes ctaPulse{0%,100%{box-shadow:0 0 20px rgba(139,188,15,0.3)}50%{box-shadow:0 0 40px rgba(139,188,15,0.6),0 0 60px rgba(139,188,15,0.2)}}
+#cta-sub{font-size:clamp(6px,1.1vw,9px);color:rgba(155,188,15,0.5);opacity:0;transition:opacity 0.8s;margin-top:-8px}
+#cta-sub.show{opacity:1}
+
+/* Replay button */
+#replay{position:fixed;top:12px;right:12px;z-index:200;background:rgba(255,255,255,0.1);
+  border:1px solid rgba(255,255,255,0.3);border-radius:8px;padding:6px 14px;
+  font-family:'Press Start 2P',monospace;font-size:8px;color:rgba(255,255,255,0.6);
+  cursor:pointer;backdrop-filter:blur(4px);transition:all 0.3s;opacity:0}
+#replay:hover{background:rgba(255,255,255,0.2);color:#fff}
+#replay.show{opacity:1}
+
+/* Progress indicator */
+#progress{position:fixed;bottom:0;left:0;height:3px;background:linear-gradient(90deg,var(--gb-light),var(--cyber-cyan),var(--cyber-pink));
+  z-index:200;transition:width 0.1s linear;width:0%}
+
+/* Scene indicator dots */
+#dots{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);display:flex;gap:8px;z-index:200}
+.dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,0.2);transition:all 0.4s}
+.dot.active{background:var(--gb-lightest);box-shadow:0 0 8px var(--gb-light)}
+
+@media(max-width:480px){
+  .desk{bottom:38%}.agent{bottom:calc(38% + 28px)}
+  #agent-reactions{flex-wrap:wrap;justify-content:center;gap:8px;width:90%}
+}
+</style>
+</head>
+<body>
+<div id="crt-overlay"></div>
+<div id="stage">
+  <!-- Scene 1: Boot -->
+  <div id="scene1" class="scene active">
+    <div id="boot-text">
+      <div class="line">FLEETKIT™</div>
+      <div class="line">GAME BOY</div>
+      <div class="line">    ©2026 OpenClaw</div>
+      <div class="line">&nbsp;</div>
+      <div class="line">Loading...</div>
+    </div>
+    <div id="progress-bar"></div>
+    <div id="press-start">PRESS START</div>
+  </div>
+
+  <!-- Scene 2: Office -->
+  <div id="scene2" class="scene">
+    <div id="office-container">
+      <div id="office-hud">
+        <span>LVL 12 ❤️❤️❤️</span>
+        <span>FLEET: 5/5</span>
+        <span>⭐ 2,847 XP</span>
+      </div>
+      <div class="desk"></div><div class="desk"></div><div class="desk"></div><div class="desk"></div><div class="desk"></div>
+      <div class="agent" style="left:9%"><div class="agent-body"><div class="agent-head"></div><div class="agent-torso"></div></div><div class="agent-name">TRADER</div></div>
+      <div class="agent" style="left:27%"><div class="agent-body"><div class="agent-head"></div><div class="agent-torso"></div></div><div class="agent-name">HACKER</div></div>
+      <div class="agent" style="left:45%"><div class="agent-body"><div class="agent-head"></div><div class="agent-torso"></div></div><div class="agent-name">BARD</div></div>
+      <div class="agent" style="left:63%"><div class="agent-body"><div class="agent-head"></div><div class="agent-torso"></div></div><div class="agent-name">SCRIBE</div></div>
+      <div class="agent" style="left:79%"><div class="agent-body"><div class="agent-head"></div><div class="agent-torso"></div></div><div class="agent-name">WATCHER</div></div>
+      <div id="team-ready">Your AI team is ready. 🎮</div>
+      <div id="office-floor"></div>
+    </div>
+  </div>
+
+  <!-- Scene 3: Mission -->
+  <div id="scene3" class="scene">
+    <div id="cmd-palette">
+      <div id="cmd-header"><kbd>Q</kbd> Command Palette</div>
+      <div id="cmd-input"><span id="typed-text"></span><span id="cmd-cursor"></span></div>
+      <div id="cmd-suggestions">
+        <div class="suggestion">→ Build a landing page</div>
+        <div class="suggestion">→ Build a landing page for our product</div>
+        <div class="suggestion">→ Build a landing page for our product launch</div>
+      </div>
+      <div id="launch-btn">🚀 Launch Mission</div>
+    </div>
+    <div id="agent-reactions">
+      <div class="bubble">On it! 💪</div>
+      <div class="bubble">Analyzing... 🔍</div>
+      <div class="bubble">Deploying! 🚀</div>
+    </div>
+  </div>
+
+  <!-- Scene 4: Achievement -->
+  <div id="scene4" class="scene">
+    <div id="toast">
+      <h2>🏆 QUEST COMPLETE!</h2>
+      <p>Landing page deployed • +20 pts</p>
+    </div>
+    <div id="streak">🔥 5-day streak!</div>
+    <div id="xp-bar-container"><div id="xp-bar"></div></div>
+    <div id="xp-label">2,847 / 3,000 XP — Level 12</div>
+  </div>
+
+  <!-- Scene 5: CTA -->
+  <div id="scene5" class="scene">
+    <div id="cta-logo">FLEETKIT</div>
+    <div id="cta-tagline">Your AI team, visualized.<br>Built for builders who ship.</div>
+    <div id="cta-price"><span>$149</span> once. No subscriptions. Forever.</div>
+    <a id="cta-btn" href="https://fleetkit.dev" target="_blank">▶ Get FleetKit</a>
+    <div id="cta-sub">30-day money-back guarantee • 30,000 lines of pixel magic</div>
+  </div>
+</div>
+
+<button id="replay" onclick="restart()">↻ Replay</button>
+<div id="progress"></div>
+<div id="dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+
+<script>
+const TOTAL=45000,scenes=[
+  {el:'scene1',start:0,end:8000},
+  {el:'scene2',start:8000,end:18000},
+  {el:'scene3',start:18000,end:28000},
+  {el:'scene4',start:28000,end:38000},
+  {el:'scene5',start:38000,end:45000}
+];
+let startTime,rafId,confettiEls=[];
+
+function setScene(idx){
+  document.querySelectorAll('.scene').forEach(s=>s.classList.remove('active'));
+  document.getElementById(scenes[idx].el).classList.add('active');
+  document.querySelectorAll('.dot').forEach((d,i)=>d.classList.toggle('active',i===idx));
+}
+
+// Scene 1: Boot sequence
+function runScene1(t){
+  const lines=document.querySelectorAll('#boot-text .line');
+  const delays=[400,1000,1600,2200,2800];
+  delays.forEach((d,i)=>{if(t>d&&lines[i])lines[i].classList.add('show')});
+  
+  const pb=document.getElementById('progress-bar');
+  if(t>3200){
+    pb.classList.add('show');
+    const pct=Math.min(100,Math.floor(((t-3200)/2800)*100));
+    const filled=Math.floor(pct/8);
+    pb.textContent='█'.repeat(filled)+'░'.repeat(12-filled)+' '+pct+'%';
+    pb.style.fontSize='clamp(8px,2vw,14px)';pb.style.color='#9bbc0f';pb.style.textShadow='0 0 8px #8bac0f';
+  }
+  if(t>6500)document.getElementById('press-start').classList.add('show');
+}
+
+// Scene 2: Office
+function runScene2(t){
+  const rel=t-8000;
+  const agents=document.querySelectorAll('.agent');
+  const enterDelays=[400,1200,2000,2800,3600];
+  enterDelays.forEach((d,i)=>{if(rel>d)agents[i].classList.add('entered')});
+  if(rel>5000)document.getElementById('office-hud').classList.add('show');
+  if(rel>7000)document.getElementById('team-ready').classList.add('show');
+}
+
+// Scene 3: Mission
+const missionText="Build a landing page for our product";
+let lastTyped=-1;
+function runScene3(t){
+  const rel=t-18000;
+  const typed=document.getElementById('typed-text');
+  if(rel>500){
+    const chars=Math.min(missionText.length,Math.floor((rel-500)/80));
+    if(chars!==lastTyped){typed.textContent=missionText.slice(0,chars);lastTyped=chars}
+  }
+  const sug=document.getElementById('cmd-suggestions');
+  if(rel>3800)sug.classList.add('show');
+  const suggestions=sug.querySelectorAll('.suggestion');
+  if(rel>4200&&suggestions[0])suggestions[0].classList.add('highlight');
+  if(rel>4800){suggestions.forEach(s=>s.classList.remove('highlight'));if(suggestions[1])suggestions[1].classList.add('highlight')}
+  if(rel>5400){suggestions.forEach(s=>s.classList.remove('highlight'));if(suggestions[2])suggestions[2].classList.add('highlight')}
+  
+  const btn=document.getElementById('launch-btn');
+  if(rel>6000){btn.classList.add('show')}
+  if(rel>6800){btn.classList.add('glow')}
+  
+  const bubbles=document.querySelectorAll('.bubble');
+  if(rel>7400&&bubbles[0])bubbles[0].classList.add('show');
+  if(rel>7900&&bubbles[1])bubbles[1].classList.add('show');
+  if(rel>8400&&bubbles[2])bubbles[2].classList.add('show');
+}
+
+// Scene 4: Achievement
+function runScene4(t){
+  const rel=t-28000;
+  if(rel>400)document.getElementById('toast').classList.add('show');
+  if(rel>2000)document.getElementById('streak').classList.add('show');
+  if(rel>3000)document.getElementById('xp-bar').style.width='95%';
+  if(rel>4000&&confettiEls.length===0)spawnConfetti();
+}
+
+function spawnConfetti(){
+  const colors=['#ff2d75','#00f0ff','#f0e000','#9bbc0f','#8b00ff','#ff6b35'];
+  const container=document.getElementById('scene4');
+  for(let i=0;i<40;i++){
+    const el=document.createElement('div');
+    el.className='confetti';
+    el.style.cssText=`left:${Math.random()*100}%;top:-20px;width:${4+Math.random()*8}px;height:${4+Math.random()*8}px;
+      background:${colors[Math.floor(Math.random()*colors.length)]};border-radius:${Math.random()>0.5?'50%':'2px'};
+      animation:confettiFall ${1.5+Math.random()*2}s ${Math.random()*0.5}s ease-out forwards`;
+    container.appendChild(el);
+    confettiEls.push(el);
+  }
+}
+
+// Scene 5: CTA
+function runScene5(t){
+  const rel=t-38000;
+  if(rel>300)document.getElementById('cta-logo').classList.add('show');
+  if(rel>1200)document.getElementById('cta-tagline').classList.add('show');
+  if(rel>2200)document.getElementById('cta-price').classList.add('show');
+  if(rel>3200){document.getElementById('cta-btn').classList.add('show');document.getElementById('cta-sub').classList.add('show')}
+  if(rel>4000)document.getElementById('replay').classList.add('show');
+}
+
+function tick(now){
+  if(!startTime)startTime=now;
+  const elapsed=now-startTime;
+  const progress=Math.min(100,(elapsed/TOTAL)*100);
+  document.getElementById('progress').style.width=progress+'%';
+  
+  // Determine current scene
+  for(let i=0;i<scenes.length;i++){
+    if(elapsed>=scenes[i].start&&elapsed<scenes[i].end){
+      setScene(i);
+      break;
+    }
+  }
+  
+  if(elapsed<8000)runScene1(elapsed);
+  if(elapsed>=8000&&elapsed<18000)runScene2(elapsed);
+  if(elapsed>=18000&&elapsed<28000)runScene3(elapsed);
+  if(elapsed>=28000&&elapsed<38000)runScene4(elapsed);
+  if(elapsed>=38000&&elapsed<45000)runScene5(elapsed);
+  
+  if(elapsed>=TOTAL){
+    // Auto-restart after 3s pause
+    setTimeout(restart,3000);
+    return;
+  }
+  rafId=requestAnimationFrame(tick);
+}
+
+function resetAll(){
+  // Reset Scene 1
+  document.querySelectorAll('#boot-text .line').forEach(l=>l.classList.remove('show'));
+  document.getElementById('progress-bar').classList.remove('show');
+  document.getElementById('progress-bar').textContent='';
+  document.getElementById('press-start').classList.remove('show');
+  // Reset Scene 2
+  document.querySelectorAll('.agent').forEach(a=>a.classList.remove('entered'));
+  document.getElementById('office-hud').classList.remove('show');
+  document.getElementById('team-ready').classList.remove('show');
+  // Reset Scene 3
+  document.getElementById('typed-text').textContent='';lastTyped=-1;
+  document.getElementById('cmd-suggestions').classList.remove('show');
+  document.querySelectorAll('.suggestion').forEach(s=>s.classList.remove('highlight'));
+  document.getElementById('launch-btn').classList.remove('show','glow');
+  document.querySelectorAll('.bubble').forEach(b=>b.classList.remove('show'));
+  // Reset Scene 4
+  document.getElementById('toast').classList.remove('show');
+  document.getElementById('streak').classList.remove('show');
+  document.getElementById('xp-bar').style.width='0%';
+  confettiEls.forEach(el=>el.remove());confettiEls=[];
+  // Reset Scene 5
+  document.getElementById('cta-logo').classList.remove('show');
+  document.getElementById('cta-tagline').classList.remove('show');
+  document.getElementById('cta-price').classList.remove('show');
+  document.getElementById('cta-btn').classList.remove('show');
+  document.getElementById('cta-sub').classList.remove('show');
+  document.getElementById('replay').classList.remove('show');
+  // Reset progress
+  document.getElementById('progress').style.width='0%';
+}
+
+function restart(){
+  if(rafId)cancelAnimationFrame(rafId);
+  resetAll();
+  startTime=null;
+  setScene(0);
+  rafId=requestAnimationFrame(tick);
+}
+
+// Auto-play on load
+requestAnimationFrame(tick);
+</script>
+</body>
+</html>
