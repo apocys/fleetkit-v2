@@ -14,10 +14,10 @@ let store;
 try {
   const Store = require('electron-store');
   store = new Store({
-    name: 'fleetkit-config',
+    name: 'spawnkit-config',
     defaults: {
       setupComplete: false,
-      theme: 'gameboy',
+      theme: 'simcity',
       windowBounds: { width: 1400, height: 900 },
       windowPosition: null,
       workspace: path.join(os.homedir(), '.openclaw', 'workspace')
@@ -27,7 +27,7 @@ try {
   // Fallback in-memory store if electron-store fails
   const _data = {
     setupComplete: false,
-    theme: 'gameboy',
+    theme: 'simcity',
     windowBounds: { width: 1400, height: 900 },
     windowPosition: null,
     workspace: path.join(os.homedir(), '.openclaw', 'workspace')
@@ -47,20 +47,20 @@ const isDev = !app.isPackaged;
 // --- Deep link protocol ---
 if (process.defaultApp) {
   if (process.argv.length >= 2) {
-    app.setAsDefaultProtocolClient('fleetkit', process.execPath, [path.resolve(process.argv[1])]);
+    app.setAsDefaultProtocolClient('spawnkit', process.execPath, [path.resolve(process.argv[1])]);
   }
 } else {
-  app.setAsDefaultProtocolClient('fleetkit');
+  app.setAsDefaultProtocolClient('spawnkit');
 }
 
 // --- About panel ---
 app.setAboutPanelOptions({
-  applicationName: 'FleetKit',
+  applicationName: 'SpawnKit',
   applicationVersion: app.getVersion(),
   version: '2.0.0',
-  copyright: '© 2025-2026 FleetKit Team',
-  website: 'https://fleetkit.dev',
-  credits: 'Your AI team, visualized.'
+  copyright: '© 2025-2026 SpawnKit Team',
+  website: 'https://spawnkit.ai',
+  credits: 'Your AI executive team, on your desktop.'
 });
 
 // --- Helpers ---
@@ -80,15 +80,42 @@ function showError(title, message) {
 
 function resolveThemePath(theme) {
   const candidates = [
-    path.join(__dirname, '..', 'src', 'theme-selector.html'),
+    // Packaged app: themes are siblings of main.js
+    path.join(__dirname, `office-${theme}`, 'index.html'),
+    // Development: themes are in parent directory
     path.join(__dirname, '..', `office-${theme}`, 'index.html'),
-    path.join(__dirname, '..', 'office-gameboy', 'index.html'),
-    path.join(__dirname, 'renderer', 'index.html')
+    // Fallback: executive theme (always exists)
+    path.join(__dirname, 'office-executive', 'index.html'),
+    path.join(__dirname, '..', 'office-executive', 'index.html'),
   ];
   for (const p of candidates) {
     if (fs.existsSync(p)) return p;
   }
   return null;
+}
+
+async function switchTheme(newTheme) {
+  try {
+    // Validate theme exists
+    const themePath = resolveThemePath(newTheme);
+    if (!themePath) {
+      return { success: false, error: `Theme "${newTheme}" not found` };
+    }
+
+    // Save new theme
+    store.set('theme', newTheme);
+
+    // Reload window with new theme
+    if (mainWindow) {
+      mainWindow.loadFile(themePath);
+      // Recreate menu to update checkmarks
+      createMenu();
+    }
+
+    return { success: true };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
 }
 
 // --- CSP headers ---
@@ -106,6 +133,60 @@ function setCSPHeaders() {
         ]
       }
     });
+  });
+}
+
+// --- Settings Window ---
+function createSettingsWindow() {
+  const settingsWindow = new BrowserWindow({
+    width: 800,
+    height: 600,
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true,
+      preload: path.join(__dirname, 'preload.js')
+    },
+    titleBarStyle: 'hiddenInset',
+    show: false,
+    resizable: false,
+    fullscreenable: false,
+    maximizable: false,
+    title: 'SpawnKit Settings',
+    parent: mainWindow,
+    modal: true
+  });
+
+  settingsWindow.loadFile(path.join(__dirname, 'settings.html'));
+
+  settingsWindow.once('ready-to-show', () => {
+    settingsWindow.show();
+  });
+
+  settingsWindow.on('closed', () => {
+    // Nothing to clean up
+  });
+}
+
+// --- Agent Builder Window ---
+function createAgentBuilderWindow() {
+  const builderWindow = new BrowserWindow({
+    width: 1000,
+    height: 700,
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true,
+      preload: path.join(__dirname, 'preload.js')
+    },
+    titleBarStyle: 'hiddenInset',
+    show: false,
+    title: 'SpawnKit — Agent Builder',
+    parent: mainWindow,
+  });
+
+  builderWindow.loadFile(path.join(__dirname, 'agent-builder.html'));
+
+  builderWindow.once('ready-to-show', () => {
+    builderWindow.show();
   });
 }
 
@@ -158,7 +239,7 @@ function createMainWindow() {
     },
     titleBarStyle: 'hiddenInset',
     show: false,
-    title: 'FleetKit',
+    title: 'SpawnKit',
     backgroundColor: '#0f0f23'
   };
 
@@ -170,13 +251,13 @@ function createMainWindow() {
   mainWindow = new BrowserWindow(windowOpts);
 
   // Load appropriate theme
-  const savedTheme = store.get('theme', 'gameboy');
+  const savedTheme = store.get('theme', 'simcity');
   const themePath = resolveThemePath(savedTheme);
 
   if (themePath) {
     mainWindow.loadFile(themePath);
   } else {
-    mainWindow.loadURL(`data:text/html,<html><body style="background:#0f0f23;color:#fff;display:flex;align-items:center;justify-content:center;height:100vh;font-family:system-ui"><div style="text-align:center"><h1>FleetKit</h1><p>No theme files found. Please reinstall.</p></div></body></html>`);
+    mainWindow.loadURL(`data:text/html,<html><body style="background:#F2F2F7;color:#1C1C1E;display:flex;align-items:center;justify-content:center;height:100vh;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif"><div style="text-align:center"><h1 style="color:#007AFF;font-size:2rem">SpawnKit</h1><p style="color:#8E8E93;margin-top:0.5rem">No theme files found. Please reinstall from <a href='https://download.spawnkit.ai' style='color:#007AFF'>download.spawnkit.ai</a></p></div></body></html>`);
   }
 
   mainWindow.once('ready-to-show', () => {
@@ -227,7 +308,7 @@ function createMenu() {
             dialog.showMessageBox(mainWindow, {
               type: 'info',
               title: 'Updates',
-              message: 'FleetKit is up to date.',
+              message: 'SpawnKit is up to date.',
               detail: `Version ${app.getVersion()}`,
               buttons: ['OK']
             });
@@ -257,6 +338,14 @@ function createMenu() {
       label: 'File',
       submenu: [
         {
+          label: 'Agent Builder…',
+          accelerator: 'CmdOrCtrl+B',
+          click: () => {
+            createAgentBuilderWindow();
+          }
+        },
+        { type: 'separator' },
+        {
           label: 'Settings',
           accelerator: isMac ? undefined : 'CmdOrCtrl+,',
           click: () => {
@@ -281,6 +370,67 @@ function createMenu() {
               mainWindow.webContents.send('toggle-agents');
             }
           }
+        },
+        { type: 'separator' },
+        {
+          label: 'Theme',
+          submenu: [
+            {
+              label: '🏙️ SimCity',
+              type: 'checkbox',
+              checked: store.get('theme', 'simcity') === 'simcity',
+              click: async () => {
+                const result = await switchTheme('simcity');
+                if (!result.success) {
+                  showError('Theme Error', result.error);
+                }
+              }
+            },
+            {
+              label: '🏢 Executive',
+              type: 'checkbox',
+              checked: store.get('theme', 'simcity') === 'executive',
+              click: async () => {
+                const result = await switchTheme('executive');
+                if (!result.success) {
+                  showError('Theme Error', result.error);
+                }
+              }
+            },
+            {
+              label: '🎮 GameBoy',
+              type: 'checkbox',
+              checked: store.get('theme', 'simcity') === 'gameboy',
+              click: async () => {
+                const result = await switchTheme('gameboy');
+                if (!result.success) {
+                  showError('Theme Error', result.error);
+                }
+              }
+            },
+            {
+              label: '🎮 GameBoy Color',
+              type: 'checkbox',
+              checked: store.get('theme', 'simcity') === 'gameboy-color',
+              click: async () => {
+                const result = await switchTheme('gameboy-color');
+                if (!result.success) {
+                  showError('Theme Error', result.error);
+                }
+              }
+            },
+            {
+              label: '🏠 Sims',
+              type: 'checkbox',
+              checked: store.get('theme', 'simcity') === 'sims',
+              click: async () => {
+                const result = await switchTheme('sims');
+                if (!result.success) {
+                  showError('Theme Error', result.error);
+                }
+              }
+            }
+          ]
         },
         { type: 'separator' },
         { role: 'reload' },
@@ -313,28 +463,28 @@ function createMenu() {
       label: 'Help',
       submenu: [
         {
-          label: 'FleetKit Website',
-          click: () => shell.openExternal('https://fleetkit.dev')
+          label: 'SpawnKit Website',
+          click: () => shell.openExternal('https://spawnkit.ai')
         },
         {
           label: 'Documentation',
-          click: () => shell.openExternal('https://docs.fleetkit.dev')
+          click: () => shell.openExternal('https://docs.spawnkit.ai')
         },
         { type: 'separator' },
         {
           label: 'Report Issue…',
-          click: () => shell.openExternal('https://github.com/fleetkit/fleetkit/issues')
+          click: () => shell.openExternal('https://github.com/apocys/spawnkit-v2/issues')
         },
         ...(!isMac ? [
           { type: 'separator' },
           {
-            label: 'About FleetKit',
+            label: 'About SpawnKit',
             click: () => {
               dialog.showMessageBox(mainWindow || BrowserWindow.getFocusedWindow(), {
                 type: 'info',
-                title: 'About FleetKit',
-                message: `FleetKit v${app.getVersion()}`,
-                detail: 'Your AI team, visualized.\nPokémon-style virtual office for AI agents.\n\n© 2025-2026 FleetKit Team\nhttps://fleetkit.dev',
+                title: 'About SpawnKit',
+                message: `SpawnKit v${app.getVersion()}`,
+                detail: 'Your AI executive team, on your desktop.\n\n© 2025-2026 SpawnKit Team\nhttps://spawnkit.ai',
                 buttons: ['OK']
               });
             }
@@ -358,7 +508,7 @@ function createTray() {
 
     const contextMenu = Menu.buildFromTemplate([
       {
-        label: 'Show FleetKit',
+        label: 'Show SpawnKit',
         click: () => {
           if (mainWindow) {
             mainWindow.show();
@@ -368,14 +518,14 @@ function createTray() {
       },
       { type: 'separator' },
       {
-        label: `FleetKit v${app.getVersion()}`,
+        label: `SpawnKit v${app.getVersion()}`,
         enabled: false
       },
       { type: 'separator' },
-      { label: 'Quit FleetKit', role: 'quit' }
+      { label: 'Quit SpawnKit', role: 'quit' }
     ]);
 
-    tray.setToolTip('FleetKit');
+    tray.setToolTip('SpawnKit');
     tray.setContextMenu(contextMenu);
 
     tray.on('click', () => {
@@ -396,6 +546,30 @@ ipcMain.handle('detect-workspace', () => {
   const defaultPath = path.join(os.homedir(), '.openclaw', 'workspace');
   const exists = fs.existsSync(defaultPath);
   return { path: defaultPath, exists };
+});
+
+ipcMain.handle('detect-openclaw-config', () => {
+  // Try to detect OpenClaw configuration
+  const configPaths = [
+    path.join(os.homedir(), '.openclaw', 'openclaw.json'),
+    path.join(os.homedir(), '.openclaw', 'config.json'),
+  ];
+  for (const p of configPaths) {
+    if (fs.existsSync(p)) {
+      try {
+        const raw = fs.readFileSync(p, 'utf-8');
+        const config = JSON.parse(raw);
+        // Extract relevant info (provider, model) without leaking secrets
+        return {
+          found: true,
+          path: p,
+          hasProvider: !!(config.models?.providers),
+          defaultModel: config.agents?.defaults?.model?.primary || null,
+        };
+      } catch { return { found: true, path: p, parseError: true }; }
+    }
+  }
+  return { found: false };
 });
 
 ipcMain.handle('test-connection', async (_event, provider, apiKey) => {
@@ -484,23 +658,67 @@ ipcMain.handle('get-default-workspace', () => {
   return path.join(os.homedir(), '.openclaw', 'workspace');
 });
 
-// --- FleetKit Data Provider integration ---
+// Theme switching
+ipcMain.handle('switch-theme', async (_event, newTheme) => {
+  try {
+    // Validate theme exists
+    const themePath = resolveThemePath(newTheme);
+    if (!themePath) {
+      return { success: false, error: `Theme "${newTheme}" not found` };
+    }
+
+    // Save new theme
+    store.set('theme', newTheme);
+
+    // Reload window with new theme
+    if (mainWindow) {
+      mainWindow.loadFile(themePath);
+      // Recreate menu to update checkmarks
+      createMenu();
+    }
+
+    return { success: true };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+});
+
+ipcMain.handle('get-current-theme', () => {
+  return store.get('theme', 'simcity');
+});
+
+// Settings window
+ipcMain.handle('open-settings', () => {
+  createSettingsWindow();
+});
+
+// Agent Builder window
+ipcMain.handle('open-agent-builder', () => {
+  createAgentBuilderWindow();
+});
+
+// Open external links
+ipcMain.handle('open-external', (_, url) => {
+  shell.openExternal(url);
+});
+
+// --- SpawnKit Data Provider integration ---
 try {
   const { registerIPC } = require('./data-provider.js');
   registerIPC(ipcMain);
 } catch (err) {
-  console.warn('[FleetKit] Data provider failed to load:', err.message);
+  console.warn('[SpawnKit] Data provider failed to load:', err.message);
   // Graceful fallback if data-provider is unavailable
-  ipcMain.handle('fleetkit:isAvailable', () => false);
-  ipcMain.handle('fleetkit:getSessions', () => ({ agents: [], subagents: [], events: [] }));
-  ipcMain.handle('fleetkit:getCrons', () => []);
-  ipcMain.handle('fleetkit:getMemory', () => ({ longTerm: null, daily: [], heartbeat: null }));
-  ipcMain.handle('fleetkit:getAgentInfo', () => null);
-  ipcMain.handle('fleetkit:getMetrics', () => ({}));
-  ipcMain.handle('fleetkit:getAll', () => ({ agents: [], subagents: [], crons: [], metrics: {}, meta: { mode: 'fallback' } }));
-  ipcMain.handle('fleetkit:invalidateCache', () => true);
-  ipcMain.handle('fleetkit:getTranscript', () => []);
-  ipcMain.handle('fleetkit:sendMission', () => ({ success: false, error: 'Data provider not loaded' }));
+  ipcMain.handle('spawnkit:isAvailable', () => false);
+  ipcMain.handle('spawnkit:getSessions', () => ({ agents: [], subagents: [], events: [] }));
+  ipcMain.handle('spawnkit:getCrons', () => []);
+  ipcMain.handle('spawnkit:getMemory', () => ({ longTerm: null, daily: [], heartbeat: null }));
+  ipcMain.handle('spawnkit:getAgentInfo', () => null);
+  ipcMain.handle('spawnkit:getMetrics', () => ({}));
+  ipcMain.handle('spawnkit:getAll', () => ({ agents: [], subagents: [], crons: [], metrics: {}, meta: { mode: 'fallback' } }));
+  ipcMain.handle('spawnkit:invalidateCache', () => true);
+  ipcMain.handle('spawnkit:getTranscript', () => []);
+  ipcMain.handle('spawnkit:sendMission', () => ({ success: false, error: 'Data provider not loaded' }));
 }
 
 // --- App Lifecycle ---
@@ -525,7 +743,7 @@ app.on('second-instance', (_event, argv) => {
   }
 
   // Handle deep link on Windows/Linux
-  const deepLink = argv.find(arg => arg.startsWith('fleetkit://'));
+  const deepLink = argv.find(arg => arg.startsWith('spawnkit://'));
   if (deepLink && mainWindow) {
     mainWindow.webContents.send('deep-link', deepLink);
   }
@@ -570,8 +788,8 @@ process.on('uncaughtException', (error) => {
   }
   try {
     dialog.showErrorBox(
-      'FleetKit — Unexpected Error',
-      `Something went wrong. Please restart FleetKit.\n\n${error.message}`
+      'SpawnKit — Unexpected Error',
+      `Something went wrong. Please restart SpawnKit.\n\n${error.message}`
     );
   } catch (_) {
     // Dialog might fail if app is shutting down
