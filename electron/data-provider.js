@@ -1,5 +1,5 @@
 /**
- * FleetKit v2 — OpenClaw Data Provider
+ * SpawnKit v2 — OpenClaw Data Provider
  * 
  * Reads REAL data from the OpenClaw filesystem.
  * Runs in Electron main process (Node.js) — full fs access.
@@ -33,7 +33,7 @@ function detectOpenClawRoot() {
   }
   
   // 3. Saved config from setup wizard
-  const configPath = path.join(os.homedir(), '.fleetkit', 'config.json');
+  const configPath = path.join(os.homedir(), '.spawnkit', 'config.json');
   if (fs.existsSync(configPath)) {
     try {
       const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
@@ -142,7 +142,7 @@ function readLastLines(filePath, lineCount = 100) {
   }
 }
 
-// ─── Agent Label → FleetKit ID Mapping ──────────────────────────────────────
+// ─── Agent Label → SpawnKit ID Mapping ──────────────────────────────────────
 
 const AGENT_MAP = {
   // Main session (no label) maps to kira/CEO
@@ -470,7 +470,7 @@ class OpenClawDataProvider {
       });
       
     } catch (e) {
-      console.error('[FleetKit DataProvider] Error reading sessions:', e.message);
+      console.error('[SpawnKit DataProvider] Error reading sessions:', e.message);
       return this._setCache('sessions', { agents: [], subagents: [], events: [] });
     }
   }
@@ -579,7 +579,7 @@ class OpenClawDataProvider {
   async getAgentInfo(agentId) {
     if (!this.workspace) return null;
     
-    // Map FleetKit agent IDs to fleet directory names
+    // Map SpawnKit agent IDs to fleet directory names
     const dirMap = {
       'hunter': 'cro-hunter',
       'forge': 'cto-forge',
@@ -748,20 +748,20 @@ function registerIPC(ipcMain) {
   const provider = new OpenClawDataProvider();
   
   if (!provider.isAvailable) {
-    console.warn('[FleetKit DataProvider] ⚠️  OpenClaw not found — data provider disabled');
+    console.warn('[SpawnKit DataProvider] ⚠️  OpenClaw not found — data provider disabled');
   } else {
-    console.log(`[FleetKit DataProvider] 🔌 Connected to OpenClaw at ${provider.openclawRoot}`);
-    console.log(`[FleetKit DataProvider] 📁 Workspace: ${provider.workspace}`);
+    console.log(`[SpawnKit DataProvider] 🔌 Connected to OpenClaw at ${provider.openclawRoot}`);
+    console.log(`[SpawnKit DataProvider] 📁 Workspace: ${provider.workspace}`);
   }
   
-  ipcMain.handle('fleetkit:isAvailable', () => provider.isAvailable);
-  ipcMain.handle('fleetkit:getSessions', () => provider.getSessions());
-  ipcMain.handle('fleetkit:getCrons', () => provider.getCrons());
-  ipcMain.handle('fleetkit:getMemory', () => provider.getMemory());
-  ipcMain.handle('fleetkit:getAgentInfo', (e, agentId) => provider.getAgentInfo(agentId));
-  ipcMain.handle('fleetkit:getMetrics', () => provider.getMetrics());
-  ipcMain.handle('fleetkit:getAll', () => provider.getAll());
-  ipcMain.handle('fleetkit:invalidateCache', () => { provider.invalidateCache(); return true; });
+  ipcMain.handle('spawnkit:isAvailable', () => provider.isAvailable);
+  ipcMain.handle('spawnkit:getSessions', () => provider.getSessions());
+  ipcMain.handle('spawnkit:getCrons', () => provider.getCrons());
+  ipcMain.handle('spawnkit:getMemory', () => provider.getMemory());
+  ipcMain.handle('spawnkit:getAgentInfo', (e, agentId) => provider.getAgentInfo(agentId));
+  ipcMain.handle('spawnkit:getMetrics', () => provider.getMetrics());
+  ipcMain.handle('spawnkit:getAll', () => provider.getAll());
+  ipcMain.handle('spawnkit:invalidateCache', () => { provider.invalidateCache(); return true; });
   
   return provider;
 }

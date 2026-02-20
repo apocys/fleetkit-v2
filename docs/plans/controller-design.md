@@ -9,7 +9,7 @@
 
 ## 1. Module Pattern
 
-IIFE exposing a singleton `SpawnKitDashboard` on `window`. Consistent with `FleetKit`, `MissionController`, and `FleetKitAchievements` patterns already in the codebase.
+IIFE exposing a singleton `SpawnKitDashboard` on `window`. Consistent with `SpawnKit`, `MissionController`, and `SpawnKitAchievements` patterns already in the codebase.
 
 ```js
 (function(global) {
@@ -69,7 +69,7 @@ All localStorage operations wrapped in try/catch.
 
 ## 5. Event System
 
-Uses `FleetKit.emit()` / `FleetKit.on()` when available, falls back to `CustomEvent` on `document`.
+Uses `SpawnKit.emit()` / `SpawnKit.on()` when available, falls back to `CustomEvent` on `document`.
 
 | Event | Payload | Trigger |
 |---|---|---|
@@ -106,9 +106,9 @@ Origin validation: accept messages only from same origin or configured whitelist
 
 ## 7. Integration with Existing Modules
 
-- **FleetKit (data-bridge):** Reuse event bus. Read `FleetKit.data.agents` for live data enrichment.
+- **SpawnKit (data-bridge):** Reuse event bus. Read `SpawnKit.data.agents` for live data enrichment.
 - **theme-switcher:** Reuse theme map (`gameboy`, `gameboy-color`, `sims`). `selectTheme()` delegates navigation to `switchTheme()` from theme-switcher.
-- **achievements:** Trigger `FleetKit.emit('mission:complete', ...)` so achievements system picks it up automatically. Reuse achievement definitions for unlock checks.
+- **achievements:** Trigger `SpawnKit.emit('mission:complete', ...)` so achievements system picks it up automatically. Reuse achievement definitions for unlock checks.
 - **mission-controller:** `completeMission()` calls `MissionController.executeMission()` to trigger office animations.
 
 ## 8. XP & Leveling Curve

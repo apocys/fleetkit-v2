@@ -1,5 +1,5 @@
-// GameBoy State Bridge - FleetKit Data Integration (Pokémon Universe Edition)
-// Uses FleetKitNames for universe-consistent naming
+// GameBoy State Bridge - SpawnKit Data Integration (Pokémon Universe Edition)
+// Uses SpawnKitNames for universe-consistent naming
 
 class GameBoyStateBridge {
     constructor(characterManager, officeMap) {
@@ -18,79 +18,124 @@ class GameBoyStateBridge {
         this.displayedSubagents = [];
         
         this.initializeDataHooks();
-        this.syncWithFleetKitData();
+        this.syncWithSpawnKitData();
     }
     
     // ── Name helpers (graceful fallback) ──────────────────
     _resolveName(canonicalId, field) {
-        if (window.FleetKitNames) return FleetKitNames.resolve('gameboy', canonicalId, field);
+        if (window.SpawnKitNames) return SpawnKitNames.resolve('gameboy', canonicalId, field);
         return canonicalId;
     }
     _resolveObj(objectId) {
-        if (window.FleetKitNames) return FleetKitNames.resolveObject('gameboy', objectId);
+        if (window.SpawnKitNames) return SpawnKitNames.resolveObject('gameboy', objectId);
         return objectId;
     }
     _subAgentName(index) {
-        if (window.FleetKitNames) return FleetKitNames.getSubAgentName('gameboy', index);
-        return `Sub-Agent #${index + 1}`;
+        if (window.SpawnKitNames) return SpawnKitNames.getSubAgentName('gameboy', index);
+        return `ROOKIE #${index + 1}`;
     }
     
     initializeDataHooks() {
-        if (window.FleetKit) {
-            FleetKit.on('mission:new', (data) => this.handleNewMission(data));
-            FleetKit.on('mission:progress', (data) => this.handleMissionProgress(data));
-            FleetKit.on('subagent:spawn', (data) => this.handleSubagentSpawn(data));
-            FleetKit.on('agent:status', (data) => this.handleAgentStatus(data));
-            FleetKit.on('cron:trigger', (data) => this.handleCronTrigger(data));
-            FleetKit.on('data:refresh', () => this.syncWithFleetKitData());
-            console.log('🎮 GameBoy State Bridge: FleetKit event hooks initialized');
+        if (window.SpawnKit) {
+            SpawnKit.on('mission:new', (data) => this.handleNewMission(data));
+            SpawnKit.on('mission:progress', (data) => this.handleMissionProgress(data));
+            SpawnKit.on('subagent:spawn', (data) => this.handleSubagentSpawn(data));
+            SpawnKit.on('agent:status', (data) => this.handleAgentStatus(data));
+            SpawnKit.on('cron:trigger', (data) => this.handleCronTrigger(data));
+            SpawnKit.on('data:refresh', () => this.syncWithSpawnKitData());
+            console.log('🎮 GameBoy State Bridge: SpawnKit event hooks initialized');
         }
     }
     
-    syncWithFleetKitData() {
-        if (!window.FleetKit?.data) {
-            console.warn('🎮 GameBoy State Bridge: FleetKit data not available');
+    syncWithSpawnKitData() {
+        if (!window.SpawnKit?.data) {
+            console.warn('🎮 GameBoy State Bridge: SpawnKit data not available');
             return;
         }
         
-        const data = FleetKit.data;
+        const data = SpawnKit.data;
         this.updateAgentStatuses(data.agents || []);
         this.updateMissionBoard(data.missions || []);
         this.updateSubagents(data.subagents || []);
+        
+        // Update Agent OS names and model identities in character manager
+        if (this.characterManager && typeof this.characterManager.updateAgentOSNames === 'function') {
+            this.characterManager.updateAgentOSNames(data);
+        }
+        
         this.lastDataSync = Date.now();
-        console.log('🎮 GameBoy State Bridge: Synced with FleetKit data');
+        console.log('🎮 GameBoy State Bridge: Synced with SpawnKit data (Agent OS + Model Identity integrated)');
     }
     
     updateAgentStatuses(agents) {
-        (agents || []).forEach(agent => {
+        if (!agents || !this.characterManager) return;
+        
+        agents.forEach(agent => {
+            if (!agent || !agent.role) return; // Skip malformed agents
+            
             const character = this.characterManager.findCharacterByRole(agent.role) ||
                             this.characterManager.findCharacterByName(agent.name);
             
-            if (character) {
-                const newState = this.mapAgentStatusToCharacterState(agent.status, agent.currentTask);
-                character.setState(newState);
-                
-                if (agent.currentTask && Math.random() > 0.7) {
-                    const bubbleText = this.formatTaskForSpeechBubble(agent.currentTask);
-                    character.showSpeechBubble(bubbleText);
+            if (character && typeof character.setState === 'function') {
+                try {
+                    const newState = this.mapAgentStatusToCharacterState(agent.status, agent.currentTask, agent);
+                    character.setState(newState);
+                    
+                    // Show speech bubble with higher frequency for real tasks
+                    if (agent.currentTask && Math.random() > 0.6) {
+                        const bubbleText = this.formatTaskForSpeechBubble(agent.currentTask);
+                        if (typeof character.showSpeechBubble === 'function') {
+                            character.showSpeechBubble(bubbleText);
+                        }
+                    }
+                    
+                    // Highlight active agent with glow effect
+                    if (agent.status === 'active' && character.sprite && typeof character.addActiveGlow === 'function') {
+                        character.addActiveGlow();
+                    }
+                } catch (err) {
+                    console.warn('🎮 Error updating agent status:', err);
                 }
             }
         });
     }
     
-    mapAgentStatusToCharacterState(status, task) {
+    mapAgentStatusToCharacterState(status, task, agent) {
         const taskLower = (task || '').toLowerCase();
+        const now = Date.now();
+        
+        // Check if agent has sub-agents running
+        if (agent?.subagents && agent.subagents.length > 0) {
+            return 'delegating';
+        }
+        
+        // Check metrics for high activity
+        if (agent?.metrics?.tokens > 1000) {
+            return Math.random() > 0.5 ? 'grinding' : 'leveling_up';
+        }
+        
+        // Check if agent has been idle for >5min
+        if (agent?.lastSeen && (now - agent.lastSeen) > 300000) {
+            return Math.random() > 0.5 ? 'getting_coffee' : 'wandering';
+        }
+        
+        // Check for recent message activity (walking between rooms)
+        if (agent?.recentMessages && agent.recentMessages.length > 5) {
+            return 'going_to_meeting';
+        }
+        
         switch (status) {
             case 'active':
             case 'working':
             case 'building':
                 if (taskLower.includes('meeting') || taskLower.includes('planning')) return 'going_to_meeting';
+                if (taskLower.includes('audit') || taskLower.includes('review')) return 'searching_files';
                 return 'working_at_desk';
             case 'creating':
             case 'monitoring':
                 return 'working_at_desk';
             case 'idle':
-                return 'thinking';
+                return agent?.lastSeen && (now - agent.lastSeen) > 180000 ? 'thinking' : 'working_at_desk';
             default:
                 return 'working_at_desk';
         }
@@ -128,19 +173,39 @@ class GameBoyStateBridge {
     }
     
     getAgentRoleById(agentId) {
-        if (!window.FleetKit?.data?.agents) return null;
-        const agent = FleetKit.data.agents.find(a => a.id === agentId);
+        if (!window.SpawnKit?.data?.agents) return null;
+        const agent = SpawnKit.data.agents.find(a => a.id === agentId);
         return agent ? agent.role : null;
     }
     
     formatTaskForSpeechBubble(task) {
-        // Pokémon-style short ALL CAPS text
-        const words = (task || 'WORKING').toUpperCase().split(' ');
-        if (words.length <= 2) return words.join(' ');
-        const keyWords = words.filter(word => 
-            word.length > 3 && !['THE', 'AND', 'FOR', 'WITH', 'FROM'].includes(word)
-        ).slice(0, 2);
-        return keyWords.join(' ') || 'WORKING';
+        if (!task) return 'WORKING!';
+        
+        const taskLower = task.toLowerCase();
+        
+        // Specific task keyword mapping
+        if (taskLower.includes('audit')) return 'AUDIT!';
+        if (taskLower.includes('sentinel')) return 'AUDIT!';
+        if (taskLower.includes('rebrand')) return 'DESIGN!';
+        if (taskLower.includes('echo') || taskLower.includes('landing') || taskLower.includes('ios')) return 'DESIGN!';
+        if (taskLower.includes('forge') || taskLower.includes('data') || taskLower.includes('bridge')) return 'CODING!';
+        if (taskLower.includes('deploy') || taskLower.includes('release')) return 'DEPLOY!';
+        if (taskLower.includes('test') || taskLower.includes('debug')) return 'DEBUG!';
+        if (taskLower.includes('meeting') || taskLower.includes('discuss')) return 'MEETING!';
+        if (taskLower.includes('research') || taskLower.includes('analyze')) return 'RESEARCH!';
+        if (taskLower.includes('monitor') || taskLower.includes('watch')) return 'MONITOR!';
+        
+        // Extract first meaningful word and capitalize
+        const words = task.toUpperCase().split(/[-_\s]+/).filter(word => 
+            word.length > 2 && 
+            !['THE', 'AND', 'FOR', 'WITH', 'FROM', 'TO', 'OF', 'IN', 'ON', 'AT', 'BY'].includes(word)
+        );
+        
+        if (words.length > 0) {
+            return words[0] + '!';
+        }
+        
+        return 'WORKING!';
     }
     
     updateMissionBoardUI() {
@@ -225,7 +290,7 @@ class GameBoyStateBridge {
         this.officeMap.updateAnimations(deltaTime);
         
         if (Date.now() - this.lastDataSync >= this.syncInterval) {
-            this.syncWithFleetKitData();
+            this.syncWithSpawnKitData();
         }
         
         if (this.eventTimer >= this.nextEvent) {
@@ -236,19 +301,45 @@ class GameBoyStateBridge {
     }
     
     triggerRandomEvent() {
-        if (!window.FleetKit?.data) return;
-        const data = FleetKit.data;
+        if (!window.SpawnKit?.data) return;
+        const data = SpawnKit.data;
         
         const now = Date.now();
+        
+        // Check for cron events
         data.crons?.forEach(cron => {
             if (cron.status === 'active' && cron.nextRun && now >= cron.nextRun) {
                 this.triggerCronAlarm(cron);
             }
         });
         
-        if (Math.random() > 0.7) {
-            const randomAgent = data.agents?.[Math.floor(Math.random() * data.agents.length)];
-            if (randomAgent) this.triggerAgentActivity(randomAgent);
+        // Dynamic agent room rotation based on real activity
+        if (data.agents && Math.random() > 0.6) {
+            const activeAgent = data.agents.find(a => a.status === 'active') || 
+                              data.agents[Math.floor(Math.random() * data.agents.length)];
+            
+            if (activeAgent) {
+                this.triggerAgentRoomRotation(activeAgent);
+            }
+        }
+        
+        // Check for sub-agent spawns/completions
+        if (data.subagents && Math.random() > 0.8) {
+            data.subagents.forEach(sub => {
+                if (sub.status === 'spawning' && !this.characterManager.hasSubagent(sub.id)) {
+                    this.handleWildRookieAppeared(sub);
+                } else if (sub.status === 'completed') {
+                    this.handleSubagentEvolution(sub);
+                }
+            });
+        }
+        
+        // Show real task progress in speech bubbles
+        if (data.missions && Math.random() > 0.7) {
+            const activeMission = data.missions.find(m => m.status === 'in_progress');
+            if (activeMission) {
+                this.showMissionProgress(activeMission);
+            }
         }
     }
     
@@ -281,10 +372,112 @@ class GameBoyStateBridge {
         }
     }
     
+    triggerAgentRoomRotation(agent) {
+        const character = this.characterManager.findCharacterByRole(agent.role) ||
+                        this.characterManager.findCharacterByName(agent.name);
+        
+        if (character) {
+            const rooms = ['desk', 'meeting', 'coffee', 'files'];
+            const currentRoom = this.getCurrentRoom(character);
+            const nextRoom = rooms[(rooms.indexOf(currentRoom) + 1) % rooms.length];
+            
+            switch (nextRoom) {
+                case 'meeting':
+                    character.setState('going_to_meeting');
+                    character.showSpeechBubble('GYM BATTLE!');
+                    break;
+                case 'coffee':
+                    character.setState('getting_coffee');
+                    character.showSpeechBubble('POTION!');
+                    break;
+                case 'files':
+                    character.setState('searching_files');
+                    character.showSpeechBubble('PC STORAGE!');
+                    break;
+                default:
+                    character.setState('working_at_desk');
+                    if (agent.currentTask) {
+                        character.showSpeechBubble(this.formatTaskForSpeechBubble(agent.currentTask));
+                    }
+            }
+        }
+    }
+    
+    getCurrentRoom(character) {
+        const pos = { x: character.gridX, y: character.gridY };
+        const locations = this.officeMap.locations;
+        
+        // Find closest location
+        let closest = 'desk';
+        let minDist = Infinity;
+        
+        Object.keys(locations).forEach(key => {
+            const loc = locations[key];
+            const dist = Math.sqrt((pos.x - loc.x) ** 2 + (pos.y - loc.y) ** 2);
+            if (dist < minDist) {
+                minDist = dist;
+                if (key.includes('meeting')) closest = 'meeting';
+                else if (key.includes('coffee')) closest = 'coffee';
+                else if (key.includes('file')) closest = 'files';
+                else closest = 'desk';
+            }
+        });
+        
+        return closest;
+    }
+    
+    handleWildRookieAppeared(subagent) {
+        if (window.PokemonUI) {
+            const pokeName = this._subAgentName(this.characterManager?.subAgentCounter || 0);
+            window.PokemonUI.wildEncounter(pokeName);
+        }
+        this.spawnSubagentCharacter(subagent);
+        
+        // Parent agent shows delegating bubble
+        const parentChar = this.characterManager.findCharacterByRole(this.getAgentRoleById(subagent.parentAgent));
+        if (parentChar) {
+            parentChar.showSpeechBubble('DELEGATING!');
+        }
+    }
+    
+    handleSubagentEvolution(subagent) {
+        const subChar = this.characterManager.subAgents.find(s => s.subagentId === subagent.id);
+        if (subChar) {
+            subChar.showSpeechBubble('EVOLVED!');
+            
+            // Celebration effect
+            setTimeout(() => {
+                this.characterManager.removeSubAgent(subChar);
+                if (window.PokemonUI) {
+                    window.PokemonUI.systemMessage(`${subChar.name} EVOLVED!\nTask completed!`);
+                }
+            }, 2000);
+        }
+    }
+    
+    showMissionProgress(mission) {
+        const assignedAgents = mission.assignedTo || [];
+        assignedAgents.forEach(agentId => {
+            const character = this.characterManager.findCharacterByName(agentId) ||
+                            this.characterManager.characters.find(c => c.role.toLowerCase().includes(agentId));
+            
+            if (character) {
+                const progressPercent = Math.round((mission.progress || 0) * 100);
+                if (progressPercent > 75) {
+                    character.showSpeechBubble('LVL UP!');
+                } else if (progressPercent > 50) {
+                    character.showSpeechBubble('GRINDING!');
+                } else {
+                    character.showSpeechBubble(this.formatTaskForSpeechBubble(mission.title));
+                }
+            }
+        });
+    }
+    
     // ── Event handlers ─────────────────────────────────
     handleNewMission(data) {
         console.log('🎯 New mission:', data);
-        this.syncWithFleetKitData();
+        this.syncWithSpawnKitData();
         
         // Wild MISSION appeared!
         if (window.PokemonUI) {
@@ -302,7 +495,7 @@ class GameBoyStateBridge {
     }
     
     handleSubagentSpawn(data) {
-        this.syncWithFleetKitData();
+        this.syncWithSpawnKitData();
     }
     
     handleAgentStatus(data) {
@@ -351,8 +544,8 @@ class GameBoyStateBridge {
     }
     
     getMissionStatus() {
-        if (!window.FleetKit?.data?.missions) return { active: 0, queued: 0, activeMissions: [] };
-        const missions = FleetKit.data.missions;
+        if (!window.SpawnKit?.data?.missions) return { active: 0, queued: 0, activeMissions: [] };
+        const missions = SpawnKit.data.missions;
         const activeMissions = missions.filter(m => m.status === 'in_progress');
         return {
             active: activeMissions.length,
@@ -366,8 +559,8 @@ class GameBoyStateBridge {
     }
     
     getAgentStatus() {
-        if (!window.FleetKit?.data?.agents) return { activeAgents: 0, activities: {}, metrics: {} };
-        const agents = FleetKit.data.agents;
+        if (!window.SpawnKit?.data?.agents) return { activeAgents: 0, activities: {}, metrics: {} };
+        const agents = SpawnKit.data.agents;
         const activities = {};
         agents.forEach(agent => {
             // Use Pokémon name in status
@@ -381,7 +574,7 @@ class GameBoyStateBridge {
         return {
             activeAgents: agents.length,
             activities: activities,
-            metrics: FleetKit.data.metrics || {}
+            metrics: SpawnKit.data.metrics || {}
         };
     }
 }
@@ -492,8 +685,31 @@ const GAMEBOY_PHRASES = {
     mission: [
         "QUEST START!", "COPY THAT!", "ROGER!", "MISSION GO!",
         "BATTLE BEGIN!", "CHALLENGE!", "QUEST LOG!", "VICTORY!"
+    ],
+    delegating: [
+        "DELEGATING!", "SUMMON!", "GO ROOKIE!", "DEPLOY!",
+        "USE MINION!", "SEND OUT!", "ASSIST!", "BACKUP!"
+    ],
+    grinding: [
+        "GRINDING!", "TRAINING!", "LVL UP!", "EXP BOOST!",
+        "POWER UP!", "FOCUS!", "HUSTLE!", "OVERDRIVE!"
+    ],
+    wandering: [
+        "EXPLORING!", "SEARCHING!", "PATROL!", "SCOUTING!",
+        "ROAMING!", "QUEST!", "ADVENTURE!", "JOURNEY!"
+    ],
+    subagent: [
+        "ROOKIE READY!", "REPORTING!", "YES SIR!", "ROGER!",
+        "COPY THAT!", "EXECUTING!", "ON IT!", "WORKING!"
     ]
 };
 
+// Utility function to get random phrase for state
+function getGameBoyPhrase(category) {
+    const phrases = GAMEBOY_PHRASES[category] || GAMEBOY_PHRASES.working;
+    return phrases[Math.floor(Math.random() * phrases.length)];
+}
+
 window.GameBoyStateBridge = GameBoyStateBridge;
 window.GAMEBOY_PHRASES = GAMEBOY_PHRASES;
+window.getGameBoyPhrase = getGameBoyPhrase;

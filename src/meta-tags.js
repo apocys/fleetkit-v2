@@ -1,5 +1,5 @@
 /**
- * FleetKit v2 — Open Graph & Meta Tags
+ * SpawnKit v2 — Open Graph & Meta Tags
  * ═════════════════════════════════════
  * 
  * Dynamically sets OG meta tags for link previews on social platforms.
@@ -144,9 +144,9 @@
 
     // ── Export ──────────────────────────────────────────────────────
 
-    if (!global.FleetKit) global.FleetKit = {};
+    if (!window.SpawnKit) window.SpawnKit = {};
 
-    global.FleetKit.meta = {
+    window.SpawnKit.meta = {
         apply: applyMeta,
         auto: autoApply,
         configs: META_CONFIG

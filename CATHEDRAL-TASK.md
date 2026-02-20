@@ -1,13 +1,13 @@
-# CATHEDRAL TASK — FleetKit v2 → SpawnKit Unified Dashboard
+# CATHEDRAL TASK — SpawnKit v2 → SpawnKit Unified Dashboard
 
 ## YOUR MISSION
-Build a UNIFIED SpawnKit dashboard that merges the visual themes (fleetkit-v2/) with the SpawnKit product (products/fleetkit-os/site/).
+Build a UNIFIED SpawnKit dashboard that merges the visual themes (spawnkit-v2/) with the SpawnKit product (products/spawnkit-os/site/).
 
 **THE #1 RULE**: Zero terminal. A grandmother must be able to use this. No jargon, no CLI, no "deploy". Just beautiful, working software.
 
 ## CURRENT CODEBASE
 
-### Visual Themes (fleetkit-v2/)
+### Visual Themes (spawnkit-v2/)
 - `src/` — 16 shared modules: PixiJS engine, UX layer, achievements, boot sequences, sprites, theme switcher, etc.
 - `office-gameboy/` — GameBoy Pokémon RPG theme (green monochrome, 4-color palette)
 - `office-gameboy-color/` — Enhanced GameBoy Color variant
@@ -15,7 +15,7 @@ Build a UNIFIED SpawnKit dashboard that merges the visual themes (fleetkit-v2/) 
 - `src/theme-selector.html` — Standalone theme picker page
 - `lib/pixi.min.js` — PixiJS rendering engine
 
-### SpawnKit Product (products/fleetkit-os/site/)
+### SpawnKit Product (products/spawnkit-os/site/)
 - `dashboard.html` — Current dashboard with agent cards
 - `js/agent-builder.js` — 6-step Create-A-Agent wizard
 - `js/setup-wizard.js` — OAuth bridge setup (zero terminal)
@@ -24,8 +24,8 @@ Build a UNIFIED SpawnKit dashboard that merges the visual themes (fleetkit-v2/) 
 
 ## WHAT TO BUILD
 
-### 1. Unified Dashboard (`fleetkit-v2/dashboard.html`)
-Create ONE new dashboard.html in fleetkit-v2/ that:
+### 1. Unified Dashboard (`spawnkit-v2/dashboard.html`)
+Create ONE new dashboard.html in spawnkit-v2/ that:
 - **First visit**: Full-screen theme selector with animated previews of all 3 themes
 - **After selection**: Dashboard with chosen theme as the LIVE background/environment
 - **Sidebar/overlay**: Agent management, missions, achievements (works with ANY theme)
@@ -67,12 +67,12 @@ Each theme renders in an iframe or container within the dashboard:
 - Accessibility: keyboard navigable
 
 ## FILES TO MODIFY/CREATE
-1. `fleetkit-v2/dashboard.html` — NEW unified dashboard
-2. `fleetkit-v2/src/dashboard-controller.js` — NEW dashboard logic
-3. `fleetkit-v2/src/*.js` — Fix null-safety bugs in ALL shared modules
-4. `fleetkit-v2/office-gameboy/*.js` — Fix null-safety bugs
-5. `fleetkit-v2/office-gameboy-color/*.js` — Fix null-safety bugs  
-6. `fleetkit-v2/office-sims/*.js` — Fix null-safety bugs
+1. `spawnkit-v2/dashboard.html` — NEW unified dashboard
+2. `spawnkit-v2/src/dashboard-controller.js` — NEW dashboard logic
+3. `spawnkit-v2/src/*.js` — Fix null-safety bugs in ALL shared modules
+4. `spawnkit-v2/office-gameboy/*.js` — Fix null-safety bugs
+5. `spawnkit-v2/office-gameboy-color/*.js` — Fix null-safety bugs  
+6. `spawnkit-v2/office-sims/*.js` — Fix null-safety bugs
 
 ## ITERATION PROTOCOL
 After building, you MUST run 20 self-review iterations:

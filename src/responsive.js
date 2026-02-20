@@ -1,5 +1,5 @@
 /**
- * FleetKit v2 — Responsive Viewport System
+ * SpawnKit v2 — Responsive Viewport System
  * ══════════════════════════════════════════
  * 
  * Handles responsive behavior for all three themes:
@@ -446,9 +446,9 @@
 
     // ── Export ──────────────────────────────────────────────────────
 
-    if (!global.FleetKit) global.FleetKit = {};
+    if (!window.SpawnKit) window.SpawnKit = {};
     
-    global.FleetKit.responsive = {
+    window.SpawnKit.responsive = {
         init: init,
         detectTheme: detectTheme
     };

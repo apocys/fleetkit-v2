@@ -1,5 +1,5 @@
 /**
- * FleetKit v2 - Universal Theme Switcher Component
+ * SpawnKit v2 - Universal Theme Switcher Component
  * 
  * Add this to any office theme to enable theme switching
  * Usage: Just include this script and call initThemeSwitcher()
@@ -201,7 +201,7 @@
         const selectorLink = container.querySelector('.theme-selector-link');
         
         // Get current theme from localStorage
-        const currentTheme = localStorage.getItem('fleetkit-theme') || 'gameboy';
+        const currentTheme = localStorage.getItem('spawnkit-theme') || 'gameboy';
         
         // Mark current theme as active
         options.forEach(option => {
@@ -262,7 +262,7 @@
         const theme = themes[themeId];
         
         // Save theme preference
-        localStorage.setItem('fleetkit-theme', themeId);
+        localStorage.setItem('spawnkit-theme', themeId);
         
         // Show loading animation if available
         if (typeof showThemeLoadingAnimation === 'function') {
@@ -312,8 +312,8 @@
     }
     
     // Export functions to global scope
-    global.initThemeSwitcher = initThemeSwitcher;
-    global.switchTheme = switchTheme;
-    global.showThemeLoadingAnimation = showThemeLoadingAnimation;
+    window.initThemeSwitcher = initThemeSwitcher;
+    window.switchTheme = switchTheme;
+    window.showThemeLoadingAnimation = showThemeLoadingAnimation;
     
 })(typeof window !== 'undefined' ? window : global);

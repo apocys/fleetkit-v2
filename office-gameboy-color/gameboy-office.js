@@ -191,7 +191,7 @@ class GameBoyVirtualOffice {
     
     showStartupMessage() {
         // GameBoy Color-style startup text — warm gold on navy
-        const startupText = new PIXI.Text('FLEETKIT GAMEBOY COLOR\n\nSYSTEM INITIALIZED\nLOADING AGENTS...', {
+        const startupText = new PIXI.Text('SPAWNKIT GAMEBOY COLOR\n\nSYSTEM INITIALIZED\nLOADING AGENTS...', {
             fontFamily: 'Press Start 2P, Monaco, monospace',
             fontSize: 12,
             fill: this.colors.lightest,

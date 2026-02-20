@@ -400,7 +400,7 @@
     <!-- Characters (with Plumbob) -->
     <script src="sims-characters.js"></script>
 
-    <!-- State bridge (FleetKit ↔ Sims) -->
+    <!-- State bridge (SpawnKit ↔ Sims) -->
     <script src="sims-state-bridge.js"></script>
 
     <!-- Main office engine (initializes everything) -->
@@ -409,8 +409,8 @@
     <script>
         document.addEventListener('DOMContentLoaded', async function() {
             // Initialize UX Layer
-            if (typeof FleetKitUX !== 'undefined') {
-                FleetKitUX.init({ theme: 'sims' });
+            if (typeof SpawnKitUX !== 'undefined') {
+                SpawnKitUX.init({ theme: 'sims' });
             }
             // Initialize OpenClaw Helpers
             if (typeof OpenClawHelpers !== 'undefined') {
@@ -419,9 +419,9 @@
 
             // Optional boot sequence
             const params = new URLSearchParams(window.location.search);
-            const shouldBoot = params.has('boot') || !localStorage.getItem('fleetkit-booted-sims');
+            const shouldBoot = params.has('boot') || !localStorage.getItem('spawnkit-booted-sims');
 
-            if (shouldBoot && typeof FleetKitBoot !== 'undefined') {
+            if (shouldBoot && typeof SpawnKitBoot !== 'undefined') {
                 const overlay = document.createElement('div');
                 overlay.id = 'bootOverlay';
                 overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;z-index:9999;background:#1a3a4a;display:flex;align-items:center;justify-content:center;color:#e0e0e0;font-family:VT323,monospace;font-size:24px;flex-direction:column;gap:16px;';
@@ -433,13 +433,13 @@
                 document.body.prepend(overlay);
 
                 try {
-                    await FleetKitBoot.play('sims', overlay, {
+                    await SpawnKitBoot.play('sims', overlay, {
                         soundEnabled: false,
                         skipable: true
                     });
                 } catch(e) { console.warn('Boot skipped:', e); }
 
-                localStorage.setItem('fleetkit-booted-sims', 'true');
+                localStorage.setItem('spawnkit-booted-sims', 'true');
                 overlay.style.transition = 'opacity 0.5s';
                 overlay.style.opacity = '0';
                 setTimeout(() => overlay.remove(), 500);
@@ -449,32 +449,37 @@
             initThemeSwitcher();
 
             // Signal UX ready
-            if (typeof FleetKitUX !== 'undefined') {
-                FleetKitUX.ready();
+            if (typeof SpawnKitUX !== 'undefined') {
+                SpawnKitUX.ready();
             }
 
             // HUD updates
             function updateHUD() {
                 try {
-                    const data = typeof FleetKit !== 'undefined' ? FleetKit.data : null;
-                    const ach = typeof FleetKitAchievements !== 'undefined' ? FleetKitAchievements : null;
+                    const data = typeof SpawnKit !== 'undefined' ? SpawnKit.data : null;
+                    const ach = typeof SpawnKitAchievements !== 'undefined' ? SpawnKitAchievements : null;
 
                     if (data) {
                         const active = (data.missions || []).filter(m => m.status === 'active' || m.status === 'in_progress').length;
                         const agents = (data.agents || []).length;
-                        document.getElementById('hudAgents').textContent = '👥 ' + agents + ' Agents';
+                        const activeAgents = (data.agents || []).filter(a => a.status === 'active').length;
+                        
+                        document.getElementById('hudAgents').textContent = `👥 ${activeAgents}/${agents} Active`;
                         document.getElementById('hudMissions').textContent = '📋 ' + active + ' Mission' + (active !== 1 ? 's' : '');
-                    }
-                    if (ach) {
-                        const score = ach.getScore ? ach.getScore() : { score: 0 };
-                        document.getElementById('hudScore').textContent = '🏆 ' + score.score + ' pts';
+                        
+                        // Show total tokens/api calls in score
+                        const tokens = data.metrics?.tokensToday || 0;
+                        const apiCalls = data.metrics?.apiCallsToday || 0;
+                        document.getElementById('hudScore').textContent = `💰 ${tokens.toLocaleString()} tokens`;
                     }
 
-                    // Clock
+                    // Clock with work day indicator
                     const now = new Date();
                     const h = now.getHours().toString().padStart(2, '0');
                     const m = now.getMinutes().toString().padStart(2, '0');
-                    document.getElementById('hudTime').textContent = '🕐 ' + h + ':' + m;
+                    const hour = now.getHours();
+                    const dayIndicator = (hour >= 9 && hour < 17) ? '☀️' : (hour >= 17 && hour < 22) ? '🌆' : '🌙';
+                    document.getElementById('hudTime').textContent = dayIndicator + ' ' + h + ':' + m;
                 } catch(e) {}
             }
 

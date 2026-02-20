@@ -1,8 +1,8 @@
 /**
- * FleetKit v2 — Click Affordances & Visual Buttons Layer
+ * SpawnKit v2 — Click Affordances & Visual Buttons Layer
  * ═══════════════════════════════════════════════════════
  *
- * The #1 UX fix: makes FleetKit usable for non-keyboard users.
+ * The #1 UX fix: makes SpawnKit usable for non-keyboard users.
  * Zero click affordances → full mouse-driven experience.
  *
  * Features:
@@ -13,7 +13,7 @@
  *   5. GameBoy HUD — replaces debug bar with Pokémon-style stats
  *   6. Demo Mode Button — watch team in action
  *
- * Integrates with: OpenClawHelpers, FleetKitUX, FleetKitAchievements,
+ * Integrates with: OpenClawHelpers, SpawnKitUX, SpawnKitAchievements,
  *                  MissionController, GameBoyCharacterManager
  *
  * Pure JS, file:// compatible, zero dependencies.
@@ -44,9 +44,9 @@ window.ClickAffordances = (() => {
     if (document.querySelector('.executive-office') || document.querySelector('.executive-suit')) return 'executive';
     if (document.getElementById('gameContainer')) return 'gameboy';
 
-    // From OpenClawHelpers or FleetKitUX
+    // From OpenClawHelpers or SpawnKitUX
     if (window.OpenClawHelpers?.theme) return OpenClawHelpers.theme;
-    if (window.FleetKitUX?.theme) return FleetKitUX.theme;
+    if (window.SpawnKitUX?.theme) return SpawnKitUX.theme;
 
     return 'gameboy';
   }
@@ -618,14 +618,14 @@ window.ClickAffordances = (() => {
       OpenClawHelpers.showMissionForm();
       return;
     }
-    if (key === '?' && window.FleetKitUX) {
-      FleetKitUX.showHelp();
+    if (key === '?' && window.SpawnKitUX) {
+      SpawnKitUX.showHelp();
       return;
     }
-    if (key === 'Tab' && window.FleetKitAchievements) {
+    if (key === 'Tab' && window.SpawnKitAchievements) {
       // TAB typically opens stats dashboard
-      if (typeof FleetKitAchievements.showStatsOverlay === 'function') {
-        FleetKitAchievements.showStatsOverlay();
+      if (typeof SpawnKitAchievements.showStatsOverlay === 'function') {
+        SpawnKitAchievements.showStatsOverlay();
         return;
       }
     }
@@ -813,10 +813,10 @@ window.ClickAffordances = (() => {
    */
   function openAgentDetail(agentId) {
     if (window.OpenClawHelpers?.showAgentDetail && typeof OpenClawHelpers.showAgentDetail === 'function') {
-      // Try to find the full agent object from FleetKit data
+      // Try to find the full agent object from SpawnKit data
       let agentObj = null;
-      if (typeof FleetKit !== 'undefined' && FleetKit?.data?.agents) {
-        agentObj = (FleetKit.data.agents || []).find(a =>
+      if (typeof SpawnKit !== 'undefined' && SpawnKit?.data?.agents) {
+        agentObj = (SpawnKit.data.agents || []).find(a =>
           a?.id === agentId ||
           a?.name?.toLowerCase() === (agentId || '').toLowerCase() ||
           a?.canonical === agentId
@@ -882,13 +882,13 @@ window.ClickAffordances = (() => {
   //  4. HELP TOAST (first visit)
   // ══════════════════════════════════════════════════════════════
 
-  const HELP_TOAST_KEY = 'fleetkit-help-toast-shown';
+  const HELP_TOAST_KEY = 'spawnkit-help-toast-shown';
 
   function showHelpToast() {
     if (localStorage.getItem(HELP_TOAST_KEY)) return;
 
     // Wait for boot/onboarding to finish
-    const delay = localStorage.getItem('fleetkit-onboarded') ? 2000 : 8000;
+    const delay = localStorage.getItem('spawnkit-onboarded') ? 2000 : 8000;
 
     setTimeout(() => {
       // Double-check no modal is open
@@ -1005,9 +1005,9 @@ window.ClickAffordances = (() => {
   }
 
   function getActiveQuestCount() {
-    // From FleetKit data
-    if (typeof FleetKit !== 'undefined' && FleetKit?.data?.missions) {
-      return (FleetKit.data.missions || []).filter(m =>
+    // From SpawnKit data
+    if (typeof SpawnKit !== 'undefined' && SpawnKit?.data?.missions) {
+      return (SpawnKit.data.missions || []).filter(m =>
         m?.status === 'running' || m?.status === 'active' || m?.status === 'pending'
       ).length;
     }
@@ -1026,26 +1026,26 @@ window.ClickAffordances = (() => {
   }
 
   function getTotalPoints() {
-    if (typeof FleetKitAchievements !== 'undefined' && FleetKitAchievements?.getStats) {
-      const stats = FleetKitAchievements.getStats();
+    if (typeof SpawnKitAchievements !== 'undefined' && SpawnKitAchievements?.getStats) {
+      const stats = SpawnKitAchievements.getStats();
       if (stats && typeof stats?.totalPoints === 'number') return stats.totalPoints;
       if (stats && typeof stats?.points === 'number') return stats.points;
     }
     // Fallback: count from localStorage
     try {
-      const unlocked = JSON.parse(localStorage.getItem('fleetkit-achievements-unlocked') || '[]');
+      const unlocked = JSON.parse(localStorage.getItem('spawnkit-achievements-unlocked') || '[]');
       return unlocked.length * 20; // Rough estimate
     } catch { return 0; }
   }
 
   function getCurrentStreak() {
-    if (typeof FleetKitAchievements !== 'undefined' && FleetKitAchievements?.getStats) {
-      const stats = FleetKitAchievements.getStats();
+    if (typeof SpawnKitAchievements !== 'undefined' && SpawnKitAchievements?.getStats) {
+      const stats = SpawnKitAchievements.getStats();
       if (stats && typeof stats?.streak === 'number') return stats.streak;
       if (stats && typeof stats?.currentStreak === 'number') return stats.currentStreak;
     }
     try {
-      const stats = JSON.parse(localStorage.getItem('fleetkit-achievements-stats') || '{}');
+      const stats = JSON.parse(localStorage.getItem('spawnkit-achievements-stats') || '{}');
       return stats?.streak || stats?.currentStreak || 0;
     } catch { return 0; }
   }

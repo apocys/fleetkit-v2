@@ -1,4 +1,4 @@
-# FleetKit v2
+# SpawnKit v2
 
 **Your AI team, visualized.**
 

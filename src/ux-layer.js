@@ -1,5 +1,5 @@
 /**
- * FleetKit v2 — Universal UX Layer (SS+ Grade)
+ * SpawnKit v2 — Universal UX Layer (SS+ Grade)
  * ═══════════════════════════════════════════════════════════════════════════
  * Loaded by ALL themes. Provides:
  *   1. Keyboard Shortcut Overlay (? key)
@@ -9,11 +9,11 @@
  *   5. Loading Skeleton (themed, auto-hides when ready)
  *
  * API:
- *   FleetKitUX.init({ theme: 'gameboy'|'cyberpunk'|'executive' })
- *   FleetKitUX.showHelp()
- *   FleetKitUX.hideHelp()
- *   FleetKitUX.ready()          — call when office is fully loaded
- *   FleetKitUX.isReady()
+ *   SpawnKitUX.init({ theme: 'gameboy'|'cyberpunk'|'executive' })
+ *   SpawnKitUX.showHelp()
+ *   SpawnKitUX.hideHelp()
+ *   SpawnKitUX.ready()          — call when office is fully loaded
+ *   SpawnKitUX.isReady()
  *
  * Pure JS + CSS, no dependencies. File:// compatible.
  *
@@ -21,7 +21,7 @@
  * @version 1.0.0
  */
 
-window.FleetKitUX = (() => {
+window.SpawnKitUX = (() => {
   'use strict';
 
   // ── State ────────────────────────────────────────────────────────
@@ -90,12 +90,12 @@ window.FleetKitUX = (() => {
   function injectStyles() {
     if (_styleEl) _styleEl.remove();
     _styleEl = document.createElement('style');
-    _styleEl.id = 'fleetkit-ux-styles';
+    _styleEl.id = 'spawnkit-ux-styles';
 
     const p = P();
 
     _styleEl.textContent = `
-      /* ═══ FleetKit UX Layer Styles ═══ */
+      /* ═══ SpawnKit UX Layer Styles ═══ */
 
       /* ── Keyboard Shortcut Overlay ── */
       #fk-help-overlay {
@@ -590,11 +590,11 @@ window.FleetKitUX = (() => {
   ];
 
   function shouldOnboard() {
-    return !localStorage.getItem('fleetkit-onboarded');
+    return !localStorage.getItem('spawnkit-onboarded');
   }
 
   function markOnboarded() {
-    localStorage.setItem('fleetkit-onboarded', 'true');
+    localStorage.setItem('spawnkit-onboarded', 'true');
   }
 
   function startOnboarding() {
@@ -654,7 +654,7 @@ window.FleetKitUX = (() => {
     _navEl = document.createElement('nav');
     _navEl.id = 'fk-nav';
     _navEl.setAttribute('role', 'navigation');
-    _navEl.setAttribute('aria-label', 'FleetKit navigation');
+    _navEl.setAttribute('aria-label', 'SpawnKit navigation');
 
     // Home button
     _navEl.appendChild(makeNavBtn('🏠', 'Home', () => {
@@ -716,7 +716,7 @@ window.FleetKitUX = (() => {
   function installErrorHandler() {
     window.addEventListener('error', (event) => {
       _errorCount++;
-      console.error('[FleetKitUX] Error caught:', event?.message);
+      console.error('[SpawnKitUX] Error caught:', event?.message);
 
       // Only show recovery screen after multiple critical errors
       // or a single fatal error that prevents rendering
@@ -727,7 +727,7 @@ window.FleetKitUX = (() => {
 
     window.addEventListener('unhandledrejection', (event) => {
       _errorCount++;
-      console.error('[FleetKitUX] Unhandled rejection:', event?.reason);
+      console.error('[SpawnKitUX] Unhandled rejection:', event?.reason);
 
       if (_errorCount >= MAX_ERRORS_BEFORE_SCREEN) {
         showErrorScreen(String(event.reason));
@@ -759,7 +759,7 @@ window.FleetKitUX = (() => {
       <div class="fk-error-emoji">😵</div>
       <h2>Something went wrong</h2>
       <p>
-        FleetKit couldn't initialize properly.<br>Try:
+        SpawnKit couldn't initialize properly.<br>Try:
       </p>
       <p style="text-align: left; line-height: 2.2;">
         • Refresh the page<br>
@@ -962,7 +962,7 @@ window.FleetKitUX = (() => {
         }
       }, 15000);
 
-      console.log(`[FleetKitUX] Initialized (theme: ${_theme})`);
+      console.log(`[SpawnKitUX] Initialized (theme: ${_theme})`);
     },
 
     /**
@@ -980,7 +980,7 @@ window.FleetKitUX = (() => {
         startOnboarding();
       }
 
-      console.log('[FleetKitUX] Office ready ✓');
+      console.log('[SpawnKitUX] Office ready ✓');
     },
 
     /**
@@ -1009,12 +1009,12 @@ window.FleetKitUX = (() => {
         _helpEl = null;
         buildHelpOverlay();
       }
-      console.log(`[FleetKitUX] Theme refreshed: ${_theme}`);
+      console.log(`[SpawnKitUX] Theme refreshed: ${_theme}`);
     },
 
     /** Manually trigger onboarding (resets onboard flag). */
     resetOnboarding() {
-      localStorage.removeItem('fleetkit-onboarded');
+      localStorage.removeItem('spawnkit-onboarded');
       _onboardingActive = false;
       startOnboarding();
     },

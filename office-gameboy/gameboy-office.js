@@ -176,9 +176,9 @@ class GameBoyVirtualOffice {
     
     showStartupMessage() {
         // GameBoy-style startup text
-        const startupText = new PIXI.Text('FLEETKIT GAMEBOY OFFICE\n\nSYSTEM INITIALIZED\nLOADING AGENTS...', {
+        const startupText = new PIXI.Text('SPAWNKIT GAMEBOY OFFICE\nENHANCED EDITION\n\nREAL DATA INTEGRATION\nLOADING AGENTS...', {
             fontFamily: 'Press Start 2P, Monaco, monospace',
-            fontSize: 12,
+            fontSize: 10,
             fill: this.colors.lightest,
             align: 'center',
             stroke: this.colors.darkest,
@@ -201,6 +201,12 @@ class GameBoyVirtualOffice {
                 }
             }, 100);
         }, 3000);
+        
+        // Add live status bar after startup
+        setTimeout(() => {
+            this.createStatusBar();
+            console.log('🎮 SPAWNKIT GAMEBOY OFFICE: Enhanced edition loaded successfully!');
+        }, 4000);
     }
     
     gameLoop(delta) {
@@ -237,6 +243,29 @@ class GameBoyVirtualOffice {
         }
     }
     
+    createStatusBar() {
+        const statusBar = new PIXI.Graphics();
+        statusBar.beginFill(this.colors.dark, 0.8);
+        statusBar.drawRect(0, this.app.screen.height - 30, this.app.screen.width, 30);
+        statusBar.endFill();
+        
+        // Status text container
+        this.statusText = new PIXI.Text('AGENTS: 0 | MISSIONS: 0 | UPTIME: 0s | TOKENS: 0', {
+            fontFamily: 'Press Start 2P, Monaco, monospace',
+            fontSize: 6,
+            fill: this.colors.lightest,
+            align: 'left'
+        });
+        this.statusText.x = 10;
+        this.statusText.y = this.app.screen.height - 20;
+        
+        statusBar.addChild(this.statusText);
+        this.effectsContainer.addChild(statusBar);
+        
+        // Start uptime counter
+        this.startTime = Date.now();
+    }
+    
     updateDebugInfo(deltaTime) {
         this.frameCount++;
         
@@ -259,7 +288,43 @@ class GameBoyVirtualOffice {
             if (activitiesElement && this.characterManager) {
                 activitiesElement.textContent = `STATUS: ${this.getShortStatus()}`;
             }
+            
+            // Update status bar with live data
+            this.updateStatusBar();
         }
+    }
+    
+    updateStatusBar() {
+        if (!this.statusText) return;
+        
+        const activeAgents = this.characterManager?.characters?.length || 0;
+        const activeMissions = this.stateBridge?.getMissionStatus?.()?.active || 0;
+        const uptime = this.startTime ? Math.floor((Date.now() - this.startTime) / 1000) : 0;
+        
+        // Get token count from SpawnKit data
+        let tokenCount = 0;
+        if (window.SpawnKit?.data?.metrics?.tokens) {
+            tokenCount = window.SpawnKit.data.metrics.tokens;
+        }
+        
+        // Format uptime nicely
+        const hours = Math.floor(uptime / 3600);
+        const minutes = Math.floor((uptime % 3600) / 60);
+        const seconds = uptime % 60;
+        
+        let uptimeStr;
+        if (hours > 0) {
+            uptimeStr = `${hours}h${minutes}m`;
+        } else if (minutes > 0) {
+            uptimeStr = `${minutes}m${seconds}s`;
+        } else {
+            uptimeStr = `${seconds}s`;
+        }
+        
+        // Format token count
+        const tokenStr = tokenCount > 1000 ? `${Math.floor(tokenCount / 1000)}K` : tokenCount.toString();
+        
+        this.statusText.text = `AGENTS: ${activeAgents} | MISSIONS: ${activeMissions} | UPTIME: ${uptimeStr} | TOKENS: ${tokenStr}`;
     }
     
     getShortStatus() {
@@ -496,8 +561,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     
-    // Help available via ? key overlay (FleetKitUX)
-    // Debug: set localStorage.setItem('fleetkit-debug', 'true') to enable verbose logging
+    // Help available via ? key overlay (SpawnKitUX)
+    // Debug: set localStorage.setItem('spawnkit-debug', 'true') to enable verbose logging
     
     // Auto-save every 30 seconds
     setInterval(() => {

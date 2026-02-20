@@ -1,12 +1,12 @@
 /**
- * FleetKit v2 — Theme-Specific Agent Names & Roles
+ * SpawnKit v2 — Theme-Specific Agent Names & Roles
  * 
  * Each theme has its own universe-consistent naming.
  * The data bridge uses canonical IDs (hunter, forge, echo, atlas, sentinel).
  * Themes override display names via this mapping.
  */
 
-window.FleetKitNames = {
+window.SpawnKitNames = {
   // ── PIXEL: Retro RPG Universe ─────────────────────────
   gameboy: {
     hunter:   { name: 'TRADER',    role: 'Revenue Trainer',  emoji: '💰', title: 'Lv.42 TRADER' },
@@ -81,5 +81,17 @@ window.FleetKitNames = {
     if (!t?.subagent) return `Sub-Agent #${index + 1}`;
     const variants = t.subagent.variants;
     return `${variants[index % variants.length]} #${Math.floor(index / variants.length) + 1}`;
+  },
+
+  // ── Model Identity Integration ──────────────────────────────────────────
+  resolveWithModel(theme, canonicalId, modelId, field) {
+    const baseName = this.resolve(theme, canonicalId, field);
+    
+    // If ModelIdentity is available, format with model level
+    if (typeof ModelIdentity !== 'undefined' && modelId) {
+      return ModelIdentity.formatDisplayName(theme, baseName, modelId);
+    }
+    
+    return baseName;
   }
 };

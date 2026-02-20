@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>FleetKit Data Bridge Test</title>
+    <title>SpawnKit Data Bridge Test</title>
     <style>
         body { font-family: monospace; background: #0a0a0f; color: #00FF41; padding: 20px; }
         .test-section { margin: 20px 0; border: 1px solid #00FF41; padding: 15px; }
@@ -12,7 +12,7 @@
     </style>
 </head>
 <body>
-    <h1>🚀 FleetKit Data Bridge Connection Test</h1>
+    <h1>🚀 SpawnKit Data Bridge Connection Test</h1>
     
     <div class="test-section">
         <div class="test-title">1. Data Bridge Initialization</div>
@@ -42,19 +42,19 @@
     <script src="../src/data-bridge.js"></script>
     <script>
         function runTests() {
-            // Test 1: FleetKit availability
+            // Test 1: SpawnKit availability
             const initTest = document.getElementById('init-test');
-            if (typeof FleetKit !== 'undefined') {
-                initTest.innerHTML = '<span class="pass">✓ FleetKit object is available</span>';
+            if (typeof SpawnKit !== 'undefined') {
+                initTest.innerHTML = '<span class="pass">✓ SpawnKit object is available</span>';
             } else {
-                initTest.innerHTML = '<span class="fail">✗ FleetKit object not found</span>';
+                initTest.innerHTML = '<span class="fail">✗ SpawnKit object not found</span>';
                 return;
             }
 
             // Test 2: Agent data
             const agentData = document.getElementById('agent-data');
-            if (FleetKit.data && FleetKit.data.agents) {
-                const agents = FleetKit.data.agents.map(a => ({
+            if (SpawnKit.data && SpawnKit.data.agents) {
+                const agents = SpawnKit.data.agents.map(a => ({
                     id: a.id,
                     name: a.name,
                     role: a.role,
@@ -68,14 +68,14 @@
 
             // Test 3: System metrics
             const metricsData = document.getElementById('metrics-data');
-            if (FleetKit.data && FleetKit.data.metrics) {
+            if (SpawnKit.data && SpawnKit.data.metrics) {
                 const metrics = {
-                    tokensToday: FleetKit.data.metrics.tokensToday,
-                    apiCallsToday: FleetKit.data.metrics.apiCallsToday,
-                    activeAgents: FleetKit.data.metrics.activeAgents,
-                    uptime: FleetKit.data.metrics.uptime,
-                    memoryUsage: FleetKit.data.metrics.memoryUsage,
-                    successRate: FleetKit.data.metrics.successRate
+                    tokensToday: SpawnKit.data.metrics.tokensToday,
+                    apiCallsToday: SpawnKit.data.metrics.apiCallsToday,
+                    activeAgents: SpawnKit.data.metrics.activeAgents,
+                    uptime: SpawnKit.data.metrics.uptime,
+                    memoryUsage: SpawnKit.data.metrics.memoryUsage,
+                    successRate: SpawnKit.data.metrics.successRate
                 };
                 metricsData.textContent = JSON.stringify(metrics, null, 2);
             } else {
@@ -84,8 +84,8 @@
 
             // Test 4: Mission data
             const missionData = document.getElementById('mission-data');
-            if (FleetKit.data && FleetKit.data.missions) {
-                const missions = FleetKit.data.missions.map(m => ({
+            if (SpawnKit.data && SpawnKit.data.missions) {
+                const missions = SpawnKit.data.missions.map(m => ({
                     id: m.id,
                     title: m.title,
                     status: m.status,
@@ -102,14 +102,14 @@
             try {
                 let eventReceived = false;
                 
-                FleetKit.on('test:event', function(data) {
+                SpawnKit.on('test:event', function(data) {
                     eventReceived = true;
                     eventTest.innerHTML += '<br><span class="pass">✓ Event received: ' + JSON.stringify(data) + '</span>';
                 });
 
                 // Trigger a test event
                 setTimeout(() => {
-                    FleetKit.emit('test:event', { message: 'Event system working!' });
+                    SpawnKit.emit('test:event', { message: 'Event system working!' });
                     
                     setTimeout(() => {
                         if (eventReceived) {
@@ -125,8 +125,8 @@
             }
         }
 
-        // Run tests when FleetKit is ready
-        if (typeof FleetKit !== 'undefined') {
+        // Run tests when SpawnKit is ready
+        if (typeof SpawnKit !== 'undefined') {
             runTests();
         } else {
             document.addEventListener('DOMContentLoaded', function() {

@@ -1,0 +1,3221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SpawnKit — Executive Office</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* ═══════════════════════════════════════════════════════════════
+           SpawnKit Executive Office v3 — Apple × Linear × Raycast
+           Premium light-mode AI workspace. SS+ quality.
+           SVG Avatars + Hierarchy View + Agent TODO Panel
+           ═══════════════════════════════════════════════════════════════ */
+
+        :root {
+            /* ── Executive Palette ──────────────────────────── */
+            --exec-blue: #007AFF;
+            --exec-blue-hover: #0A84FF;
+            --exec-blue-muted: rgba(0, 122, 255, 0.15);
+            --exec-blue-glow: rgba(0, 122, 255, 0.3);
+            --exec-white: #FFFFFF;
+            --exec-gray-50: #F5F5F7;
+            --exec-gray-100: #E5E5EA;
+            --exec-gray-200: #C7C7CC;
+            --exec-gray-300: #AEAEB2;
+            --exec-gray-400: #8E8E93;
+            --exec-gray-500: #636366;
+            --exec-gray-600: #48484A;
+            --exec-gray-700: #3A3A3C;
+            --exec-gray-800: #2C2C2E;
+            --exec-gray-900: #1C1C1E;
+            --exec-black: #000000;
+
+            /* ── Semantic Colors (Light Mode Default) ───────── */
+            --bg-primary: #F5F5F7;
+            --bg-secondary: var(--exec-white);
+            --bg-tertiary: var(--exec-gray-50);
+            --bg-room: rgba(255, 255, 255, 0.85);
+            --bg-room-hover: rgba(255, 255, 255, 0.95);
+            --bg-frosted: rgba(255, 255, 255, 0.72);
+            --text-primary: var(--exec-gray-900);
+            --text-secondary: var(--exec-gray-600);
+            --text-tertiary: var(--exec-gray-500);
+            --border-subtle: rgba(0, 0, 0, 0.06);
+            --border-medium: rgba(0, 0, 0, 0.1);
+            --border-strong: rgba(0, 0, 0, 0.16);
+
+            /* ── Status Colors ──────────────────────────────── */
+            --status-active: #30D158;
+            --status-busy: #FFD60A;
+            --status-idle: var(--exec-gray-500);
+            --status-error: #FF453A;
+
+            /* ── Agent Brand Colors ─────────────────────────── */
+            --color-ceo: var(--exec-blue);
+            --color-atlas: #BF5AF2;
+            --color-forge: #FF9F0A;
+            --color-hunter: #FF453A;
+            --color-echo: #0A84FF;
+            --color-sentinel: #30D158;
+
+            /* ── Typography ─────────────────────────────────── */
+            --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+            /* ── Animation ──────────────────────────────────── */
+            --ease-smooth: cubic-bezier(0.2, 0.8, 0.2, 1);
+            --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+            --ease-out: cubic-bezier(0, 0, 0.2, 1);
+
+            /* ── Layout ─────────────────────────────────────── */
+            --room-radius: 16px;
+            --panel-width: 380px;
+        }
+
+        /* ═══════════════════════════════════════════════════
+           Reset & Base
+           ═══════════════════════════════════════════════════ */
+        *, *::before, *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: var(--font-family);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* ═══════════════════════════════════════════════════
+           Ambient Background — Subtle Grain + Gradient
+           ═══════════════════════════════════════════════════ */
+        .exec-backdrop {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            background:
+                radial-gradient(ellipse 80% 60% at 50% 20%, rgba(0, 122, 255, 0.06) 0%, transparent 70%),
+                radial-gradient(ellipse 60% 40% at 80% 80%, rgba(0, 122, 255, 0.04) 0%, transparent 60%),
+                var(--bg-primary);
+            pointer-events: none;
+        }
+
+        /* ── Floating Ambient Particles ─────────────────── */
+        .exec-particles {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        .exec-particle {
+            position: absolute;
+            width: 3px;
+            height: 3px;
+            background: rgba(0, 122, 255, 0.12);
+            border-radius: 50%;
+            animation: particleDrift linear infinite;
+        }
+
+        .exec-particle:nth-child(1) {
+            left: 15%;
+            top: 30%;
+            animation-duration: 28s;
+            animation-delay: 0s;
+        }
+        .exec-particle:nth-child(2) {
+            left: 70%;
+            top: 60%;
+            width: 2px;
+            height: 2px;
+            background: rgba(0, 122, 255, 0.15);
+            animation-duration: 34s;
+            animation-delay: -8s;
+        }
+        .exec-particle:nth-child(3) {
+            left: 45%;
+            top: 80%;
+            width: 2px;
+            height: 2px;
+            background: rgba(0, 0, 0, 0.04);
+            animation-duration: 22s;
+            animation-delay: -14s;
+        }
+
+        @keyframes particleDrift {
+            0%   { transform: translate(0, 0) scale(1); opacity: 0; }
+            10%  { opacity: 1; }
+            50%  { transform: translate(40px, -60px) scale(1.3); }
+            90%  { opacity: 1; }
+            100% { transform: translate(-20px, -120px) scale(0.8); opacity: 0; }
+        }
+
+        /* ═══════════════════════════════════════════════════
+           Main Layout Container
+           ═══════════════════════════════════════════════════ */
+        .exec-container {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ═══════════════════════════════════════════════════
+           View Toggle Bar
+           ═══════════════════════════════════════════════════ */
+        .exec-view-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            padding: 12px 24px 0;
+            flex-shrink: 0;
+        }
+
+        .view-toggle-group {
+            display: flex;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.04);
+            border: 1px solid var(--border-subtle);
+            border-radius: 10px;
+            padding: 3px;
+            gap: 2px;
+        }
+
+        .view-toggle-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            border: none;
+            background: transparent;
+            border-radius: 8px;
+            font-family: var(--font-family);
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-tertiary);
+            cursor: pointer;
+            transition: all 0.25s var(--ease-smooth);
+            -webkit-tap-highlight-color: transparent;
+            outline: none;
+            white-space: nowrap;
+        }
+
+        .view-toggle-btn:hover {
+            color: var(--text-secondary);
+            background: rgba(0, 0, 0, 0.03);
+        }
+
+        .view-toggle-btn.active {
+            background: var(--exec-white);
+            color: var(--text-primary);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
+        }
+
+        .view-toggle-btn:focus-visible {
+            outline: 2px solid var(--exec-blue);
+            outline-offset: 2px;
+        }
+
+        .view-toggle-icon {
+            font-size: 14px;
+            line-height: 1;
+        }
+
+        /* ═══════════════════════════════════════════════════
+           Office Floor — CSS Grid Layout (Grid View)
+           ═══════════════════════════════════════════════════ */
+        .exec-floor {
+            flex: 1;
+            padding: 16px 24px 24px;
+            display: grid;
+            grid-template-columns: 1fr 1.6fr 1fr;
+            grid-template-rows: 1fr 1fr 0.8fr;
+            gap: 12px;
+            max-width: 1200px;
+            max-height: calc(100vh - 112px);
+            margin: 0 auto;
+            width: 100%;
+            transition: opacity 0.3s var(--ease-smooth);
+        }
+
+        .exec-floor.hidden {
+            display: none;
+        }
+
+        /* ═══════════════════════════════════════════════════
+           Hierarchy / Org Chart View
+           ═══════════════════════════════════════════════════ */
+        .exec-hierarchy {
+            flex: 1;
+            padding: 16px 24px 24px;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            max-width: 1200px;
+            max-height: calc(100vh - 112px);
+            margin: 0 auto;
+            width: 100%;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: var(--exec-gray-300) transparent;
+        }
+
+        .exec-hierarchy.visible {
+            display: flex;
+        }
+
+        .exec-hierarchy::-webkit-scrollbar { width: 4px; }
+        .exec-hierarchy::-webkit-scrollbar-thumb { background: var(--exec-gray-300); border-radius: 2px; }
+
+        /* ── Org Tree Structure ──────────────────────────── */
+        .org-tree {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0;
+            padding: 12px 0;
+            width: 100%;
+        }
+
+        /* ── Tree Node (generic) ────────────────────────── */
+        .org-node {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+        }
+
+        .org-card {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 14px 22px;
+            background: var(--bg-room);
+            border: 1px solid var(--border-subtle);
+            border-radius: 14px;
+            cursor: pointer;
+            transition: all 0.3s var(--ease-smooth);
+            min-width: 180px;
+        }
+
+        .org-card:hover {
+            background: var(--bg-room-hover);
+            border-color: var(--border-medium);
+            transform: translateY(-1px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+        }
+
+        .org-card--ceo {
+            padding: 18px 28px;
+            background: linear-gradient(135deg, rgba(255,255,255,0.95), rgba(255,255,255,0.85));
+            border-color: var(--border-medium);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+        }
+
+        .org-card--ceo:hover {
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(0, 122, 255, 0.15);
+        }
+
+        .org-card-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .org-card-info .agent-name {
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .org-card-info .agent-role {
+            font-size: 11px;
+        }
+
+        .org-card--ceo .org-card-info .agent-name {
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        .org-card--ceo .org-card-info .agent-role {
+            font-size: 12px;
+        }
+
+        /* ── Tree Connector Lines ───────────────────────── */
+        .org-connector {
+            width: 2px;
+            height: 28px;
+            background: var(--border-medium);
+            flex-shrink: 0;
+        }
+
+        .org-connector--branch {
+            width: 2px;
+            height: 20px;
+            background: var(--border-medium);
+        }
+
+        .org-children {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            position: relative;
+            padding-top: 0;
+        }
+
+        /* Horizontal connecting bar above children */
+        .org-children::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: calc(50% - var(--bar-half-width, 200px));
+            right: calc(50% - var(--bar-half-width, 200px));
+            height: 2px;
+            background: var(--border-medium);
+        }
+
+        .org-child {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* ═══════════════════════════════════════════════════
+           Room — Base Component
+           ═══════════════════════════════════════════════════ */
+        .exec-room {
+            position: relative;
+            background: var(--bg-room);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--room-radius);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            cursor: pointer;
+            transition:
+                background 0.3s var(--ease-smooth),
+                border-color 0.3s var(--ease-smooth),
+                transform 0.3s var(--ease-smooth),
+                box-shadow 0.3s var(--ease-smooth);
+            overflow: hidden;
+            -webkit-tap-highlight-color: transparent;
+            outline: none;
+        }
+
+        .exec-room::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            background: radial-gradient(ellipse at 50% 0%, rgba(0,122,255,0.03) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .exec-room:hover {
+            background: var(--bg-room-hover);
+            border-color: var(--border-medium);
+            transform: translateY(-1px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+        }
+
+        .exec-room:focus-visible {
+            outline: 2px solid var(--exec-blue);
+            outline-offset: 2px;
+        }
+
+        .exec-room:active {
+            transform: translateY(0);
+        }
+
+        /* ── Room Label (top-left) ──────────────────────── */
+        .exec-room-label {
+            position: absolute;
+            top: 12px;
+            left: 16px;
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 1.2px;
+            text-transform: uppercase;
+            color: var(--text-tertiary);
+        }
+
+        /* ═══════════════════════════════════════════════════
+           CEO Room — Hero Room (center-top, spans full width)
+           ═══════════════════════════════════════════════════ */
+        .exec-room--ceo {
+            grid-column: 1 / -1;
+            grid-row: 1;
+            flex-direction: row;
+            justify-content: center;
+            align-items: center;
+            gap: 32px;
+            padding: 28px 36px;
+            background: linear-gradient(135deg,
+                rgba(255, 255, 255, 0.95) 0%,
+                rgba(255, 255, 255, 0.85) 100%
+            );
+            border-color: var(--border-medium);
+        }
+
+        .exec-room--ceo::after {
+            content: '';
+            position: absolute;
+            inset: -1px;
+            border-radius: inherit;
+            padding: 1px;
+            background: linear-gradient(
+                135deg,
+                rgba(0, 122, 255, 0.15) 0%,
+                rgba(0, 122, 255, 0) 40%,
+                rgba(0, 122, 255, 0) 60%,
+                rgba(0, 122, 255, 0.1) 100%
+            );
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            pointer-events: none;
+            animation: ceoBorderShift 8s ease-in-out infinite alternate;
+        }
+
+        @keyframes ceoBorderShift {
+            0%   { opacity: 0.5; }
+            50%  { opacity: 1; }
+            100% { opacity: 0.5; }
+        }
+
+        .exec-room--ceo:hover {
+            box-shadow:
+                0 8px 32px rgba(0, 0, 0, 0.1),
+                0 0 0 1px rgba(0, 122, 255, 0.15);
+        }
+
+        .ceo-content {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+        }
+
+        .ceo-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .ceo-info .agent-name {
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .ceo-info .agent-role {
+            font-size: 13px;
+        }
+
+        /* ── Mailbox Button ─────────────────────────────── */
+        .ceo-mailbox {
+            position: absolute;
+            top: 16px;
+            right: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 14px;
+            background: var(--exec-blue-muted);
+            border: 1px solid rgba(0, 122, 255, 0.2);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.25s var(--ease-smooth);
+            font-family: inherit;
+            color: var(--exec-blue);
+            font-size: 13px;
+            font-weight: 500;
+            -webkit-tap-highlight-color: transparent;
+            outline: none;
+        }
+
+        .ceo-mailbox:hover {
+            background: rgba(0, 122, 255, 0.25);
+            border-color: rgba(0, 122, 255, 0.4);
+            transform: scale(1.03);
+        }
+
+        .ceo-mailbox:focus-visible {
+            outline: 2px solid var(--exec-blue);
+            outline-offset: 2px;
+        }
+
+        .ceo-mailbox-icon {
+            font-size: 18px;
+            line-height: 1;
+        }
+
+        .ceo-mailbox-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 18px;
+            height: 18px;
+            padding: 0 5px;
+            background: var(--exec-blue);
+            color: var(--exec-white);
+            font-size: 11px;
+            font-weight: 700;
+            border-radius: 9px;
+            line-height: 1;
+        }
+
+        /* ═══════════════════════════════════════════════════
+           Agent Avatar — SVG Container
+           ═══════════════════════════════════════════════════ */
+        .agent-avatar {
+            position: relative;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: transform 0.3s var(--ease-spring), box-shadow 0.3s var(--ease-smooth);
+            overflow: hidden;
+        }
+
+        .agent-avatar svg {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .agent-avatar--lg {
+            width: 56px;
+            height: 56px;
+        }
+
+        .exec-room:hover .agent-avatar,
+        .org-card:hover .agent-avatar {
+            transform: scale(1.08);
+        }
+
+        /* ── Status Dot ─────────────────────────────────── */
+        .agent-status-dot {
+            position: absolute;
+            bottom: 1px;
+            right: 1px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            border: 2px solid var(--bg-room);
+            transition: background 0.3s var(--ease-smooth);
+            z-index: 2;
+        }
+
+        .agent-status-dot--active { background: var(--status-active); }
+        .agent-status-dot--busy   { background: var(--status-busy); }
+        .agent-status-dot--idle   { background: var(--status-idle); }
+
+        /* ── Agent Text ─────────────────────────────────── */
+        .agent-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+            line-height: 1.2;
+        }
+
+        .agent-role {
+            font-size: 11px;
+            font-weight: 400;
+            color: var(--text-tertiary);
+            line-height: 1.2;
+        }
+
+        /* ═══════════════════════════════════════════════════
+           Agent Rooms — Grid Placement
+           ═══════════════════════════════════════════════════ */
+        .exec-room--atlas    { grid-column: 1; grid-row: 2; }
+        .exec-room--forge    { grid-column: 2; grid-row: 2; }
+        .exec-room--hunter   { grid-column: 3; grid-row: 2; }
+        .exec-room--echo     { grid-column: 1; grid-row: 3; }
+        .exec-room--meeting  { grid-column: 2; grid-row: 3; }
+        .exec-room--sentinel { grid-column: 3; grid-row: 3; }
+
+        /* ═══════════════════════════════════════════════════
+           Meeting Room — Boardroom
+           ═══════════════════════════════════════════════════ */
+        .exec-room--meeting {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(248, 248, 250, 0.9));
+            border: 1px solid var(--border-medium);
+            cursor: pointer;
+            flex-direction: column;
+            gap: 12px;
+            align-items: flex-start;
+            padding: 18px 22px;
+        }
+
+        .exec-room--meeting:hover {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(248, 248, 250, 0.95));
+            border-color: var(--border-strong);
+            transform: translateY(-1px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+        }
+
+        .meeting-status {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            width: 100%;
+        }
+
+        .meeting-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-primary);
+            flex: 1;
+        }
+
+        .meeting-icon {
+            font-size: 24px;
+            opacity: 0.7;
+        }
+
+        .meeting-count {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 20px;
+            height: 20px;
+            padding: 0 6px;
+            background: var(--exec-blue);
+            color: var(--exec-white);
+            font-size: 11px;
+            font-weight: 700;
+            border-radius: 10px;
+            line-height: 1;
+            animation: meetingPulse 3s ease-in-out infinite;
+        }
+
+        @keyframes meetingPulse {
+            0%, 100% { 
+                box-shadow: 0 0 0 0 rgba(0, 122, 255, 0.7);
+                transform: scale(1);
+            }
+            50% { 
+                box-shadow: 0 0 0 4px rgba(0, 122, 255, 0);
+                transform: scale(1.05);
+            }
+        }
+
+        .meeting-preview {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            width: 100%;
+        }
+
+        .meeting-active {
+            font-size: 12px;
+            color: var(--text-secondary);
+            padding: 4px 8px;
+            background: rgba(0, 122, 255, 0.08);
+            border-radius: 6px;
+            border-left: 3px solid var(--exec-blue);
+        }
+
+        /* ═══════════════════════════════════════════════════
+           Agent Detail Expand Panel (in-place)
+           ═══════════════════════════════════════════════════ */
+        .agent-detail {
+            display: none;
+            width: 100%;
+            padding-top: 8px;
+            border-top: 1px solid var(--border-subtle);
+            margin-top: 4px;
+        }
+
+        .agent-detail.visible {
+            display: block;
+            animation: detailSlideIn 0.3s var(--ease-smooth);
+        }
+
+        @keyframes detailSlideIn {
+            from { opacity: 0; transform: translateY(-4px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .agent-detail-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 4px 0;
+            font-size: 11px;
+        }
+
+        .agent-detail-label {
+            color: var(--text-tertiary);
+            font-weight: 500;
+        }
+
+        .agent-detail-value {
+            color: var(--text-secondary);
+            font-weight: 400;
+            text-align: right;
+            max-width: 60%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        /* ═══════════════════════════════════════════════════
+           Mailbox Slide-In Panel
+           ═══════════════════════════════════════════════════ */
+        .mailbox-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 100;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s var(--ease-smooth);
+        }
+
+        .mailbox-overlay.open {
+            pointer-events: auto;
+            opacity: 1;
+        }
+
+        .mailbox-overlay.open .mailbox-backdrop {
+            opacity: 1;
+        }
+
+        .mailbox-overlay.open .mailbox-panel {
+            transform: translateX(0);
+        }
+
+        .mailbox-backdrop {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            opacity: 0;
+            transition: opacity 0.35s var(--ease-smooth);
+        }
+
+        .mailbox-panel {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: var(--panel-width);
+            max-width: 90vw;
+            height: 100%;
+            background: var(--bg-secondary);
+            border-left: 1px solid var(--border-medium);
+            display: flex;
+            flex-direction: column;
+            transform: translateX(100%);
+            transition: transform 0.4s var(--ease-smooth);
+            box-shadow: -16px 0 48px rgba(0, 0, 0, 0.1);
+        }
+
+        .mailbox-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border-subtle);
+            flex-shrink: 0;
+        }
+
+        .mailbox-title {
+            font-size: 17px;
+            font-weight: 700;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .mailbox-close {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: none;
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.2s var(--ease-smooth);
+            font-family: inherit;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .mailbox-close:hover {
+            background: var(--exec-gray-100);
+            color: var(--text-primary);
+        }
+
+        .mailbox-close:focus-visible {
+            outline: 2px solid var(--exec-blue);
+            outline-offset: 2px;
+        }
+
+        .mailbox-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px 0;
+            scrollbar-width: thin;
+            scrollbar-color: var(--exec-gray-300) transparent;
+        }
+
+        .mailbox-messages::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .mailbox-messages::-webkit-scrollbar-thumb {
+            background: var(--exec-gray-300);
+            border-radius: 2px;
+        }
+
+        /* ── Message Item ───────────────────────────────── */
+        .mail-item {
+            display: flex;
+            gap: 12px;
+            padding: 14px 24px;
+            transition: background 0.2s var(--ease-smooth);
+            cursor: pointer;
+            position: relative;
+        }
+
+        .mail-item:hover {
+            background: rgba(0, 0, 0, 0.03);
+        }
+
+        .mail-item--read {
+            opacity: 0.7;
+        }
+
+        .mail-item--read .mail-preview {
+            color: var(--text-tertiary);
+        }
+
+        .mail-unread-dot {
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 8px;
+            height: 8px;
+            background: var(--exec-blue);
+            border-radius: 50%;
+            animation: unreadPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes unreadPulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .mail-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--exec-white);
+            flex-shrink: 0;
+            overflow: hidden;
+        }
+
+        .mail-avatar svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .mail-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .mail-header {
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+            margin-bottom: 3px;
+        }
+
+        .mail-sender {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .mail-time {
+            font-size: 11px;
+            color: var(--text-tertiary);
+            flex-shrink: 0;
+        }
+
+        .mail-preview {
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.4;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .mail-divider {
+            height: 1px;
+            background: var(--border-subtle);
+            margin: 0 24px;
+        }
+
+        /* ═══════════════════════════════════════════════════
+           Agent TODO Panel — Slide-In from Right
+           ═══════════════════════════════════════════════════ */
+        .todo-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 200;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s var(--ease-smooth);
+        }
+
+        .todo-overlay.open {
+            pointer-events: auto;
+            opacity: 1;
+        }
+
+        .todo-overlay.open .todo-backdrop {
+            opacity: 1;
+        }
+
+        .todo-overlay.open .todo-panel {
+            transform: translateX(0);
+        }
+
+        .todo-backdrop {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            opacity: 0;
+            transition: opacity 0.35s var(--ease-smooth);
+        }
+
+        .todo-panel {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: var(--panel-width);
+            max-width: 90vw;
+            height: 100%;
+            background: var(--bg-secondary);
+            border-left: 1px solid var(--border-medium);
+            display: flex;
+            flex-direction: column;
+            transform: translateX(100%);
+            transition: transform 0.4s var(--ease-smooth);
+            box-shadow: -16px 0 48px rgba(0, 0, 0, 0.1);
+        }
+
+        .todo-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px 24px 16px;
+            border-bottom: 1px solid var(--border-subtle);
+            flex-shrink: 0;
+        }
+
+        .todo-agent-info {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .todo-agent-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            overflow: hidden;
+        }
+
+        .todo-agent-avatar svg {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .todo-agent-details {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .todo-agent-name {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text-primary);
+            line-height: 1.2;
+        }
+
+        .todo-agent-role {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-tertiary);
+            line-height: 1.2;
+        }
+
+        .todo-close {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: none;
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.2s var(--ease-smooth);
+            font-family: inherit;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .todo-close:hover {
+            background: var(--exec-gray-100);
+            color: var(--text-primary);
+        }
+
+        .todo-close:focus-visible {
+            outline: 2px solid var(--exec-blue);
+            outline-offset: 2px;
+        }
+
+        .todo-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0;
+            scrollbar-width: thin;
+            scrollbar-color: var(--exec-gray-300) transparent;
+        }
+
+        .todo-content::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .todo-content::-webkit-scrollbar-thumb {
+            background: var(--exec-gray-300);
+            border-radius: 2px;
+        }
+
+        /* ── TODO Sections ──────────────────────────────── */
+        .todo-section {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .todo-section:last-child {
+            border-bottom: none;
+        }
+
+        .todo-section-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            margin-bottom: 12px;
+        }
+
+        .todo-current-task {
+            font-size: 15px;
+            font-weight: 500;
+            color: var(--text-primary);
+            line-height: 1.3;
+        }
+
+        .todo-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .todo-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 0;
+        }
+
+        .todo-icon {
+            font-size: 16px;
+            line-height: 1;
+            width: 18px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        .todo-text {
+            font-size: 14px;
+            color: var(--text-primary);
+            line-height: 1.3;
+            flex: 1;
+        }
+
+        .todo-item--done .todo-text {
+            color: var(--text-tertiary);
+            text-decoration: line-through;
+        }
+
+        .todo-item--progress .todo-text {
+            color: var(--text-primary);
+        }
+
+        .todo-item--pending .todo-text {
+            color: var(--text-secondary);
+        }
+
+        /* ── Skills Section ─────────────────────────────── */
+        .todo-skills {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .skill-item {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .skill-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .skill-name {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .skill-percentage {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-tertiary);
+        }
+
+        .skill-bar {
+            width: 100%;
+            height: 6px;
+            background: var(--exec-gray-100);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .skill-progress {
+            height: 100%;
+            background: var(--exec-blue);
+            border-radius: 3px;
+            transition: width 0.6s var(--ease-smooth);
+        }
+
+        /* ═══════════════════════════════════════════════════════════════
+           Meeting Room Panel — Similar to TODO Panel
+           ═══════════════════════════════════════════════════════════════ */
+        .meeting-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 200;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s var(--ease-smooth);
+        }
+
+        .meeting-overlay.open {
+            pointer-events: auto;
+            opacity: 1;
+        }
+
+        .meeting-overlay.open .meeting-backdrop {
+            opacity: 1;
+        }
+
+        .meeting-overlay.open .meeting-panel {
+            transform: translateX(0);
+        }
+
+        .meeting-backdrop {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            opacity: 0;
+            transition: opacity 0.35s var(--ease-smooth);
+        }
+
+        .meeting-panel {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: var(--panel-width);
+            max-width: 90vw;
+            height: 100%;
+            background: var(--bg-secondary);
+            border-left: 1px solid var(--border-medium);
+            display: flex;
+            flex-direction: column;
+            transform: translateX(100%);
+            transition: transform 0.4s var(--ease-smooth);
+            box-shadow: -16px 0 48px rgba(0, 0, 0, 0.1);
+        }
+
+        .meeting-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px 24px 16px;
+            border-bottom: 1px solid var(--border-subtle);
+            flex-shrink: 0;
+        }
+
+        .meeting-title {
+            font-size: 17px;
+            font-weight: 700;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .meeting-close {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: none;
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.2s var(--ease-smooth);
+            font-family: inherit;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .meeting-close:hover {
+            background: var(--exec-gray-100);
+            color: var(--text-primary);
+        }
+
+        .meeting-close:focus-visible {
+            outline: 2px solid var(--exec-blue);
+            outline-offset: 2px;
+        }
+
+        .meeting-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0;
+            scrollbar-width: thin;
+            scrollbar-color: var(--exec-gray-300) transparent;
+        }
+
+        .meeting-content::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .meeting-content::-webkit-scrollbar-thumb {
+            background: var(--exec-gray-300);
+            border-radius: 2px;
+        }
+
+        /* ── Meeting Sections ──────────────────────────── */
+        .meeting-section {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .meeting-section:last-child {
+            border-bottom: none;
+        }
+
+        .meeting-section-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            margin-bottom: 12px;
+        }
+
+        .meeting-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .meeting-item {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            padding: 12px 16px;
+            background: rgba(0, 122, 255, 0.05);
+            border-left: 4px solid var(--exec-blue);
+            border-radius: 8px;
+        }
+
+        .meeting-item--active {
+            border-left-color: #FF453A;
+            background: rgba(255, 69, 58, 0.08);
+        }
+
+        .meeting-item--scheduled {
+            border-left-color: #FFD60A;
+            background: rgba(255, 214, 10, 0.08);
+        }
+
+        .meeting-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .meeting-item-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .meeting-item-status {
+            font-size: 11px;
+            font-weight: 500;
+            padding: 2px 8px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .meeting-item--active .meeting-item-status {
+            background: #FF453A;
+            color: white;
+        }
+
+        .meeting-item--scheduled .meeting-item-status {
+            background: #FFD60A;
+            color: #8B6914;
+        }
+
+        .meeting-item-description {
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+
+        .meeting-participants {
+            display: flex;
+            gap: 6px;
+            margin-top: 8px;
+        }
+
+        .meeting-participant {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: 600;
+            color: white;
+            background: var(--exec-blue);
+            overflow: hidden;
+        }
+
+        .meeting-participant svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* ── Sub-Agent Display in Hierarchy ──────────── */
+        .org-sub-level {
+            margin-top: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .org-sub-level-demo {
+            margin-top: 24px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .org-sub-children {
+            display: flex;
+            gap: 12px;
+        }
+
+        .org-sub-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            padding: 8px 12px;
+            background: rgba(0, 122, 255, 0.08);
+            border: 1px solid rgba(0, 122, 255, 0.2);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.25s var(--ease-smooth);
+            min-width: 100px;
+        }
+
+        .org-sub-card:hover {
+            background: rgba(0, 122, 255, 0.15);
+            border-color: rgba(0, 122, 255, 0.35);
+            transform: translateY(-1px);
+        }
+
+        .sub-agent-name {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-primary);
+            line-height: 1.2;
+        }
+
+        .sub-agent-role {
+            font-size: 10px;
+            font-weight: 400;
+            color: var(--text-tertiary);
+            line-height: 1.2;
+        }
+
+        /* ═══════════════════════════════════════════════════
+           Status Bar — Frosted Glass Bottom Bar
+           ═══════════════════════════════════════════════════ */
+        .exec-statusbar {
+            position: relative;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 12px 24px;
+            background: var(--bg-frosted);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border-top: 1px solid var(--border-subtle);
+            flex-shrink: 0;
+        }
+
+        .statusbar-info {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex-shrink: 0;
+        }
+
+        .statusbar-item {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-tertiary);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+        }
+
+        .statusbar-item-icon {
+            font-size: 14px;
+        }
+
+        .statusbar-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--status-active);
+            animation: statusPulse 2.5s ease-in-out infinite;
+        }
+
+        @keyframes statusPulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .statusbar-separator {
+            width: 1px;
+            height: 16px;
+            background: var(--border-subtle);
+        }
+
+        /* ── Command Input ──────────────────────────────── */
+        .exec-command-input {
+            flex: 1;
+            position: relative;
+        }
+
+        .exec-command-input input {
+            width: 100%;
+            height: 40px;
+            padding: 0 16px 0 38px;
+            background: rgba(0, 0, 0, 0.03);
+            border: 1px solid var(--border-subtle);
+            border-radius: 10px;
+            color: var(--text-primary);
+            font-family: var(--font-family);
+            font-size: 13px;
+            font-weight: 400;
+            outline: none;
+            transition:
+                border-color 0.25s var(--ease-smooth),
+                background 0.25s var(--ease-smooth),
+                box-shadow 0.25s var(--ease-smooth);
+        }
+
+        .exec-command-input input::placeholder {
+            color: var(--text-tertiary);
+        }
+
+        .exec-command-input input:focus {
+            background: var(--exec-white);
+            border-color: var(--exec-blue);
+            box-shadow: 0 0 0 3px var(--exec-blue-muted);
+        }
+
+        .exec-command-input .input-icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-tertiary);
+            font-size: 15px;
+            pointer-events: none;
+            transition: color 0.25s var(--ease-smooth);
+        }
+
+        .exec-command-input input:focus ~ .input-icon {
+            color: var(--exec-blue);
+        }
+
+        /* ═══════════════════════════════════════════════════
+           Responsive — Mobile / Small Viewports
+           ═══════════════════════════════════════════════════ */
+        @media (max-width: 768px) {
+            .exec-floor {
+                grid-template-columns: 1fr 1fr;
+                grid-template-rows: auto;
+                gap: 10px;
+                padding: 16px;
+                max-height: none;
+                overflow-y: auto;
+            }
+
+            .exec-room--ceo {
+                grid-column: 1 / -1;
+                grid-row: auto;
+                flex-direction: column;
+                gap: 16px;
+                padding: 20px;
+            }
+
+            .ceo-content {
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+            }
+
+            .ceo-mailbox {
+                position: relative;
+                top: auto;
+                right: auto;
+                margin-top: 8px;
+            }
+
+            .exec-room--atlas    { grid-column: 1; grid-row: auto; }
+            .exec-room--forge    { grid-column: 2; grid-row: auto; }
+            .exec-room--hunter   { grid-column: 1; grid-row: auto; }
+            .exec-room--echo     { grid-column: 2; grid-row: auto; }
+            .exec-room--meeting  { grid-column: 1 / -1; grid-row: auto; }
+            .exec-room--sentinel { grid-column: 1 / -1; grid-row: auto; }
+
+            .exec-room {
+                padding: 16px;
+                min-height: 100px;
+            }
+
+            .agent-avatar { width: 40px; height: 40px; }
+            .agent-avatar--lg { width: 48px; height: 48px; }
+
+            .statusbar-info { gap: 10px; }
+            .statusbar-item { font-size: 11px; }
+
+            .mailbox-panel,
+            .todo-panel,
+            .meeting-panel { 
+                width: 100vw; 
+            }
+
+            /* Hierarchy responsive */
+            .org-children {
+                flex-wrap: wrap;
+                gap: 12px;
+            }
+
+            .org-card {
+                min-width: 140px;
+                padding: 10px 14px;
+                gap: 10px;
+            }
+
+            .org-card .agent-avatar {
+                width: 36px;
+                height: 36px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .exec-floor {
+                grid-template-columns: 1fr;
+                padding: 12px;
+            }
+
+            .exec-room--atlas,
+            .exec-room--forge,
+            .exec-room--hunter,
+            .exec-room--echo,
+            .exec-room--sentinel {
+                grid-column: 1;
+            }
+
+            .exec-statusbar {
+                flex-direction: column;
+                gap: 10px;
+                padding: 12px 16px;
+            }
+
+            .statusbar-info {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .org-children {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .org-children::before {
+                display: none;
+            }
+        }
+
+        /* ═══════════════════════════════════════════════════
+           Accessibility — Focus-Visible Ring
+           ═══════════════════════════════════════════════════ */
+        :focus-visible {
+            outline: 2px solid var(--exec-blue);
+            outline-offset: 2px;
+        }
+
+        /* Disable outline for mouse users */
+        :focus:not(:focus-visible) {
+            outline: none;
+        }
+
+        /* ═══════════════════════════════════════════════════
+           Reduced Motion
+           ═══════════════════════════════════════════════════ */
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ═══ Ambient Background ═══ -->
+    <div class="exec-backdrop" aria-hidden="true"></div>
+    <div class="exec-particles" aria-hidden="true">
+        <div class="exec-particle"></div>
+        <div class="exec-particle"></div>
+        <div class="exec-particle"></div>
+    </div>
+
+    <!-- ═══ SVG Avatar Definitions (hidden, referenced by use) ═══ -->
+    <svg xmlns="http://www.w3.org/2000/svg" style="display:none">
+        <defs>
+            <!-- ── ApoMac: Tech CEO with glasses ── -->
+            <symbol id="avatar-ceo" viewBox="0 0 48 48">
+                <circle cx="24" cy="24" r="24" fill="#007AFF"/>
+                <circle cx="24" cy="20" r="10" fill="#F5D6B8"/>
+                <path d="M14 42c0-8 4.5-14 10-14s10 6 10 14" fill="#1C1C1E"/>
+                <!-- Hair -->
+                <path d="M14 17c0-6 4.5-11 10-11s10 5 10 11c0 1-.2 2-.5 2.8-.8-4-4.5-7-9.5-7s-8.7 3-9.5 7c-.3-.8-.5-1.8-.5-2.8z" fill="#3A3A3C"/>
+                <!-- Glasses -->
+                <rect x="15.5" y="17.5" width="7" height="5.5" rx="2.5" fill="none" stroke="#1C1C1E" stroke-width="1.5"/>
+                <rect x="25.5" y="17.5" width="7" height="5.5" rx="2.5" fill="none" stroke="#1C1C1E" stroke-width="1.5"/>
+                <line x1="22.5" y1="20" x2="25.5" y2="20" stroke="#1C1C1E" stroke-width="1.2"/>
+                <!-- Eyes behind glasses -->
+                <circle cx="19" cy="20.2" r="1.2" fill="#1C1C1E"/>
+                <circle cx="29" cy="20.2" r="1.2" fill="#1C1C1E"/>
+                <!-- Smile -->
+                <path d="M20 24.5c0 0 2 2.5 4 2.5s4-2.5 4-2.5" fill="none" stroke="#C4856A" stroke-width="1" stroke-linecap="round"/>
+            </symbol>
+
+            <!-- ── Atlas: Professional / Organized (neat hair, tie) ── -->
+            <symbol id="avatar-atlas" viewBox="0 0 48 48">
+                <circle cx="24" cy="24" r="24" fill="#BF5AF2"/>
+                <circle cx="24" cy="20" r="10" fill="#E8C9A0"/>
+                <path d="M14 42c0-8 4.5-14 10-14s10 6 10 14" fill="#4A3668"/>
+                <!-- Tie -->
+                <polygon points="24,29 22,34 24,36 26,34" fill="#9B59B6"/>
+                <!-- Neat side-parted hair -->
+                <path d="M14 17c0-6 4.5-11 10-11s10 5 10 11v1c0-5-3.5-9-7-9-2 0-3.5.8-4.5 2C21 9.5 19 10 17 12c-1.5 1.5-2.5 3-3 5z" fill="#2C1810"/>
+                <!-- Eyes -->
+                <ellipse cx="19.5" cy="19.5" rx="1.3" ry="1.5" fill="#1C1C1E"/>
+                <ellipse cx="28.5" cy="19.5" rx="1.3" ry="1.5" fill="#1C1C1E"/>
+                <!-- Subtle smile -->
+                <path d="M21 24c0 0 1.5 2 3 2s3-2 3-2" fill="none" stroke="#B5896E" stroke-width="1" stroke-linecap="round"/>
+            </symbol>
+
+            <!-- ── Forge: Engineer with hard hat ── -->
+            <symbol id="avatar-forge" viewBox="0 0 48 48">
+                <circle cx="24" cy="24" r="24" fill="#FF9F0A"/>
+                <circle cx="24" cy="21" r="10" fill="#D4A87A"/>
+                <path d="M14 42c0-8 4.5-14 10-14s10 6 10 14" fill="#5C3D1E"/>
+                <!-- Hard hat -->
+                <path d="M12 17h24v2c0 1-1 2-2 2H14c-1 0-2-1-2-2v-2z" fill="#FFD60A"/>
+                <path d="M14 17c0-5 4.5-9 10-9s10 4 10 9H14z" fill="#FFD60A"/>
+                <rect x="12" y="16.5" width="24" height="2" rx="1" fill="#E8B800"/>
+                <!-- Hat stripe -->
+                <rect x="14" y="12" width="20" height="1.5" rx="0.75" fill="#E8B800"/>
+                <!-- Eyes — determined -->
+                <rect x="18" y="19" width="3" height="2" rx="1" fill="#1C1C1E"/>
+                <rect x="27" y="19" width="3" height="2" rx="1" fill="#1C1C1E"/>
+                <!-- Confident grin -->
+                <path d="M20 25c0 0 2 2 4 2s4-2 4-2" fill="none" stroke="#A07050" stroke-width="1.2" stroke-linecap="round"/>
+            </symbol>
+
+            <!-- ── Hunter: Sharp / Aggressive (angular features, sharp eyes) ── -->
+            <symbol id="avatar-hunter" viewBox="0 0 48 48">
+                <circle cx="24" cy="24" r="24" fill="#FF453A"/>
+                <circle cx="24" cy="20" r="10" fill="#E8C9A0"/>
+                <path d="M14 42c0-8 4.5-14 10-14s10 6 10 14" fill="#1C1C1E"/>
+                <!-- Spiky/angular hair -->
+                <path d="M14 16l3-8 4 5 3-6 3 4 4-5 3 7 2-3v6c0-6-4-11-10-11S14 10 14 16z" fill="#8B0000"/>
+                <!-- Sharp eyes — angled brows -->
+                <line x1="16" y1="17" x2="21" y2="18.5" stroke="#1C1C1E" stroke-width="1.5" stroke-linecap="round"/>
+                <line x1="32" y1="17" x2="27" y2="18.5" stroke="#1C1C1E" stroke-width="1.5" stroke-linecap="round"/>
+                <circle cx="19" cy="20" r="1.4" fill="#1C1C1E"/>
+                <circle cx="29" cy="20" r="1.4" fill="#1C1C1E"/>
+                <!-- Smirk -->
+                <path d="M21 24.5c0 0 1 1.5 3 1.5 3 0 4-2.5 4-2.5" fill="none" stroke="#B5896E" stroke-width="1" stroke-linecap="round"/>
+            </symbol>
+
+            <!-- ── Echo: Creative / Artistic (colorful, beret/headband) ── -->
+            <symbol id="avatar-echo" viewBox="0 0 48 48">
+                <circle cx="24" cy="24" r="24" fill="#0A84FF"/>
+                <circle cx="24" cy="21" r="10" fill="#F0D5B8"/>
+                <path d="M14 42c0-8 4.5-14 10-14s10 6 10 14" fill="#2A6CB5"/>
+                <!-- Wavy/creative hair -->
+                <path d="M14 18c0-6 4.5-11 10-11s10 5 10 11c-1-3-4-6-7-6-1.5 0-3 .5-4 1.5C22 12 20 11 17.5 12 15.5 13 14.5 15 14 18z" fill="#5B3A8C"/>
+                <!-- Beret/headband -->
+                <path d="M13 15c2-3 6-5 11-5s9 2 11 5" fill="none" stroke="#FF6B9D" stroke-width="2.5" stroke-linecap="round"/>
+                <circle cx="32" cy="13" r="2" fill="#FF6B9D"/>
+                <!-- Expressive eyes -->
+                <ellipse cx="19.5" cy="20" rx="1.5" ry="1.8" fill="#1C1C1E"/>
+                <ellipse cx="28.5" cy="20" rx="1.5" ry="1.8" fill="#1C1C1E"/>
+                <!-- Eye sparkles -->
+                <circle cx="20.2" cy="19.2" r="0.6" fill="white"/>
+                <circle cx="29.2" cy="19.2" r="0.6" fill="white"/>
+                <!-- Happy smile -->
+                <path d="M20 25c0 0 2 3 4 3s4-3 4-3" fill="none" stroke="#C4856A" stroke-width="1" stroke-linecap="round"/>
+            </symbol>
+
+            <!-- ── Sentinel: Vigilant Guard (helmet visor, alert eyes) ── -->
+            <symbol id="avatar-sentinel" viewBox="0 0 48 48">
+                <circle cx="24" cy="24" r="24" fill="#30D158"/>
+                <circle cx="24" cy="21" r="10" fill="#D4B896"/>
+                <path d="M14 42c0-8 4.5-14 10-14s10 6 10 14" fill="#1B3A1B"/>
+                <!-- Guard helmet / visor -->
+                <path d="M13 18c0-7 5-12 11-12s11 5 11 12H13z" fill="#2D5A2D"/>
+                <path d="M13 18h22v2c0 1-1 1.5-2 1.5H15c-1 0-2-.5-2-1.5v-2z" fill="#1B3A1B"/>
+                <!-- Visor slit with glowing eyes -->
+                <rect x="15" y="18" width="18" height="3.5" rx="1.5" fill="#0A1A0A" opacity="0.8"/>
+                <!-- Alert scanning eyes -->
+                <circle cx="20" cy="19.8" r="1.5" fill="#30D158"/>
+                <circle cx="20" cy="19.8" r="0.7" fill="#FFFFFF"/>
+                <circle cx="28" cy="19.8" r="1.5" fill="#30D158"/>
+                <circle cx="28" cy="19.8" r="0.7" fill="#FFFFFF"/>
+                <!-- Stoic line mouth -->
+                <line x1="21" y1="26" x2="27" y2="26" stroke="#A07050" stroke-width="1.2" stroke-linecap="round"/>
+            </symbol>
+        </defs>
+    </svg>
+
+    <!-- ═══ Main Container ═══ -->
+    <div class="exec-container">
+
+        <!-- ═══ View Toggle ═══ -->
+        <div class="exec-view-toggle">
+            <div class="view-toggle-group" role="tablist" aria-label="View mode">
+                <button class="view-toggle-btn active" role="tab" aria-selected="true" aria-controls="gridView" id="tabGrid" data-view="grid">
+                    <span class="view-toggle-icon" aria-hidden="true">⊞</span>
+                    <span>Office Grid</span>
+                </button>
+                <button class="view-toggle-btn" role="tab" aria-selected="false" aria-controls="hierarchyView" id="tabHierarchy" data-view="hierarchy">
+                    <span class="view-toggle-icon" aria-hidden="true">⋮⋮</span>
+                    <span>Org Chart</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- ═══ Office Floor Grid (Grid View) ═══ -->
+        <div class="exec-floor" id="gridView" role="tabpanel" aria-labelledby="tabGrid">
+
+            <!-- ── CEO Room ────────────────────────────── -->
+            <div class="exec-room exec-room--ceo" role="button" tabindex="0" aria-label="CEO Office — ApoMac" data-agent="ceo">
+                <span class="exec-room-label">CEO Office</span>
+                <div class="ceo-content">
+                    <div class="agent-avatar agent-avatar--lg" aria-hidden="true">
+                        <svg><use href="#avatar-ceo"/></svg>
+                        <span class="agent-status-dot agent-status-dot--active" aria-label="Active"></span>
+                    </div>
+                    <div class="ceo-info">
+                        <span class="agent-name">ApoMac</span>
+                        <span class="agent-role">Chief Executive Officer</span>
+                    </div>
+                </div>
+                <button class="ceo-mailbox" aria-label="Open mailbox — 3 unread messages" id="mailboxBtn">
+                    <span class="ceo-mailbox-icon" aria-hidden="true">📬</span>
+                    <span>Inbox</span>
+                    <span class="ceo-mailbox-badge" id="mailboxBadge">3</span>
+                </button>
+
+                <!-- CEO Detail (hidden by default) -->
+                <div class="agent-detail" id="detail-ceo">
+                    <div class="agent-detail-row">
+                        <span class="agent-detail-label">Status</span>
+                        <span class="agent-detail-value">🟢 Active</span>
+                    </div>
+                    <div class="agent-detail-row">
+                        <span class="agent-detail-label">Current Task</span>
+                        <span class="agent-detail-value">Reviewing team roadmap</span>
+                    </div>
+                    <div class="agent-detail-row">
+                        <span class="agent-detail-label">Tasks Today</span>
+                        <span class="agent-detail-value">12</span>
+                    </div>
+                    <div class="agent-detail-row">
+                        <span class="agent-detail-label">Uptime</span>
+                        <span class="agent-detail-value">4h 23m</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── Atlas Room ──────────────────────────── -->
+            <div class="exec-room exec-room--atlas" role="button" tabindex="0" aria-label="Atlas — COO" data-agent="atlas">
+                <span class="exec-room-label">Atlas</span>
+                <div class="agent-avatar" aria-hidden="true">
+                    <svg><use href="#avatar-atlas"/></svg>
+                    <span class="agent-status-dot agent-status-dot--active" aria-label="Active"></span>
+                </div>
+                <span class="agent-name">Atlas</span>
+                <span class="agent-role">COO</span>
+                <div class="agent-detail" id="detail-atlas">
+                    <div class="agent-detail-row">
+                        <span class="agent-detail-label">Status</span>
+                        <span class="agent-detail-value">🟢 Active</span>
+                    </div>
+                    <div class="agent-detail-row">
+                        <span class="agent-detail-label">Current Task</span>
+                        <span class="agent-detail-value">Coordinating workflows</span>
+                    </div>
+                    <div class="agent-detail-row">
+                        <span class="agent-detail-label">Tasks Today</span>
+                        <span class="agent-detail-value">8</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── Forge Room ──────────────────────────── -->
+            <div class="exec-room exec-room--forge" role="button" tabindex="0" aria-label="Forge — CTO" data-agent="forge">
+                <span class="exec-room-label">Forge</span>
+                <div class="agent-avatar" aria-hidden="true">
+                    <svg><use href="#avatar-forge"/></svg>
+                    <span class="agent-status-dot agent-status-dot--busy" aria-label="Busy"></span>
+                </div>
+                <span class="agent-name">Forge</span>
+                <span class="agent-role">CTO</span>
+                <div class="agent-detail" id="detail-forge">
+                    <div class="agent-detail-row">
+                        <span class="agent-detail-label">Status</span>
+                        <span class="agent-detail-value">🟡 Building</span>
+                    </div>
+                    <div class="agent-detail-row">
+                        <span class="agent-detail-label">Current Task</span>
+                        <span class="agent-detail-value">Executive theme build</span>
+                    </div>
+                    <div class="agent-detail-row">
+                        <span class="agent-detail-label">Tasks Today</span>
+                        <span class="agent-detail-value">5</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── Hunter Room ─────────────────────────── -->
+            <div class="exec-room exec-room--hunter" role="button" tabindex="0" aria-label="Hunter — CRO" data-agent="hunter">
+                <span class="exec-room-label">Hunter</span>
+                <div class="agent-avatar" aria-hidden="true">
+                    <svg><use href="#avatar-hunter"/></svg>
+                    <span class="agent-status-dot agent-status-dot--active" aria-label="Active"></span>
+                </div>
+                <span class="agent-name">Hunter</span>
+                <span class="agent-role">CRO</span>
+                <div class="agent-detail" id="detail-hunter">
+                    <div class="agent-detail-row">
+                        <span class="agent-detail-label">Status</span>
+                        <span class="agent-detail-value">🟢 Active</span>
+                    </div>
+                    <div class="agent-detail-row">
+                        <span class="agent-detail-label">Current Task</span>
+                        <span class="agent-detail-value">Prospecting leads</span>
+                    </div>
+                    <div class="agent-detail-row">
+                        <span class="agent-detail-label">Tasks Today</span>
+                        <span class="agent-detail-value">14</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── Echo Room ───────────────────────────── -->
+            <div class="exec-room exec-room--echo" role="button" tabindex="0" aria-label="Echo — CMO" data-agent="echo">
+                <span class="exec-room-label">Echo</span>
+                <div class="agent-avatar" aria-hidden="true">
+                    <svg><use href="#avatar-echo"/></svg>
+                    <span class="agent-status-dot agent-status-dot--idle" aria-label="Idle"></span>
+                </div>
+                <span class="agent-name">Echo</span>
+                <span class="agent-role">CMO</span>
+                <div class="agent-detail" id="detail-echo">
+                    <div class="agent-detail-row">
+                        <span class="agent-detail-label">Status</span>
+                        <span class="agent-detail-value">⚪ Idle</span>
+                    </div>
+                    <div class="agent-detail-row">
+                        <span class="agent-detail-label">Current Task</span>
+                        <span class="agent-detail-value">Awaiting assignments</span>
+                    </div>
+                    <div class="agent-detail-row">
+                        <span class="agent-detail-label">Tasks Today</span>
+                        <span class="agent-detail-value">3</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── Meeting Room / Boardroom ────────────── -->
+            <div class="exec-room exec-room--meeting" role="button" tabindex="0" aria-label="Active Boardroom — Click to view meetings" data-room="meeting">
+                <span class="exec-room-label">Boardroom</span>
+                <div class="meeting-status">
+                    <span class="meeting-icon" aria-hidden="true">🏛️</span>
+                    <span class="meeting-label">Active Meetings</span>
+                    <span class="meeting-count" id="meetingCount">2</span>
+                </div>
+                <div class="meeting-preview" id="meetingPreview">
+                    <div class="meeting-active">🔴 SS+ Quality Review</div>
+                    <div class="meeting-active">📋 Daily Standup</div>
+                </div>
+            </div>
+
+            <!-- ── Sentinel Room ───────────────────────── -->
+            <div class="exec-room exec-room--sentinel" role="button" tabindex="0" aria-label="Sentinel — QA & Security" data-agent="sentinel">
+                <span class="exec-room-label">Sentinel</span>
+                <div class="agent-avatar" aria-hidden="true">
+                    <svg><use href="#avatar-sentinel"/></svg>
+                    <span class="agent-status-dot agent-status-dot--active" aria-label="Active"></span>
+                </div>
+                <span class="agent-name">Sentinel</span>
+                <span class="agent-role">QA & Security</span>
+                <div class="agent-detail" id="detail-sentinel">
+                    <div class="agent-detail-row">
+                        <span class="agent-detail-label">Status</span>
+                        <span class="agent-detail-value">🟢 Active</span>
+                    </div>
+                    <div class="agent-detail-row">
+                        <span class="agent-detail-label">Current Task</span>
+                        <span class="agent-detail-value">Monitoring systems</span>
+                    </div>
+                    <div class="agent-detail-row">
+                        <span class="agent-detail-label">Tasks Today</span>
+                        <span class="agent-detail-value">7</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+        <!-- /exec-floor -->
+
+        <!-- ═══ Hierarchy / Org Chart View ═══ -->
+        <div class="exec-hierarchy" id="hierarchyView" role="tabpanel" aria-labelledby="tabHierarchy">
+            <div class="org-tree">
+                <!-- CEO at top -->
+                <div class="org-node">
+                    <div class="org-card org-card--ceo" data-agent="ceo" tabindex="0" role="button" aria-label="ApoMac — CEO">
+                        <div class="agent-avatar agent-avatar--lg" aria-hidden="true">
+                            <svg><use href="#avatar-ceo"/></svg>
+                            <span class="agent-status-dot agent-status-dot--active"></span>
+                        </div>
+                        <div class="org-card-info">
+                            <span class="agent-name">ApoMac</span>
+                            <span class="agent-role">Chief Executive Officer</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Connector down -->
+                <div class="org-connector"></div>
+
+                <!-- C-Level children -->
+                <div class="org-children" style="--bar-half-width: 340px;">
+                    <!-- Atlas -->
+                    <div class="org-child">
+                        <div class="org-connector--branch"></div>
+                        <div class="org-card" data-agent="atlas" tabindex="0" role="button" aria-label="Atlas — COO">
+                            <div class="agent-avatar" aria-hidden="true">
+                                <svg><use href="#avatar-atlas"/></svg>
+                                <span class="agent-status-dot agent-status-dot--active"></span>
+                            </div>
+                            <div class="org-card-info">
+                                <span class="agent-name">Atlas</span>
+                                <span class="agent-role">COO</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Forge -->
+                    <div class="org-child">
+                        <div class="org-connector--branch"></div>
+                        <div class="org-card" data-agent="forge" tabindex="0" role="button" aria-label="Forge — CTO">
+                            <div class="agent-avatar" aria-hidden="true">
+                                <svg><use href="#avatar-forge"/></svg>
+                                <span class="agent-status-dot agent-status-dot--busy"></span>
+                            </div>
+                            <div class="org-card-info">
+                                <span class="agent-name">Forge</span>
+                                <span class="agent-role">CTO</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Echo -->
+                    <div class="org-child">
+                        <div class="org-connector--branch"></div>
+                        <div class="org-card" data-agent="echo" tabindex="0" role="button" aria-label="Echo — CMO">
+                            <div class="agent-avatar" aria-hidden="true">
+                                <svg><use href="#avatar-echo"/></svg>
+                                <span class="agent-status-dot agent-status-dot--idle"></span>
+                            </div>
+                            <div class="org-card-info">
+                                <span class="agent-name">Echo</span>
+                                <span class="agent-role">CMO</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Hunter -->
+                    <div class="org-child">
+                        <div class="org-connector--branch"></div>
+                        <div class="org-card" data-agent="hunter" tabindex="0" role="button" aria-label="Hunter — CRO">
+                            <div class="agent-avatar" aria-hidden="true">
+                                <svg><use href="#avatar-hunter"/></svg>
+                                <span class="agent-status-dot agent-status-dot--active"></span>
+                            </div>
+                            <div class="org-card-info">
+                                <span class="agent-name">Hunter</span>
+                                <span class="agent-role">CRO</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sentinel -->
+                    <div class="org-child">
+                        <div class="org-connector--branch"></div>
+                        <div class="org-card" data-agent="sentinel" tabindex="0" role="button" aria-label="Sentinel — QA & Security">
+                            <div class="agent-avatar" aria-hidden="true">
+                                <svg><use href="#avatar-sentinel"/></svg>
+                                <span class="agent-status-dot agent-status-dot--active"></span>
+                            </div>
+                            <div class="org-card-info">
+                                <span class="agent-name">Sentinel</span>
+                                <span class="agent-role">QA & Security</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Sub-agents under Sentinel -->
+                        <div class="org-sub-level">
+                            <div class="org-connector"></div>
+                            <div class="org-sub-children">
+                                <div class="org-sub-card">
+                                    <div class="sub-agent-name">CodeGuard</div>
+                                    <div class="sub-agent-role">Security Scanner</div>
+                                </div>
+                                <div class="org-sub-card">
+                                    <div class="sub-agent-name">QualityBot</div>
+                                    <div class="sub-agent-role">Test Automation</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Show sub-agents example for one C-level -->
+                <div class="org-sub-level-demo">
+                    <div class="org-connector"></div>
+                    <div class="org-children" style="--bar-half-width: 120px; margin-top: 16px;">
+                        <!-- Example sub-agents under Atlas -->
+                        <div class="org-child">
+                            <div class="org-connector--branch"></div>
+                            <div class="org-sub-card">
+                                <div class="sub-agent-name">TaskMaster</div>
+                                <div class="sub-agent-role">Workflow Automation</div>
+                            </div>
+                        </div>
+                        <div class="org-child">
+                            <div class="org-connector--branch"></div>
+                            <div class="org-sub-card">
+                                <div class="sub-agent-name">DocBot</div>
+                                <div class="sub-agent-role">Documentation</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- /exec-hierarchy -->
+
+        <!-- ═══ Status Bar (Bottom) ═══ -->
+        <div class="exec-statusbar" role="status" aria-label="Office status bar">
+            <div class="statusbar-info">
+                <div class="statusbar-item">
+                    <span class="statusbar-dot" aria-hidden="true"></span>
+                    <span>Executive Office</span>
+                </div>
+                <div class="statusbar-separator" aria-hidden="true"></div>
+                <div class="statusbar-item">
+                    <span class="statusbar-item-icon" aria-hidden="true">👥</span>
+                    <span id="statusAgentCount">6 Agents</span>
+                </div>
+                <div class="statusbar-separator" aria-hidden="true"></div>
+                <div class="statusbar-item">
+                    <span class="statusbar-item-icon" aria-hidden="true">⚡</span>
+                    <span id="statusSystem">All systems nominal</span>
+                </div>
+            </div>
+            <div class="exec-command-input">
+                <input
+                    type="text"
+                    placeholder="Type a command..."
+                    aria-label="Command input"
+                    id="commandInput"
+                    autocomplete="off"
+                    spellcheck="false"
+                />
+                <span class="input-icon" aria-hidden="true">⌘</span>
+            </div>
+        </div>
+
+    </div>
+    <!-- /exec-container -->
+
+    <!-- ═══ Mailbox Slide-In Panel ═══ -->
+    <div class="mailbox-overlay" id="mailboxOverlay" role="dialog" aria-modal="true" aria-label="CEO Mailbox">
+        <div class="mailbox-backdrop" id="mailboxBackdrop"></div>
+        <div class="mailbox-panel">
+            <div class="mailbox-header">
+                <div class="mailbox-title">
+                    <span aria-hidden="true">📬</span>
+                    Inbox
+                </div>
+                <button class="mailbox-close" id="mailboxClose" aria-label="Close mailbox">×</button>
+            </div>
+            <div class="mailbox-messages" id="mailboxMessages">
+                <!-- Messages populated by JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ Agent TODO Panel ═══ -->
+    <div class="todo-overlay" id="todoOverlay" role="dialog" aria-modal="true" aria-labelledby="todoTitle">
+        <div class="todo-backdrop" id="todoBackdrop"></div>
+        <div class="todo-panel">
+            <div class="todo-header">
+                <div class="todo-agent-info" id="todoAgentInfo">
+                    <div class="todo-agent-avatar" id="todoAvatar">
+                        <!-- Avatar populated by JS -->
+                    </div>
+                    <div class="todo-agent-details">
+                        <div class="todo-agent-name" id="todoName">Agent Name</div>
+                        <div class="todo-agent-role" id="todoRole">Agent Role</div>
+                    </div>
+                </div>
+                <button class="todo-close" id="todoClose" aria-label="Close TODO panel">×</button>
+            </div>
+            <div class="todo-content" id="todoContent">
+                <!-- Content populated by JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ Meeting Room Panel ═══ -->
+    <div class="meeting-overlay" id="meetingOverlay" role="dialog" aria-modal="true" aria-labelledby="meetingTitle">
+        <div class="meeting-backdrop" id="meetingBackdrop"></div>
+        <div class="meeting-panel">
+            <div class="meeting-header">
+                <div class="meeting-title" id="meetingTitle">
+                    <span aria-hidden="true">🏛️</span>
+                    Executive Boardroom
+                </div>
+                <button class="meeting-close" id="meetingClose" aria-label="Close meeting panel">×</button>
+            </div>
+            <div class="meeting-content" id="meetingContent">
+                <!-- Content populated by JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════
+         JavaScript — Interactions & State Bridge
+         ═══════════════════════════════════════════════════ -->
+    <script src="../src/data-bridge.js"></script>
+    <script>
+    // Read config from setup wizard (if available)
+    try {
+      const setupConfig = JSON.parse(localStorage.getItem('spawnkit-config') || '{}');
+      if (setupConfig.userName) {
+        // Replace "ApoMac" with the user's name in the CEO card
+        document.addEventListener('DOMContentLoaded', () => {
+          const ceoNames = document.querySelectorAll('[data-agent="ceo"] .agent-name, .ceo-name');
+          ceoNames.forEach(el => el.textContent = setupConfig.userName);
+        });
+      }
+      if (setupConfig.ceoName) {
+        // Replace CEO agent name
+        document.addEventListener('DOMContentLoaded', () => {
+          const ceoLabels = document.querySelectorAll('[data-agent="ceo"] .agent-label');
+          ceoLabels.forEach(el => el.textContent = setupConfig.ceoName);
+        });
+      }
+    } catch(e) { /* ignore */ }
+
+    (function() {
+        'use strict';
+
+        /* ═══════════════════════════════════════════════
+           Configuration & Mock Data
+           ═══════════════════════════════════════════════ */
+
+        // Get user's setup config for personalization
+        var setupConfig = {};
+        try {
+            setupConfig = JSON.parse(localStorage.getItem('spawnkit-config') || '{}');
+        } catch(e) {}
+
+        var AGENTS = {
+            ceo:      { name: setupConfig.userName || 'ApoMac',   role: setupConfig.ceoName || 'CEO',           color: '#007AFF', status: 'active',  task: 'Leading SS+ quality transformation' },
+            atlas:    { name: 'Atlas',    role: 'COO',           color: '#BF5AF2', status: 'active',  task: 'Orchestrating FeedCast deployment pipeline' },
+            forge:    { name: 'Forge',    role: 'CTO',           color: '#FF9F0A', status: 'busy',    task: 'Hardening Executive dashboard architecture' },
+            hunter:   { name: 'Hunter',   role: 'CRO',           color: '#FF453A', status: 'active',  task: 'Deploying €199/mo revenue strategy' },
+            echo:     { name: 'Echo',     role: 'CMO',           color: '#0A84FF', status: 'busy',    task: 'Scaling TikTok content automation' },
+            sentinel: { name: 'Sentinel', role: 'QA & Security', color: '#30D158', status: 'active',  task: 'Securing entire fleet infrastructure' },
+        };
+
+        /* SVG avatar ID map for mailbox rendering */
+        var AVATAR_MAP = {
+            'ApoMac': 'avatar-ceo',
+            [setupConfig.userName || 'ApoMac']: 'avatar-ceo',
+            'Atlas': 'avatar-atlas',
+            'Forge': 'avatar-forge',
+            'Hunter': 'avatar-hunter',
+            'Echo': 'avatar-echo',
+            'Sentinel': 'avatar-sentinel'
+        };
+
+        var MOCK_MESSAGES = [
+            { sender: 'Kira',    color: '#FF2D55', time: '16:15', text: 'Lets go we need SS+', read: false },
+            { sender: 'Sentinel',color: '#30D158', time: '15:30', text: 'Full audit complete — C+ score. 4 security vulns fixed ✅', read: false },
+            { sender: 'Forge',   color: '#FF9F0A', time: '14:26', text: 'Personal AI Assistant MVP — security hardened, F-01→F-04 patched', read: false },
+            { sender: 'Echo',    color: '#0A84FF', time: '14:16', text: 'VideoCast pipeline spawned — 5 TikTok scripts generated', read: true },
+            { sender: 'Hunter',  color: '#FF453A', time: '14:26', text: 'Stripe live config in progress — €199/mo pricing locked', read: true },
+            { sender: 'System',  color: '#636366', time: '12:44', text: 'Hetzner OpenClaw connected — distributed fleet ONLINE', read: true },
+            { sender: 'Atlas',   color: '#BF5AF2', time: '08:00', text: 'Fleet standup done — 6 active workstreams tracked', read: true },
+            { sender: 'Kira',    color: '#FF2D55', time: '06:30', text: 'Morning brief received — Annecy 8°C, 2 ideas reviewed', read: true },
+        ];
+
+        /* Agent TODO Data — Real fleet activity */
+        var AGENT_TODO_DATA = {
+            ceo: {
+                currentTask: 'SS+ Quality Push — All Projects',
+                todos: [
+                    { text: 'Hetzner OpenClaw — dual fleet online', status: 'done', icon: '✅' },
+                    { text: 'SpawnKit dashboard — Executive v3 deployed', status: 'done', icon: '✅' },
+                    { text: 'Genre-swap covers — Phase 2 generating', status: 'progress', icon: '🔄' },
+                    { text: 'Quality Pipeline — T1→T4 implemented', status: 'done', icon: '✅' },
+                    { text: 'FeedCast — real music per style', status: 'progress', icon: '🔄' },
+                    { text: 'Personal AI Assistant — MVP deploy', status: 'pending', icon: '⬜' }
+                ],
+                skills: [
+                    { name: 'Orchestration', percentage: 95 },
+                    { name: 'Strategy', percentage: 90 },
+                    { name: 'Product Vision', percentage: 88 }
+                ]
+            },
+            atlas: {
+                currentTask: 'FeedCast Operations — Hetzner Sync',
+                todos: [
+                    { text: 'Fleet OS v1 directory structure', status: 'done', icon: '✅' },
+                    { text: 'TODO.md per agent — accountability', status: 'done', icon: '✅' },
+                    { text: 'FeedCast bot health check', status: 'progress', icon: '🔄' },
+                    { text: 'Music styles sync to server', status: 'pending', icon: '⬜' },
+                    { text: 'Episode generation test', status: 'pending', icon: '⬜' }
+                ],
+                skills: [
+                    { name: 'Operations', percentage: 95 },
+                    { name: 'Process Design', percentage: 92 },
+                    { name: 'Documentation', percentage: 88 }
+                ]
+            },
+            forge: {
+                currentTask: 'Personal AI Assistant — Security Hardening',
+                todos: [
+                    { text: 'F-01: Timing-safe auth ✓', status: 'done', icon: '✅' },
+                    { text: 'F-02: Shell injection prevention ✓', status: 'done', icon: '✅' },
+                    { text: 'F-03: Rate limiting (10/hr auth) ✓', status: 'done', icon: '✅' },
+                    { text: 'F-04: No default API key ✓', status: 'done', icon: '✅' },
+                    { text: 'SpawnKit Executive v3 theme', status: 'done', icon: '✅' },
+                    { text: 'Live data bridge (postMessage)', status: 'progress', icon: '🔄' },
+                    { text: 'MVP deployment to Hetzner', status: 'pending', icon: '⬜' }
+                ],
+                skills: [
+                    { name: 'Engineering', percentage: 97 },
+                    { name: 'Security', percentage: 92 },
+                    { name: 'Architecture', percentage: 94 }
+                ]
+            },
+            hunter: {
+                currentTask: 'Stripe Live Mode — Payment Infrastructure',
+                todos: [
+                    { text: 'Test products created (3 tiers)', status: 'done', icon: '✅' },
+                    { text: 'Pricing: €199/mo Personal AI', status: 'done', icon: '✅' },
+                    { text: 'Switch to live mode', status: 'progress', icon: '🔄' },
+                    { text: 'Payment links generation', status: 'pending', icon: '⬜' },
+                    { text: 'Webhook integration', status: 'pending', icon: '⬜' }
+                ],
+                skills: [
+                    { name: 'Revenue', percentage: 90 },
+                    { name: 'Growth Hacking', percentage: 88 },
+                    { name: 'Sales Funnel', percentage: 85 }
+                ]
+            },
+            echo: {
+                currentTask: 'VideoCast TikTok Pipeline',
+                todos: [
+                    { text: 'HeyGen account setup (163 credits)', status: 'done', icon: '✅' },
+                    { text: 'Video #1 delivered to Kira', status: 'done', icon: '✅' },
+                    { text: 'Script generator pipeline', status: 'progress', icon: '🔄' },
+                    { text: 'Caption burn-in (Whisper+ffmpeg)', status: 'pending', icon: '⬜' },
+                    { text: 'First 5 automated TikToks', status: 'pending', icon: '⬜' }
+                ],
+                skills: [
+                    { name: 'Brand Story', percentage: 92 },
+                    { name: 'Content Strategy', percentage: 88 },
+                    { name: 'Video Production', percentage: 80 }
+                ]
+            },
+            sentinel: {
+                currentTask: 'Full Fleet Audit — 7 Projects',
+                todos: [
+                    { text: 'Personal AI security audit (14 findings)', status: 'done', icon: '✅' },
+                    { text: 'FeedCast ops audit (music fraud found)', status: 'done', icon: '✅' },
+                    { text: 'SpawnKit dashboard audit (A grade)', status: 'done', icon: '✅' },
+                    { text: 'VideoCast pipeline review', status: 'done', icon: '✅' },
+                    { text: 'Fleet OS integration check', status: 'done', icon: '✅' },
+                    { text: 'Re-audit after SS+ fixes', status: 'pending', icon: '⬜' }
+                ],
+                skills: [
+                    { name: 'Security Audit', percentage: 97 },
+                    { name: 'Quality Assurance', percentage: 95 },
+                    { name: 'Risk Analysis', percentage: 93 }
+                ]
+            }
+        };
+
+        /* ═══════════════════════════════════════════════
+           DOM References
+           ═══════════════════════════════════════════════ */
+
+        var mailboxBtn      = document.getElementById('mailboxBtn');
+        var mailboxOverlay  = document.getElementById('mailboxOverlay');
+        var mailboxBackdrop = document.getElementById('mailboxBackdrop');
+        var mailboxClose    = document.getElementById('mailboxClose');
+        var mailboxMessages = document.getElementById('mailboxMessages');
+        var commandInput    = document.getElementById('commandInput');
+        var gridView        = document.getElementById('gridView');
+        var hierarchyView   = document.getElementById('hierarchyView');
+        var tabGrid         = document.getElementById('tabGrid');
+        var tabHierarchy    = document.getElementById('tabHierarchy');
+
+        // TODO Panel elements
+        var todoOverlay     = document.getElementById('todoOverlay');
+        var todoBackdrop    = document.getElementById('todoBackdrop');
+        var todoClose       = document.getElementById('todoClose');
+        var todoAvatar      = document.getElementById('todoAvatar');
+        var todoName        = document.getElementById('todoName');
+        var todoRole        = document.getElementById('todoRole');
+        var todoContent     = document.getElementById('todoContent');
+
+        // Meeting Panel elements
+        var meetingOverlay  = document.getElementById('meetingOverlay');
+        var meetingBackdrop = document.getElementById('meetingBackdrop');
+        var meetingClose    = document.getElementById('meetingClose');
+        var meetingContent  = document.getElementById('meetingContent');
+
+        /* ═══════════════════════════════════════════════
+           View Toggle — Grid / Hierarchy
+           ═══════════════════════════════════════════════ */
+
+        function switchView(view) {
+            if (view === 'grid') {
+                gridView.classList.remove('hidden');
+                hierarchyView.classList.remove('visible');
+                tabGrid.classList.add('active');
+                tabGrid.setAttribute('aria-selected', 'true');
+                tabHierarchy.classList.remove('active');
+                tabHierarchy.setAttribute('aria-selected', 'false');
+            } else {
+                gridView.classList.add('hidden');
+                hierarchyView.classList.add('visible');
+                tabHierarchy.classList.add('active');
+                tabHierarchy.setAttribute('aria-selected', 'true');
+                tabGrid.classList.remove('active');
+                tabGrid.setAttribute('aria-selected', 'false');
+            }
+        }
+
+        tabGrid.addEventListener('click', function() { switchView('grid'); });
+        tabHierarchy.addEventListener('click', function() { switchView('hierarchy'); });
+
+        // Keyboard nav for tabs
+        document.querySelector('.view-toggle-group').addEventListener('keydown', function(e) {
+            if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+                e.preventDefault();
+                var current = document.querySelector('.view-toggle-btn.active');
+                var next = e.key === 'ArrowRight' ? tabHierarchy : tabGrid;
+                switchView(next.dataset.view);
+                next.focus();
+            }
+        });
+
+        /* ═══════════════════════════════════════════════
+           Mailbox Panel — Open / Close
+           ═══════════════════════════════════════════════ */
+
+        function openMailbox(e) {
+            if (e) e.stopPropagation();
+            closeTodoPanel(); // Close TODO panel if open
+            mailboxOverlay.classList.add('open');
+            mailboxClose.focus();
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeMailbox() {
+            mailboxOverlay.classList.remove('open');
+            document.body.style.overflow = '';
+            mailboxBtn.focus();
+        }
+
+        mailboxBtn.addEventListener('click', openMailbox);
+        mailboxBackdrop.addEventListener('click', closeMailbox);
+        mailboxClose.addEventListener('click', closeMailbox);
+
+        /* ═══════════════════════════════════════════════
+           TODO Panel — Open / Close
+           ═══════════════════════════════════════════════ */
+
+        function openTodoPanel(agentId) {
+            closeMailbox(); // Close mailbox if open
+
+            var agent = AGENTS[agentId];
+            var todoData = AGENT_TODO_DATA[agentId];
+            if (!agent || !todoData) return;
+
+            // Update header
+            todoName.textContent = agent.name;
+            todoRole.textContent = agent.role;
+
+            // Update avatar
+            var avatarId = AVATAR_MAP[agent.name];
+            if (avatarId) {
+                todoAvatar.innerHTML = '<svg><use href="#' + avatarId + '"/></svg>';
+            } else {
+                todoAvatar.innerHTML = agent.name.charAt(0);
+                todoAvatar.style.background = agent.color;
+                todoAvatar.style.color = '#fff';
+            }
+
+            // Build content
+            var content = '';
+
+            // Current Task section
+            content += '<div class="todo-section">';
+            content += '<div class="todo-section-title">Current Task</div>';
+            content += '<div class="todo-current-task">' + todoData.currentTask + '</div>';
+            content += '</div>';
+
+            // TODO List section
+            content += '<div class="todo-section">';
+            content += '<div class="todo-section-title">TODO List</div>';
+            content += '<div class="todo-list">';
+            todoData.todos.forEach(function(todo) {
+                content += '<div class="todo-item todo-item--' + todo.status + '">';
+                content += '<span class="todo-icon">' + todo.icon + '</span>';
+                content += '<span class="todo-text">' + todo.text + '</span>';
+                content += '</div>';
+            });
+            content += '</div>';
+            content += '</div>';
+
+            // Skills section
+            content += '<div class="todo-section">';
+            content += '<div class="todo-section-title">Skills</div>';
+            content += '<div class="todo-skills">';
+            todoData.skills.forEach(function(skill) {
+                content += '<div class="skill-item">';
+                content += '<div class="skill-header">';
+                content += '<span class="skill-name">' + skill.name + '</span>';
+                content += '<span class="skill-percentage">' + skill.percentage + '%</span>';
+                content += '</div>';
+                content += '<div class="skill-bar">';
+                content += '<div class="skill-progress" style="width: ' + skill.percentage + '%"></div>';
+                content += '</div>';
+                content += '</div>';
+            });
+            content += '</div>';
+            content += '</div>';
+
+            todoContent.innerHTML = content;
+
+            // Show panel
+            todoOverlay.classList.add('open');
+            todoClose.focus();
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeTodoPanel() {
+            todoOverlay.classList.remove('open');
+            document.body.style.overflow = '';
+        }
+
+        todoBackdrop.addEventListener('click', closeTodoPanel);
+        todoClose.addEventListener('click', closeTodoPanel);
+
+        /* ═══════════════════════════════════════════════
+           Meeting Panel — Open / Close
+           ═══════════════════════════════════════════════ */
+
+        function openMeetingPanel() {
+            closeTodoPanel(); // Close TODO panel if open
+            closeMailbox();   // Close mailbox if open
+
+            // Build meeting content
+            var content = '';
+
+            // Active meetings section
+            content += '<div class="meeting-section">';
+            content += '<div class="meeting-section-title">Active Meetings</div>';
+            content += '<div class="meeting-list">';
+            
+            content += '<div class="meeting-item meeting-item--active">';
+            content += '<div class="meeting-item-header">';
+            content += '<div class="meeting-item-title">🔴 SS+ Quality Review</div>';
+            content += '<div class="meeting-item-status">Live</div>';
+            content += '</div>';
+            content += '<div class="meeting-item-description">Fleet-wide quality push — all projects under review. Kira leading.</div>';
+            content += '<div class="meeting-participants">';
+            content += '<div class="meeting-participant" style="background: #FF2D55;">K</div>';
+            content += '<div class="meeting-participant"><svg><use href="#avatar-ceo"/></svg></div>';
+            content += '<div class="meeting-participant"><svg><use href="#avatar-forge"/></svg></div>';
+            content += '<div class="meeting-participant"><svg><use href="#avatar-sentinel"/></svg></div>';
+            content += '</div>';
+            content += '</div>';
+
+            content += '<div class="meeting-item meeting-item--active">';
+            content += '<div class="meeting-item-header">';
+            content += '<div class="meeting-item-title">📋 Daily Standup</div>';
+            content += '<div class="meeting-item-status">Live</div>';
+            content += '</div>';
+            content += '<div class="meeting-item-description">C-level sync on active workstreams and blockers.</div>';
+            content += '<div class="meeting-participants">';
+            content += '<div class="meeting-participant"><svg><use href="#avatar-ceo"/></svg></div>';
+            content += '<div class="meeting-participant"><svg><use href="#avatar-atlas"/></svg></div>';
+            content += '<div class="meeting-participant"><svg><use href="#avatar-forge"/></svg></div>';
+            content += '<div class="meeting-participant"><svg><use href="#avatar-hunter"/></svg></div>';
+            content += '<div class="meeting-participant"><svg><use href="#avatar-echo"/></svg></div>';
+            content += '</div>';
+            content += '</div>';
+
+            content += '</div>';
+            content += '</div>';
+
+            // Scheduled meetings section
+            content += '<div class="meeting-section">';
+            content += '<div class="meeting-section-title">Scheduled</div>';
+            content += '<div class="meeting-list">';
+            
+            content += '<div class="meeting-item meeting-item--scheduled">';
+            content += '<div class="meeting-item-header">';
+            content += '<div class="meeting-item-title">📊 Sprint Planning</div>';
+            content += '<div class="meeting-item-status">15:30</div>';
+            content += '</div>';
+            content += '<div class="meeting-item-description">Next sprint goals and resource allocation.</div>';
+            content += '</div>';
+
+            content += '<div class="meeting-item meeting-item--scheduled">';
+            content += '<div class="meeting-item-header">';
+            content += '<div class="meeting-item-title">🚀 FeedCast Demo</div>';
+            content += '<div class="meeting-item-status">17:00</div>';
+            content += '</div>';
+            content += '<div class="meeting-item-description">Atlas presenting the full music pipeline to Kira.</div>';
+            content += '</div>';
+
+            content += '</div>';
+            content += '</div>';
+
+            // Meeting history section
+            content += '<div class="meeting-section">';
+            content += '<div class="meeting-section-title">Recent</div>';
+            content += '<div class="meeting-list">';
+            
+            content += '<div class="meeting-item">';
+            content += '<div class="meeting-item-header">';
+            content += '<div class="meeting-item-title">✅ Security Audit Results</div>';
+            content += '<div class="meeting-item-status">Completed</div>';
+            content += '</div>';
+            content += '<div class="meeting-item-description">Sentinel presented full fleet audit — 14 security findings addressed.</div>';
+            content += '</div>';
+
+            content += '<div class="meeting-item">';
+            content += '<div class="meeting-item-header">';
+            content += '<div class="meeting-item-title">✅ Stripe Live Mode Planning</div>';
+            content += '<div class="meeting-item-status">Completed</div>';
+            content += '</div>';
+            content += '<div class="meeting-item-description">Hunter pitched €199/mo pricing strategy for Personal AI.</div>';
+            content += '</div>';
+
+            content += '</div>';
+            content += '</div>';
+
+            meetingContent.innerHTML = content;
+
+            // Show panel
+            meetingOverlay.classList.add('open');
+            meetingClose.focus();
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeMeetingPanel() {
+            meetingOverlay.classList.remove('open');
+            document.body.style.overflow = '';
+        }
+
+        meetingBackdrop.addEventListener('click', closeMeetingPanel);
+        meetingClose.addEventListener('click', closeMeetingPanel);
+
+        // Close panels on Escape
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                if (todoOverlay.classList.contains('open')) {
+                    closeTodoPanel();
+                } else if (meetingOverlay.classList.contains('open')) {
+                    closeMeetingPanel();
+                } else if (mailboxOverlay.classList.contains('open')) {
+                    closeMailbox();
+                }
+            }
+        });
+
+        /* ── Update Mailbox Badge ───────────────────── */
+        function updateMailboxBadge() {
+            var unreadCount = MOCK_MESSAGES.filter(function(msg) { return !msg.read; }).length;
+            var badge = document.getElementById('mailboxBadge');
+            if (badge) {
+                badge.textContent = unreadCount;
+                if (unreadCount === 0) {
+                    badge.style.opacity = '0.5';
+                } else {
+                    badge.style.opacity = '1';
+                }
+            }
+            
+            // Update mailbox button aria-label
+            if (mailboxBtn) {
+                var label = 'Open mailbox — ' + unreadCount + ' unread message' + (unreadCount === 1 ? '' : 's');
+                mailboxBtn.setAttribute('aria-label', label);
+            }
+        }
+
+        /* ── Render Messages ────────────────────────── */
+        function renderMessages(messages) {
+            mailboxMessages.innerHTML = '';
+            messages.forEach(function(msg, i) {
+                if (i > 0) {
+                    var divider = document.createElement('div');
+                    divider.className = 'mail-divider';
+                    divider.setAttribute('aria-hidden', 'true');
+                    mailboxMessages.appendChild(divider);
+                }
+
+                var item = document.createElement('div');
+                item.className = 'mail-item' + (msg.read ? ' mail-item--read' : '');
+                item.dataset.messageIndex = i;
+
+                // Use SVG avatar if available, else fallback to letter
+                var avatarId = AVATAR_MAP[msg.sender];
+                var avatarContent;
+                if (avatarId) {
+                    avatarContent = '<svg><use href="#' + avatarId + '"/></svg>';
+                } else {
+                    avatarContent = (msg.sender || '?').charAt(0);
+                }
+
+                var unreadIndicator = msg.read ? '' : '<div class="mail-unread-dot" aria-hidden="true"></div>';
+
+                item.innerHTML =
+                    '<div class="mail-avatar" style="background: ' + msg.color + ';" aria-hidden="true">' + avatarContent + '</div>' +
+                    '<div class="mail-content">' +
+                        '<div class="mail-header">' +
+                            '<span class="mail-sender">' + msg.sender + '</span>' +
+                            '<span class="mail-time">' + msg.time + '</span>' +
+                        '</div>' +
+                        '<div class="mail-preview">' + msg.text + '</div>' +
+                    '</div>' + unreadIndicator;
+
+                // Click to mark as read
+                item.addEventListener('click', function() {
+                    if (!msg.read) {
+                        msg.read = true;
+                        item.classList.add('mail-item--read');
+                        var dot = item.querySelector('.mail-unread-dot');
+                        if (dot) dot.remove();
+                        updateMailboxBadge();
+                    }
+                });
+
+                mailboxMessages.appendChild(item);
+            });
+            
+            updateMailboxBadge();
+        }
+
+        renderMessages(MOCK_MESSAGES);
+
+        /* ═══════════════════════════════════════════════
+           Agent Room — Click to Show TODO Panel
+           ═══════════════════════════════════════════════ */
+
+        var expandedRoom = null;
+
+        // Handle agent room clicks in both grid and hierarchy views
+        document.addEventListener('click', function(e) {
+            var agentElement = e.target.closest('[data-agent]');
+            if (agentElement) {
+                // Don't toggle if clicking mailbox button
+                if (e.target.closest('.ceo-mailbox')) return;
+
+                var agentId = agentElement.dataset.agent;
+                openTodoPanel(agentId);
+                return;
+            }
+
+            // Handle meeting room clicks
+            var meetingElement = e.target.closest('[data-room="meeting"]');
+            if (meetingElement) {
+                openMeetingPanel();
+                return;
+            }
+
+            // Handle detail expansion (legacy behavior for non-agent elements)
+            var room = e.target.closest('.exec-room[data-agent]');
+            if (room && !e.target.closest('.ceo-mailbox')) {
+                var agentId = room.dataset.agent;
+                var detail = document.getElementById('detail-' + agentId);
+                if (detail) {
+                    if (expandedRoom && expandedRoom !== detail) {
+                        expandedRoom.classList.remove('visible');
+                    }
+                    detail.classList.toggle('visible');
+                    expandedRoom = detail.classList.contains('visible') ? detail : null;
+                }
+            }
+
+            // Close detail when clicking outside
+            if (!room && expandedRoom) {
+                expandedRoom.classList.remove('visible');
+                expandedRoom = null;
+            }
+        });
+
+        // Keyboard: Enter/Space to open TODO panel
+        document.querySelectorAll('[data-agent]').forEach(function(element) {
+            element.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    var agentId = element.dataset.agent;
+                    openTodoPanel(agentId);
+                }
+            });
+        });
+
+        // Keyboard: Enter/Space to open Meeting panel
+        document.querySelectorAll('[data-room="meeting"]').forEach(function(element) {
+            element.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    openMeetingPanel();
+                }
+            });
+        });
+
+        /* ═══════════════════════════════════════════════
+           Command Input — Enter to send via postMessage
+           ═══════════════════════════════════════════════ */
+
+        commandInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && commandInput.value.trim()) {
+                var cmd = commandInput.value.trim();
+                // Send command to parent (dashboard.html)
+                if (window.parent !== window) {
+                    window.parent.postMessage({
+                        type: 'executive:command',
+                        command: cmd,
+                        timestamp: Date.now()
+                    }, '*');
+                }
+                commandInput.value = '';
+            }
+        });
+
+        /* ═══════════════════════════════════════════════
+           postMessage Bridge — Communication with Parent
+           ═══════════════════════════════════════════════ */
+
+        window.addEventListener('message', function(e) {
+            if (!e.data || typeof e.data !== 'object') return;
+            var isSameOrigin = (e.origin === window.location.origin || e.origin === 'null');
+            if (!isSameOrigin) return;
+
+            switch (e.data.type) {
+                case 'spawnkit:data':
+                    handleDataUpdate(e.data.payload);
+                    break;
+
+                case 'spawnkit:agents':
+                    handleAgentsUpdate(e.data.agents);
+                    break;
+
+                case 'spawnkit:messages':
+                    handleMessagesUpdate(e.data.messages);
+                    break;
+
+                case 'spawnkit:theme':
+                    handleThemeChange(e.data.theme);
+                    break;
+
+                case 'spawnkit:ping':
+                    if (window.parent !== window) {
+                        window.parent.postMessage({
+                            type: 'executive:pong',
+                            theme: 'executive',
+                            timestamp: Date.now()
+                        }, '*');
+                    }
+                    break;
+            }
+        });
+
+        /* ── Data Update Handlers ───────────────────── */
+
+        function handleDataUpdate(payload) {
+            if (!payload) return;
+
+            if (payload.agents) {
+                handleAgentsUpdate(payload.agents);
+            }
+
+            if (payload.agents) {
+                var count = payload.agents.length;
+                document.getElementById('statusAgentCount').textContent = count + ' Agent' + (count !== 1 ? 's' : '');
+            }
+        }
+
+        function handleAgentsUpdate(agents) {
+            if (!agents || !Array.isArray(agents)) return;
+
+            agents.forEach(function(agent) {
+                if (!agent || !agent.name) return;
+                var id = agent.name.toLowerCase();
+
+                // Update in both grid and hierarchy views
+                document.querySelectorAll('[data-agent="' + id + '"]').forEach(function(el) {
+                    var dot = el.querySelector('.agent-status-dot');
+                    if (dot && agent.status) {
+                        dot.className = 'agent-status-dot';
+                        var statusMap = { active: 'active', working: 'active', building: 'busy', idle: 'idle', error: 'idle' };
+                        dot.classList.add('agent-status-dot--' + (statusMap[agent.status] || 'idle'));
+                    }
+                    
+                    // Update agent name to show Agent OS format if available
+                    var nameEl = el.querySelector('.agent-name');
+                    if (nameEl && agent.role && window.AgentOSNaming) {
+                        // Try to construct Agent OS name format for main agents
+                        var parentMap = { Hunter: 'Hunter', Forge: 'Forge', Echo: 'Echo', Atlas: 'Atlas', Sentinel: 'Sentinel', ApoMac: 'Main' };
+                        var parent = parentMap[agent.name] || agent.name;
+                        var roleMap = { CTO: 'CodeBuilder', CRO: 'Researcher', CMO: 'ContentCreator', COO: 'OpsRunner', CEO: 'Coordinator', 'QA & Security': 'Auditor' };
+                        var role = roleMap[agent.role] || 'TaskRunner';
+                        var agentOSName = parent + '.' + role + '-01';
+                        nameEl.textContent = agentOSName;
+                        
+                        // Add model badge if available
+                        if (agent.model && window.ModelIdentity) {
+                            var modelIdentity = window.ModelIdentity.getIdentity(agent.model);
+                            var badge = el.querySelector('.model-badge') || document.createElement('span');
+                            badge.className = 'model-badge';
+                            badge.textContent = modelIdentity.level;
+                            badge.style.color = modelIdentity.color;
+                            badge.style.marginLeft = '6px';
+                            badge.style.fontSize = '10px';
+                            badge.style.fontWeight = '600';
+                            if (!el.querySelector('.model-badge')) {
+                                nameEl.appendChild(badge);
+                            }
+                        }
+                    }
+                });
+
+                // Update detail if exists
+                var detail = document.getElementById('detail-' + id);
+                if (detail && agent.currentTask) {
+                    var taskEl = detail.querySelectorAll('.agent-detail-value')[1];
+                    if (taskEl) taskEl.textContent = agent.currentTask;
+                }
+            });
+        }
+
+        function handleMessagesUpdate(messages) {
+            if (!messages || !Array.isArray(messages)) return;
+            renderMessages(messages);
+            var badge = document.getElementById('mailboxBadge');
+            if (badge) {
+                badge.textContent = messages.length;
+            }
+        }
+
+        function handleThemeChange(theme) {
+            // Could apply light/dark mode in future
+        }
+
+        /* ═══════════════════════════════════════════════
+           Status Bar — Clock & System Status
+           ═══════════════════════════════════════════════ */
+
+        function updateClock() {
+            var now = new Date();
+            var h = now.getHours().toString().padStart(2, '0');
+            var m = now.getMinutes().toString().padStart(2, '0');
+            var statusEl = document.getElementById('statusSystem');
+            if (statusEl) {
+                statusEl.textContent = 'All systems nominal • ' + h + ':' + m;
+            }
+        }
+
+        updateClock();
+        setInterval(updateClock, 30000);
+
+        /* ═══════════════════════════════════════════════
+           Announce readiness to parent
+           ═══════════════════════════════════════════════ */
+
+        if (window.parent !== window) {
+            window.parent.postMessage({
+                type: 'executive:ready',
+                theme: 'executive',
+                timestamp: Date.now()
+            }, '*');
+        }
+
+        /* ═══════════════════════════════════════════════
+           Shared scripts compatibility
+           ═══════════════════════════════════════════════ */
+
+        window.__EXEC_THEME = 'executive';
+
+        /* ═══════════════════════════════════════════════
+           Live Activity Simulation — Makes it feel alive
+           ═══════════════════════════════════════════════ */
+
+        var ACTIVITY_VERBS = {
+            ceo:      ['Orchestrating', 'Reviewing', 'Synthesizing', 'Delegating', 'Planning'],
+            atlas:    ['Coordinating', 'Documenting', 'Syncing', 'Auditing', 'Scheduling'],
+            forge:    ['Building', 'Deploying', 'Optimizing', 'Refactoring', 'Testing'],
+            hunter:   ['Prospecting', 'Analyzing', 'Pricing', 'Pitching', 'Converting'],
+            echo:     ['Crafting', 'Writing', 'Designing', 'Scripting', 'Publishing'],
+            sentinel: ['Scanning', 'Auditing', 'Reviewing', 'Monitoring', 'Verifying']
+        };
+
+        var ACTIVITY_OBJECTS = {
+            ceo:      ['fleet operations', 'quality pipeline', 'revenue strategy', 'sprint goals', 'SS+ roadmap'],
+            atlas:    ['workflows', 'FeedCast ops', 'deployment pipeline', 'cron schedules', 'fleet status'],
+            forge:    ['security middleware', 'executive dashboard', 'API endpoints', 'live data bridge', 'Hetzner infra'],
+            hunter:   ['Stripe payments', 'lead pipeline', 'pricing tiers', 'market segments', 'conversion funnel'],
+            echo:     ['TikTok scripts', 'brand story', 'video pipeline', 'landing page copy', 'social content'],
+            sentinel: ['codebase', 'fleet deliverables', 'security posture', 'compliance gates', 'deploy artifacts']
+        };
+
+        function randomActivity(agentId) {
+            var verbs = ACTIVITY_VERBS[agentId] || ACTIVITY_VERBS.ceo;
+            var objects = ACTIVITY_OBJECTS[agentId] || ACTIVITY_OBJECTS.ceo;
+            return verbs[Math.floor(Math.random() * verbs.length)] + ' ' + objects[Math.floor(Math.random() * objects.length)];
+        }
+
+        /* Rotate agent tasks every 15-45 seconds for liveness */
+        function simulateActivity() {
+            var agentIds = Object.keys(AGENTS);
+            var targetId = agentIds[Math.floor(Math.random() * agentIds.length)];
+            var newTask = randomActivity(targetId);
+            AGENTS[targetId].task = newTask;
+
+            /* Update visible task text in grid view */
+            document.querySelectorAll('[data-agent="' + targetId + '"]').forEach(function(el) {
+                var taskEl = el.querySelector('.agent-task');
+                if (taskEl) {
+                    taskEl.style.opacity = '0';
+                    setTimeout(function() {
+                        taskEl.textContent = newTask;
+                        taskEl.style.opacity = '1';
+                    }, 200);
+                }
+            });
+
+            /* Schedule next update — random 15-45s */
+            setTimeout(simulateActivity, 15000 + Math.random() * 30000);
+        }
+
+        /* Start after 8 seconds */
+        setTimeout(simulateActivity, 8000);
+
+        /* ── Uptime Counter in Status Bar ───────────── */
+        var startTime = Date.now() - (8 * 3600000 + 23 * 60000); /* Simulate 8h23m uptime */
+        function updateUptime() {
+            var elapsed = Date.now() - startTime;
+            var h = Math.floor(elapsed / 3600000);
+            var m = Math.floor((elapsed % 3600000) / 60000);
+            var uptimeEl = document.getElementById('statusAgentCount');
+            if (uptimeEl) {
+                uptimeEl.textContent = '6 Agents • ' + h + 'h' + m.toString().padStart(2, '0') + 'm uptime';
+            }
+        }
+        updateUptime();
+        setInterval(updateUptime, 60000);
+
+        // ── SpawnKit Integration for Agent OS Names ─────────────────────
+        function handleSubagentsUpdate(subagents) {
+            if (!subagents || !Array.isArray(subagents)) return;
+            
+            // Update existing subagent cards with Agent OS names
+            subagents.forEach(function(subagent) {
+                if (!subagent.agentOSName) return;
+                
+                // Find subagent elements and update names
+                document.querySelectorAll('.sub-agent-name').forEach(function(el) {
+                    // Check if this element matches our subagent (by parent or task context)
+                    var card = el.closest('.org-sub-card');
+                    if (card && window.AgentOSNaming) {
+                        var displayName = window.AgentOSNaming.displayName(subagent.agentOSName, 'full');
+                        el.textContent = displayName;
+                        
+                        // Add model badge if available
+                        if (subagent.model && window.ModelIdentity) {
+                            var modelIdentity = window.ModelIdentity.getIdentity(subagent.model);
+                            var roleEl = card.querySelector('.sub-agent-role');
+                            if (roleEl) {
+                                roleEl.innerHTML = subagent.task + ' <span class="model-badge" style="color: ' + 
+                                    modelIdentity.color + '; font-size: 8px; font-weight: 600;">(' + 
+                                    modelIdentity.level + ')</span>';
+                            }
+                        }
+                    }
+                });
+            });
+        }
+
+        // Listen for SpawnKit data updates
+        if (window.SpawnKit) {
+            SpawnKit.on('data:refresh', function(data) {
+                if (data.agents) handleAgentsUpdate(data.agents);
+                if (data.subagents) handleSubagentsUpdate(data.subagents);
+            });
+        }
+
+        // Wire up live data if available
+        if (window.SpawnKit && window.SpawnKit.mode === 'live') {
+            SpawnKit.on('data:refresh', function(data) {
+                if (typeof handleDataUpdate === 'function') handleDataUpdate(data);
+            });
+            SpawnKit.refresh();
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof SpawnKitUX !== 'undefined') {
+                SpawnKitUX.init({ theme: 'executive' });
+            }
+            if (typeof OpenClawHelpers !== 'undefined') {
+                OpenClawHelpers.init({ theme: 'executive' });
+            }
+            if (typeof initThemeSwitcher === 'function') {
+                initThemeSwitcher();
+            }
+            if (typeof SpawnKitUX !== 'undefined') {
+                SpawnKitUX.ready();
+            }
+        });
+
+    })();
+    </script>
+
+</body>
+</html>

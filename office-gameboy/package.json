@@ -1,7 +1,7 @@
 {
-  "name": "fleetkit-gameboy-office",
+  "name": "spawnkit-gameboy-office",
   "version": "2.0.0",
-  "description": "GameBoy-style virtual office with interactive mission mechanics for FleetKit v2",
+  "description": "GameBoy-style virtual office with interactive mission mechanics for SpawnKit v2",
   "main": "index.html",
   "scripts": {
     "start": "python3 -m http.server 8080",
@@ -27,7 +27,7 @@
     "mission-system",
     "ai-agents"
   ],
-  "author": "Echo (CMO) - FleetKit Team",
+  "author": "Echo (CMO) - SpawnKit Team",
   "license": "MIT",
   "dependencies": {
     "pixi.js": "^8.6.1"
@@ -38,7 +38,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/openclaw/fleetkit-v2"
+    "url": "https://github.com/openclaw/spawnkit-v2"
   },
   "features": {
     "visual_style": [

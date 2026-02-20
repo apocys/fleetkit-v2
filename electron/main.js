@@ -319,9 +319,7 @@ function createMenu() {
           label: 'Preferences…',
           accelerator: 'CmdOrCtrl+,',
           click: () => {
-            if (mainWindow) {
-              mainWindow.webContents.send('open-preferences');
-            }
+            createSettingsWindow();
           }
         },
         { type: 'separator' },
@@ -349,9 +347,7 @@ function createMenu() {
           label: 'Settings',
           accelerator: isMac ? undefined : 'CmdOrCtrl+,',
           click: () => {
-            if (mainWindow) {
-              mainWindow.webContents.send('open-preferences');
-            }
+            createSettingsWindow();
           },
           visible: !isMac
         },

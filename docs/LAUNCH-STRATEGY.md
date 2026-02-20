@@ -1,4 +1,4 @@
-# FleetKit v2 — Launch Strategy
+# SpawnKit v2 — Launch Strategy
 
 ## Positioning: "The Anti-Subscription AI Dashboard"
 
@@ -15,7 +15,7 @@
 ## Phase 1: Pre-Launch (2 weeks)
 
 ### Week 1: Build Buzz
-- [ ] **Landing page live** on custom domain (fleetkit.ai or fleetkit.dev)
+- [ ] **Landing page live** on custom domain (spawnkit.ai or spawnkit.dev)
 - [ ] **Teaser GIF** — 10s GameBoy boot sequence, posted on Twitter/X
 - [ ] **Product Hunt "Coming Soon"** page (collect followers)
 - [ ] **Reddit posts** in r/ChatGPT, r/artificial, r/IndieHackers — "I built a Pokémon-style virtual office for AI agents"
@@ -52,7 +52,7 @@
 
 ### PH Description
 ```
-FleetKit turns your AI agents into a living virtual office.
+SpawnKit turns your AI agents into a living virtual office.
 
 🎮 Three cinematic themes:
 → GameBoy: Pokémon-style pixel quests with chiptune music

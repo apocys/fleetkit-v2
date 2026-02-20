@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SpawnKit — Setup</title>
+  <meta name="description" content="Set up your AI executive team in 60 seconds.">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23007AFF'/%3E%3Ctext x='16' y='22' text-anchor='middle' font-family='system-ui' font-size='16' font-weight='700' fill='white'%3ES%3C/text%3E%3C/svg%3E">
+  <style>
+    :root {
+      --blue: #007AFF;
+      --blue-hover: #0066D6;
+      --blue-light: rgba(0, 122, 255, 0.08);
+      --blue-tint: rgba(0, 122, 255, 0.12);
+      --bg: #F2F2F7;
+      --card: #FFFFFF;
+      --card-hover: #F8F8FC;
+      --text: #1C1C1E;
+      --text2: #3C3C43;
+      --text3: #8E8E93;
+      --separator: rgba(60, 60, 67, 0.12);
+      --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 2px 8px rgba(0,0,0,0.04);
+      --shadow-lg: 0 4px 12px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.04);
+      --radius: 12px;
+      --radius-lg: 16px;
+      --green: #34C759;
+      --orange: #FF9500;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .container {
+      max-width: 540px;
+      width: 100%;
+      padding: 2rem 1.25rem;
+    }
+
+    /* Header */
+    .header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    .logo {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--blue);
+      text-decoration: none;
+      display: inline-block;
+      margin-bottom: 0.25rem;
+    }
+
+    .tagline {
+      font-size: 0.85rem;
+      color: var(--text3);
+      font-weight: 500;
+    }
+
+    /* Progress bar */
+    .progress-bar {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 2rem;
+      padding: 0 0.5rem;
+    }
+
+    .progress-segment {
+      flex: 1;
+      height: 4px;
+      background: var(--separator);
+      border-radius: 2px;
+      transition: background 0.4s ease;
+    }
+
+    .progress-segment.completed {
+      background: var(--blue);
+    }
+
+    .progress-segment.active {
+      background: var(--blue);
+      opacity: 0.6;
+    }
+
+    .progress-labels {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 1.5rem;
+      padding: 0 0.25rem;
+    }
+
+    .progress-labels span {
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: var(--text3);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .progress-labels span.active {
+      color: var(--blue);
+    }
+
+    /* Card */
+    .card {
+      background: var(--card);
+      border-radius: var(--radius-lg);
+      padding: 1.75rem;
+      box-shadow: var(--shadow);
+    }
+
+    .card h2 {
+      font-size: 1.35rem;
+      font-weight: 700;
+      margin-bottom: 0.35rem;
+      color: var(--text);
+    }
+
+    .card .desc {
+      font-size: 0.9rem;
+      color: var(--text3);
+      margin-bottom: 1.5rem;
+    }
+
+    /* Form fields */
+    .field {
+      margin-bottom: 1.25rem;
+    }
+
+    .field label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text2);
+      margin-bottom: 0.4rem;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .field input {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1.5px solid var(--separator);
+      border-radius: 10px;
+      font-size: 1rem;
+      font-family: inherit;
+      background: var(--bg);
+      color: var(--text);
+      transition: all 0.2s ease;
+      outline: none;
+    }
+
+    .field input:focus {
+      border-color: var(--blue);
+      background: white;
+      box-shadow: 0 0 0 3px var(--blue-light);
+    }
+
+    .field input::placeholder {
+      color: var(--text3);
+    }
+
+    /* Plan cards */
+    .plan-cards {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .plan-card {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 1rem 1.25rem;
+      background: var(--bg);
+      border: 2px solid transparent;
+      border-radius: var(--radius);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .plan-card:hover {
+      background: var(--card-hover);
+      border-color: var(--separator);
+    }
+
+    .plan-card.selected {
+      background: var(--blue-light);
+      border-color: var(--blue);
+    }
+
+    .plan-card .radio {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      border: 2px solid var(--text3);
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+    }
+
+    .plan-card.selected .radio {
+      border-color: var(--blue);
+      background: var(--blue);
+    }
+
+    .plan-card.selected .radio::after {
+      content: '✓';
+      color: white;
+      font-size: 0.7rem;
+      font-weight: 700;
+    }
+
+    .plan-info { flex: 1; }
+    .plan-name { font-weight: 600; font-size: 0.95rem; }
+    .plan-price { font-size: 0.8rem; color: var(--text3); margin-top: 0.15rem; }
+    .plan-badge {
+      font-size: 0.65rem;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .badge-free { background: rgba(52,199,89,0.12); color: var(--green); }
+    .badge-popular { background: var(--blue-tint); color: var(--blue); }
+
+    /* Theme cards */
+    .theme-cards {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 0.75rem;
+    }
+
+    .theme-card {
+      text-align: center;
+      padding: 1.25rem 0.75rem;
+      background: var(--bg);
+      border: 2px solid transparent;
+      border-radius: var(--radius);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .theme-card:hover {
+      border-color: var(--separator);
+      transform: translateY(-1px);
+    }
+
+    .theme-card.selected {
+      background: var(--blue-light);
+      border-color: var(--blue);
+    }
+
+    .theme-icon { font-size: 2rem; margin-bottom: 0.5rem; }
+    .theme-name { font-weight: 600; font-size: 0.85rem; }
+    .theme-desc { font-size: 0.7rem; color: var(--text3); margin-top: 0.2rem; }
+
+    /* Team list */
+    .team-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .team-member {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.75rem 1rem;
+      background: var(--bg);
+      border-radius: 10px;
+    }
+
+    .team-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      background: var(--blue-light);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      flex-shrink: 0;
+    }
+
+    .team-name { font-weight: 600; font-size: 0.9rem; }
+    .team-role { font-size: 0.75rem; color: var(--text3); }
+
+    /* Buttons */
+    .actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 1.5rem;
+      gap: 0.75rem;
+    }
+
+    .btn {
+      padding: 12px 24px;
+      border-radius: 10px;
+      border: none;
+      font-size: 0.9rem;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn-primary {
+      background: var(--blue);
+      color: white;
+      flex: 1;
+    }
+
+    .btn-primary:hover { background: var(--blue-hover); }
+    .btn-primary:disabled { opacity: 0.35; cursor: not-allowed; }
+
+    .btn-secondary {
+      background: transparent;
+      color: var(--blue);
+    }
+
+    .btn-secondary:hover { background: var(--blue-light); }
+
+    .btn-skip {
+      background: transparent;
+      color: var(--text3);
+      font-size: 0.85rem;
+      border: none;
+      cursor: pointer;
+      font-family: inherit;
+      padding: 8px 0;
+      transition: color 0.2s;
+    }
+
+    .btn-skip:hover { color: var(--blue); }
+
+    /* Finish screen */
+    .finish-icon { font-size: 3rem; text-align: center; margin-bottom: 0.75rem; }
+    .finish-card {
+      background: var(--bg);
+      border-radius: var(--radius);
+      padding: 1rem;
+      margin: 1rem 0;
+    }
+
+    .finish-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.5rem 0;
+      border-bottom: 1px solid var(--separator);
+      font-size: 0.9rem;
+    }
+
+    .finish-row:last-child { border-bottom: none; }
+    .finish-label { color: var(--text3); }
+    .finish-value { font-weight: 600; }
+
+    .countdown-text {
+      text-align: center;
+      font-size: 0.8rem;
+      color: var(--text3);
+      margin-top: 0.75rem;
+    }
+
+    /* Step visibility */
+    .step { display: none; }
+    .step.active { display: block; }
+
+    @media (max-width: 480px) {
+      .theme-cards { grid-template-columns: 1fr; }
+      .container { padding: 1.5rem 1rem; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <a href="https://spawnkit.ai" class="logo">SpawnKit</a>
+    <div class="tagline">Your AI Executive Team</div>
+  </div>
+
+  <div class="progress-bar">
+    <div class="progress-segment completed" data-step="1"></div>
+    <div class="progress-segment" data-step="2"></div>
+    <div class="progress-segment" data-step="3"></div>
+    <div class="progress-segment" data-step="4"></div>
+  </div>
+
+  <div class="progress-labels">
+    <span class="active" data-label="1">Welcome</span>
+    <span data-label="2">Plan</span>
+    <span data-label="3">Team</span>
+    <span data-label="4">Theme</span>
+  </div>
+
+  <!-- Step 1: Welcome -->
+  <div class="step active" id="step1">
+    <div class="card">
+      <h2>Welcome to SpawnKit</h2>
+      <p class="desc">Set up your AI executive team in 60 seconds.</p>
+      <div class="field">
+        <label>Your name</label>
+        <input type="text" id="userName" placeholder="Your name" autocomplete="given-name">
+      </div>
+      <div class="field">
+        <label>Name your CEO agent</label>
+        <input type="text" id="ceoName" placeholder="e.g., Atlas, Commander, Boss">
+      </div>
+      <button class="btn-skip" id="btnSkipAll">Skip setup, go to demo →</button>
+      <div class="actions">
+        <div></div>
+        <button class="btn btn-primary" id="btnStep1Next" disabled>Continue</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 2: Plan -->
+  <div class="step" id="step2">
+    <div class="card">
+      <h2>Choose your plan</h2>
+      <p class="desc">Start free, upgrade anytime.</p>
+      <div class="plan-cards">
+        <div class="plan-card selected" data-plan="free">
+          <div class="radio"></div>
+          <div class="plan-info">
+            <div class="plan-name">Free</div>
+            <div class="plan-price">5 agents · 1 workspace · Community support</div>
+          </div>
+          <span class="plan-badge badge-free">Free</span>
+        </div>
+        <div class="plan-card" data-plan="pro">
+          <div class="radio"></div>
+          <div class="plan-info">
+            <div class="plan-name">Pro</div>
+            <div class="plan-price">Unlimited agents · Priority support · Custom themes</div>
+          </div>
+          <span class="plan-badge badge-popular">$49/mo</span>
+        </div>
+        <div class="plan-card" data-plan="business">
+          <div class="radio"></div>
+          <div class="plan-info">
+            <div class="plan-name">Business</div>
+            <div class="plan-price">Team collaboration · API access · Dedicated support</div>
+          </div>
+          <span class="plan-badge">$149/mo</span>
+        </div>
+      </div>
+      <div class="actions">
+        <button class="btn btn-secondary" id="btnStep2Back">← Back</button>
+        <button class="btn btn-primary" id="btnStep2Next">Continue</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 3: Team -->
+  <div class="step" id="step3">
+    <div class="card">
+      <h2>Meet your team</h2>
+      <p class="desc">These AI agents will run your operations.</p>
+      <div class="team-list">
+        <div class="team-member">
+          <div class="team-avatar">🎯</div>
+          <div><div class="team-name">Hunter</div><div class="team-role">Chief Revenue Officer — finds revenue &amp; opportunities</div></div>
+        </div>
+        <div class="team-member">
+          <div class="team-avatar">⚡</div>
+          <div><div class="team-name">Forge</div><div class="team-role">Chief Technology Officer — builds &amp; optimizes</div></div>
+        </div>
+        <div class="team-member">
+          <div class="team-avatar">📣</div>
+          <div><div class="team-name">Echo</div><div class="team-role">Chief Marketing Officer — brand &amp; storytelling</div></div>
+        </div>
+        <div class="team-member">
+          <div class="team-avatar">📋</div>
+          <div><div class="team-name">Atlas</div><div class="team-role">Chief Operations Officer — process &amp; documentation</div></div>
+        </div>
+        <div class="team-member">
+          <div class="team-avatar">🛡️</div>
+          <div><div class="team-name">Sentinel</div><div class="team-role">Auditor — quality gates &amp; security reviews</div></div>
+        </div>
+      </div>
+      <div class="actions">
+        <button class="btn btn-secondary" id="btnStep3Back">← Back</button>
+        <button class="btn btn-primary" id="btnStep3Next">Continue</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 4: Theme -->
+  <div class="step" id="step4">
+    <div class="card">
+      <h2>Pick your style</h2>
+      <p class="desc">Choose an office theme. Change anytime in settings.</p>
+      <div class="theme-cards">
+        <div class="theme-card selected" data-theme="executive">
+          <div class="theme-icon">🏢</div>
+          <div class="theme-name">Executive</div>
+          <div class="theme-desc">Premium boardroom</div>
+        </div>
+        <div class="theme-card" data-theme="gameboy">
+          <div class="theme-icon">🎮</div>
+          <div class="theme-name">GameBoy</div>
+          <div class="theme-desc">Pixel retro</div>
+        </div>
+        <div class="theme-card" data-theme="sims">
+          <div class="theme-icon">🏠</div>
+          <div class="theme-name">Sims</div>
+          <div class="theme-desc">Cozy virtual office</div>
+        </div>
+      </div>
+      <div class="actions">
+        <button class="btn btn-secondary" id="btnStep4Back">← Back</button>
+        <button class="btn btn-primary" id="btnFinish">Launch SpawnKit 🚀</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Finish -->
+  <div class="step" id="stepFinish">
+    <div class="card" style="text-align: center;">
+      <div class="finish-icon">✅</div>
+      <h2>You're all set!</h2>
+      <p class="desc">Your AI executive team is ready.</p>
+      <div class="finish-card">
+        <div class="finish-row"><span class="finish-label">Name</span><span class="finish-value" id="finishName">—</span></div>
+        <div class="finish-row"><span class="finish-label">CEO Agent</span><span class="finish-value" id="finishCeo">—</span></div>
+        <div class="finish-row"><span class="finish-label">Plan</span><span class="finish-value" id="finishPlan">—</span></div>
+        <div class="finish-row"><span class="finish-label">Theme</span><span class="finish-value" id="finishTheme">—</span></div>
+      </div>
+      <button class="btn btn-primary" id="btnEnterOffice" style="width: 100%;">Download the app →</button>
+      <p class="countdown-text">Redirecting to <strong>download.spawnkit.ai</strong> in <span id="countdown">5</span>s…</p>
+    </div>
+  </div>
+</div>
+
+<script>
+  const $ = s => document.querySelector(s);
+  const $$ = s => document.querySelectorAll(s);
+
+  const state = {
+    userName: '',
+    ceoName: '',
+    plan: 'free',
+    theme: 'executive',
+    demoMode: false
+  };
+
+  let currentStep = 1;
+
+  function showStep(n) {
+    $$('.step').forEach(el => el.classList.remove('active'));
+    const id = n === 'finish' ? 'stepFinish' : `step${n}`;
+    $(`#${id}`).classList.add('active');
+
+    // Update progress
+    $$('.progress-segment').forEach((seg, i) => {
+      const step = i + 1;
+      seg.classList.remove('completed', 'active');
+      if (n === 'finish' || step < n) seg.classList.add('completed');
+      else if (step === n) seg.classList.add('active');
+    });
+
+    $$('.progress-labels span').forEach(lbl => {
+      lbl.classList.remove('active');
+      if (parseInt(lbl.dataset.label) === n) lbl.classList.add('active');
+    });
+
+    if (typeof n === 'number') currentStep = n;
+  }
+
+  // Step 1: inputs
+  const nameInput = $('#userName');
+  const ceoInput = $('#ceoName');
+  const btn1 = $('#btnStep1Next');
+
+  function checkStep1() {
+    btn1.disabled = !nameInput.value.trim();
+  }
+
+  nameInput.addEventListener('input', () => { state.userName = nameInput.value.trim(); checkStep1(); });
+  ceoInput.addEventListener('input', () => { state.ceoName = ceoInput.value.trim(); });
+
+  btn1.addEventListener('click', () => showStep(2));
+
+  // Skip
+  $('#btnSkipAll').addEventListener('click', () => {
+    state.demoMode = true;
+    state.userName = 'Explorer';
+    state.ceoName = 'ApoMac';
+    state.plan = 'free';
+    showStep(4);
+  });
+
+  // Step 2: plan
+  $$('.plan-card').forEach(card => {
+    card.addEventListener('click', () => {
+      $$('.plan-card').forEach(c => c.classList.remove('selected'));
+      card.classList.add('selected');
+      state.plan = card.dataset.plan;
+    });
+  });
+
+  $('#btnStep2Back').addEventListener('click', () => showStep(1));
+  $('#btnStep2Next').addEventListener('click', () => showStep(3));
+
+  // Step 3: team
+  $('#btnStep3Back').addEventListener('click', () => showStep(2));
+  $('#btnStep3Next').addEventListener('click', () => showStep(4));
+
+  // Step 4: theme
+  $$('.theme-card').forEach(card => {
+    card.addEventListener('click', () => {
+      $$('.theme-card').forEach(c => c.classList.remove('selected'));
+      card.classList.add('selected');
+      state.theme = card.dataset.theme;
+    });
+  });
+
+  $('#btnStep4Back').addEventListener('click', () => showStep(3));
+
+  // Finish
+  $('#btnFinish').addEventListener('click', () => {
+    if (!state.ceoName) state.ceoName = 'ApoMac';
+    $('#finishName').textContent = state.userName || 'Explorer';
+    $('#finishCeo').textContent = state.ceoName;
+    const plans = { free: '🆓 Free', pro: '⭐ Pro ($49/mo)', business: '🏢 Business ($149/mo)' };
+    $('#finishPlan').textContent = plans[state.plan] || state.plan;
+    const themes = { executive: '🏢 Executive', gameboy: '🎮 GameBoy', sims: '🏠 Sims' };
+    $('#finishTheme').textContent = themes[state.theme] || state.theme;
+    showStep('finish');
+    startCountdown();
+  });
+
+  function saveAndRedirect() {
+    const config = {
+      userName: state.userName || 'Explorer',
+      ceoName: state.ceoName || 'ApoMac',
+      plan: state.plan,
+      theme: state.theme,
+      demoMode: state.demoMode,
+      setupComplete: true,
+      timestamp: Date.now()
+    };
+    localStorage.setItem('spawnkit-config', JSON.stringify(config));
+    window.location.href = 'https://download.spawnkit.ai';
+  }
+
+  $('#btnEnterOffice').addEventListener('click', saveAndRedirect);
+
+  let countdownTimer;
+  function startCountdown() {
+    let s = 5;
+    const el = $('#countdown');
+    countdownTimer = setInterval(() => {
+      s--;
+      el.textContent = s;
+      if (s <= 0) { clearInterval(countdownTimer); saveAndRedirect(); }
+    }, 1000);
+  }
+</script>
+</body>
+</html>

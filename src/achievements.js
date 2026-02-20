@@ -1,15 +1,15 @@
 /**
- * FleetKit v2 — Achievement & Stats System (Gamification Layer)
+ * SpawnKit v2 — Achievement & Stats System (Gamification Layer)
  * ══════════════════════════════════════════════════════════════
  *
  * Makes users WANT to keep the tab open. Dopamine-driven engagement:
  * achievements, streaks, stats dashboard, productivity scoring.
  *
- * All state persisted to localStorage under `fleetkit-achievements-*` keys.
- * Hooks into FleetKit event bus (FleetKit.on / FleetKit.emit) and
+ * All state persisted to localStorage under `spawnkit-achievements-*` keys.
+ * Hooks into SpawnKit event bus (SpawnKit.on / SpawnKit.emit) and
  * MissionController lifecycle.
  *
- * API: window.FleetKitAchievements.{unlock, check, getAll, getStats, ...}
+ * API: window.SpawnKitAchievements.{unlock, check, getAll, getStats, ...}
  *
  * @author Echo (CMO)
  * @version 2.0.0
@@ -24,14 +24,14 @@
 
   const ACHIEVEMENTS = [
     // Getting Started
-    { id: 'first_boot',      name: 'Power On!',         desc: 'Launch FleetKit for the first time',     icon: '🎮', points: 10,  category: 'start' },
+    { id: 'first_boot',      name: 'Power On!',         desc: 'Launch SpawnKit for the first time',     icon: '🎮', points: 10,  category: 'start' },
     { id: 'first_mission',   name: 'Quest Accepted',    desc: 'Complete your first mission',            icon: '⚔️', points: 20,  category: 'start' },
     { id: 'theme_explorer',  name: 'Theme Explorer',    desc: 'Try all 3 themes',                      icon: '🎨', points: 30,  category: 'start' },
 
     // Dedication
-    { id: 'night_owl',       name: 'Night Owl',         desc: 'Use FleetKit after midnight',            icon: '🦉', points: 15,  category: 'dedication' },
-    { id: 'early_bird',      name: 'Early Bird',        desc: 'Use FleetKit before 7 AM',               icon: '🐦', points: 15,  category: 'dedication' },
-    { id: 'marathon',        name: 'Marathon Runner',    desc: 'Keep FleetKit open for 1 hour',          icon: '🏃', points: 25,  category: 'dedication' },
+    { id: 'night_owl',       name: 'Night Owl',         desc: 'Use SpawnKit after midnight',            icon: '🦉', points: 15,  category: 'dedication' },
+    { id: 'early_bird',      name: 'Early Bird',        desc: 'Use SpawnKit before 7 AM',               icon: '🐦', points: 15,  category: 'dedication' },
+    { id: 'marathon',        name: 'Marathon Runner',    desc: 'Keep SpawnKit open for 1 hour',          icon: '🏃', points: 25,  category: 'dedication' },
     { id: 'dedicated',       name: 'Dedicated',         desc: 'Visit 7 days in a row',                  icon: '🔥', points: 50,  category: 'dedication' },
 
     // Productivity
@@ -56,14 +56,14 @@
   // ═══════════════════════════════════════════════════════════════
 
   const KEYS = {
-    unlocked:     'fleetkit-achievements-unlocked',
-    stats:        'fleetkit-achievements-stats',
-    streak:       'fleetkit-achievements-streak',
-    themes:       'fleetkit-achievements-themes',
-    shortcuts:    'fleetkit-achievements-shortcuts',
-    agents:       'fleetkit-achievements-agents',
-    coffeeCount:  'fleetkit-achievements-coffee',
-    sessionStart: 'fleetkit-achievements-session-start',
+    unlocked:     'spawnkit-achievements-unlocked',
+    stats:        'spawnkit-achievements-stats',
+    streak:       'spawnkit-achievements-streak',
+    themes:       'spawnkit-achievements-themes',
+    shortcuts:    'spawnkit-achievements-shortcuts',
+    agents:       'spawnkit-achievements-agents',
+    coffeeCount:  'spawnkit-achievements-coffee',
+    sessionStart: 'spawnkit-achievements-session-start',
   };
 
   function loadJSON(key, fallback) {
@@ -140,7 +140,7 @@
     'b', 'a'
   ];
 
-  // All known keyboard shortcuts in FleetKit
+  // All known keyboard shortcuts in SpawnKit
   const ALL_SHORTCUTS = new Set([
     '1', '2', '3', '4', '5',   // Select agents
     'm',                         // New mission
@@ -155,7 +155,7 @@
   // ═══════════════════════════════════════════════════════════════
 
   function getCurrentTheme() {
-    return localStorage.getItem('fleetkit-theme') || 'cyberpunk';
+    return localStorage.getItem('spawnkit-theme') || 'cyberpunk';
   }
 
   // ═══════════════════════════════════════════════════════════════
@@ -246,11 +246,11 @@
   // ═══════════════════════════════════════════════════════════════
 
   function ensureToastContainer() {
-    let c = document.getElementById('fleetkit-toast-container');
+    let c = document.getElementById('spawnkit-toast-container');
     if (c) return c;
 
     c = document.createElement('div');
-    c.id = 'fleetkit-toast-container';
+    c.id = 'spawnkit-toast-container';
     Object.assign(c.style, {
       position: 'fixed',
       top: '20px',
@@ -284,7 +284,7 @@
     const container = ensureToastContainer();
     const theme = getCurrentTheme();
     const toast = document.createElement('div');
-    toast.className = 'fleetkit-achievement-toast';
+    toast.className = 'spawnkit-achievement-toast';
 
     // Theme-adaptive styles
     const themeStyles = {
@@ -408,7 +408,7 @@
       Object.assign(shimmer.style, {
         position: 'absolute', top: '0', left: '0', right: '0', height: '2px',
         background: 'linear-gradient(90deg, transparent, #ffd700, transparent)',
-        animation: 'fleetkit-shimmer 2s ease-in-out infinite',
+        animation: 'spawnkit-shimmer 2s ease-in-out infinite',
       });
       toast.appendChild(shimmer);
     }
@@ -491,65 +491,65 @@
   // ═══════════════════════════════════════════════════════════════
 
   function injectCSS() {
-    if (document.getElementById('fleetkit-achievements-css')) return;
+    if (document.getElementById('spawnkit-achievements-css')) return;
     const style = document.createElement('style');
-    style.id = 'fleetkit-achievements-css';
+    style.id = 'spawnkit-achievements-css';
     style.textContent = `
-      @keyframes fleetkit-shimmer {
+      @keyframes spawnkit-shimmer {
         0%, 100% { opacity: 0.3; transform: translateX(-100%); }
         50% { opacity: 1; transform: translateX(100%); }
       }
 
-      @keyframes fleetkit-pulse {
+      @keyframes spawnkit-pulse {
         0%, 100% { transform: scale(1); }
         50% { transform: scale(1.05); }
       }
 
-      @keyframes fleetkit-glow {
+      @keyframes spawnkit-glow {
         0%, 100% { box-shadow: 0 0 5px rgba(0, 255, 255, 0.3); }
         50% { box-shadow: 0 0 20px rgba(0, 255, 255, 0.6); }
       }
 
-      @keyframes fleetkit-fadeIn {
+      @keyframes spawnkit-fadeIn {
         from { opacity: 0; transform: scale(0.95); }
         to   { opacity: 1; transform: scale(1); }
       }
 
-      @keyframes fleetkit-slideUp {
+      @keyframes spawnkit-slideUp {
         from { opacity: 0; transform: translateY(20px); }
         to   { opacity: 1; transform: translateY(0); }
       }
 
-      @keyframes fleetkit-streak-fire {
+      @keyframes spawnkit-streak-fire {
         0%, 100% { transform: scale(1) rotate(-2deg); }
         25% { transform: scale(1.1) rotate(2deg); }
         50% { transform: scale(1.05) rotate(-1deg); }
         75% { transform: scale(1.15) rotate(1deg); }
       }
 
-      #fleetkit-stats-overlay {
-        animation: fleetkit-fadeIn 0.3s ease-out;
+      #spawnkit-stats-overlay {
+        animation: spawnkit-fadeIn 0.3s ease-out;
       }
 
-      #fleetkit-stats-overlay .stat-row {
-        animation: fleetkit-slideUp 0.3s ease-out both;
+      #spawnkit-stats-overlay .stat-row {
+        animation: spawnkit-slideUp 0.3s ease-out both;
       }
 
-      #fleetkit-stats-overlay .achievement-badge {
+      #spawnkit-stats-overlay .achievement-badge {
         transition: transform 0.2s ease, box-shadow 0.2s ease;
         cursor: default;
       }
 
-      #fleetkit-stats-overlay .achievement-badge:hover {
+      #spawnkit-stats-overlay .achievement-badge:hover {
         transform: scale(1.15);
       }
 
-      #fleetkit-stats-overlay .achievement-badge.locked {
+      #spawnkit-stats-overlay .achievement-badge.locked {
         filter: grayscale(1) brightness(0.4);
         opacity: 0.4;
       }
 
-      #fleetkit-stats-overlay .achievement-badge.locked:hover {
+      #spawnkit-stats-overlay .achievement-badge.locked:hover {
         filter: grayscale(0.5) brightness(0.6);
         opacity: 0.7;
       }
@@ -596,7 +596,7 @@
 
     // Check dedicated achievement (7-day streak)
     if (_streak.current >= 7) {
-      FleetKitAchievements.unlock('dedicated');
+      SpawnKitAchievements.unlock('dedicated');
     }
   }
 
@@ -605,7 +605,7 @@
       3:   { icon: '🔥', msg: '3-day streak! You\'re on fire!' },
       7:   { icon: '🔥🔥', msg: '7-day streak! Unstoppable!' },
       14:  { icon: '🔥🔥🔥', msg: '2-week streak! Legend!' },
-      30:  { icon: '🌟', msg: '30-day streak! You ARE FleetKit!' },
+      30:  { icon: '🌟', msg: '30-day streak! You ARE SpawnKit!' },
       50:  { icon: '💫', msg: '50-day streak! Mythical!' },
       100: { icon: '👑', msg: '100-day streak! Ultimate!' },
     };
@@ -717,7 +717,7 @@
 
     // Build overlay
     const overlay = document.createElement('div');
-    overlay.id = 'fleetkit-stats-overlay';
+    overlay.id = 'spawnkit-stats-overlay';
     Object.assign(overlay.style, {
       position: 'fixed',
       top: '0', left: '0', width: '100vw', height: '100vh',
@@ -780,7 +780,7 @@
 
     // Streak visual
     const streakEmoji = _streak.current >= 7 ? '🔥🔥🔥' : _streak.current >= 3 ? '🔥🔥' : _streak.current >= 1 ? '🔥' : '❄️';
-    const streakStyle = _streak.current >= 3 ? 'animation: fleetkit-streak-fire 1s ease-in-out infinite;' : '';
+    const streakStyle = _streak.current >= 3 ? 'animation: spawnkit-streak-fire 1s ease-in-out infinite;' : '';
 
     panel.innerHTML += `
       <div style="position:relative; z-index:1;">
@@ -933,8 +933,8 @@
     showToast(achievement);
 
     // Emit event
-    if (typeof FleetKit !== 'undefined' && FleetKit?.emit) {
-      FleetKit.emit('achievement:unlocked', { achievement, total: _unlocked.size });
+    if (typeof SpawnKit !== 'undefined' && SpawnKit?.emit) {
+      SpawnKit.emit('achievement:unlocked', { achievement, total: _unlocked.size });
     }
 
     console.log(`[Achievements] 🏆 Unlocked: ${achievement.icon} ${achievement.name} (+${achievement.points})`);
@@ -957,11 +957,11 @@
   // ─── EVENT HOOKS & AUTO-TRACKING ─────────────────────────────
   // ═══════════════════════════════════════════════════════════════
 
-  function bindFleetKitEvents() {
-    if (typeof FleetKit === 'undefined' || !FleetKit?.on) return;
+  function bindSpawnKitEvents() {
+    if (typeof SpawnKit === 'undefined' || !SpawnKit?.on) return;
 
     // Mission complete → track stats + achievements
-    FleetKit.on('mission:complete', (data) => {
+    SpawnKit.on('mission:complete', (data) => {
       const today = todayStr();
       _stats.totalMissions++;
 
@@ -999,7 +999,7 @@
     });
 
     // Theme switch → track for theme_explorer
-    FleetKit.on('theme:changed', (data) => {
+    SpawnKit.on('theme:changed', (data) => {
       if (data?.theme) {
         _themesVisited.add(data.theme);
         persist();
@@ -1112,8 +1112,8 @@
 
   function bindCoffeeTracking() {
     // Listen for coffee station interactions
-    if (typeof FleetKit !== 'undefined' && FleetKit?.on) {
-      FleetKit.on('coffee:visit', () => {
+    if (typeof SpawnKit !== 'undefined' && SpawnKit?.on) {
+      SpawnKit.on('coffee:visit', () => {
         _coffeeCount++;
         saveJSON(KEYS.coffeeCount, _coffeeCount);
         if (_coffeeCount >= 10) unlock('coffee_addict');
@@ -1132,8 +1132,8 @@
 
   function bindSoundTracking() {
     // When sound is enabled, unlock audiophile
-    if (typeof FleetKit !== 'undefined' && FleetKit?.on) {
-      FleetKit.on('sound:enabled', () => {
+    if (typeof SpawnKit !== 'undefined' && SpawnKit?.on) {
+      SpawnKit.on('sound:enabled', () => {
         unlock('sound_on');
       });
     }
@@ -1156,7 +1156,7 @@
 
     // Watch for changes via localStorage
     window.addEventListener('storage', (e) => {
-      if (e.key === 'fleetkit-theme' && e.newValue) {
+      if (e.key === 'spawnkit-theme' && e.newValue) {
         _themesVisited.add(e.newValue);
         persist();
         if (_themesVisited.size >= 3) unlock('theme_explorer');
@@ -1194,7 +1194,7 @@
     }
 
     // Bind all trackers
-    bindFleetKitEvents();
+    bindSpawnKitEvents();
     bindKeyboardTracking();
     bindTimeChecks();
     bindMarathonTracker();
@@ -1210,7 +1210,7 @@
   // ─── PUBLIC API ───────────────────────────────────────────────
   // ═══════════════════════════════════════════════════════════════
 
-  const FleetKitAchievements = {
+  const SpawnKitAchievements = {
     /** Unlock an achievement by ID. Returns true if newly unlocked. */
     unlock(achievementId) {
       return unlock(achievementId);
@@ -1272,7 +1272,7 @@
 
     /** Reset all achievements and stats (dev only). */
     reset() {
-      if (!confirm('Reset ALL FleetKit achievements and stats? This cannot be undone.')) return;
+      if (!confirm('Reset ALL SpawnKit achievements and stats? This cannot be undone.')) return;
       _unlocked = new Set();
       _stats = {
         totalMissions: 0, missionsToday: 0, missionsTodayDate: null,
@@ -1316,8 +1316,8 @@
 
     /** Manually trigger a mission completion (for testing or external use). */
     trackMissionComplete(data) {
-      if (typeof FleetKit !== 'undefined' && FleetKit.emit) {
-        FleetKit.emit('mission:complete', data || {});
+      if (typeof SpawnKit !== 'undefined' && SpawnKit.emit) {
+        SpawnKit.emit('mission:complete', data || {});
       }
     },
 
@@ -1330,7 +1330,7 @@
   // ═══════════════════════════════════════════════════════════════
 
   // Expose API globally
-  global.FleetKitAchievements = FleetKitAchievements;
+  window.SpawnKitAchievements = SpawnKitAchievements;
 
   // Auto-initialize when DOM is ready
   if (document.readyState === 'loading') {

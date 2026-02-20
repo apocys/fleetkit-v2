@@ -1,9 +1,9 @@
 /**
- * FleetKit v2 — Dynamic Page Titles
+ * SpawnKit v2 — Dynamic Page Titles
  * ═══════════════════════════════════
  * 
  * Updates document.title based on the current application state.
- * Listens to FleetKit events (mission lifecycle, meetings, celebrations)
+ * Listens to SpawnKit events (mission lifecycle, meetings, celebrations)
  * and crafts contextual, emoji-rich titles that make the browser tab alive.
  * 
  * Title patterns:
@@ -120,21 +120,21 @@
         }
     }
 
-    // ── Hook into FleetKit event system ────────────────────────────
+    // ── Hook into SpawnKit event system ────────────────────────────
 
     function bindEvents() {
-        if (!global.FleetKit || typeof global.FleetKit.on !== 'function') {
-            // Retry later if FleetKit isn't ready yet
+        if (!window.SpawnKit || typeof window.SpawnKit.on !== 'function') {
+            // Retry later if SpawnKit isn't ready yet
             setTimeout(bindEvents, 200);
             return;
         }
 
         // Mission lifecycle
-        global.FleetKit.on('mission:new', (data) => {
+        window.SpawnKit.on('mission:new', (data) => {
             setState('mission', data);
         });
 
-        global.FleetKit.on('mission:progress', (data) => {
+        window.SpawnKit.on('mission:progress', (data) => {
             if (data && data.progress >= 100) {
                 setState('celebrating');
                 // Auto-return to idle after celebration
@@ -142,22 +142,22 @@
             }
         });
 
-        global.FleetKit.on('mission:complete', () => {
+        window.SpawnKit.on('mission:complete', () => {
             setState('celebrating');
             setTimeout(() => setState('idle'), 5000);
         });
 
         // Meetings
-        global.FleetKit.on('meeting:start', () => {
+        window.SpawnKit.on('meeting:start', () => {
             setState('meeting');
         });
 
-        global.FleetKit.on('meeting:end', () => {
+        window.SpawnKit.on('meeting:end', () => {
             setState('idle');
         });
 
         // MC state events (from mission-controller)
-        global.FleetKit.on('mc:state', (data) => {
+        window.SpawnKit.on('mc:state', (data) => {
             if (!data) return;
             const s = data.state || data;
             if (s === 'idle')        setState('idle');
@@ -169,7 +169,7 @@
         });
 
         // MC phase events
-        global.FleetKit.on('mc:phase', (data) => {
+        window.SpawnKit.on('mc:phase', (data) => {
             if (!data) return;
             if (data.phase === 'celebration') {
                 setState('celebrating');
@@ -182,8 +182,8 @@
         });
 
         // Boot
-        global.FleetKit.on('boot:start', () => setState('boot'));
-        global.FleetKit.on('boot:complete', () => setState('idle'));
+        window.SpawnKit.on('boot:start', () => setState('boot'));
+        window.SpawnKit.on('boot:complete', () => setState('idle'));
     }
 
     // ── Initialize ─────────────────────────────────────────────────
@@ -196,9 +196,9 @@
 
     // ── Export ──────────────────────────────────────────────────────
 
-    if (!global.FleetKit) global.FleetKit = {};
+    if (!window.SpawnKit) window.SpawnKit = {};
 
-    global.FleetKit.pageTitle = {
+    window.SpawnKit.pageTitle = {
         init: init,
         setState: setState,
         getState: () => currentState,

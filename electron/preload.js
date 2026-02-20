@@ -3,9 +3,11 @@ const { contextBridge, ipcRenderer } = require('electron');
 contextBridge.exposeInMainWorld('electronAPI', {
   // Setup wizard
   detectWorkspace: () => ipcRenderer.invoke('detect-workspace'),
+  detectOpenClawConfig: () => ipcRenderer.invoke('detect-openclaw-config'),
   testConnection: (provider, apiKey) => ipcRenderer.invoke('test-connection', provider, apiKey),
   saveConfig: (config) => ipcRenderer.invoke('save-config', config),
   completeSetup: (config) => ipcRenderer.invoke('complete-setup', config),
+  getDefaultWorkspace: () => ipcRenderer.invoke('detect-workspace').then(r => r.path),
 
   // Version info
   getVersion: () => ipcRenderer.invoke('get-version'),
@@ -15,29 +17,47 @@ contextBridge.exposeInMainWorld('electronAPI', {
   maximize: () => ipcRenderer.invoke('window-maximize'),
   close: () => ipcRenderer.invoke('window-close'),
 
-  // Directory browser
+  // Directory browser (both names for compatibility)
   browseDirectory: () => ipcRenderer.invoke('browse-directory'),
+  browseFolder: () => ipcRenderer.invoke('browse-directory'),
 
   // Menu events
   onToggleAgents: (callback) => {
     ipcRenderer.on('toggle-agents', callback);
     return () => ipcRenderer.removeListener('toggle-agents', callback);
+  },
+
+  // Theme switching
+  switchTheme: (theme) => ipcRenderer.invoke('switch-theme', theme),
+  getCurrentTheme: () => ipcRenderer.invoke('get-current-theme'),
+
+  // Settings
+  detectOpenclawConfig: () => ipcRenderer.invoke('detect-openclaw-config'),
+  openExternal: (url) => ipcRenderer.invoke('open-external', url),
+
+  // Agent Builder
+  openAgentBuilder: () => ipcRenderer.invoke('open-agent-builder'),
+
+  // Preferences
+  onOpenPreferences: (callback) => {
+    ipcRenderer.on('open-preferences', callback);
+    return () => ipcRenderer.removeListener('open-preferences', callback);
   }
 });
 
-// FleetKit data API (if data-provider is loaded)
-contextBridge.exposeInMainWorld('fleetkitAPI', {
-  isAvailable: () => ipcRenderer.invoke('fleetkit:isAvailable'),
-  getSessions: () => ipcRenderer.invoke('fleetkit:getSessions'),
-  getCrons: () => ipcRenderer.invoke('fleetkit:getCrons'),
-  getMemory: () => ipcRenderer.invoke('fleetkit:getMemory'),
-  getAgentInfo: (id) => ipcRenderer.invoke('fleetkit:getAgentInfo', id),
-  getMetrics: () => ipcRenderer.invoke('fleetkit:getMetrics'),
-  getAll: () => ipcRenderer.invoke('fleetkit:getAll'),
-  getTranscript: (sessionId, limit) => ipcRenderer.invoke('fleetkit:getTranscript', sessionId, limit),
-  sendMission: (task) => ipcRenderer.invoke('fleetkit:sendMission', task),
-  invalidateCache: () => ipcRenderer.invoke('fleetkit:invalidateCache'),
-  onUpdate: (callback) => ipcRenderer.on('fleetkit:update', (_, data) => callback(data))
+// SpawnKit data API (if data-provider is loaded)
+contextBridge.exposeInMainWorld('spawnkitAPI', {
+  isAvailable: () => ipcRenderer.invoke('spawnkit:isAvailable'),
+  getSessions: () => ipcRenderer.invoke('spawnkit:getSessions'),
+  getCrons: () => ipcRenderer.invoke('spawnkit:getCrons'),
+  getMemory: () => ipcRenderer.invoke('spawnkit:getMemory'),
+  getAgentInfo: (id) => ipcRenderer.invoke('spawnkit:getAgentInfo', id),
+  getMetrics: () => ipcRenderer.invoke('spawnkit:getMetrics'),
+  getAll: () => ipcRenderer.invoke('spawnkit:getAll'),
+  getTranscript: (sessionId, limit) => ipcRenderer.invoke('spawnkit:getTranscript', sessionId, limit),
+  sendMission: (task) => ipcRenderer.invoke('spawnkit:sendMission', task),
+  invalidateCache: () => ipcRenderer.invoke('spawnkit:invalidateCache'),
+  onUpdate: (callback) => ipcRenderer.on('spawnkit:update', (_, data) => callback(data))
 });
 
 // Platform detection

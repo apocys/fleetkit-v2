@@ -1,4 +1,4 @@
-# FleetKit v2 Development Roadmap
+# SpawnKit v2 Development Roadmap
 
 ## Phase 1: Office Versions (IN PROGRESS)
 - [x] Base PixiJS engine working
@@ -36,4 +36,4 @@
 
 **Current Status:** 3 office versions building simultaneously
 **ETA:** Version previews in ~10 min, chosen version polished tonight
-**Timeline:** Full FleetKit v2 ready within 2-3 weeks (compressed from 8)
+**Timeline:** Full SpawnKit v2 ready within 2-3 weeks (compressed from 8)

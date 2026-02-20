@@ -253,21 +253,21 @@
     <!-- PixiJS v7 from CDN -->
     <script src="../lib/pixi.min.js"></script>
     
-    <!-- FleetKit v2 Visual Polish Layer -->
+    <!-- SpawnKit v2 Visual Polish Layer -->
     <script src="../src/favicon.js"></script>
     <script src="../src/meta-tags.js"></script>
     <script src="../src/page-title.js"></script>
     
-    <!-- FleetKit v2 Theme Names (universe-consistent naming) -->
+    <!-- SpawnKit v2 Theme Names (universe-consistent naming) -->
     <script src="../src/theme-names.js"></script>
     
-    <!-- FleetKit v2 Data Bridge -->
+    <!-- SpawnKit v2 Data Bridge -->
     <script src="../src/data-bridge.js"></script>
     
-    <!-- FleetKit v2 Sprites -->
+    <!-- SpawnKit v2 Sprites -->
     <script src="../src/sprites.js"></script>
     
-    <!-- FleetKit v2 Mission Controller (Pokémon-style gameplay core) -->
+    <!-- SpawnKit v2 Mission Controller (Pokémon-style gameplay core) -->
     <script src="../src/mission-controller.js"></script>
     
     <!-- Boot Sequence -->
@@ -303,8 +303,8 @@
     <script>
         document.addEventListener('DOMContentLoaded', async function() {
             // Initialize UX Layer
-            if (typeof FleetKitUX !== 'undefined') {
-                FleetKitUX.init({ theme: 'gameboy' });
+            if (typeof SpawnKitUX !== 'undefined') {
+                SpawnKitUX.init({ theme: 'gameboy' });
             }
             // Initialize OpenClaw Helpers
             if (typeof OpenClawHelpers !== 'undefined') {
@@ -312,9 +312,9 @@
             }
             
             const params = new URLSearchParams(window.location.search);
-            const shouldBoot = params.has('boot') || !localStorage.getItem('fleetkit-booted-gameboy');
+            const shouldBoot = params.has('boot') || !localStorage.getItem('spawnkit-booted-gameboy');
             
-            if (shouldBoot && typeof FleetKitBoot !== 'undefined') {
+            if (shouldBoot && typeof SpawnKitBoot !== 'undefined') {
                 // Create boot overlay
                 const overlay = document.createElement('div');
                 overlay.id = 'bootOverlay';
@@ -322,13 +322,13 @@
                 document.body.prepend(overlay);
                 
                 try {
-                    await FleetKitBoot.play('gameboy', overlay, { 
+                    await SpawnKitBoot.play('gameboy', overlay, { 
                         soundEnabled: false, 
                         skipable: true 
                     });
                 } catch(e) { console.warn('Boot skipped:', e); }
                 
-                localStorage.setItem('fleetkit-booted-gameboy', 'true');
+                localStorage.setItem('spawnkit-booted-gameboy', 'true');
                 overlay.style.transition = 'opacity 0.5s';
                 overlay.style.opacity = '0';
                 setTimeout(() => overlay.remove(), 500);
@@ -337,15 +337,15 @@
             initThemeSwitcher();
             
             // Signal UX layer that office is ready
-            if (typeof FleetKitUX !== 'undefined') {
-                FleetKitUX.ready();
+            if (typeof SpawnKitUX !== 'undefined') {
+                SpawnKitUX.ready();
             }
             
             // Update HUD with real data every 5 seconds
             function updateHUD() {
                 try {
-                    const data = typeof FleetKit !== 'undefined' ? FleetKit.data : null;
-                    const ach = typeof FleetKitAchievements !== 'undefined' ? FleetKitAchievements : null;
+                    const data = typeof SpawnKit !== 'undefined' ? SpawnKit.data : null;
+                    const ach = typeof SpawnKitAchievements !== 'undefined' ? SpawnKitAchievements : null;
                     
                     if (data) {
                         const activeMissions = (data.missions || []).filter(m => m.status === 'active').length;

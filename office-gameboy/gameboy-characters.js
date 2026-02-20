@@ -1,12 +1,12 @@
 // GameBoy Characters - Pokémon-universe AI agents for the virtual office
-// Wired to FleetKitNames for universe-consistent naming
+// Wired to SpawnKitNames for universe-consistent naming
 
 /**
- * Graceful name resolver — falls back to canonical names if FleetKitNames unavailable
+ * Graceful name resolver — falls back to canonical names if SpawnKitNames unavailable
  */
 function resolveGB(canonicalId, field) {
-    if (window.FleetKitNames) {
-        return FleetKitNames.resolve('gameboy', canonicalId, field);
+    if (window.SpawnKitNames) {
+        return SpawnKitNames.resolve('gameboy', canonicalId, field);
     }
     // Graceful fallback
     const fallback = { hunter: 'Hunter', forge: 'Forge', echo: 'Echo', atlas: 'Atlas', sentinel: 'Sentinel' };
@@ -15,19 +15,19 @@ function resolveGB(canonicalId, field) {
 }
 
 function resolveGBObject(objectId) {
-    if (window.FleetKitNames) return FleetKitNames.resolveObject('gameboy', objectId);
+    if (window.SpawnKitNames) return SpawnKitNames.resolveObject('gameboy', objectId);
     return objectId;
 }
 
 function getGBSubAgentName(index) {
-    if (window.FleetKitNames) return FleetKitNames.getSubAgentName('gameboy', index);
+    if (window.SpawnKitNames) return SpawnKitNames.getSubAgentName('gameboy', index);
     return `Sub-Agent #${index + 1}`;
 }
 
 class GameBoyCharacter {
     constructor(canonicalId, role, emoji, color, homeDesk, officeMap) {
         this.canonicalId = canonicalId;
-        // Resolve Pokémon names from FleetKitNames
+        // Resolve Pokémon names from SpawnKitNames
         this.name = resolveGB(canonicalId, 'name');
         this.title = resolveGB(canonicalId, 'title');
         this.role = role;
@@ -87,7 +87,7 @@ class GameBoyCharacter {
     }
     
     createGameBoySprite() {
-        if (window.FleetKitSprites && this.canUsePixelSprites()) {
+        if (window.SpawnKitSprites && this.canUsePixelSprites()) {
             this.createPixelSprite();
         } else {
             this.createGraphicsSprite();
@@ -96,7 +96,7 @@ class GameBoyCharacter {
     
     canUsePixelSprites() {
         const spriteId = this.getSpriteCharacterId();
-        return spriteId && window.FleetKitSprites.characters[spriteId];
+        return spriteId && window.SpawnKitSprites.characters[spriteId];
     }
     
     getSpriteCharacterId() {
@@ -120,7 +120,7 @@ class GameBoyCharacter {
         const ctx = canvas.getContext('2d', { willReadFrequently: true });
         const spriteId = this.getSpriteCharacterId();
         const frameName = this.getFrameNameForState();
-        FleetKitSprites.renderFrame(ctx, spriteId, frameName, 0, 0, pixelSize);
+        SpawnKitSprites.renderFrame(ctx, spriteId, frameName, 0, 0, pixelSize);
         this.applyGameBoyTint(ctx, canvas.width, canvas.height);
         const texture = PIXI.Texture.from(canvas);
         this.sprite = new PIXI.Sprite(texture);
@@ -153,9 +153,15 @@ class GameBoyCharacter {
             case 'going_to_meeting':
             case 'getting_coffee':
             case 'searching_files':
+            case 'wandering':
                 return this.isMoving ? 'walk_right_1' : 'idle_1';
             case 'celebrating':
                 return 'celebrating_1';
+            case 'delegating':
+                return 'working_1'; // Special animation for delegating
+            case 'grinding':
+            case 'leveling_up':
+                return 'working_1'; // Intense working animation
             case 'thinking':
             default:
                 return 'idle_1';
@@ -179,12 +185,12 @@ class GameBoyCharacter {
     }
     
     updateSpriteFrame() {
-        if (this.spriteCanvas && this.spriteContext && window.FleetKitSprites) {
+        if (this.spriteCanvas && this.spriteContext && window.SpawnKitSprites) {
             const newFrame = this.getFrameNameForState();
             if (newFrame !== this.currentFrame) {
                 this.spriteContext.clearRect(0, 0, this.spriteCanvas.width, this.spriteCanvas.height);
                 const spriteId = this.getSpriteCharacterId();
-                FleetKitSprites.renderFrame(this.spriteContext, spriteId, newFrame, 0, 0, 2);
+                SpawnKitSprites.renderFrame(this.spriteContext, spriteId, newFrame, 0, 0, 2);
                 this.applyGameBoyTint(this.spriteContext, this.spriteCanvas.width, this.spriteCanvas.height);
                 this.sprite.texture.update();
                 this.currentFrame = newFrame;
@@ -193,11 +199,31 @@ class GameBoyCharacter {
     }
     
     createNameLabel() {
-        // Show Pokémon-style title (e.g. "Lv.99 HACKER")
-        this.nameLabel = new PIXI.Text(this.title, {
+        // Use Agent OS naming if available, fallback to Pokémon-style title
+        let displayName = this.title;
+        
+        // Check if this character has an associated subagent with Agent OS name
+        if (this.agentOSName && window.AgentOSNaming) {
+            displayName = window.AgentOSNaming.displayName(this.agentOSName, 'abbreviated');
+        } else if (this.role && this.canonicalId) {
+            // Try to construct abbreviated name for main agents (F.TR-01 format)
+            const parentMap = { hunter: 'H', forge: 'F', echo: 'E', atlas: 'A', sentinel: 'S', main: 'M' };
+            const parent = parentMap[this.canonicalId] || this.canonicalId[0].toUpperCase();
+            const roleAbbrev = this.role === 'CTO' ? 'CT' : this.role === 'CRO' ? 'CR' : this.role === 'CMO' ? 'CM' : this.role === 'COO' ? 'CO' : this.role === 'CEO' ? 'CE' : 'AG';
+            displayName = `${parent}.${roleAbbrev}-01`;
+        }
+        
+        // Apply model identity color if available
+        let textColor = this.colors.lightest;
+        if (this.model && window.ModelIdentity) {
+            const modelId = window.ModelIdentity.getIdentity(this.model);
+            textColor = modelId.color ? parseInt(modelId.color.replace('#', '0x'), 16) : this.colors.lightest;
+        }
+        
+        this.nameLabel = new PIXI.Text(displayName, {
             fontFamily: 'Press Start 2P, Monaco, monospace',
             fontSize: 5,
-            fill: this.colors.lightest,
+            fill: textColor,
             stroke: this.colors.darkest,
             strokeThickness: 1
         });
@@ -276,7 +302,7 @@ class GameBoyCharacter {
         let weights = {};
         switch (this.state) {
             case 'working_at_desk':
-                weights = { going_to_meeting: 2, getting_coffee: 2, thinking: 2, celebrating: 1, searching_files: 1, working_at_desk: 1 };
+                weights = { going_to_meeting: 2, getting_coffee: 2, thinking: 2, celebrating: 1, searching_files: 1, working_at_desk: 1, wandering: 1 };
                 break;
             case 'going_to_meeting':
                 weights = { in_meeting: 5, working_at_desk: 1 };
@@ -285,10 +311,20 @@ class GameBoyCharacter {
                 weights = { working_at_desk: 4, getting_coffee: 1 };
                 break;
             case 'getting_coffee':
-                weights = { working_at_desk: 3, thinking: 1, celebrating: 1 };
+                weights = { working_at_desk: 3, thinking: 1, celebrating: 1, wandering: 1 };
                 break;
             case 'searching_files':
                 weights = { working_at_desk: 4, thinking: 1 };
+                break;
+            case 'wandering':
+                weights = { working_at_desk: 3, getting_coffee: 1, searching_files: 1 };
+                break;
+            case 'delegating':
+                weights = { working_at_desk: 4, going_to_meeting: 1 };
+                break;
+            case 'grinding':
+            case 'leveling_up':
+                weights = { working_at_desk: 5, celebrating: 2 };
                 break;
             default:
                 weights = { working_at_desk: 5, going_to_meeting: 1, getting_coffee: 1 };
@@ -318,7 +354,7 @@ class GameBoyCharacter {
                 break;
             case 'in_meeting':
                 this.isWorking = true;
-                this.showSpeechBubble("MEETING");
+                this.showSpeechBubble("MEETING", 4000);
                 break;
             case 'getting_coffee':
                 this.goToCoffee();
@@ -327,10 +363,22 @@ class GameBoyCharacter {
                 this.celebrate();
                 break;
             case 'thinking':
-                this.showSpeechBubble("...");
+                this.showSpeechBubble("...", 3000);
                 break;
             case 'searching_files':
                 this.searchFiles();
+                break;
+            case 'wandering':
+                this.wander();
+                break;
+            case 'delegating':
+                this.delegate();
+                break;
+            case 'grinding':
+                this.grind();
+                break;
+            case 'leveling_up':
+                this.levelUp();
                 break;
         }
     }
@@ -366,10 +414,52 @@ class GameBoyCharacter {
         this.celebrationBounce = 0;
     }
     
-    showSpeechBubble(text) {
+    wander() {
+        // Random movement around the office
+        const locations = Object.values(this.officeMap.locations);
+        const randomLoc = locations[Math.floor(Math.random() * locations.length)];
+        const offset = { x: Math.random() - 0.5, y: Math.random() - 0.5 };
+        this.moveTo(randomLoc.x + offset.x, randomLoc.y + offset.y);
+        const phrase = window.getGameBoyPhrase ? window.getGameBoyPhrase('wandering') : "EXPLORING!";
+        this.showSpeechBubble(phrase, 3000);
+    }
+    
+    delegate() {
+        // Stay at desk but show delegating animation
+        this.goToDesk();
+        this.isWorking = true;
+        const phrase = window.getGameBoyPhrase ? window.getGameBoyPhrase('delegating') : "DELEGATING!";
+        this.showSpeechBubble(phrase, 4000);
+        this.addActiveGlow();
+    }
+    
+    grind() {
+        this.goToDesk();
+        this.isWorking = true;
+        this.showProgressBar();
+        const phrase = window.getGameBoyPhrase ? window.getGameBoyPhrase('grinding') : "GRINDING!";
+        this.showSpeechBubble(phrase, 4000);
+        // Faster working animation
+        this.workingAnimation += 0.02;
+    }
+    
+    levelUp() {
+        this.goToDesk();
+        this.isWorking = true;
+        const phrase = window.getGameBoyPhrase ? window.getGameBoyPhrase('celebrating') : "LVL UP!";
+        this.showSpeechBubble(phrase, 5000);
+        this.celebrationBounce = 0;
+        this.addActiveGlow();
+    }
+    
+    showSpeechBubble(text, duration) {
         this.hideSpeechBubble();
         
         const bubbleContainer = new PIXI.Container();
+        
+        // Determine bubble duration - longer for real task text
+        const isRealTask = text && (text.includes('!') || text.length > 8);
+        const bubbleDuration = duration || (isRealTask ? 5000 : 3000);
         
         // Pokémon-style dialog box with thicker borders
         const bubble = new PIXI.Graphics();
@@ -412,7 +502,7 @@ class GameBoyCharacter {
         
         this.speechBubble = bubbleContainer;
         this.container.addChild(this.speechBubble);
-        this.speechTimer = 4000;
+        this.speechTimer = bubbleDuration;
     }
     
     hideSpeechBubble() {
@@ -509,6 +599,46 @@ class GameBoyCharacter {
             this.documentSprite = null;
         }
     }
+    
+    addActiveGlow() {
+        this.removeActiveGlow(); // Remove existing glow
+        
+        try {
+            // Try to use GlowFilter if available
+            if (PIXI.filters && PIXI.filters.GlowFilter) {
+                const glowFilter = new PIXI.filters.GlowFilter({
+                    distance: 8,
+                    outerStrength: 2,
+                    innerStrength: 1,
+                    color: this.colors.lightest,
+                    quality: 0.3
+                });
+                
+                this.sprite.filters = [glowFilter];
+            } else {
+                // Fallback: subtle tint change
+                this.sprite.tint = 0xFFFFAA; // Slight yellow tint
+            }
+        } catch (err) {
+            console.warn('🎮 Glow effect not available, using tint fallback');
+            this.sprite.tint = 0xFFFFAA;
+        }
+        
+        // Remove glow after 3 seconds
+        setTimeout(() => {
+            this.removeActiveGlow();
+        }, 3000);
+    }
+    
+    removeActiveGlow() {
+        if (this.sprite) {
+            if (this.sprite.filters) {
+                this.sprite.filters = [];
+            }
+            // Reset tint
+            this.sprite.tint = 0xFFFFFF;
+        }
+    }
 }
 
 class GameBoyCharacterManager {
@@ -523,7 +653,7 @@ class GameBoyCharacterManager {
     }
     
     createCharacters() {
-        // Map canonical agent IDs to Pokémon names via FleetKitNames
+        // Map canonical agent IDs to Pokémon names via SpawnKitNames
         const characterData = [
             { id: 'hunter',   desk: 'hunterDesk',   color: 0x8BAC0F },
             { id: 'forge',    desk: 'forgeDesk',     color: 0x9BBB0F },
@@ -703,12 +833,84 @@ class GameBoyCharacterManager {
         setTimeout(() => this.container.removeChild(confetti), 3000);
     }
     
+    // ── Agent OS Integration Methods ───────────────────────────
+    updateAgentOSNames(spawnKitData) {
+        if (!spawnKitData?.subagents || !window.AgentOSNaming) return;
+        
+        spawnKitData.subagents.forEach(subagent => {
+            const character = this.findCharacterByName(subagent.name) || 
+                            this.findCharacterById(subagent.id);
+            
+            if (character && subagent.agentOSName) {
+                character.agentOSName = subagent.agentOSName;
+                character.model = subagent.model;
+                // Recreate name label with new Agent OS name
+                if (character.nameLabel) {
+                    character.container.removeChild(character.nameLabel);
+                    character.createNameLabel();
+                }
+            }
+        });
+        
+        // Update main agents with model identities
+        if (spawnKitData.agents) {
+            spawnKitData.agents.forEach(agent => {
+                const character = this.findCharacterByRole(agent.role) || 
+                                this.findCharacterByName(agent.name);
+                
+                if (character && agent.model) {
+                    character.model = agent.model;
+                    // Recreate name label with model-based colors
+                    if (character.nameLabel) {
+                        character.container.removeChild(character.nameLabel);
+                        character.createNameLabel();
+                    }
+                }
+            });
+        }
+    }
+    
+    findCharacterById(id) {
+        return this.characters.find(char => char.id === id) || 
+               this.subAgents.find(sub => sub.subagentId === id);
+    }
+
     findCharacterByRole(role) {
         if (!role) return null;
-        return this.characters.find(char => 
-            char.role.toLowerCase() === role.toLowerCase() ||
-            char.role.toLowerCase().includes(role.toLowerCase())
+        
+        const roleLower = role.toLowerCase();
+        
+        // Direct role matches
+        let character = this.characters.find(char => 
+            char.role.toLowerCase() === roleLower ||
+            char.role.toLowerCase().includes(roleLower)
         );
+        
+        if (character) return character;
+        
+        // Map specific role names to canonical IDs
+        const roleMapping = {
+            'cro': 'hunter',    // Chief Revenue Officer
+            'cto': 'forge',     // Chief Technology Officer  
+            'cmo': 'echo',      // Chief Marketing Officer
+            'coo': 'atlas',     // Chief Operating Officer
+            'auditor': 'sentinel', // Security/Audit role
+            'ceo': 'hunter',    // CEO maps to Hunter for now
+            'revenue': 'hunter',
+            'technology': 'forge',
+            'tech': 'forge',
+            'marketing': 'echo',
+            'operations': 'atlas',
+            'security': 'sentinel',
+            'audit': 'sentinel'
+        };
+        
+        const canonicalId = roleMapping[roleLower];
+        if (canonicalId) {
+            character = this.characters.find(char => char.canonicalId === canonicalId);
+        }
+        
+        return character;
     }
     
     findCharacterByName(name) {

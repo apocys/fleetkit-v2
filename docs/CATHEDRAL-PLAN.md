@@ -1,4 +1,4 @@
-# FleetKit v2 — The Cathedral Plan
+# SpawnKit v2 — The Cathedral Plan
 
 ## Vision
 Not a product. A masterpiece. The Pantheon of AI management.
@@ -12,7 +12,7 @@ Every pixel intentional. Every interaction delightful. Every detail obsessed ove
 - [ ] 3 theme previews (interactive hover)
 - [ ] "Pay once, own forever" positioning
 - [ ] Testimonial-ready layout
-- [ ] One CTA: "Download FleetKit"
+- [ ] One CTA: "Download SpawnKit"
 
 ### 2. ACQUISITION — Installer
 - [ ] One-click .dmg (macOS) / .exe (Windows)
@@ -55,7 +55,7 @@ Every pixel intentional. Every interaction delightful. Every detail obsessed ove
 
 ### Personas to Test
 1. **Sarah, 28** — Designer, never used CLI, downloads from Product Hunt
-   - Can she set up FleetKit without documentation?
+   - Can she set up SpawnKit without documentation?
    - Does she understand what she's looking at?
    - Does she share a screenshot within 5 minutes?
 

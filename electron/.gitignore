@@ -1,18 +1,13 @@
-# Dependencies
+# Build artifacts
+dist/
 node_modules/
 
-# Build output
-dist/
-
-# Electron build cache
-.electron-builder-cache/
-
-# Configuration (contains API keys)
-config.json
-
-# Development
-.DS_Store
-*.log
-
-# OS generated files
-Thumbs.db
+# Pre-build copies (originals live in parent dirs)
+office-executive/
+office-gameboy/
+office-gameboy-color/
+office-sims/
+src/
+lib/
+sprites/
+dashboard.html

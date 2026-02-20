@@ -1,5 +1,5 @@
 /**
- * FleetKit v2 — Dynamic Favicons
+ * SpawnKit v2 — Dynamic Favicons
  * ═══════════════════════════════
  * 
  * Each theme gets a unique, hand-crafted SVG favicon rendered as a data URI.
@@ -133,9 +133,9 @@
 
     // ── Export ──────────────────────────────────────────────────────
 
-    if (!global.FleetKit) global.FleetKit = {};
+    if (!window.SpawnKit) window.SpawnKit = {};
 
-    global.FleetKit.favicon = {
+    window.SpawnKit.favicon = {
         set: setFavicon,
         auto: autoSetFavicon,
         favicons: favicons,

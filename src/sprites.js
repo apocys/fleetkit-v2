@@ -1,12 +1,12 @@
 /**
- * FleetKit v2 — Pixel Art Character Sprites
+ * SpawnKit v2 — Pixel Art Character Sprites
  * 5 AI agent characters as 16x16 pixel art drawn with Canvas2D
  * 
  * Characters: Hunter (CRO), Forge (CTO), Echo (CMO), Atlas (COO), Sentinel (Auditor)
  * Each has: idle(2), walk_right(2), working(2), celebrating(2) animation frames
  */
 
-window.FleetKitSprites = {
+window.SpawnKitSprites = {
   characters: {
     // =========================================================================
     // HUNTER (CRO) 💰 — Navy suit, gold tie, briefcase
@@ -821,7 +821,7 @@ window.FleetKitSprites = {
   renderFrame(ctx, characterId, frameName, x, y, pixelSize) {
     const char = this.characters[characterId];
     if (!char) {
-      console.warn(`FleetKitSprites: Unknown character "${characterId}"`);
+      console.warn(`SpawnKitSprites: Unknown character "${characterId}"`);
       return;
     }
 
@@ -834,7 +834,7 @@ window.FleetKitSprites = {
     }
 
     if (!frame) {
-      console.warn(`FleetKitSprites: Unknown frame "${frameName}" for "${characterId}"`);
+      console.warn(`SpawnKitSprites: Unknown frame "${frameName}" for "${characterId}"`);
       return;
     }
 

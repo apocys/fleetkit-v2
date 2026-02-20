@@ -1,4 +1,4 @@
-# FleetKit — Product Hunt Launch Copy
+# SpawnKit — Product Hunt Launch Copy
 
 ## 🏷️ Tagline Options (Ranked by Viral Potential)
 
@@ -19,13 +19,13 @@
 
 > Hey PH! 👋
 >
-> I'm building FleetKit because I was tired of staring at boring dashboards while my AI agents did incredible work behind the scenes.
+> I'm building SpawnKit because I was tired of staring at boring dashboards while my AI agents did incredible work behind the scenes.
 >
 > I run a fleet of AI agents — they trade, write, code, monitor, and research for me 24/7. But every tool I used to manage them looked like a 90s admin panel. Terminal logs. JSON blobs. Slack notifications drowning in noise.
 >
 > So I thought: what if managing AI agents felt like *playing a game?*
 >
-> FleetKit is a virtual office for your AI agents. You see them working at their desks, completing quests, leveling up. There are three themes: **GameBoy** (pixel art nostalgia), **Cyberpunk** (neon terminal vibes), and **Executive** (clean KPI boardroom).
+> SpawnKit is a virtual office for your AI agents. You see them working at their desks, completing quests, leveling up. There are three themes: **GameBoy** (pixel art nostalgia), **Cyberpunk** (neon terminal vibes), and **Executive** (clean KPI boardroom).
 >
 > Your agents get names, roles, speech bubbles. You assign missions through a command palette. Achievements pop up. Streak counters keep you engaged. It makes the invisible work of AI *visible and delightful.*
 >
@@ -55,7 +55,7 @@
 
 ### "This looks amazing! How does it connect to my AI agents?"
 
-> Thanks so much! 🙏 FleetKit connects to any AI agent through our simple API or webhooks. If your agent can send HTTP requests, it works with FleetKit. We support LangChain, CrewAI, AutoGen, custom agents — basically anything. The setup takes about 5 minutes. Happy to walk you through it!
+> Thanks so much! 🙏 SpawnKit connects to any AI agent through our simple API or webhooks. If your agent can send HTTP requests, it works with SpawnKit. We support LangChain, CrewAI, AutoGen, custom agents — basically anything. The setup takes about 5 minutes. Happy to walk you through it!
 
 ### "What's the difference between the three themes?"
 
@@ -71,7 +71,7 @@
 
 ### "Can I self-host this?"
 
-> Yes! FleetKit is a client-side application — you own the code. Run it locally, deploy to your own server, embed it in your existing dashboard. No external dependencies, no phoning home. Your data stays yours.
+> Yes! SpawnKit is a client-side application — you own the code. Run it locally, deploy to your own server, embed it in your existing dashboard. No external dependencies, no phoning home. Your data stays yours.
 
 ### "This reminds me of [Tamagotchi / SimCity / RPG]!"
 
@@ -79,11 +79,11 @@
 
 ### "How is this different from [LangSmith / AgentOps / other tool]?"
 
-> Great tools! The key difference: those focus on *observability* (traces, logs, debugging). FleetKit focuses on *experience* (visualization, gamification, delight). We're not replacing your monitoring stack — we're giving it a face. Think of us as the *frontend* for your AI operations. Many users run both!
+> Great tools! The key difference: those focus on *observability* (traces, logs, debugging). SpawnKit focuses on *experience* (visualization, gamification, delight). We're not replacing your monitoring stack — we're giving it a face. Think of us as the *frontend* for your AI operations. Many users run both!
 
 ### "Will there be a team/enterprise version?"
 
-> It's on the roadmap! Right now FleetKit is perfect for solo builders and small teams. We're working on multi-user features (shared offices, team leaderboards, role-based views) for a future release. Join our Discord to stay in the loop and shape what we build next!
+> It's on the roadmap! Right now SpawnKit is perfect for solo builders and small teams. We're working on multi-user features (shared offices, team leaderboards, role-based views) for a future release. Join our Discord to stay in the loop and shape what we build next!
 
 ---
 

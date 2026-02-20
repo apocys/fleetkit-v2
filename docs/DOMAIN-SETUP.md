@@ -1,7 +1,7 @@
-# FleetKit Domain Setup
+# SpawnKit Domain Setup
 
 ## Domain Registration
-- **Domain**: fleetkit.dev
+- **Domain**: spawnkit.dev
 - **Registrar**: Namecheap ($10.98/year)
 - **Status**: AVAILABLE ✅
 
@@ -21,21 +21,21 @@ www → apocys.github.io
 ```
 
 ### Setup Steps
-1. Register fleetkit.dev at Namecheap
+1. Register spawnkit.dev at Namecheap
 2. Update DNS with GitHub IPs above
 3. Add custom domain in GitHub Pages settings
 4. Wait for DNS propagation (5-60 min)
 5. Enable HTTPS in GitHub Pages
 
 ## GitHub Pages Custom Domain
-- Repository: apocys/fleetkit-v2  
-- Settings → Pages → Custom domain: `fleetkit.dev`
+- Repository: apocys/spawnkit-v2  
+- Settings → Pages → Custom domain: `spawnkit.dev`
 - Auto-deploy from main branch
 
 ## Final URLs
-- **Production**: https://fleetkit.dev
-- **Demo**: https://fleetkit.dev/demo.html
-- **Download**: https://github.com/apocys/fleetkit-v2/releases
+- **Production**: https://spawnkit.dev
+- **Demo**: https://spawnkit.dev/demo.html
+- **Download**: https://github.com/apocys/spawnkit-v2/releases
 
 ---
 *Ready to register domain and go live!*

@@ -28,18 +28,18 @@
 | gameboy-map.js | ~360 | ✅ Clean |
 
 ## Patterns Verified (All Pass)
-- ✅ No unguarded `FleetKit.data.X` access (all guarded by `?.` or early-return)
+- ✅ No unguarded `SpawnKit.data.X` access (all guarded by `?.` or early-return)
 - ✅ No unguarded `.toUpperCase()/.toLowerCase()` (all wrapped in `String()` or `|| ''`)
 - ✅ No unguarded `.map/.filter/.forEach/.find/.some` on potentially-null arrays
 - ✅ All `document.getElementById` results null-checked before use
 - ✅ All deep property chains (3+ levels) use `?.`
-- ✅ All `window.FleetKit` access uses `?.data?.` pattern
+- ✅ All `window.SpawnKit` access uses `?.data?.` pattern
 - ✅ All character/sprite/container property access uses `?.` or fallback defaults
 - ✅ All function parameters that call `.toLowerCase()` / `.toUpperCase()` wrapped in `String()`
 - ✅ All `window.simsOffice.X.Y` chains use `?.` throughout
 
 ## Specific Null-Safety Patterns Already In Place
-1. `window.FleetKit?.data?.agents` — every data access
+1. `window.SpawnKit?.data?.agents` — every data access
 2. `this.characterManager?.findCharacterByRole()` — all cross-references
 3. `this.officeMap?.locations?.phoneAlarm` — all location lookups
 4. `(agents || []).forEach(agent => { if (!agent) return; ...})` — array iteration safety

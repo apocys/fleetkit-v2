@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FleetKit Themes - SpawnKit</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 40px 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 50px;
+        }
+        
+        .header h1 {
+            font-size: 3em;
+            margin: 0 0 10px 0;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+            margin: 0;
+        }
+        
+        .themes-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            max-width: 1200px;
+            width: 100%;
+        }
+        
+        .theme-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            cursor: pointer;
+            text-decoration: none;
+            color: inherit;
+        }
+        
+        .theme-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 30px 60px rgba(0,0,0,0.2);
+        }
+        
+        .theme-icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+            display: block;
+        }
+        
+        .theme-title {
+            font-size: 1.8em;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #333;
+        }
+        
+        .theme-description {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+        
+        .theme-status {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: 500;
+        }
+        
+        .status-live {
+            background: #e8f5e8;
+            color: #2d5d31;
+        }
+        
+        .status-new {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .executive { --accent: #2c3e50; }
+        .gameboy { --accent: #8bc34a; }
+        .sims { --accent: #ff6b6b; }
+        .simcity { --accent: #3498db; }
+        
+        .footer {
+            margin-top: 50px;
+            text-align: center;
+            color: rgba(255,255,255,0.8);
+        }
+        
+        @media (max-width: 768px) {
+            .themes-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🚀 FleetKit Themes</h1>
+        <p>Choose your dashboard experience</p>
+    </div>
+    
+    <div class="themes-grid">
+        <a href="office-executive/" class="theme-card executive">
+            <div class="theme-icon">💼</div>
+            <div class="theme-title">Executive</div>
+            <div class="theme-description">
+                Clean, professional interface with sophisticated charts and metrics. 
+                Perfect for boardroom presentations and executive dashboards.
+            </div>
+            <div class="theme-status status-live">LIVE</div>
+        </a>
+        
+        <a href="office-gameboy/" class="theme-card gameboy">
+            <div class="theme-icon">🎮</div>
+            <div class="theme-title">GameBoy</div>
+            <div class="theme-description">
+                Retro green monochrome aesthetic inspired by classic handheld gaming. 
+                Nostalgic pixel art meets modern functionality.
+            </div>
+            <div class="theme-status status-live">LIVE</div>
+        </a>
+        
+        <a href="office-sims/" class="theme-card sims">
+            <div class="theme-icon">🏠</div>
+            <div class="theme-title">Sims</div>
+            <div class="theme-description">
+                Playful life simulation interface with isometric views and social elements. 
+                Manage your digital life like a game.
+            </div>
+            <div class="theme-status status-live">UPDATED</div>
+        </a>
+        
+        <a href="office-simcity/" class="theme-card simcity">
+            <div class="theme-icon">🏙️</div>
+            <div class="theme-title">SimCity</div>
+            <div class="theme-description">
+                Urban planning dashboard with city-building aesthetics. 
+                Visualize your data like managing a thriving metropolis.
+            </div>
+            <div class="theme-status status-new">NEW</div>
+        </a>
+    </div>
+    
+    <div class="footer">
+        <p>Powered by SpawnKit • FleetKit v2</p>
+    </div>
+</body>
+</html>

@@ -6,6 +6,7 @@
     <title>SpawnKit — Your AI Team Dashboard</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
         :root {
@@ -22,6 +23,7 @@
             --sidebar-width: 300px;
             --btn-min: 48px;
             --transition-smooth: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            --theme-accent: #007AFF; /* Default to Executive blue */
         }
 
         html, body {
@@ -158,6 +160,7 @@
         }
 
         /* Per-theme glow on hover */
+        .theme-card[data-theme="executive"]:hover      { border-color: #007AFF; box-shadow: 0 12px 32px rgba(0,122,255,0.2); }
         .theme-card[data-theme="gameboy"]:hover       { border-color: #9BBB0F; box-shadow: 0 12px 32px rgba(155,187,15,0.2); }
         .theme-card[data-theme="gameboy-color"]:hover  { border-color: #ff6688; box-shadow: 0 12px 32px rgba(255,102,136,0.2); }
         .theme-card[data-theme="sims"]:hover           { border-color: #00ff00; box-shadow: 0 12px 32px rgba(0,255,0,0.15); }
@@ -194,6 +197,34 @@
             position: relative;
             overflow: hidden;
             border: 1px solid rgba(255,255,255,0.06);
+        }
+
+        /* Executive preview: clean gradient with grid of circles */
+        .theme-card[data-theme="executive"] .card-preview {
+            background: linear-gradient(135deg, #1C1C1E, #2C2C2E);
+        }
+        .theme-card[data-theme="executive"] .card-preview::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-image:
+                radial-gradient(circle, rgba(0,122,255,0.15) 2px, transparent 2px);
+            background-size: 20px 20px;
+            animation: executiveGrid 8s linear infinite;
+        }
+        .theme-card[data-theme="executive"] .card-preview::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #007AFF, #007AFF);
+            opacity: 0.8;
+        }
+        @keyframes executiveGrid {
+            from { background-position: 0 0; }
+            to { background-position: 20px 20px; }
         }
 
         /* GameBoy preview: scrolling pixel grid */
@@ -321,6 +352,7 @@
             from { transform: translateX(-100%); }
             to   { transform: translateX(100%); }
         }
+        .theme-card[data-theme="executive"]    .card-swatch { background: linear-gradient(90deg, #007AFF, #5AC8FA, #34C759); }
         .theme-card[data-theme="gameboy"]      .card-swatch { background: linear-gradient(90deg, #0F380F, #306230, #8BAC0F, #9BBB0F); }
         .theme-card[data-theme="gameboy-color"] .card-swatch { background: linear-gradient(90deg, #ff6688, #66ccff, #88ff66, #ffcc44); }
         .theme-card[data-theme="sims"]          .card-swatch { background: linear-gradient(90deg, #1a3a4a, #5a8898, #00cc00, #d4aa44); }
@@ -362,6 +394,21 @@
             transition: opacity var(--transition-smooth);
         }
         .theme-card:hover .card-shortcut { opacity: 1; }
+
+        /* Recommended badge */
+        .card-badge {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            background: #007AFF;
+            color: white;
+            font-size: 0.6rem;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 12px;
+            letter-spacing: 0.5px;
+        }
+        .theme-card[data-theme="executive"]    .card-btn:hover { background: #007AFF; border-color: #007AFF; color: white; }
         .theme-card[data-theme="gameboy"]      .card-btn:hover { background: #9BBB0F; border-color: #9BBB0F; color: #0F380F; }
         .theme-card[data-theme="gameboy-color"] .card-btn:hover { background: #ff6688; border-color: #ff6688; color: #1a0a2a; }
         .theme-card[data-theme="sims"]          .card-btn:hover { background: #00cc00; border-color: #00cc00; color: #1a3a4a; }
@@ -735,6 +782,132 @@
         .tooltip-dismiss:hover { background: #33ffff; }
 
         /* ═══════════════════════════════════════════
+           EXECUTIVE THEME — Light Mode Overrides
+           Scoped to .theme-executive so dark themes
+           (GameBoy, GBC, Sims) are NOT affected.
+           ═══════════════════════════════════════════ */
+        body.theme-executive {
+            background: #F5F5F7;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        body.theme-executive .starfield { display: none; }
+
+        body.theme-executive #menuBtn {
+            background: rgba(255,255,255,0.85);
+            border: 1px solid rgba(0,0,0,0.08);
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        }
+        body.theme-executive #menuBtn:hover {
+            background: rgba(255,255,255,0.95);
+        }
+        body.theme-executive #menuBtn .bar {
+            background: #1C1C1E;
+        }
+        body.theme-executive #menuBtn::after {
+            background: rgba(255,255,255,0.95);
+            color: #636366;
+        }
+
+        body.theme-executive #sidebar {
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border-right: 1px solid rgba(0,0,0,0.06);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        body.theme-executive .sidebar-header {
+            border-bottom-color: rgba(0,0,0,0.06);
+        }
+        body.theme-executive .sidebar-title {
+            color: #1C1C1E;
+        }
+        body.theme-executive .sidebar-close {
+            color: #8E8E93;
+        }
+        body.theme-executive .sidebar-close:hover {
+            background: rgba(0,0,0,0.04);
+            color: #1C1C1E;
+        }
+
+        body.theme-executive .sidebar-section-label {
+            color: #8E8E93;
+        }
+
+        body.theme-executive .stat-card {
+            background: rgba(0,0,0,0.03);
+            border-color: rgba(0,0,0,0.06);
+        }
+        body.theme-executive .stat-value {
+            color: #007AFF;
+        }
+        body.theme-executive .stat-label {
+            color: #8E8E93;
+        }
+
+        body.theme-executive .agent-item:hover {
+            background: rgba(0,0,0,0.04);
+        }
+        body.theme-executive .agent-name {
+            color: #1C1C1E;
+        }
+        body.theme-executive .agent-role {
+            color: #8E8E93;
+        }
+        body.theme-executive .agent-level-bar {
+            background: rgba(0,0,0,0.06);
+        }
+        body.theme-executive .agent-sprite {
+            background: rgba(0,0,0,0.04);
+        }
+        body.theme-executive .agent-detail {
+            color: #636366;
+        }
+
+        body.theme-executive .create-agent-btn {
+            border-color: rgba(0,122,255,0.3);
+            color: #007AFF;
+        }
+        body.theme-executive .create-agent-btn:hover {
+            background: rgba(0,122,255,0.06);
+            border-color: rgba(0,122,255,0.5);
+        }
+
+        body.theme-executive .switch-theme-btn {
+            border-color: rgba(0,0,0,0.08);
+            background: rgba(0,0,0,0.03);
+            color: #636366;
+        }
+        body.theme-executive .switch-theme-btn:hover {
+            background: rgba(0,0,0,0.06);
+            color: #1C1C1E;
+        }
+
+        body.theme-executive #sidebarBackdrop {
+            background: rgba(0,0,0,0.2);
+        }
+
+        body.theme-executive .sidebar-body::-webkit-scrollbar-thumb {
+            background: rgba(0,0,0,0.1);
+        }
+        body.theme-executive .sidebar-body::-webkit-scrollbar-thumb:hover {
+            background: rgba(0,0,0,0.2);
+        }
+
+        /* Executive loading overlay — light with blue spinner */
+        body.theme-executive #loadingOverlay {
+            background: rgba(255,255,255,0.95);
+        }
+        body.theme-executive .spinner {
+            border-color: rgba(0,0,0,0.08);
+            border-top-color: #007AFF;
+        }
+        body.theme-executive .loading-label {
+            color: #007AFF;
+        }
+
+        /* ═══════════════════════════════════════════
            ═══════════════════════════════════════════ */
         @media (max-width: 767px) {
             .cards-grid {
@@ -896,9 +1069,21 @@
     </div>
 
     <div class="cards-grid" id="cardsGrid">
+        <!-- Executive -->
+        <div class="theme-card" data-theme="executive" tabindex="0" role="button" aria-label="Enter Executive Office">
+            <span class="card-shortcut">1</span>
+            <span class="card-badge">★ Recommended</span>
+            <div class="card-emoji">🏢</div>
+            <div class="card-name">Executive</div>
+            <div class="card-desc">Professional AI workspace. Clean, fast, beautiful.</div>
+            <div class="card-preview"></div>
+            <div class="card-swatch"></div>
+            <button class="card-btn">Enter Office</button>
+        </div>
+
         <!-- GameBoy -->
         <div class="theme-card" data-theme="gameboy" tabindex="0" role="button" aria-label="Enter GameBoy Office">
-            <span class="card-shortcut">1</span>
+            <span class="card-shortcut">2</span>
             <div class="card-emoji">🎮</div>
             <div class="card-name">GameBoy</div>
             <div class="card-desc">Pixel quests and 8-bit charm. Your agents explore a retro green world.</div>
@@ -909,7 +1094,7 @@
 
         <!-- GameBoy Color -->
         <div class="theme-card" data-theme="gameboy-color" tabindex="0" role="button" aria-label="Enter GameBoy Color Office">
-            <span class="card-shortcut">2</span>
+            <span class="card-shortcut">3</span>
             <div class="card-emoji">🌈</div>
             <div class="card-name">GameBoy Color</div>
             <div class="card-desc">Same retro soul, now in vivid color. Upgraded pixels, same heart.</div>
@@ -920,7 +1105,7 @@
 
         <!-- The Sims -->
         <div class="theme-card" data-theme="sims" tabindex="0" role="button" aria-label="Enter The Sims Office">
-            <span class="card-shortcut">3</span>
+            <span class="card-shortcut">4</span>
             <div class="card-emoji">💎</div>
             <div class="card-name">The Sims</div>
             <div class="card-desc">Isometric nostalgia with need bars and plumbobs. It's 2000 again.</div>
@@ -941,9 +1126,10 @@
     <div class="help-box">
         <div class="help-title">⌨️ Keyboard Shortcuts</div>
         <div class="help-row"><span class="help-key">?</span><span class="help-desc">Show this help</span></div>
-        <div class="help-row"><span class="help-key">1</span><span class="help-desc">Enter GameBoy office</span></div>
-        <div class="help-row"><span class="help-key">2</span><span class="help-desc">Enter GameBoy Color office</span></div>
-        <div class="help-row"><span class="help-key">3</span><span class="help-desc">Enter The Sims office</span></div>
+        <div class="help-row"><span class="help-key">1</span><span class="help-desc">Enter Executive office</span></div>
+        <div class="help-row"><span class="help-key">2</span><span class="help-desc">Enter GameBoy office</span></div>
+        <div class="help-row"><span class="help-key">3</span><span class="help-desc">Enter GameBoy Color office</span></div>
+        <div class="help-row"><span class="help-key">4</span><span class="help-desc">Enter The Sims office</span></div>
         <div class="help-row"><span class="help-key">Tab</span><span class="help-desc">Toggle team sidebar</span></div>
         <div class="help-row"><span class="help-key">Esc</span><span class="help-desc">Close sidebar or overlay</span></div>
         <button class="help-close" id="helpClose">Got it!</button>
@@ -1002,6 +1188,7 @@
 
     // ─── Config ─────────────────────────────────────
     var THEMES = {
+        'executive':     { name: 'Executive', path: './office-executive/index.html', emoji: '🏢', loadMsg: 'Preparing your workspace\u2026' },
         'gameboy':       { name: 'GameBoy',       path: './office-gameboy/index.html',       emoji: '🎮', loadMsg: 'Booting up pixels\u2026' },
         'gameboy-color': { name: 'GameBoy Color', path: './office-gameboy-color/index.html', emoji: '🌈', loadMsg: 'Painting the rainbow\u2026' },
         'sims':          { name: 'The Sims',      path: './office-sims/index.html',          emoji: '💎', loadMsg: 'Building your world\u2026' }
@@ -1013,13 +1200,14 @@
         visited: 'spawnkit-dashboard-visited'
     };
 
-    // Sample agents (static data — no user input)
+    // Fleet agents — synchronized with executive office roster
     var AGENTS = [
-        { id: 'nova',     name: 'Nova',     role: 'Researcher',  emoji: '🔬', level: 0.8,  color: '#00ffff' },
-        { id: 'cipher',   name: 'Cipher',   role: 'Developer',   emoji: '💻', level: 0.65, color: '#ff00ff' },
-        { id: 'sentinel', name: 'Sentinel', role: 'Guardian',    emoji: '🛡️', level: 0.9,  color: '#ffff00' },
-        { id: 'atlas',    name: 'Atlas',    role: 'Navigator',   emoji: '🗺️', level: 0.5,  color: '#ff6644' },
-        { id: 'spark',    name: 'Spark',    role: 'Creative',    emoji: '✨', level: 0.35, color: '#66ff66' }
+        { id: 'apomac',   name: 'ApoMac',   role: 'CEO',           emoji: '🍎', level: 1.0,  color: '#007AFF' },
+        { id: 'atlas',    name: 'Atlas',     role: 'COO',           emoji: '🗺️', level: 0.8,  color: '#BF5AF2' },
+        { id: 'forge',    name: 'Forge',     role: 'CTO',           emoji: '🔨', level: 0.9,  color: '#FF9F0A' },
+        { id: 'hunter',   name: 'Hunter',    role: 'Growth',        emoji: '🎯', level: 0.65, color: '#FF453A' },
+        { id: 'echo',     name: 'Echo',      role: 'CMO',           emoji: '📢', level: 0.5,  color: '#0A84FF' },
+        { id: 'sentinel', name: 'Sentinel',  role: 'QA & Security', emoji: '🛡️', level: 0.9,  color: '#30D158' }
     ];
 
     // ─── DOM refs ───────────────────────────────────
@@ -1075,6 +1263,22 @@
         if (!THEMES[themeId]) return;
         currentTheme = themeId;
         safeSet(STORAGE.theme, themeId);
+
+        // Toggle executive light-mode class on body
+        if (themeId === 'executive') {
+            document.body.classList.add('theme-executive');
+        } else {
+            document.body.classList.remove('theme-executive');
+        }
+
+        // Set theme accent color CSS variable
+        var accentColors = {
+            'executive': '#007AFF',
+            'gameboy': '#9BBB0F',
+            'gameboy-color': '#ff6688',
+            'sims': '#00cc00'
+        };
+        document.documentElement.style.setProperty('--theme-accent', accentColors[themeId] || '#007AFF');
 
         var t = THEMES[themeId];
         $loadingLabel.textContent = t.loadMsg || ('Loading ' + t.name + ' Office\u2026');
@@ -1278,6 +1482,7 @@
         $frame.src = 'about:blank';
         $selector.classList.remove('hidden');
         $menuBtn.classList.remove('visible');
+        document.body.classList.remove('theme-executive');
         currentTheme = null;
         // Don't clear localStorage — let them pick a new one
     });
@@ -1295,7 +1500,7 @@
     });
 
     // ─── Keyboard shortcuts ─────────────────────────
-    var THEME_KEYS = { '1': 'gameboy', '2': 'gameboy-color', '3': 'sims' };
+    var THEME_KEYS = { '1': 'executive', '2': 'gameboy', '3': 'gameboy-color', '4': 'sims' };
 
     document.addEventListener('keydown', function(e) {
         // Don't intercept when typing in an input
@@ -1323,7 +1528,7 @@
             return;
         }
 
-        // 1/2/3 → theme selection (only on selector screen)
+        // 1/2/3/4 → theme selection (only on selector screen)
         if (THEME_KEYS[e.key] && !$selector.classList.contains('hidden')) {
             e.preventDefault();
             selectTheme(THEME_KEYS[e.key]);
@@ -1341,9 +1546,8 @@
         if (saved && THEMES[saved]) {
             selectTheme(saved);
         } else {
-            // First visit flow
-            animateCards();
-            maybeShowWelcome();
+            // First visit flow - load Executive directly
+            selectTheme('executive');
         }
     }
 

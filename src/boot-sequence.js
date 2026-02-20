@@ -1,18 +1,18 @@
 /**
- * FleetKit v2 — Boot Sequences
+ * SpawnKit v2 — Boot Sequences
  * Three unique loading experiences: GameBoy, Cyberpunk, Executive
  * 
  * Pure Canvas2D + DOM rendering, no external dependencies.
  * Uses theme-names.js for agent display names.
  * 
  * API:
- *   window.FleetKitBoot.play(theme, container, options) → Promise
- *   window.FleetKitBoot.skip()
+ *   window.SpawnKitBoot.play(theme, container, options) → Promise
+ *   window.SpawnKitBoot.skip()
  * 
  * @author Atlas (COO)
  */
 
-window.FleetKitBoot = (() => {
+window.SpawnKitBoot = (() => {
   // ── Internal state ──────────────────────────────────────────────
   let _resolve = null;
   let _skipRequested = false;
@@ -112,11 +112,11 @@ window.FleetKitBoot = (() => {
   }
 
   function isReturningUser() {
-    return localStorage.getItem('fleetkit-boot-seen') === 'true';
+    return localStorage.getItem('spawnkit-boot-seen') === 'true';
   }
 
   function markSeen() {
-    localStorage.setItem('fleetkit-boot-seen', 'true');
+    localStorage.setItem('spawnkit-boot-seen', 'true');
   }
 
   // ── Pixel font (5×7 bitmap) ─────────────────────────────────────
@@ -317,7 +317,7 @@ window.FleetKitBoot = (() => {
 
     // ── Step 2: Logo scrolls down ──
     if (!abbreviated) {
-      const logoText = 'FLEETKIT';
+      const logoText = 'SPAWNKIT';
       const logoScale = Math.max(3, Math.floor(W / 180));
       const logoW = measurePixelText(logoText, logoScale);
       const logoX = (W - logoW) / 2;
@@ -388,11 +388,11 @@ window.FleetKitBoot = (() => {
     }
     if (skipped()) return;
 
-    // ── Step 5: "FLEETKIT Version 2.0" ──
+    // ── Step 5: "SPAWNKIT Version 2.0" ──
     {
       ctx.fillStyle = GB_BG; ctx.fillRect(0, 0, W, H);
       const vScale = Math.max(2, Math.floor(W / 300));
-      drawPixelTextCentered(ctx, 'FLEETKIT VERSION 2.0', H * 0.45, vScale, GB_DARK);
+      drawPixelTextCentered(ctx, 'SPAWNKIT VERSION 2.0', H * 0.45, vScale, GB_DARK);
       drawScanlines(ctx, W, H, 0.06);
       await step(abbreviated ? 400 : 1000);
     }
@@ -417,7 +417,7 @@ window.FleetKitBoot = (() => {
           }
           ctx.fillStyle = GB_BG; ctx.fillRect(0, 0, W, H);
           const vScale = Math.max(2, Math.floor(W / 300));
-          drawPixelTextCentered(ctx, 'FLEETKIT VERSION 2.0', H * 0.35, vScale, GB_DARK);
+          drawPixelTextCentered(ctx, 'SPAWNKIT VERSION 2.0', H * 0.35, vScale, GB_DARK);
 
           // Blink every 500ms
           if (Math.floor((now - blinkStart) / 500) % 2 === 0) {
@@ -440,7 +440,7 @@ window.FleetKitBoot = (() => {
       const startTime = performance.now();
 
       // Get agent names from theme-names
-      const names = window.FleetKitNames;
+      const names = window.SpawnKitNames;
       const agentIds = ['hunter', 'forge', 'echo', 'atlas', 'sentinel'];
       const agentLabels = agentIds.map(id => names?.resolve ? names.resolve('gameboy', id) : (id || '').toUpperCase());
 
@@ -452,9 +452,9 @@ window.FleetKitBoot = (() => {
 
           ctx.fillStyle = GB_BG; ctx.fillRect(0, 0, W, H);
 
-          // Large FLEETKIT title
+          // Large SPAWNKIT title
           const titleScale = Math.max(4, Math.floor(W / 120));
-          drawPixelTextCentered(ctx, 'FLEETKIT', H * 0.15, titleScale, GB_DARK);
+          drawPixelTextCentered(ctx, 'SPAWNKIT', H * 0.15, titleScale, GB_DARK);
 
           // Subtitle
           const subScale = Math.max(1, Math.floor(titleScale / 3));
@@ -627,7 +627,7 @@ window.FleetKitBoot = (() => {
     if (skipped()) { markSeen(); return; }
 
     // ── Step 2: INITIALIZING ──
-    await typeLine('> INITIALIZING FLEETKIT v2.0...', CP_GREEN, abbreviated ? 10 : 25);
+    await typeLine('> INITIALIZING SPAWNKIT v2.0...', CP_GREEN, abbreviated ? 10 : 25);
     await step(abbreviated ? 100 : 400);
     if (skipped()) { markSeen(); return; }
 
@@ -648,7 +648,7 @@ window.FleetKitBoot = (() => {
     if (skipped()) { markSeen(); return; }
 
     // ── Step 5: Agent loading lines ──
-    const names = window.FleetKitNames;
+    const names = window.SpawnKitNames;
     const agentIds = ['hunter', 'forge', 'echo', 'atlas', 'sentinel'];
     const agentTitles = agentIds.map(id => {
       if (names?.resolve) return names.resolve('cyberpunk', id, 'title');
@@ -834,7 +834,7 @@ window.FleetKitBoot = (() => {
 
           ctx.globalAlpha = alpha;
 
-          // Logo — elegant "FK" monogram + FLEETKIT text
+          // Logo — elegant "FK" monogram + SPAWNKIT text
           const logoSize = Math.max(32, Math.floor(W / 15));
           const cx = W / 2;
           const cy = H * 0.35;
@@ -860,7 +860,7 @@ window.FleetKitBoot = (() => {
           ctx.textBaseline = 'middle';
           ctx.fillText('FK', cx, cy + 2);
 
-          // FLEETKIT text below logo
+          // SPAWNKIT text below logo
           ctx.font = `${Math.floor(logoSize * 0.45)}px "Georgia", "Times New Roman", serif`;
           ctx.fillStyle = EX_GOLD;
           ctx.letterSpacing = '8px';
@@ -935,7 +935,7 @@ window.FleetKitBoot = (() => {
     if (skipped()) { markSeen(); return; }
 
     // ── Step 4: Portrait cards slide in ──
-    const names = window.FleetKitNames;
+    const names = window.SpawnKitNames;
     const agentIds = ['hunter', 'forge', 'echo', 'atlas', 'sentinel'];
     const agentInfo = agentIds.map(id => {
       if (names?.resolve) {
@@ -1151,10 +1151,10 @@ window.FleetKitBoot = (() => {
               await executiveBoot(opts);
               break;
             default:
-              console.warn(`FleetKitBoot: Unknown theme "${theme}", skipping.`);
+              console.warn(`SpawnKitBoot: Unknown theme "${theme}", skipping.`);
           }
         } catch (e) {
-          console.error('FleetKitBoot error:', e);
+          console.error('SpawnKitBoot error:', e);
         }
 
         finish();
@@ -1172,7 +1172,7 @@ window.FleetKitBoot = (() => {
      * Reset the "returning user" flag (forces full boot next time).
      */
     resetSeen() {
-      localStorage.removeItem('fleetkit-boot-seen');
+      localStorage.removeItem('spawnkit-boot-seen');
     }
   };
 })();

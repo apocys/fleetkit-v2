@@ -1,13 +1,13 @@
-# FleetKit v2 - Theme System & Data Bridge
+# SpawnKit v2 - Theme System & Data Bridge
 
 ## Overview
 
-FleetKit v2 features a unified theme system with a real-time data bridge that connects all themes to live OpenClaw data. Users can switch between themes seamlessly while maintaining consistent data flow.
+SpawnKit v2 features a unified theme system with a real-time data bridge that connects all themes to live OpenClaw data. Users can switch between themes seamlessly while maintaining consistent data flow.
 
 ## Files
 
 - **`theme-selector.html`** - Landing page for choosing themes (like picking your starter Pokémon!)
-- **`data-bridge.js`** - Universal data bridge exposing `FleetKit.data` to all themes
+- **`data-bridge.js`** - Universal data bridge exposing `SpawnKit.data` to all themes
 - **`theme-switcher.js`** - Theme switcher component (gear icon) for switching themes
 - **`data-integration-example.js`** - Examples showing how themes integrate with the data bridge
 - **`README.md`** - This documentation
@@ -24,16 +24,16 @@ The theme selector provides a beautiful landing page where users choose their pr
 - Clean dark UI with animated backgrounds
 - Theme preview with color gradients
 - Smooth loading animations
-- Saves preference to `localStorage('fleetkit-theme')`
+- Saves preference to `localStorage('spawnkit-theme')`
 - Auto-redirects to saved theme on return visits
 - Easter eggs (Konami code, click counter)
 
 ## Data Bridge
 
-The data bridge (`data-bridge.js`) provides a global `FleetKit.data` object with real-time data:
+The data bridge (`data-bridge.js`) provides a global `SpawnKit.data` object with real-time data:
 
 ```js
-FleetKit.data = {
+SpawnKit.data = {
   agents: [...],      // Main agents with status, tasks, metrics
   subagents: [...],   // Spawned subagents with progress
   missions: [...],    // Active missions with progress, assignments
@@ -50,16 +50,16 @@ Ready for OpenClaw integration:
 - `GET /api/sessions` → agent statuses & subagents
 - `GET /api/crons` → scheduled tasks  
 - `WebSocket /ws/events` → real-time updates
-- Config in `~/.fleetkit/config.json`
+- Config in `~/.spawnkit/config.json`
 
 ### Event System
 
 ```js
-FleetKit.on('mission:new', callback)
-FleetKit.on('agent:status', callback)  
-FleetKit.on('cron:trigger', callback)
-FleetKit.on('subagent:spawn', callback)
-FleetKit.on('subagent:complete', callback)
+SpawnKit.on('mission:new', callback)
+SpawnKit.on('agent:status', callback)  
+SpawnKit.on('cron:trigger', callback)
+SpawnKit.on('subagent:spawn', callback)
+SpawnKit.on('subagent:complete', callback)
 ```
 
 ## Theme Integration
@@ -68,10 +68,10 @@ Any theme can integrate with just **3 lines of code**:
 
 ```js
 // 1. Access global data
-const data = FleetKit.data;
+const data = SpawnKit.data;
 
 // 2. Listen for updates
-FleetKit.on('agent:status', updateUI);
+SpawnKit.on('agent:status', updateUI);
 
 // 3. Use the data
 displayAgents(data.agents);
@@ -80,25 +80,25 @@ displayAgents(data.agents);
 ### Complete Example
 
 ```js
-function integrateWithFleetKit() {
+function integrateWithSpawnKit() {
     // Get live agent data
-    const activeAgents = FleetKit.data.agents.filter(a => a.status === 'active');
+    const activeAgents = SpawnKit.data.agents.filter(a => a.status === 'active');
     
     // Listen for mission updates
-    FleetKit.on('mission:progress', (event) => {
-        const mission = FleetKit.data.missions.find(m => m.id === event.data.missionId);
+    SpawnKit.on('mission:progress', (event) => {
+        const mission = SpawnKit.data.missions.find(m => m.id === event.data.missionId);
         updateProgressBar(mission.id, mission.progress);
     });
     
     // Listen for subagent spawns
-    FleetKit.on('subagent:spawn', (event) => {
+    SpawnKit.on('subagent:spawn', (event) => {
         addNewCharacter(event.data.subagentId, event.data.task);
     });
     
     // Display current data
     displayAgents(activeAgents);
-    displayMissions(FleetKit.data.missions);
-    displayMetrics(FleetKit.data.metrics);
+    displayMissions(SpawnKit.data.missions);
+    displayMetrics(SpawnKit.data.metrics);
 }
 ```
 
@@ -134,7 +134,7 @@ Each theme should:
 1. Include the data bridge: `<script src="../src/data-bridge.js"></script>`
 2. Include the theme switcher: `<script src="../src/theme-switcher.js"></script>`  
 3. Initialize the switcher: `initThemeSwitcher()`
-4. Integrate with data: Use `FleetKit.data` and event system
+4. Integrate with data: Use `SpawnKit.data` and event system
 
 ### Styling
 
@@ -183,7 +183,7 @@ body.executive-theme #theme-switcher-button {
 ```js
 {
   id: 'm1',
-  title: 'FleetKit v2 Launch',
+  title: 'SpawnKit v2 Launch',
   description: 'Build and deploy the next generation AI office interface', 
   status: 'in_progress',
   progress: 0.72,
@@ -233,7 +233,7 @@ The system is designed for easy OpenClaw integration:
 
 1. Replace mock data in `data-bridge.js` with API calls
 2. Connect WebSocket for real-time events
-3. Map OpenClaw session data to FleetKit agent structure
-4. Store config in `~/.fleetkit/config.json`
+3. Map OpenClaw session data to SpawnKit agent structure
+4. Store config in `~/.spawnkit/config.json`
 
 All integration points are documented with `// from: API_NAME` comments.

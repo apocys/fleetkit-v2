@@ -1,6 +1,6 @@
-# FleetKit Electron App
+# SpawnKit Electron App
 
-A beautiful, minimal Electron app that provides a premium setup wizard and desktop interface for FleetKit v2.
+A beautiful, minimal Electron app that provides a premium setup wizard and desktop interface for SpawnKit v2.
 
 ## Features
 
@@ -52,7 +52,7 @@ npm run build:linux
 
 ## Configuration
 
-The app stores its configuration in `~/.fleetkit/config.json`:
+The app stores its configuration in `~/.spawnkit/config.json`:
 
 ```json
 {
@@ -78,11 +78,11 @@ The app stores its configuration in `~/.fleetkit/config.json`:
 - Non-technical users can set up without documentation
 
 **Quality Bar:**
-Show this to someone who's never used a command line. They should be able to get FleetKit running in under 2 minutes.
+Show this to someone who's never used a command line. They should be able to get SpawnKit running in under 2 minutes.
 
 ## Integration
 
 - Automatically loads the PixiJS office from `../office/index.html`
 - Falls back to a placeholder view if office isn't built yet
-- Tray icon shows FleetKit status
+- Tray icon shows SpawnKit status
 - Menu commands integrate with the office view

@@ -16,7 +16,7 @@
 ## Iteration 3: Mission board + achievements ✅
 - createMission() / completeMission() / getMission() / loadMissions()
 - Mission → XP reward chain: completeMission awards XP to all assigned agents
-- Achievement integration: emits `mission:complete` on FleetKit bus for FleetKitAchievements pickup
+- Achievement integration: emits `mission:complete` on SpawnKit bus for SpawnKitAchievements pickup
 - MissionController integration: createMission triggers executeMission for office animations
 
 ## Iteration 4: iframe communication ✅
@@ -40,7 +40,7 @@
 - [x] JSDoc on all public methods
 - [x] Zero eval() or innerHTML
 - [x] All localStorage wrapped in try/catch
-- [x] Integrates with FleetKit bus, MissionController, FleetKitAchievements
+- [x] Integrates with SpawnKit bus, MissionController, SpawnKitAchievements
 - [x] iframe postMessage with origin validation
 - [x] Auto-initializes on DOMContentLoaded
 - [x] Module export for Node.js/bundlers

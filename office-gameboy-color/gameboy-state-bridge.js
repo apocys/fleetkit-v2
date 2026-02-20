@@ -1,4 +1,4 @@
-// GameBoy Color State Bridge - FleetKit Data Integration (Pokémon Universe Edition)
+// GameBoy Color State Bridge - SpawnKit Data Integration (Pokémon Universe Edition)
 // Full color palette — uses GBC_CSS and GBC_PALETTE from gameboy-characters.js
 
 class GameBoyStateBridge {
@@ -18,47 +18,47 @@ class GameBoyStateBridge {
         this.displayedSubagents = [];
         
         this.initializeDataHooks();
-        this.syncWithFleetKitData();
+        this.syncWithSpawnKitData();
     }
     
     // ── Name helpers (graceful fallback) ──────────────────
     _resolveName(canonicalId, field) {
-        if (window.FleetKitNames) return FleetKitNames.resolve('gameboy-color', canonicalId, field);
+        if (window.SpawnKitNames) return SpawnKitNames.resolve('gameboy-color', canonicalId, field);
         return canonicalId;
     }
     _resolveObj(objectId) {
-        if (window.FleetKitNames) return FleetKitNames.resolveObject('gameboy', objectId);
+        if (window.SpawnKitNames) return SpawnKitNames.resolveObject('gameboy', objectId);
         return objectId;
     }
     _subAgentName(index) {
-        if (window.FleetKitNames) return FleetKitNames.getSubAgentName('gameboy', index);
+        if (window.SpawnKitNames) return SpawnKitNames.getSubAgentName('gameboy', index);
         return `Sub-Agent #${index + 1}`;
     }
     
     initializeDataHooks() {
-        if (window.FleetKit) {
-            FleetKit.on('mission:new', (data) => this.handleNewMission(data));
-            FleetKit.on('mission:progress', (data) => this.handleMissionProgress(data));
-            FleetKit.on('subagent:spawn', (data) => this.handleSubagentSpawn(data));
-            FleetKit.on('agent:status', (data) => this.handleAgentStatus(data));
-            FleetKit.on('cron:trigger', (data) => this.handleCronTrigger(data));
-            FleetKit.on('data:refresh', () => this.syncWithFleetKitData());
-            console.log('🎮 GameBoy Color State Bridge: FleetKit event hooks initialized');
+        if (window.SpawnKit) {
+            SpawnKit.on('mission:new', (data) => this.handleNewMission(data));
+            SpawnKit.on('mission:progress', (data) => this.handleMissionProgress(data));
+            SpawnKit.on('subagent:spawn', (data) => this.handleSubagentSpawn(data));
+            SpawnKit.on('agent:status', (data) => this.handleAgentStatus(data));
+            SpawnKit.on('cron:trigger', (data) => this.handleCronTrigger(data));
+            SpawnKit.on('data:refresh', () => this.syncWithSpawnKitData());
+            console.log('🎮 GameBoy Color State Bridge: SpawnKit event hooks initialized');
         }
     }
     
-    syncWithFleetKitData() {
-        if (!window.FleetKit?.data) {
-            console.warn('🎮 GameBoy Color State Bridge: FleetKit data not available');
+    syncWithSpawnKitData() {
+        if (!window.SpawnKit?.data) {
+            console.warn('🎮 GameBoy Color State Bridge: SpawnKit data not available');
             return;
         }
         
-        const data = FleetKit.data;
+        const data = SpawnKit.data;
         this.updateAgentStatuses(data.agents);
         this.updateMissionBoard(data.missions);
         this.updateSubagents(data.subagents);
         this.lastDataSync = Date.now();
-        console.log('🎮 GameBoy Color State Bridge: Synced with FleetKit data');
+        console.log('🎮 GameBoy Color State Bridge: Synced with SpawnKit data');
     }
     
     updateAgentStatuses(agents) {
@@ -130,8 +130,8 @@ class GameBoyStateBridge {
     }
     
     getAgentRoleById(agentId) {
-        if (!window.FleetKit?.data?.agents) return null;
-        const agent = window.FleetKit.data.agents.find(a => a?.id === agentId);
+        if (!window.SpawnKit?.data?.agents) return null;
+        const agent = window.SpawnKit.data.agents.find(a => a?.id === agentId);
         return agent?.role || null;
     }
     
@@ -237,7 +237,7 @@ class GameBoyStateBridge {
         this.officeMap?.updateAnimations(deltaTime);
         
         if (Date.now() - this.lastDataSync >= this.syncInterval) {
-            this.syncWithFleetKitData();
+            this.syncWithSpawnKitData();
         }
         
         if (this.eventTimer >= this.nextEvent) {
@@ -248,8 +248,8 @@ class GameBoyStateBridge {
     }
     
     triggerRandomEvent() {
-        if (!window.FleetKit?.data) return;
-        const data = window.FleetKit.data;
+        if (!window.SpawnKit?.data) return;
+        const data = window.SpawnKit.data;
         
         const now = Date.now();
         (data?.crons || []).forEach(cron => {
@@ -299,7 +299,7 @@ class GameBoyStateBridge {
     // ── Event handlers ─────────────────────────────────
     handleNewMission(data) {
         console.log('🎯 New mission:', data);
-        this.syncWithFleetKitData();
+        this.syncWithSpawnKitData();
         
         if (window.PokemonUI) {
             window.PokemonUI.wildEncounterMission(data?.title || 'NEW QUEST');
@@ -316,7 +316,7 @@ class GameBoyStateBridge {
     }
     
     handleSubagentSpawn(data) {
-        this.syncWithFleetKitData();
+        this.syncWithSpawnKitData();
     }
     
     handleAgentStatus(data) {
@@ -365,7 +365,7 @@ class GameBoyStateBridge {
     }
     
     getMissionStatus() {
-        const missions = window.FleetKit?.data?.missions || [];
+        const missions = window.SpawnKit?.data?.missions || [];
         if (!missions.length) return { active: 0, queued: 0, activeMissions: [] };
         const activeMissions = missions.filter(m => m?.status === 'in_progress');
         return {
@@ -380,7 +380,7 @@ class GameBoyStateBridge {
     }
     
     getAgentStatus() {
-        const agents = window.FleetKit?.data?.agents || [];
+        const agents = window.SpawnKit?.data?.agents || [];
         if (!agents.length) return { activeAgents: 0, activities: {}, metrics: {} };
         const activities = {};
         agents.forEach(agent => {
@@ -395,7 +395,7 @@ class GameBoyStateBridge {
         return {
             activeAgents: agents.length,
             activities: activities,
-            metrics: window.FleetKit?.data?.metrics || {}
+            metrics: window.SpawnKit?.data?.metrics || {}
         };
     }
 }

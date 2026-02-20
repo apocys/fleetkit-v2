@@ -1,12 +1,12 @@
-# FleetKit v2 — Next Steps (Priority Order)
+# SpawnKit v2 — Next Steps (Priority Order)
 
 ## 🔴 Ship-Critical (before any public showing)
 
 ### 1. Real Data Integration (data-bridge.js)
 Replace mock data with actual OpenClaw API calls:
-- `FleetKit.api.getSessions()` → GET to OpenClaw sessions endpoint
-- `FleetKit.api.getCrons()` → GET cron jobs  
-- `FleetKit.data.agents` → real agent status from OpenClaw
+- `SpawnKit.api.getSessions()` → GET to OpenClaw sessions endpoint
+- `SpawnKit.api.getCrons()` → GET cron jobs  
+- `SpawnKit.data.agents` → real agent status from OpenClaw
 - WebSocket for live events (mission progress, agent status)
 - **Without this, Marcus (power user) won't convert**
 
@@ -18,10 +18,10 @@ Replace mock data with actual OpenClaw API calls:
 - Code sign for macOS (avoid Gatekeeper issues)
 
 ### 3. Domain + Hosting
-- Register fleetkit.dev or fleetkit.app
+- Register spawnkit.dev or spawnkit.app
 - Deploy landing page to Vercel/Netlify (free tier)
 - Set up Stripe Payment Link with live keys
-- Wire "Get FleetKit" button to actual download
+- Wire "Get SpawnKit" button to actual download
 
 ### 4. Demo Video (60 seconds)
 - Screen record: theme selector → GameBoy boot → office → Q palette → mission → achievement
@@ -43,7 +43,7 @@ Replace mock data with actual OpenClaw API calls:
 - Schedule launch for a Saturday
 
 ### 7. GitHub Repo Polish
-- Push fleetkit-v2 to public github.com/apocys/fleetkit-v2
+- Push spawnkit-v2 to public github.com/apocys/spawnkit-v2
 - Clean README with demo GIF
 - Add LICENSE (MIT)
 - GitHub releases with .dmg/.exe downloads

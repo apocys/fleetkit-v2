@@ -7,7 +7,7 @@
  *  - Speed controls (right) — Play/Pause, 1x, 2x, 3x
  *  - Buy/Build mode buttons (decorative)
  *
- * All driven by real FleetKit data mapped to Sims-style needs.
+ * All driven by real SpawnKit data mapped to Sims-style needs.
  *
  * @author Echo (CMO) 📊
  */
@@ -244,43 +244,54 @@ class SimsUI {
     // ── Needs sync ──────────────────────────────────────
 
     _syncNeeds() {
-        const data = window.FleetKit?.data;
+        const data = window.SpawnKit?.data;
         if (!data) return;
 
         const metrics = data?.metrics || {};
         const agents = data?.agents || [];
         const missions = data?.missions || [];
         const events = data?.events || [];
+        
+        // Get selected agent's data if available
+        const selectedChar = this.characterManager?.characters?.[this.selectedAgent || 0];
+        const agentMetrics = selectedChar?.agentMetrics || {};
 
-        // Energy = memory/uptime remaining (inverse of usage)
-        this.needs.Energy = Math.max(5, Math.min(100,
-            100 - (metrics?.memoryUsage ?? 0.3) * 100
-        ));
+        // Energy = session uptime (longer sessions = more tired)
+        const uptime = agentMetrics.uptime || 0; // in minutes
+        this.needs.Energy = Math.max(10, Math.min(100, 100 - Math.min(uptime / 120, 80))); // 2hrs = mostly tired
 
-        // Fun = missions completed ratio
+        // Fun = variety of tasks and mission progress
         const totalMissions = missions.length || 1;
-        const completed = missions.filter(m => m?.status === 'completed' || ((m?.progress ?? 0) >= 1)).length;
-        this.needs.Fun = Math.max(5, Math.min(100, (completed / totalMissions) * 100 + 20));
+        const activeMissions = missions.filter(m => m?.status === 'in_progress' || m?.status === 'active').length;
+        const completedMissions = missions.filter(m => m?.status === 'completed' || ((m?.progress ?? 0) >= 1)).length;
+        this.needs.Fun = Math.max(15, Math.min(100, (activeMissions * 30) + (completedMissions * 20) + 20));
 
-        // Social = active sessions / agents talking
-        const activeSessions = metrics?.sessionsActive || agents.filter(a => a?.status === 'active').length;
-        this.needs.Social = Math.max(5, Math.min(100, activeSessions * 18 + 10));
+        // Social = messages sent, active conversations
+        const tokensUsed = agentMetrics.tokensUsed || metrics?.tokensToday || 0;
+        const socialActivity = Math.min(tokensUsed / 5000, 100); // normalized token usage = conversation
+        this.needs.Social = Math.max(10, Math.min(100, socialActivity + 20));
 
-        // Hunger = API calls (more = fuller)
-        const apiCalls = metrics?.apiCallsToday || 0;
-        this.needs.Hunger = Math.max(5, Math.min(100, Math.min(apiCalls / 2, 100)));
+        // Hunger = API calls consumed (more calls = more satisfied)
+        const apiCalls = agentMetrics.apiCalls || metrics?.apiCallsToday || 0;
+        this.needs.Hunger = Math.max(15, Math.min(100, Math.min(apiCalls * 2, 90) + 10));
 
-        // Hygiene = inverse of error rate
+        // Hygiene = error rate and system health
         const errorRate = events.filter(e => e?.type === 'error').length;
-        this.needs.Hygiene = Math.max(5, Math.min(100, 100 - errorRate * 10));
+        const systemHealth = 100 - (metrics?.memoryUsage || 0) * 50 - (metrics?.cpuUsage || 0) * 30;
+        this.needs.Hygiene = Math.max(10, Math.min(100, systemHealth - (errorRate * 15)));
 
-        // Bladder = inverse of queue depth (placeholder)
-        this.needs.Bladder = Math.max(5, Math.min(100, 80 - Math.random() * 20));
+        // Bladder = queue depth / pending work (inverse comfort)
+        const pendingWork = missions.filter(m => m?.status === 'pending').length;
+        const inProgressWork = missions.filter(m => m?.status === 'in_progress').length;
+        const workLoad = (pendingWork * 15) + (inProgressWork * 5);
+        this.needs.Bladder = Math.max(10, Math.min(100, 90 - workLoad));
 
-        // Simoleons (fun metric: token usage as currency)
-        const simoleons = Math.max(0, 25000 - (metrics?.tokensToday ?? 0));
+        // Simoleons = budget remaining (tokens as currency with better scaling)
+        const dailyBudget = 50000; // Starting daily budget
+        const tokenCost = metrics?.tokensToday || 0;
+        const remainingBudget = Math.max(0, dailyBudget - (tokenCost * 2)); // $0.002 per token
         const el = document.getElementById('simsSimoleons');
-        if (el) el.textContent = `§ ${simoleons.toLocaleString()}`;
+        if (el) el.textContent = `§ ${Math.floor(remainingBudget).toLocaleString()}`;
 
         this._updateNeedBars();
     }

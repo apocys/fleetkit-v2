@@ -1,4 +1,4 @@
-# FleetKit v2 — SS+ GRADE PLAN
+# SpawnKit v2 — SS+ GRADE PLAN
 
 ## Current State: S-grade (individual components)
 ## Target: SS+ (complete product — zero friction, addictive, mindblowing end-to-end)

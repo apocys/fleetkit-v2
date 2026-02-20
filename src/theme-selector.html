@@ -3,988 +3,626 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SpawnKit — Your AI Team, Visualized</title>
+    <title>SpawnKit — Choose Your Office</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Press+Start+2P&display=swap" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&display=swap');
-        
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg: #f5f5f7;
+            --bg2: #ffffff;
+            --surface: #ffffff;
+            --text: #1a1a2e;
+            --text2: #4a4a5e;
+            --text3: #8888a0;
+            --accent: #6366f1;
+            --accent2: #818cf8;
+            --accent-glow: rgba(99, 102, 241, .12);
+            --green: #22c55e;
+            --radius: 16px;
+            --font-body: 'Inter', system-ui, -apple-system, sans-serif;
+            --font-pixel: 'Press Start 2P', monospace;
         }
-        
+
+        html { scroll-behavior: smooth; }
+
         body {
-            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
-            color: #e0e0e0;
-            font-family: 'JetBrains Mono', monospace;
+            font-family: var(--font-body);
+            background: var(--bg);
+            color: var(--text);
             min-height: 100vh;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            overflow-x: hidden;
-            overflow-y: auto;
-            position: relative;
-            padding: 40px 20px;
-        }
-        
-        /* Animated background stars */
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 200%;
-            background-image: 
-                radial-gradient(circle at 25% 25%, rgba(255,255,255,0.1) 1px, transparent 1px),
-                radial-gradient(circle at 75% 75%, rgba(255,255,255,0.05) 1px, transparent 1px),
-                radial-gradient(circle at 50% 10%, rgba(0,255,255,0.1) 1px, transparent 1px);
-            background-size: 100px 100px, 150px 150px, 200px 200px;
-            animation: starfield 60s linear infinite;
-            pointer-events: none;
-            z-index: 0;
-        }
-        
-        @keyframes starfield {
-            0% { transform: translateY(0); }
-            100% { transform: translateY(-100px); }
+            padding: 60px 24px 48px;
+            -webkit-font-smoothing: antialiased;
         }
 
-        /* ─── VALUE PROPOSITION ─── */
+        /* ─── NAV BAR ─── */
+        .nav {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            z-index: 100;
+            padding: 14px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(245, 245, 247, 0.85);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+        }
+
+        .nav-logo {
+            font-family: var(--font-pixel);
+            font-size: 0.65rem;
+            color: var(--accent);
+            letter-spacing: 2px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+        }
+
+        .nav-logo .dot {
+            width: 7px; height: 7px;
+            background: var(--green);
+            border-radius: 50%;
+            animation: pulse-dot 2s ease infinite;
+        }
+
+        .nav-back {
+            font-size: 0.85rem;
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .nav-back:hover { color: var(--accent2); }
+
+        /* ─── HEADER ─── */
         .header {
             text-align: center;
-            margin-bottom: 40px;
-            z-index: 10;
-            position: relative;
-        }
-        
-        .logo {
-            font-size: 3.2rem;
-            font-weight: 600;
-            background: linear-gradient(45deg, #00ffff, #ff00ff, #ffff00);
-            background-size: 300% 300%;
-            -webkit-background-clip: text;
-            background-clip: text;
-            -webkit-text-fill-color: transparent;
-            animation: gradientShift 3s ease-in-out infinite alternate;
-            letter-spacing: 6px;
-        }
-        
-        @keyframes gradientShift {
-            0% { background-position: 0% 50%; }
-            100% { background-position: 100% 50%; }
-        }
-        
-        .tagline {
-            font-size: 1.15rem;
-            color: #ccc;
-            margin-top: 12px;
-            font-weight: 400;
-        }
-        
-        .value-prop {
-            font-size: 0.85rem;
-            color: #777;
-            margin-top: 14px;
-            line-height: 1.6;
-            max-width: 480px;
-            margin-left: auto;
-            margin-right: auto;
+            margin-top: 40px;
+            margin-bottom: 48px;
         }
 
-        .choose-label {
-            font-size: 0.9rem;
-            color: #999;
-            margin-top: 28px;
-            text-transform: uppercase;
-            letter-spacing: 3px;
+        .header-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
         }
-        
-        /* ─── THEME CARDS ─── */
-        .theme-selector {
-            display: flex;
-            gap: 30px;
-            flex-wrap: wrap;
-            justify-content: center;
-            z-index: 10;
+
+        .header-subtitle {
+            font-size: 1.05rem;
+            color: var(--text3);
+            font-weight: 400;
+        }
+
+        /* ─── THEME GRID ─── */
+        .theme-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            max-width: 880px;
+            width: 100%;
+        }
+
+        .theme-card {
+            background: var(--surface);
+            border: 1px solid rgba(0, 0, 0, 0.06);
+            border-radius: var(--radius);
+            padding: 0;
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(.4, 0, .2, 1);
             position: relative;
         }
-        
-        .theme-card {
-            background: rgba(20, 20, 20, 0.8);
-            border: 2px solid rgba(255, 255, 255, 0.1);
-            border-radius: 12px;
-            width: 280px;
-            padding: 25px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            backdrop-filter: blur(10px);
+
+        .theme-card:hover {
+            border-color: var(--accent);
+            transform: translateY(-6px);
+            box-shadow: 0 16px 48px rgba(99, 102, 241, 0.12), 0 4px 16px rgba(0, 0, 0, 0.06);
+        }
+
+        .theme-card:hover .select-button {
+            background: var(--accent);
+            color: #fff;
+        }
+
+        /* ─── MINI PREVIEWS ─── */
+        .mini-preview {
+            width: 100%;
+            height: 160px;
             position: relative;
             overflow: hidden;
         }
-        
-        .theme-card::before {
-            content: '';
-            position: absolute;
-            top: -2px;
-            left: -2px;
-            right: -2px;
-            bottom: -2px;
-            background: linear-gradient(45deg, transparent, transparent);
-            border-radius: 12px;
-            z-index: -1;
-            transition: all 0.3s ease;
+
+        /* GameBoy — classic green */
+        .preview-gameboy {
+            background: #0f380f;
         }
-        
-        .theme-card.gameboy::before {
-            background: linear-gradient(45deg, #9BBB0F, #306230);
+        .preview-gameboy .scan {
+            position: absolute; inset: 0;
+            background: repeating-linear-gradient(
+                0deg, transparent, transparent 2px,
+                rgba(0,0,0,0.08) 2px, rgba(0,0,0,0.08) 4px
+            );
+            pointer-events: none;
         }
-        
-        .theme-card.cyberpunk::before {
-            background: linear-gradient(45deg, #00ffff, #ff00ff);
+        .preview-gameboy .floor-line {
+            position: absolute; bottom: 32px; left: 16px; right: 16px;
+            height: 1px; background: #306230;
         }
-        
-        .theme-card.executive::before {
-            background: linear-gradient(45deg, #c9a876, #8b6914);
+        .preview-gameboy .agent {
+            position: absolute; bottom: 36px;
+            width: 12px; height: 16px;
+            background: #9bbc0f; border-radius: 2px 2px 0 0;
         }
-        
-        .theme-card.gameboy[data-theme="gameboy-color"]::before {
-            background: linear-gradient(135deg, #ff6688, #66ccff, #88ff66);
+        .preview-gameboy .agent:nth-child(3) { left: 28px; height: 18px; }
+        .preview-gameboy .agent:nth-child(4) { left: 64px; height: 14px; }
+        .preview-gameboy .agent:nth-child(5) { left: 100px; height: 16px; }
+        .preview-gameboy .agent:nth-child(6) { left: 140px; height: 12px; }
+        .preview-gameboy .agent:nth-child(7) { left: 180px; height: 16px; }
+        .preview-gameboy .hud {
+            position: absolute; top: 10px; left: 12px;
+            font-family: var(--font-pixel); font-size: 5px;
+            color: #9bbc0f; line-height: 1.8;
+        }
+        .preview-gameboy .status-bar {
+            position: absolute; bottom: 0; left: 0; right: 0;
+            height: 26px; background: #0a2a0a;
+            border-top: 1px solid #306230;
+            display: flex; align-items: center; padding: 0 12px;
+            font-family: var(--font-pixel); font-size: 4px; color: #9bbc0f;
+            gap: 12px;
         }
 
-        .theme-card.sims::before {
-            background: linear-gradient(45deg, #00ff00, #1a3a4a);
+        /* GameBoy Color — purple tones */
+        .preview-gbc {
+            background: #1a0e2e;
         }
-        
-        .theme-card:hover {
-            transform: translateY(-10px) scale(1.02);
-            border-color: rgba(255, 255, 255, 0.3);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        .preview-gbc .scan {
+            position: absolute; inset: 0;
+            background: repeating-linear-gradient(
+                0deg, transparent, transparent 2px,
+                rgba(0,0,0,0.06) 2px, rgba(0,0,0,0.06) 4px
+            );
+            pointer-events: none;
         }
-        
-        .theme-card:hover::before {
-            opacity: 1;
+        .preview-gbc .floor-line {
+            position: absolute; bottom: 32px; left: 16px; right: 16px;
+            height: 1px; background: #3a2a5a;
         }
-        
+        .preview-gbc .agent {
+            position: absolute; bottom: 36px;
+            width: 12px; height: 16px;
+            border-radius: 2px 2px 0 0;
+        }
+        .preview-gbc .agent:nth-child(3) { left: 28px; height: 18px; background: #e86080; }
+        .preview-gbc .agent:nth-child(4) { left: 64px; height: 14px; background: #60a0e8; }
+        .preview-gbc .agent:nth-child(5) { left: 100px; height: 16px; background: #60e880; }
+        .preview-gbc .agent:nth-child(6) { left: 140px; height: 14px; background: #e8d060; }
+        .preview-gbc .agent:nth-child(7) { left: 180px; height: 16px; background: #a080e8; }
+        .preview-gbc .hud {
+            position: absolute; top: 10px; left: 12px;
+            font-family: var(--font-pixel); font-size: 5px;
+            color: #a080e8; line-height: 1.8;
+        }
+        .preview-gbc .status-bar {
+            position: absolute; bottom: 0; left: 0; right: 0;
+            height: 26px; background: #120a20;
+            border-top: 1px solid #3a2a5a;
+            display: flex; align-items: center; padding: 0 12px;
+            font-family: var(--font-pixel); font-size: 4px; color: #a080e8;
+            gap: 12px;
+        }
+
+        /* Sims — teal/blue */
+        .preview-sims {
+            background: #e8f0f2;
+            position: relative;
+        }
+        .preview-sims .grass {
+            position: absolute; bottom: 0; left: 0; right: 0;
+            height: 40px; background: #7ab87a;
+        }
+        .preview-sims .house {
+            position: absolute; bottom: 40px; left: 50%;
+            transform: translateX(-50%);
+            width: 100px; height: 50px;
+            background: #f0e0c8; border: 1px solid #d0c0a0;
+            border-radius: 2px;
+        }
+        .preview-sims .roof {
+            position: absolute; bottom: 90px; left: 50%;
+            transform: translateX(-50%);
+            width: 0; height: 0;
+            border-left: 56px solid transparent;
+            border-right: 56px solid transparent;
+            border-bottom: 24px solid #c05040;
+        }
+        .preview-sims .plumbob {
+            position: absolute; top: 14px; left: 50%;
+            transform: translateX(-50%);
+        }
+        .preview-sims .plumbob-diamond {
+            width: 0; height: 0;
+            border-left: 7px solid transparent;
+            border-right: 7px solid transparent;
+            border-bottom: 10px solid #2aaa4a;
+        }
+        .preview-sims .plumbob-diamond-bottom {
+            width: 0; height: 0;
+            border-left: 7px solid transparent;
+            border-right: 7px solid transparent;
+            border-top: 10px solid #1e8a3a;
+        }
+        .preview-sims .person {
+            position: absolute; top: 32px; left: 50%;
+            transform: translateX(-50%);
+            width: 10px; height: 14px;
+            background: #5588aa; border-radius: 2px;
+        }
+        .preview-sims .status-bar {
+            position: absolute; bottom: 0; left: 0; right: 0;
+            height: 26px; background: #2a5a8a;
+            display: flex; align-items: center; padding: 0 12px; gap: 6px;
+        }
+        .preview-sims .need {
+            height: 4px; flex: 1; border-radius: 2px; overflow: hidden;
+            background: #1a4a6a;
+        }
+        .preview-sims .need-fill {
+            height: 100%; border-radius: 2px;
+        }
+        .preview-sims .need:nth-child(1) .need-fill { width: 85%; background: #4ade80; }
+        .preview-sims .need:nth-child(2) .need-fill { width: 60%; background: #facc15; }
+        .preview-sims .need:nth-child(3) .need-fill { width: 40%; background: #f87171; }
+        .preview-sims .need:nth-child(4) .need-fill { width: 95%; background: #4ade80; }
+
+        /* ─── CARD BODY ─── */
+        .card-body {
+            padding: 20px 24px 24px;
+        }
+
         .theme-emoji {
-            font-size: 3.2rem;
-            margin-bottom: 14px;
-            animation: float 3s ease-in-out infinite;
+            font-size: 1.6rem;
+            margin-bottom: 8px;
         }
-        
-        @keyframes float {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-10px); }
-        }
-        
+
         .theme-name {
-            font-size: 1.4rem;
-            font-weight: 600;
-            margin-bottom: 6px;
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 4px;
         }
-        
+
         .theme-description {
-            font-size: 0.8rem;
-            color: #aaa;
-            margin-bottom: 18px;
+            font-size: 0.85rem;
+            color: var(--text3);
+            margin-bottom: 16px;
             line-height: 1.5;
         }
 
-        /* ─── MINI PREVIEW BOXES ─── */
-        .mini-preview {
-            width: 200px;
-            height: 100px;
-            border-radius: 6px;
-            margin-bottom: 18px;
-            overflow: hidden;
-            position: relative;
-            font-size: 6px;
-            line-height: 1.3;
-        }
-
-        /* GameBoy preview — green pixel office */
-        .preview-gameboy {
-            background: #0F380F;
-            border: 2px solid #306230;
-            padding: 6px;
-            image-rendering: pixelated;
-        }
-        .preview-gameboy .gb-floor {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 30%;
-            background: repeating-linear-gradient(
-                90deg,
-                #306230 0px, #306230 10px,
-                #0F380F 10px, #0F380F 20px
-            );
-        }
-        .preview-gameboy .gb-agent {
-            position: absolute;
-            width: 12px;
-            height: 16px;
-            background: #9BBB0F;
-            border-radius: 3px 3px 0 0;
-        }
-        .preview-gameboy .gb-agent::after {
-            content: '';
-            position: absolute;
-            top: 3px;
-            left: 2px;
-            width: 3px;
-            height: 2px;
-            background: #0F380F;
-            box-shadow: 5px 0 0 #0F380F;
-        }
-        .preview-gameboy .gb-agent:nth-child(1) { left: 15px; bottom: 30%; }
-        .preview-gameboy .gb-agent:nth-child(2) { left: 55px; bottom: 30%; }
-        .preview-gameboy .gb-agent:nth-child(3) { left: 95px; bottom: 30%; }
-        .preview-gameboy .gb-desk {
-            position: absolute;
-            width: 20px;
-            height: 8px;
-            background: #8BAC0F;
-            bottom: 30%;
-        }
-        .preview-gameboy .gb-desk:nth-child(4) { left: 32px; }
-        .preview-gameboy .gb-desk:nth-child(5) { left: 72px; }
-        .preview-gameboy .gb-desk:nth-child(6) { left: 120px; }
-        .preview-gameboy .gb-quest {
-            position: absolute;
-            top: 6px;
-            left: 6px;
-            color: #9BBB0F;
-            font-family: monospace;
-            font-size: 7px;
-            letter-spacing: 0.5px;
-        }
-        .preview-gameboy .gb-quest-icon {
-            position: absolute;
-            top: 4px;
-            right: 8px;
-            font-size: 14px;
-        }
-
-        /* Cyberpunk preview — neon terminal */
-        .preview-cyberpunk {
-            background: #0a0012;
-            border: 1px solid #ff00ff44;
-            padding: 6px 8px;
-            font-family: monospace;
-            color: #00ffff;
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-            box-shadow: inset 0 0 20px rgba(255,0,255,0.1);
-        }
-        .preview-cyberpunk .cp-line {
-            white-space: nowrap;
-            overflow: hidden;
-            font-size: 7px;
-            opacity: 0.9;
-        }
-        .preview-cyberpunk .cp-line .cp-name { color: #ff00ff; }
-        .preview-cyberpunk .cp-line .cp-status { color: #00ff88; }
-        .preview-cyberpunk .cp-line .cp-data { color: #ffff00; }
-        .preview-cyberpunk .cp-header {
-            color: #ff00ff;
-            font-size: 7px;
-            border-bottom: 1px solid #ff00ff33;
-            padding-bottom: 2px;
-            margin-bottom: 2px;
-            letter-spacing: 1px;
-        }
-        .preview-cyberpunk .cp-cursor {
-            display: inline-block;
-            width: 4px;
-            height: 7px;
-            background: #00ffff;
-            animation: blink 1s step-end infinite;
-            margin-left: 2px;
-            vertical-align: middle;
-        }
-        @keyframes blink {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0; }
-        }
-        .preview-cyberpunk .cp-scanline {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: repeating-linear-gradient(
-                0deg,
-                transparent,
-                transparent 2px,
-                rgba(0,0,0,0.15) 2px,
-                rgba(0,0,0,0.15) 4px
-            );
-            pointer-events: none;
-        }
-
-        /* Executive preview — boardroom */
-        .preview-executive {
-            background: linear-gradient(180deg, #1a1510 0%, #2c2416 100%);
-            border: 1px solid #c9a87644;
-            padding: 6px;
-            position: relative;
-        }
-        .preview-executive .ex-table {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 100px;
-            height: 36px;
-            background: linear-gradient(135deg, #5a4a2a, #3d3219);
-            border-radius: 20px;
-            border: 1px solid #c9a87655;
-        }
-        .preview-executive .ex-chair {
-            position: absolute;
-            width: 10px;
-            height: 10px;
-            background: #8b6914;
-            border-radius: 50%;
-            border: 1px solid #c9a87666;
-        }
-        .preview-executive .ex-chair:nth-child(2) { top: 12px; left: 30px; }
-        .preview-executive .ex-chair:nth-child(3) { top: 12px; left: 80px; }
-        .preview-executive .ex-chair:nth-child(4) { top: 12px; left: 130px; }
-        .preview-executive .ex-chair:nth-child(5) { bottom: 12px; left: 30px; }
-        .preview-executive .ex-chair:nth-child(6) { bottom: 12px; left: 80px; }
-        .preview-executive .ex-chair:nth-child(7) { bottom: 12px; left: 130px; }
-        .preview-executive .ex-kpi {
-            position: absolute;
-            top: 4px;
-            right: 6px;
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-        }
-        .preview-executive .ex-kpi-bar {
-            width: 30px;
-            height: 3px;
-            background: rgba(201,168,118,0.3);
-            border-radius: 1px;
-            overflow: hidden;
-        }
-        .preview-executive .ex-kpi-bar::after {
-            content: '';
-            display: block;
-            height: 100%;
-            border-radius: 1px;
-            background: #c9a876;
-        }
-        .preview-executive .ex-kpi-bar:nth-child(1)::after { width: 80%; }
-        .preview-executive .ex-kpi-bar:nth-child(2)::after { width: 60%; }
-        .preview-executive .ex-kpi-bar:nth-child(3)::after { width: 90%; }
-        .preview-executive .ex-label {
-            position: absolute;
-            top: 4px;
-            left: 6px;
-            color: #c9a876;
-            font-size: 6px;
-            letter-spacing: 0.5px;
-            text-transform: uppercase;
-            opacity: 0.7;
-        }
-
-        .color-preview {
-            width: 100%;
-            height: 6px;
-            border-radius: 3px;
-            margin-bottom: 18px;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .gameboy .color-preview {
-            background: linear-gradient(90deg, #0F380F, #306230, #8BAC0F, #9BBB0F);
-        }
-        
-        .cyberpunk .color-preview {
-            background: linear-gradient(90deg, #000000, #ff00ff, #00ffff, #ffff00);
-        }
-        
-        .executive .color-preview {
-            background: linear-gradient(90deg, #2c2416, #5a4a2a, #8b6914, #c9a876);
-        }
-        
-        .color-preview::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-            animation: shimmer 2s ease-in-out infinite;
-        }
-        
-        @keyframes shimmer {
-            0% { left: -100%; }
-            100% { left: 100%; }
-        }
-        
         .select-button {
-            background: rgba(255, 255, 255, 0.1);
-            border: 2px solid rgba(255, 255, 255, 0.2);
-            color: #e0e0e0;
-            padding: 12px 24px;
-            border-radius: 6px;
-            font-family: 'JetBrains Mono', monospace;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-top: auto;
+            width: 100%;
+            padding: 10px 20px;
+            border-radius: 10px;
+            border: none;
+            background: var(--bg);
+            color: var(--text2);
+            font-family: var(--font-body);
+            font-weight: 600;
             font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.25s ease;
         }
-        
+
         .select-button:hover {
-            background: rgba(255, 255, 255, 0.2);
-            border-color: rgba(255, 255, 255, 0.4);
-            color: #ffffff;
-        }
-        
-        .gameboy .select-button:hover {
-            background: #9BBB0F;
-            border-color: #9BBB0F;
-            color: #0F380F;
-        }
-        
-        .cyberpunk .select-button:hover {
-            background: #00ffff;
-            border-color: #00ffff;
-            color: #000000;
-        }
-        
-        .executive .select-button:hover {
-            background: #c9a876;
-            border-color: #c9a876;
-            color: #2c2416;
+            background: var(--accent);
+            color: #fff;
         }
 
         /* ─── HOW IT WORKS ─── */
-        .how-it-works {
-            z-index: 10;
-            position: relative;
-            margin-top: 50px;
+        .how-section {
+            margin-top: 56px;
             text-align: center;
             max-width: 520px;
         }
 
-        .how-it-works-title {
-            font-size: 0.75rem;
-            color: #555;
+        .how-title {
+            font-size: 0.7rem;
+            font-family: var(--font-pixel);
+            color: var(--text3);
             text-transform: uppercase;
-            letter-spacing: 4px;
-            margin-bottom: 20px;
+            letter-spacing: 3px;
+            margin-bottom: 24px;
         }
 
         .how-steps {
             display: flex;
-            flex-direction: column;
-            gap: 10px;
-            text-align: left;
+            gap: 32px;
+            justify-content: center;
         }
 
         .how-step {
-            display: flex;
-            align-items: baseline;
-            gap: 12px;
+            text-align: center;
+            flex: 1;
+        }
+
+        .how-step-num {
+            width: 36px; height: 36px;
+            border-radius: 50%;
+            background: var(--accent);
+            color: #fff;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700;
+            font-size: 0.85rem;
+            margin: 0 auto 10px;
+        }
+
+        .how-step-text {
             font-size: 0.8rem;
-            color: #777;
+            color: var(--text2);
             line-height: 1.5;
         }
 
-        .how-step .step-num {
-            color: #555;
-            font-weight: 600;
-            min-width: 16px;
-        }
-
-        .how-step .step-arrow {
-            color: #444;
-        }
-
-        .how-step em {
+        .how-step-text em {
             font-style: normal;
-            color: #999;
-        }
-
-        .how-help {
-            margin-top: 18px;
-            font-size: 0.7rem;
-            color: #444;
-            letter-spacing: 1px;
+            color: var(--text);
+            font-weight: 600;
         }
 
         /* ─── FOOTER ─── */
         .footer {
-            z-index: 10;
-            position: relative;
-            margin-top: 40px;
+            margin-top: 48px;
             text-align: center;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            align-items: center;
-        }
-
-        .replay-link {
             font-size: 0.75rem;
-            color: #555;
-            cursor: pointer;
-            transition: color 0.3s ease;
-            background: none;
-            border: none;
-            font-family: 'JetBrains Mono', monospace;
-            letter-spacing: 0.5px;
+            color: var(--text3);
         }
 
-        .replay-link:hover {
-            color: #00ffff;
+        .footer a {
+            color: var(--accent);
+            text-decoration: none;
         }
 
-        .footer-text {
-            font-size: 0.65rem;
-            color: #333;
-            letter-spacing: 1px;
-        }
-
-        /* ─── LOADING SCREEN ─── */
+        /* ─── LOADING ─── */
         .loading {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.9);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-            flex-direction: column;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--bg);
+            display: none; align-items: center; justify-content: center;
+            z-index: 1000; flex-direction: column;
         }
-        
-        .loading.active {
-            display: flex;
-        }
-        
+        .loading.active { display: flex; }
         .spinner {
-            width: 50px;
-            height: 50px;
-            border: 3px solid rgba(255, 255, 255, 0.1);
-            border-top: 3px solid #00ffff;
+            width: 32px; height: 32px;
+            border: 3px solid rgba(99, 102, 241, 0.15);
+            border-top: 3px solid var(--accent);
             border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin-bottom: 20px;
+            animation: spin 0.8s linear infinite;
+            margin-bottom: 16px;
         }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes pulse-dot { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
         .loading-text {
-            color: #00ffff;
-            font-size: 1rem;
-            text-transform: uppercase;
-            letter-spacing: 2px;
+            color: var(--text2);
+            font-size: 0.9rem;
+            font-weight: 500;
         }
-        
+
         /* ─── RESPONSIVE ─── */
         @media (max-width: 768px) {
-            .theme-selector {
-                flex-direction: column;
-                align-items: center;
+            .theme-grid {
+                grid-template-columns: 1fr;
+                max-width: 360px;
             }
-            
-            .theme-card {
-                width: 300px;
-            }
-            
-            .mini-preview {
-                width: 220px;
-                height: 110px;
-            }
-
-            .logo {
-                font-size: 2.2rem;
-            }
-
-            .tagline {
-                font-size: 1rem;
-            }
-
             .how-steps {
-                padding: 0 10px;
+                flex-direction: column;
+                gap: 16px;
+            }
+            .header-title { font-size: 1.5rem; }
+        }
+
+        @media (min-width: 769px) and (max-width: 960px) {
+            .theme-grid {
+                grid-template-columns: repeat(2, 1fr);
+                max-width: 600px;
             }
         }
     </style>
 </head>
 <body>
-    <!-- ─── HEADER / VALUE PROPOSITION ─── -->
+
+    <!-- Nav -->
+    <nav class="nav">
+        <a href="../landing/index.html" class="nav-logo">
+            <span class="dot"></span>
+            SPAWNKIT
+        </a>
+        <a href="../landing/index.html" class="nav-back">← Back to Home</a>
+    </nav>
+
+    <!-- Header -->
     <div class="header">
-        <div class="logo">SPAWNKIT</div>
-        <div class="tagline">Your AI team, visualized.</div>
-        <div class="value-prop">
-            Watch your AI agents work, collaborate, and complete<br>
-            missions in a living virtual office.
-        </div>
-        <div class="choose-label">Choose your office style</div>
+        <h1 class="header-title">Choose Your Office</h1>
+        <p class="header-subtitle">Pick a theme for your AI team's workspace.</p>
     </div>
-    
-    <!-- ─── THEME CARDS ─── -->
-    <div class="theme-selector">
-        <!-- GameBoy Theme -->
-        <div class="theme-card gameboy" data-theme="gameboy">
-            <div class="theme-emoji">🎮</div>
-            <div class="theme-name">GameBoy</div>
-            <div class="theme-description">Pokémon vibes. Your agents go on pixel quests with 8-bit music.</div>
-            
-            <!-- Mini preview: pixel office -->
+
+    <!-- Theme Grid -->
+    <div class="theme-grid">
+
+        <!-- GameBoy -->
+        <div class="theme-card" data-theme="gameboy">
             <div class="mini-preview preview-gameboy">
-                <div class="gb-quest">▸ MISSION: Deploy API</div>
-                <div class="gb-quest-icon">⚔️</div>
-                <div class="gb-agent"></div>
-                <div class="gb-agent"></div>
-                <div class="gb-agent"></div>
-                <div class="gb-desk"></div>
-                <div class="gb-desk"></div>
-                <div class="gb-desk"></div>
-                <div class="gb-floor"></div>
-            </div>
-
-            <div class="color-preview"></div>
-            <button class="select-button">Enter Office</button>
-        </div>
-        
-        <!-- GameBoy Color Theme -->
-        <div class="theme-card gameboy" data-theme="gameboy-color">
-            <div class="theme-emoji">🌈</div>
-            <div class="theme-name">GameBoy Color</div>
-            <div class="theme-description">Full-color pixel art upgrade. Same Pokémon soul, now in vivid RGB.</div>
-            
-            <!-- Mini preview: colorful pixel office -->
-            <div class="mini-preview preview-gameboy" style="background:#2a1a3a;">
-                <div class="gb-quest" style="background:rgba(255,100,200,0.3);border-color:rgba(255,100,200,0.5);color:#ff88cc;">▸ QUEST: Color Shift</div>
-                <div class="gb-quest-icon">🌟</div>
-                <div class="gb-agent" style="background:#ff6688;"></div>
-                <div class="gb-agent" style="background:#66ccff;"></div>
-                <div class="gb-agent" style="background:#88ff66;"></div>
-                <div class="gb-desk" style="background:#8866cc;"></div>
-                <div class="gb-desk" style="background:#8866cc;"></div>
-                <div class="gb-desk" style="background:#8866cc;"></div>
-                <div class="gb-floor" style="background:#1a0a2a;"></div>
-            </div>
-
-            <div class="color-preview"></div>
-            <button class="select-button">Enter Office</button>
-        </div>
-        
-        <!-- Cyberpunk Theme -->
-        <div class="theme-card cyberpunk" data-theme="cyberpunk">
-            <div class="theme-emoji">🌃</div>
-            <div class="theme-name">Cyberpunk</div>
-            <div class="theme-description">Hacker aesthetic. Neon terminals, live data feeds, dark mode everything.</div>
-            
-            <!-- Mini preview: neon terminal -->
-            <div class="mini-preview preview-cyberpunk">
-                <div class="cp-header">◈ FLEET TERMINAL v2.0</div>
-                <div class="cp-line"><span class="cp-name">NOVA</span> <span class="cp-status">● ACTIVE</span> — researching</div>
-                <div class="cp-line"><span class="cp-name">CIPHER</span> <span class="cp-status">● ACTIVE</span> — coding</div>
-                <div class="cp-line"><span class="cp-name">SENTINEL</span> <span class="cp-status">● IDLE</span> — monitoring</div>
-                <div class="cp-line"><span class="cp-name">ATLAS</span> <span class="cp-status">● ACTIVE</span> — deploying</div>
-                <div class="cp-line"><span class="cp-data">▸ missions: 12 ✓  3 ◌</span></div>
-                <div class="cp-line"><span class="cp-data">▸ uptime: 48:22:07</span><span class="cp-cursor"></span></div>
-                <div class="cp-scanline"></div>
-            </div>
-
-            <div class="color-preview"></div>
-            <button class="select-button">Enter Office</button>
-        </div>
-        
-        <!-- Executive Theme -->
-        <div class="theme-card executive" data-theme="executive">
-            <div class="theme-emoji">🏢</div>
-            <div class="theme-name">Executive</div>
-            <div class="theme-description">Luxury boardroom. Your AI C-suite with real-time KPI dashboards.</div>
-            
-            <!-- Mini preview: boardroom -->
-            <div class="mini-preview preview-executive">
-                <div class="ex-label">Q4 Board Meeting</div>
-                <div class="ex-table"></div>
-                <div class="ex-chair"></div>
-                <div class="ex-chair"></div>
-                <div class="ex-chair"></div>
-                <div class="ex-chair"></div>
-                <div class="ex-chair"></div>
-                <div class="ex-chair"></div>
-                <div class="ex-kpi">
-                    <div class="ex-kpi-bar"></div>
-                    <div class="ex-kpi-bar"></div>
-                    <div class="ex-kpi-bar"></div>
+                <div class="scan"></div>
+                <div class="hud">▸ MISSION: Deploy API<br>▸ AGENTS: 5 ONLINE</div>
+                <div class="floor-line"></div>
+                <div class="agent"></div>
+                <div class="agent"></div>
+                <div class="agent"></div>
+                <div class="agent"></div>
+                <div class="agent"></div>
+                <div class="status-bar">
+                    <span>⬤ 5 AGENTS</span>
+                    <span>LVL 12</span>
+                    <span>▮▮▮▮▮▯▯ XP</span>
                 </div>
             </div>
-
-            <div class="color-preview"></div>
-            <button class="select-button">Enter Office</button>
+            <div class="card-body">
+                <div class="theme-emoji">🎮</div>
+                <div class="theme-name">GameBoy</div>
+                <div class="theme-description">Pixel art quests. 8-bit agents on retro missions.</div>
+                <button class="select-button">Enter Office →</button>
+            </div>
         </div>
 
-        <div class="theme-card sims" data-theme="sims">
-            <div class="theme-emoji">💎</div>
-            <div class="theme-name">The Sims</div>
-            <div class="theme-description">Isometric office nostalgia. Plumbobs, needs bars, and Simlish — it's 2000 again.</div>
-            
-            <!-- Mini preview: Sims-style -->
-            <div class="mini-preview" style="background:#f0e0c0;overflow:hidden;position:relative;">
-                <div style="position:absolute;top:4px;left:50%;transform:translateX(-50%);font-size:9px;color:#2a2a2a;">🏠 Office</div>
-                <div style="position:absolute;top:18px;left:50%;transform:translateX(-50%);">
-                    <div style="width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-bottom:8px solid #00ff00;margin:0 auto;"></div>
-                    <div style="width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:8px solid #00cc00;margin:0 auto;"></div>
-                    <div style="width:8px;height:12px;background:#8833aa;margin:2px auto;border-radius:1px;"></div>
-                </div>
-                <div style="position:absolute;bottom:0;left:0;right:0;height:22px;background:linear-gradient(180deg,#2a4858,#1a3a4a);display:flex;align-items:center;padding:0 6px;gap:4px;">
-                    <div style="width:12px;height:12px;background:#1a3a4a;border:1px solid #5a8898;border-radius:2px;"></div>
-                    <div style="flex:1;display:flex;flex-direction:column;gap:1px;">
-                        <div style="height:3px;background:#00cc00;border-radius:1px;width:80%;"></div>
-                        <div style="height:3px;background:#cccc00;border-radius:1px;width:50%;"></div>
-                        <div style="height:3px;background:#cc0000;border-radius:1px;width:30%;"></div>
-                    </div>
+        <!-- GameBoy Color -->
+        <div class="theme-card" data-theme="gameboy-color">
+            <div class="mini-preview preview-gbc">
+                <div class="scan"></div>
+                <div class="hud">▸ QUEST: Color Shift<br>▸ PARTY: 5 READY</div>
+                <div class="floor-line"></div>
+                <div class="agent"></div>
+                <div class="agent"></div>
+                <div class="agent"></div>
+                <div class="agent"></div>
+                <div class="agent"></div>
+                <div class="status-bar">
+                    <span>⬤ 5 AGENTS</span>
+                    <span>LVL 8</span>
+                    <span>▮▮▮▯▯▯▯ XP</span>
                 </div>
             </div>
-
-            <div class="color-preview"></div>
-            <button class="select-button">Enter Office</button>
+            <div class="card-body">
+                <div class="theme-emoji">🌈</div>
+                <div class="theme-name">GameBoy Color</div>
+                <div class="theme-description">Same pixel soul, now in vivid color.</div>
+                <button class="select-button">Enter Office →</button>
+            </div>
         </div>
+
+        <!-- The Sims -->
+        <div class="theme-card" data-theme="sims">
+            <div class="mini-preview preview-sims">
+                <div class="plumbob">
+                    <div class="plumbob-diamond"></div>
+                    <div class="plumbob-diamond-bottom"></div>
+                </div>
+                <div class="person"></div>
+                <div class="roof"></div>
+                <div class="house"></div>
+                <div class="grass"></div>
+                <div class="status-bar">
+                    <div class="need"><div class="need-fill"></div></div>
+                    <div class="need"><div class="need-fill"></div></div>
+                    <div class="need"><div class="need-fill"></div></div>
+                    <div class="need"><div class="need-fill"></div></div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="theme-emoji">💎</div>
+                <div class="theme-name">The Sims</div>
+                <div class="theme-description">Isometric nostalgia. Plumbobs and needs bars.</div>
+                <button class="select-button">Enter Office →</button>
+            </div>
+        </div>
+
     </div>
 
-    <!-- ─── HOW IT WORKS ─── -->
-    <div class="how-it-works">
-        <div class="how-it-works-title">How It Works</div>
+    <!-- How It Works -->
+    <div class="how-section">
+        <div class="how-title">How It Works</div>
         <div class="how-steps">
             <div class="how-step">
-                <span class="step-num">1.</span>
-                <span><em>Pick a theme</em> <span class="step-arrow">→</span> Your office loads with 5 AI agents</span>
+                <div class="how-step-num">1</div>
+                <div class="how-step-text"><em>Pick a theme</em><br>Your office loads with 5 AI agents</div>
             </div>
             <div class="how-step">
-                <span class="step-num">2.</span>
-                <span><em>Send missions</em> <span class="step-arrow">→</span> Press <strong>Q</strong> or click the <strong>+</strong> button</span>
+                <div class="how-step-num">2</div>
+                <div class="how-step-text"><em>Send missions</em><br>Press Q or click the + button</div>
             </div>
             <div class="how-step">
-                <span class="step-num">3.</span>
-                <span><em>Watch &amp; earn</em> <span class="step-arrow">→</span> Agents work, you unlock achievements</span>
+                <div class="how-step-num">3</div>
+                <div class="how-step-text"><em>Watch & earn</em><br>Agents work, you unlock achievements</div>
             </div>
         </div>
-        <div class="how-help">Powered by OpenClaw &nbsp;|&nbsp; Press <strong>?</strong> for help anytime</div>
     </div>
 
-    <!-- ─── FOOTER ─── -->
     <div class="footer">
-        <button class="replay-link" id="replayBtn">🎬 Replay intro animation</button>
-        <div class="footer-text">Powered by SpawnKit • Built with OpenClaw • v2.0</div>
+        Powered by <a href="../landing/index.html">SpawnKit</a> · Built with OpenClaw · v2.0
     </div>
-    
-    <!-- Loading Screen -->
+
+    <!-- Loading -->
     <div class="loading" id="loading">
         <div class="spinner"></div>
-        <div class="loading-text" id="loadingText">Initializing Theme...</div>
+        <div class="loading-text" id="loadingText">Loading...</div>
     </div>
-    
-    <!-- FleetKit v2 Visual Polish Layer -->
-    <script src="favicon.js"></script>
-    <script src="meta-tags.js"></script>
-    <script src="page-title.js"></script>
-    <script src="responsive.js"></script>
-    <script src="transitions.js"></script>
-    
+
     <script>
-        // Theme configuration
         const themes = {
-            gameboy: {
-                name: 'GameBoy',
-                path: '../office-gameboy/index.html',
-                emoji: '🎮'
-            },
-            'gameboy-color': {
-                name: 'GameBoy Color',
-                path: '../office-gameboy-color/index.html',
-                emoji: '🌈'
-            },
-            cyberpunk: {
-                name: 'Cyberpunk',
-                path: '../office-cyberpunk/index.html',
-                emoji: '🌃'
-            },
-            executive: {
-                name: 'Executive',
-                path: '../office-executive/index.html',
-                emoji: '🏢'
-            },
-            sims: {
-                name: 'The Sims',
-                path: '../office-sims/index.html',
-                emoji: '💎'
-            }
+            gameboy: { name: 'GameBoy', path: '../office-gameboy/index.html' },
+            'gameboy-color': { name: 'GameBoy Color', path: '../office-gameboy-color/index.html' },
+            sims: { name: 'The Sims', path: '../office-sims/index.html' }
         };
-        
-        // Initialize theme selector
+
         document.addEventListener('DOMContentLoaded', function() {
-            const themeCards = document.querySelectorAll('.theme-card');
-            const loading = document.getElementById('loading');
-            const loadingText = document.getElementById('loadingText');
-            
-            // ?reset clears saved theme (escape hatch)
+            // Reset saved theme if ?reset in URL
             if (new URLSearchParams(window.location.search).has('reset')) {
-                localStorage.removeItem('fleetkit-theme');
+                localStorage.removeItem('spawnkit-theme');
             }
-            
-            // Check if a theme was previously selected
-            const savedTheme = localStorage.getItem('fleetkit-theme');
-            if (savedTheme && themes[savedTheme]) {
-                // Auto-redirect to saved theme with a brief flash
-                showLoading(`Loading ${themes[savedTheme].name} Office...`);
-                setTimeout(() => {
-                    redirectToTheme(savedTheme);
-                }, 800);
+
+            // Auto-redirect to saved theme
+            const saved = localStorage.getItem('spawnkit-theme');
+            if (saved && themes[saved]) {
+                showLoading(`Loading ${themes[saved].name}...`);
+                setTimeout(() => { window.location.href = themes[saved].path + '?boot=true'; }, 500);
                 return;
             }
-            
-            // Add click handlers to theme cards
-            themeCards.forEach(card => {
-                const button = card.querySelector('.select-button');
-                const theme = card.dataset.theme;
-                
-                // Add click handler to entire card
-                card.addEventListener('click', (e) => {
-                    if (e.target !== button) {
-                        button.click();
-                    }
-                });
-                
-                // Add click handler to button
-                button.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    selectTheme(theme);
-                });
-                
-                // Add keyboard support
-                card.addEventListener('keydown', (e) => {
+
+            // Click handlers
+            document.querySelectorAll('.theme-card').forEach(card => {
+                card.addEventListener('click', () => selectTheme(card.dataset.theme));
+                card.setAttribute('tabindex', '0');
+                card.addEventListener('keydown', e => {
                     if (e.key === 'Enter' || e.key === ' ') {
                         e.preventDefault();
-                        selectTheme(theme);
+                        selectTheme(card.dataset.theme);
                     }
                 });
-                
-                // Make cards focusable
-                card.setAttribute('tabindex', '0');
             });
-            
-            // Entrance animation for cards
-            setTimeout(() => {
-                themeCards.forEach((card, index) => {
-                    card.style.opacity = '0';
-                    card.style.transform = 'translateY(50px)';
-                    card.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
-                    
-                    setTimeout(() => {
-                        card.style.opacity = '1';
-                        card.style.transform = 'translateY(0)';
-                    }, index * 200);
-                });
-            }, 100);
 
-            // Replay intro animation button
-            document.getElementById('replayBtn').addEventListener('click', () => {
-                localStorage.setItem('fleetkit-boot-seen', 'false');
-                localStorage.removeItem('fleetkit-theme');
-                window.location.reload();
+            // Staggered entrance animation
+            document.querySelectorAll('.theme-card').forEach((card, i) => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(24px)';
+                card.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+                setTimeout(() => {
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0)';
+                }, 150 + i * 100);
             });
         });
-        
-        function selectTheme(themeId) {
-            if (!themes[themeId]) return;
-            
-            const theme = themes[themeId];
-            
-            // Save theme to localStorage
-            localStorage.setItem('fleetkit-theme', themeId);
-            
-            // Show loading animation
-            showLoading(`Loading ${theme.name} Office...`);
-            
-            // Add a brief delay for the loading animation
-            setTimeout(() => {
-                redirectToTheme(themeId);
-            }, 1500);
+
+        function selectTheme(id) {
+            if (!themes[id]) return;
+            localStorage.setItem('spawnkit-theme', id);
+            showLoading(`Loading ${themes[id].name}...`);
+            setTimeout(() => { window.location.href = themes[id].path + '?boot=true'; }, 600);
         }
-        
+
         function showLoading(text) {
-            const loading = document.getElementById('loading');
-            const loadingText = document.getElementById('loadingText');
-            
-            loadingText.textContent = text;
-            loading.classList.add('active');
+            document.getElementById('loadingText').textContent = text;
+            document.getElementById('loading').classList.add('active');
         }
-        
-        function redirectToTheme(themeId) {
-            const theme = themes[themeId];
-            if (theme) {
-                // Pass ?boot=true to trigger cinematic boot sequence
-                const separator = theme.path.includes('?') ? '&' : '?';
-                window.location.href = theme.path + separator + 'boot=true';
-            }
-        }
-        
-        // Easter egg — hue rotate on 10 clicks
-        let clickCount = 0;
-        document.addEventListener('click', () => {
-            clickCount++;
-            if (clickCount === 10) {
-                document.body.style.filter = 'hue-rotate(180deg)';
-                setTimeout(() => {
-                    document.body.style.filter = 'none';
-                }, 1000);
-                clickCount = 0;
-            }
-        });
-        
-        // Konami code easter egg
-        let konamiCode = [];
-        const konami = [38, 38, 40, 40, 37, 39, 37, 39, 66, 65]; // ↑↑↓↓←→←→BA
-        
-        document.addEventListener('keydown', (e) => {
-            konamiCode.push(e.keyCode);
-            if (konamiCode.length > konami.length) {
-                konamiCode.shift();
-            }
-            
-            if (konamiCode.join(',') === konami.join(',')) {
-                // Activate secret mode
-                document.body.style.animation = 'gradientShift 2s infinite';
-                document.body.style.background = 'linear-gradient(45deg, #ff0000, #00ff00, #0000ff, #ffff00)';
-                document.body.style.backgroundSize = '400% 400%';
-                
-                setTimeout(() => {
-                    document.body.style.animation = '';
-                    document.body.style.background = 'linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%)';
-                }, 3000);
-                
-                konamiCode = [];
-            }
-        });
     </script>
 </body>
 </html>

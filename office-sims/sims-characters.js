@@ -13,19 +13,19 @@
 // ── Name resolvers (graceful fallback) ─────────────────
 
 function resolveSims(canonicalId, field) {
-    if (window.FleetKitNames) return FleetKitNames.resolve('sims', canonicalId, field);
+    if (window.SpawnKitNames) return SpawnKitNames.resolve('sims', canonicalId, field);
     const fb = { hunter: 'Hunter', forge: 'Forge', echo: 'Echo', atlas: 'Atlas', sentinel: 'Sentinel' };
     if (field === 'title') return (fb[canonicalId] || canonicalId);
     return fb[canonicalId] || canonicalId;
 }
 
 function resolveSimsObject(objectId) {
-    if (window.FleetKitNames) return FleetKitNames.resolveObject('sims', objectId);
+    if (window.SpawnKitNames) return SpawnKitNames.resolveObject('sims', objectId);
     return objectId;
 }
 
 function getSimsSubAgentName(index) {
-    if (window.FleetKitNames) return FleetKitNames.getSubAgentName('sims', index);
+    if (window.SpawnKitNames) return SpawnKitNames.getSubAgentName('sims', index);
     return `Intern #${index + 1}`;
 }
 
@@ -241,7 +241,21 @@ class SimsCharacter {
     }
 
     _createNameLabel() {
-        this.nameLabel = new PIXI.Text(this.title, {
+        // Use Agent OS naming if available, fallback to title
+        let displayName = this.title;
+        
+        // Check if this character has an associated subagent with Agent OS name
+        if (this.agentOSName && window.AgentOSNaming) {
+            displayName = window.AgentOSNaming.displayName(this.agentOSName, 'full');
+        } else if (this.role && this.canonicalId) {
+            // Try to construct full name for main agents (Parent.Role-01 format)
+            const parentMap = { hunter: 'Hunter', forge: 'Forge', echo: 'Echo', atlas: 'Atlas', sentinel: 'Sentinel', main: 'Main' };
+            const parent = parentMap[this.canonicalId] || this.canonicalId;
+            const roleAbbrev = this.role === 'CTO' ? 'CodeBuilder' : this.role === 'CRO' ? 'Researcher' : this.role === 'CMO' ? 'ContentCreator' : this.role === 'COO' ? 'OpsRunner' : this.role === 'CEO' ? 'Coordinator' : 'TaskRunner';
+            displayName = `${parent}.${roleAbbrev}-01`;
+        }
+        
+        this.nameLabel = new PIXI.Text(displayName, {
             fontFamily: '"Trebuchet MS", "Lucida Sans", sans-serif',
             fontSize: 8,
             fill: 0x2a2a2a,
@@ -256,6 +270,15 @@ class SimsCharacter {
 
     _createPlumbob() {
         this.plumbob = new Plumbob();
+        
+        // Set plumbob color based on model identity
+        if (this.model && window.ModelIdentity) {
+            const modelIdentity = window.ModelIdentity.getIdentity(this.model);
+            if (modelIdentity.color) {
+                this.plumbob.setColor(parseInt(modelIdentity.color.replace('#', '0x'), 16));
+            }
+        }
+        
         this.plumbob.container.y = -32;
         this.container.addChild(this.plumbob.container);
     }
@@ -284,6 +307,10 @@ class SimsCharacter {
                 const fp = this.officeMap?.locations?.fileCabinets;
                 if (fp) this.moveTo(fp.x, fp.y);
                 break;
+            case 'checking_inbox':
+                const mb = this.officeMap?.locations?.mailbox;
+                if (mb) this.moveTo(mb.x, mb.y);
+                break;
             case 'at_whiteboard':
                 const wb = this.officeMap?.locations?.missionBoard;
                 if (wb) this.moveTo(wb.x + (Math.random() - 0.5), wb.y + 1);
@@ -303,10 +330,11 @@ class SimsCharacter {
 
     changeState() {
         const weights = {
-            working_at_desk: { going_to_meeting: 2, getting_coffee: 2, thinking: 2, chatting: 1, searching_files: 1, working_at_desk: 1 },
+            working_at_desk: { going_to_meeting: 2, getting_coffee: 2, thinking: 2, chatting: 1, searching_files: 1, checking_inbox: 1, working_at_desk: 1 },
             going_to_meeting: { working_at_desk: 4, getting_coffee: 1 },
             getting_coffee:  { working_at_desk: 3, chatting: 2, thinking: 1 },
             searching_files: { working_at_desk: 4, thinking: 1 },
+            checking_inbox:  { working_at_desk: 4, chatting: 1 },
             thinking:        { working_at_desk: 4, going_to_meeting: 1, getting_coffee: 1 },
             chatting:        { working_at_desk: 3, getting_coffee: 1 },
             celebrating:     { working_at_desk: 5 },
@@ -464,6 +492,9 @@ class SimsCharacter {
                 color = 0x88ff00; break;
             case 'getting_coffee':
                 color = 0xcccc00; break;
+            case 'searching_files':
+            case 'checking_inbox':
+                color = 0x44ff44; break;
             case 'celebrating':
                 color = 0x00ff88; break;
         }
@@ -587,6 +618,65 @@ class SimsCharacterManager {
         this.subAgents.push(stagiaire);
         this.container.addChild(stagiaire.container);
         return stagiaire;
+    }
+    
+    // ── Agent OS Integration Methods ───────────────────────────
+    updateAgentOSNames(spawnKitData) {
+        if (!spawnKitData || !window.AgentOSNaming) return;
+        
+        // Update subagents with Agent OS names
+        if (spawnKitData.subagents) {
+            spawnKitData.subagents.forEach(subagent => {
+                const character = this.findCharacterByName(subagent.name) || 
+                                this.findCharacterById(subagent.id);
+                
+                if (character && subagent.agentOSName) {
+                    character.agentOSName = subagent.agentOSName;
+                    character.model = subagent.model;
+                    // Recreate name label with new Agent OS name
+                    if (character.nameLabel) {
+                        character.container.removeChild(character.nameLabel);
+                        character._createNameLabel();
+                    }
+                    // Update plumbob color based on model identity
+                    if (subagent.model && character.plumbob) {
+                        const modelIdentity = window.ModelIdentity.getIdentity(subagent.model);
+                        if (modelIdentity.color) {
+                            character.plumbob.setColor(parseInt(modelIdentity.color.replace('#', '0x'), 16));
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Update main agents with model identities
+        if (spawnKitData.agents) {
+            spawnKitData.agents.forEach(agent => {
+                const character = this.findCharacterByRole(agent.role) || 
+                                this.findCharacterByName(agent.name);
+                
+                if (character && agent.model) {
+                    character.model = agent.model;
+                    // Recreate name label with Agent OS format
+                    if (character.nameLabel) {
+                        character.container.removeChild(character.nameLabel);
+                        character._createNameLabel();
+                    }
+                    // Update plumbob color based on model identity
+                    if (character.plumbob) {
+                        const modelIdentity = window.ModelIdentity.getIdentity(agent.model);
+                        if (modelIdentity.color) {
+                            character.plumbob.setColor(parseInt(modelIdentity.color.replace('#', '0x'), 16));
+                        }
+                    }
+                }
+            });
+        }
+    }
+    
+    findCharacterById(id) {
+        return this.characters.find(char => char.id === id) || 
+               this.subAgents.find(sub => sub.subagentId === id);
     }
 }
 

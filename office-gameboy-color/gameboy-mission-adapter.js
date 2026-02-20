@@ -55,22 +55,22 @@
     }
   };
 
-  // ─── Sub-agent name pool (Pokémon trainers via FleetKitNames) ──
+  // ─── Sub-agent name pool (Pokémon trainers via SpawnKitNames) ──
   let stagiaireCounter = 0;
   
   function getSubAgentDisplayName(index) {
-    if (window.FleetKitNames) return FleetKitNames.getSubAgentName('gameboy', index);
+    if (window.SpawnKitNames) return SpawnKitNames.getSubAgentName('gameboy', index);
     const fallback = ['ROOKIE #1', 'YOUNGSTER #1', 'BUG CATCHER #1'];
     return fallback[index % fallback.length];
   }
   
   function resolveObjectName(objectId) {
-    if (window.FleetKitNames) return FleetKitNames.resolveObject('gameboy', objectId);
+    if (window.SpawnKitNames) return SpawnKitNames.resolveObject('gameboy', objectId);
     return objectId;
   }
   
   function resolveAgentName(canonicalId, field) {
-    if (window.FleetKitNames) return FleetKitNames.resolve('gameboy-color', canonicalId, field);
+    if (window.SpawnKitNames) return SpawnKitNames.resolve('gameboy-color', canonicalId, field);
     const fallback = { hunter: 'TRADER', forge: 'HACKER', echo: 'BARD', atlas: 'SCRIBE', sentinel: 'WATCHER' };
     return fallback[canonicalId] || canonicalId;
   }

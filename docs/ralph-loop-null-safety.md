@@ -1,4 +1,4 @@
-# RALPH LOOP: Null-Safety Hardening — FleetKit-v2
+# RALPH LOOP: Null-Safety Hardening — SpawnKit-v2
 
 **Status:** ✅ Complete  
 **Date:** 2026-02-20  
@@ -36,17 +36,17 @@
 - `key.toUpperCase()` → `(key || '').toUpperCase()` (triggerKey keyboard dispatch)
 - `window.gameboyOffice.stateBridge?...` → `window.gameboyOffice?.stateBridge?...` (missing first optional chain)
 - `window.gameboyOffice.triggerMeeting()` → `window.gameboyOffice?.triggerMeeting?.()` (could be undefined)
-- `FleetKit.data.agents.find(...)` → `(FleetKit.data.agents || []).find(...)` (agents could be undefined)
+- `SpawnKit.data.agents.find(...)` → `(SpawnKit.data.agents || []).find(...)` (agents could be undefined)
 
 **data-bridge.js (6 fixes)**
-- `FleetKit.data.agents.forEach(...)` → `(FleetKit.data?.agents || []).forEach(...)` (demo refresh)
+- `SpawnKit.data.agents.forEach(...)` → `(SpawnKit.data?.agents || []).forEach(...)` (demo refresh)
 - `agent.tokensUsed += ...` → `agent.tokensUsed = (agent.tokensUsed || 0) + ...` (property init safety)
-- `FleetKit.data.metrics.tokensToday += ...` → guarded with `if (FleetKit.data?.metrics)`
-- `FleetKit.data.agents.concat(FleetKit.data.subagents)` → both guarded with `|| []`
-- `FleetKit.data.agents.find(a => a.id...)` → `(FleetKit.data?.agents || []).find(a => a?.id...)`
-- `FleetKit.data.missions.push(...)` → added null-init `if (!FleetKit.data.missions) FleetKit.data.missions = [];`
-- `FleetKit.data.crons` → `FleetKit.data?.crons || []`
-- `FleetKit.data.memory` → `FleetKit.data?.memory || null`
+- `SpawnKit.data.metrics.tokensToday += ...` → guarded with `if (SpawnKit.data?.metrics)`
+- `SpawnKit.data.agents.concat(SpawnKit.data.subagents)` → both guarded with `|| []`
+- `SpawnKit.data.agents.find(a => a.id...)` → `(SpawnKit.data?.agents || []).find(a => a?.id...)`
+- `SpawnKit.data.missions.push(...)` → added null-init `if (!SpawnKit.data.missions) SpawnKit.data.missions = [];`
+- `SpawnKit.data.crons` → `SpawnKit.data?.crons || []`
+- `SpawnKit.data.memory` → `SpawnKit.data?.memory || null`
 
 ### Iteration 2: Files 5-7
 
@@ -58,8 +58,8 @@
 - `this._theme.getCharacterPosition(charId)` → `this._theme?.getCharacterPosition(charId)` (4 similar methods)
 
 **openclaw-helpers.js (3 fixes)**
-- `FleetKit.data.agents.find(...)` → `(FleetKit.data?.agents || []).find(...)`
-- `FleetKit.data.missions.filter(...)` → `(FleetKit.data?.missions || []).filter(...)`
+- `SpawnKit.data.agents.find(...)` → `(SpawnKit.data?.agents || []).find(...)`
+- `SpawnKit.data.missions.filter(...)` → `(SpawnKit.data?.missions || []).filter(...)`
 - `fuzzyMatch` — added `if (!text) return false;` guard before `.toLowerCase()`
 
 **sprites.js (2 fixes)**

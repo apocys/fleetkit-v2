@@ -1,4 +1,4 @@
-# FleetKit Launch Kit — Ready to Copy & Paste
+# SpawnKit Launch Kit — Ready to Copy & Paste
 
 ## 🐦 Twitter/X Threads
 
@@ -14,7 +14,7 @@ Three themes: GameBoy 🎮, Cyberpunk ⚡, Executive 👔
 
 $149 once. No subscriptions. Forever.
 
-→ fleetkit.dev
+→ spawnkit.dev
 
 🧵 1/7
 ```
@@ -32,7 +32,7 @@ I thought: what if managing AI agents felt like playing a game?
 ```
 
 ```
-So I built FleetKit.
+So I built SpawnKit.
 
 Your agents get pixel art sprites, names, roles, speech bubbles.
 
@@ -94,7 +94,7 @@ The numbers:
 
 $149. Once. Own it forever.
 
-fleetkit.dev
+spawnkit.dev
 
 🧵 7/7
 ```
@@ -106,29 +106,29 @@ fleetkit.dev
 ### r/SideProject
 **Title:** I built a virtual pixel office for AI agents — $149, no subscriptions
 
-I run a fleet of AI agents that work 24/7. Managing them through terminals and JSON was painful. So I built FleetKit — a visual office where you watch your agents work, assign missions, and earn achievements.
+I run a fleet of AI agents that work 24/7. Managing them through terminals and JSON was painful. So I built SpawnKit — a visual office where you watch your agents work, assign missions, and earn achievements.
 
 Three themes: GameBoy (pixel RPG), Cyberpunk (neon terminals), Executive (KPI boardroom).
 
 32,000+ lines of handcrafted code. Real data integration via Electron. $149 one-time, no subscriptions.
 
-[Demo](https://apocys.github.io/fleetkit-v2/) | [Download](https://github.com/apocys/fleetkit-v2/releases/tag/v2.0.0)
+[Demo](https://apocys.github.io/spawnkit-v2/) | [Download](https://github.com/apocys/spawnkit-v2/releases/tag/v2.0.0)
 
 Would love your feedback!
 
 ### r/ChatGPT / r/ArtificialIntelligence
 **Title:** What if managing AI agents felt like playing Pokémon?
 
-FleetKit is a virtual office for your AI agents. Instead of terminal logs, you get pixel art characters working at desks, completing quests, and leveling up.
+SpawnKit is a virtual office for your AI agents. Instead of terminal logs, you get pixel art characters working at desks, completing quests, and leveling up.
 
 Three themes, 15 achievements, chiptune sounds, and a Spotlight-style command palette.
 
 Works with OpenClaw and multi-agent systems. $149, no subscriptions.
 
-[Try the demo](https://apocys.github.io/fleetkit-v2/)
+[Try the demo](https://apocys.github.io/spawnkit-v2/)
 
 ### r/IndieHacking
-**Title:** After 3 days of obsessive building, I shipped FleetKit — a virtual office for AI agents ($149, no subscriptions)
+**Title:** After 3 days of obsessive building, I shipped SpawnKit — a virtual office for AI agents ($149, no subscriptions)
 
 The story: I run 5 AI agents 24/7. They're incredible workers. But managing them through Slack pings and terminal logs? Boring as hell.
 
@@ -154,21 +154,21 @@ Feedback welcome!
 
 ## 📧 Hacker News
 
-**Title:** Show HN: FleetKit – A pixel art virtual office for AI agents ($149, no subscription)
+**Title:** Show HN: SpawnKit – A pixel art virtual office for AI agents ($149, no subscription)
 
-**URL:** https://apocys.github.io/fleetkit-v2/
+**URL:** https://apocys.github.io/spawnkit-v2/
 
 **Comment:**
-Hi HN. I built FleetKit because managing AI agents through terminals is boring.
+Hi HN. I built SpawnKit because managing AI agents through terminals is boring.
 
-FleetKit gives your AI agents a visual office — three themes (GameBoy pixel RPG, Cyberpunk neon terminals, Executive boardroom), a command palette, and 15 achievements.
+SpawnKit gives your AI agents a visual office — three themes (GameBoy pixel RPG, Cyberpunk neon terminals, Executive boardroom), a command palette, and 15 achievements.
 
 It's a desktop Electron app that reads real data from OpenClaw (or shows demo data in the browser). 32K lines of vanilla JS, no frameworks, no external dependencies for audio or sprites.
 
 I went counter-trend with pricing: $149 one-time instead of yet another subscription. The bet is that people are tired of monthly charges and will pay more upfront.
 
-Code: https://github.com/apocys/fleetkit-v2
-Demo: https://apocys.github.io/fleetkit-v2/demo.html
+Code: https://github.com/apocys/spawnkit-v2
+Demo: https://apocys.github.io/spawnkit-v2/demo.html
 
 Feedback welcome.
 
@@ -176,7 +176,7 @@ Feedback welcome.
 
 ## 📊 Indie Hackers
 
-**Title:** Day 1: Launched FleetKit — a visual office for AI agents
+**Title:** Day 1: Launched SpawnKit — a visual office for AI agents
 
 **Body:**
 - Built in 3 days of obsessive "cathedral" building
@@ -186,6 +186,6 @@ Feedback welcome.
 - Stack: Vanilla JS, Electron, Web Audio API, Canvas2D
 - No frameworks. No external dependencies for audio/sprites.
 
-Link: fleetkit.dev
+Link: spawnkit.dev
 
 Revenue: $0 (just launched)

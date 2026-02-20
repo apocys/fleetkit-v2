@@ -1,4 +1,4 @@
-// GameBoy Color Map - Retro-styled isometric layout for FleetKit Virtual Office
+// GameBoy Color Map - Retro-styled isometric layout for SpawnKit Virtual Office
 // Full color edition — warm navy/teal/gold palette
 
 class GameBoyOfficeMap {
@@ -33,9 +33,9 @@ class GameBoyOfficeMap {
             files:        0xA0A0B0,  // File cabinets — silver
         };
         
-        // Define locations using Pokémon universe names (via FleetKitNames)
-        const _obj = (id) => window.FleetKitNames ? FleetKitNames.resolveObject('gameboy', id) : id;
-        const _name = (id) => window.FleetKitNames ? FleetKitNames.resolve('gameboy-color', id, 'title') : id;
+        // Define locations using Pokémon universe names (via SpawnKitNames)
+        const _obj = (id) => window.SpawnKitNames ? SpawnKitNames.resolveObject('gameboy', id) : id;
+        const _name = (id) => window.SpawnKitNames ? SpawnKitNames.resolve('gameboy-color', id, 'title') : id;
         
         this.locations = {
             // Agent desks (Pokémon trainer stations)

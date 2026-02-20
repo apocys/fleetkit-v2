@@ -1,13 +1,13 @@
 // GameBoy Color Characters - Pokémon-universe AI agents for the virtual office
 // Full color edition — each agent has a DISTINCT color!
-// Wired to FleetKitNames for universe-consistent naming
+// Wired to SpawnKitNames for universe-consistent naming
 
 /**
- * Graceful name resolver — falls back to canonical names if FleetKitNames unavailable
+ * Graceful name resolver — falls back to canonical names if SpawnKitNames unavailable
  */
 function resolveGB(canonicalId, field) {
-    if (window.FleetKitNames) {
-        return FleetKitNames.resolve('gameboy-color', canonicalId, field);
+    if (window.SpawnKitNames) {
+        return SpawnKitNames.resolve('gameboy-color', canonicalId, field);
     }
     // Graceful fallback
     const fallback = { hunter: 'Hunter', forge: 'Forge', echo: 'Echo', atlas: 'Atlas', sentinel: 'Sentinel' };
@@ -16,12 +16,12 @@ function resolveGB(canonicalId, field) {
 }
 
 function resolveGBObject(objectId) {
-    if (window.FleetKitNames) return FleetKitNames.resolveObject('gameboy', objectId);
+    if (window.SpawnKitNames) return SpawnKitNames.resolveObject('gameboy', objectId);
     return objectId;
 }
 
 function getGBSubAgentName(index) {
-    if (window.FleetKitNames) return FleetKitNames.getSubAgentName('gameboy', index);
+    if (window.SpawnKitNames) return SpawnKitNames.getSubAgentName('gameboy', index);
     return `Sub-Agent #${index + 1}`;
 }
 
@@ -66,7 +66,7 @@ const GBC_CSS = {
 class GameBoyCharacter {
     constructor(canonicalId, role, emoji, color, homeDesk, officeMap) {
         this.canonicalId = canonicalId;
-        // Resolve Pokémon names from FleetKitNames
+        // Resolve Pokémon names from SpawnKitNames
         this.name = resolveGB(canonicalId, 'name');
         this.title = resolveGB(canonicalId, 'title');
         this.role = role;
@@ -126,7 +126,7 @@ class GameBoyCharacter {
     }
     
     createGameBoySprite() {
-        if (window.FleetKitSprites && this.canUsePixelSprites()) {
+        if (window.SpawnKitSprites && this.canUsePixelSprites()) {
             this.createPixelSprite();
         } else {
             this.createGraphicsSprite();
@@ -135,7 +135,7 @@ class GameBoyCharacter {
     
     canUsePixelSprites() {
         const spriteId = this.getSpriteCharacterId();
-        return spriteId && window.FleetKitSprites.characters[spriteId];
+        return spriteId && window.SpawnKitSprites.characters[spriteId];
     }
     
     getSpriteCharacterId() {
@@ -159,7 +159,7 @@ class GameBoyCharacter {
         const ctx = canvas.getContext('2d', { willReadFrequently: true });
         const spriteId = this.getSpriteCharacterId();
         const frameName = this.getFrameNameForState();
-        FleetKitSprites.renderFrame(ctx, spriteId, frameName, 0, 0, pixelSize);
+        SpawnKitSprites.renderFrame(ctx, spriteId, frameName, 0, 0, pixelSize);
         this.applyGBCTint(ctx, canvas.width, canvas.height);
         const texture = PIXI.Texture.from(canvas);
         this.sprite = new PIXI.Sprite(texture);
@@ -248,12 +248,12 @@ class GameBoyCharacter {
     }
     
     updateSpriteFrame() {
-        if (this.spriteCanvas && this.spriteContext && window.FleetKitSprites) {
+        if (this.spriteCanvas && this.spriteContext && window.SpawnKitSprites) {
             const newFrame = this.getFrameNameForState();
             if (newFrame !== this.currentFrame) {
                 this.spriteContext.clearRect(0, 0, this.spriteCanvas.width, this.spriteCanvas.height);
                 const spriteId = this.getSpriteCharacterId();
-                FleetKitSprites.renderFrame(this.spriteContext, spriteId, newFrame, 0, 0, 2);
+                SpawnKitSprites.renderFrame(this.spriteContext, spriteId, newFrame, 0, 0, 2);
                 this.applyGBCTint(this.spriteContext, this.spriteCanvas.width, this.spriteCanvas.height);
                 this.sprite.texture.update();
                 this.currentFrame = newFrame;

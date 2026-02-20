@@ -3,51 +3,52 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FleetKit — Setup Wizard</title>
+  <title>SpawnKit — Setup Wizard</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     /* ═══════════════════════════════════════════
-       FleetKit Setup Wizard — Embedded Styles
+       SpawnKit Setup Wizard — Embedded Styles
        ═══════════════════════════════════════════ */
 
     :root {
-      --accent: #6366f1;
-      --accent-hover: #5855eb;
-      --accent-light: rgba(99, 102, 241, 0.1);
-      --accent-glow: rgba(99, 102, 241, 0.25);
-      --bg-primary: #0f0f0f;
-      --bg-secondary: #1a1a1a;
-      --bg-tertiary: #262626;
-      --bg-elevated: #2a2a2a;
-      --text-primary: #ffffff;
-      --text-secondary: #a3a3a3;
-      --text-muted: #737373;
-      --border: #404040;
-      --border-light: #525252;
-      --success: #10b981;
-      --success-bg: rgba(16, 185, 129, 0.1);
-      --error: #ef4444;
-      --error-bg: rgba(239, 68, 68, 0.1);
-      --warning: #f59e0b;
-      --warning-bg: rgba(245, 158, 11, 0.1);
-      --radius: 8px;
-      --radius-sm: 4px;
-      --radius-lg: 12px;
-      --radius-xl: 16px;
-      --shadow-sm: 0 2px 8px rgba(0,0,0,0.2);
-      --shadow-md: 0 8px 25px rgba(0,0,0,0.3);
-      --shadow-lg: 0 16px 48px rgba(0,0,0,0.4);
+      --accent: #007AFF;
+      --accent-hover: #0066D6;
+      --accent-light: rgba(0, 122, 255, 0.08);
+      --accent-glow: rgba(0, 122, 255, 0.2);
+      --bg-primary: #F2F2F7;
+      --bg-secondary: #FFFFFF;
+      --bg-tertiary: #E5E5EA;
+      --bg-elevated: #FFFFFF;
+      --text-primary: #1C1C1E;
+      --text-secondary: #3C3C43;
+      --text-muted: #8E8E93;
+      --border: rgba(60, 60, 67, 0.12);
+      --border-light: rgba(60, 60, 67, 0.08);
+      --success: #34C759;
+      --success-bg: rgba(52, 199, 89, 0.1);
+      --error: #FF3B30;
+      --error-bg: rgba(255, 59, 48, 0.1);
+      --warning: #FF9500;
+      --warning-bg: rgba(255, 149, 0, 0.1);
+      --radius: 12px;
+      --radius-sm: 8px;
+      --radius-lg: 16px;
+      --radius-xl: 20px;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 2px 8px rgba(0,0,0,0.04);
+      --shadow-md: 0 4px 12px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.04);
+      --shadow-lg: 0 8px 24px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.04);
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', sans-serif;
       background: var(--bg-primary);
       color: var(--text-primary);
-      line-height: 1.6;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
       -webkit-app-region: drag;
       overflow-x: hidden;
       min-height: 100vh;
@@ -76,10 +77,10 @@
     .logo {
       font-size: 2rem;
       font-weight: 800;
-      background: linear-gradient(135deg, var(--accent), #8b5cf6);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
+      color: var(--accent);
+      -webkit-background-clip: initial;
+      -webkit-text-fill-color: initial;
+      background-clip: initial;
       margin-bottom: 0.25rem;
     }
 
@@ -822,7 +823,7 @@
 
     <!-- Header -->
     <div class="wizard-header">
-      <div class="logo">FleetKit</div>
+      <div class="logo">SpawnKit</div>
       <div class="logo-subtitle">Your AI Executive Team</div>
     </div>
 
@@ -845,7 +846,7 @@
          ═══════════════════════════════════════ -->
     <div class="step active" id="step1" data-step="1">
       <h2 class="step-title">Let's find your workspace</h2>
-      <p class="step-subtitle">FleetKit needs a place to save your team's work. We'll try to find it automatically.</p>
+      <p class="step-subtitle">SpawnKit needs a place to save your team's work. We'll try to find it automatically.</p>
 
       <div id="workspaceDetecting" style="text-align:center; padding: 2rem 0;">
         <div class="spinner" style="width:24px; height:24px; margin: 0 auto 0.75rem;"></div>
@@ -885,7 +886,7 @@
                     aria-label="Browse for folder">📂 Browse</button>
           </div>
           <div class="form-help" id="pathHelp">
-            This is where FleetKit stores your AI team's files. Usually <code>~/.openclaw/workspace</code>
+            This is where SpawnKit stores your AI team's files. Usually <code>~/.openclaw/workspace</code>
           </div>
         </div>
       </div>
@@ -905,7 +906,7 @@
          ═══════════════════════════════════════ -->
     <div class="step" id="step2" data-step="2">
       <h2 class="step-title">Connect your AI brain</h2>
-      <p class="step-subtitle">FleetKit needs an AI provider to power your executive team. Choose how to connect:</p>
+      <p class="step-subtitle">SpawnKit needs an AI provider to power your executive team. Choose how to connect:</p>
 
       <!-- Option A: I have an API key -->
       <div class="option-card" id="optionApiKey" tabindex="0" role="button" aria-pressed="false">
@@ -917,7 +918,7 @@
               <span class="tooltip-trigger" tabindex="0">
                 <span class="tooltip-icon">?</span>
                 <span class="tooltip-content">
-                  An API key is like a password that lets FleetKit talk to an AI service. You get one when you sign up with a provider like Anthropic or OpenAI. It's free to start.
+                  An API key is like a password that lets SpawnKit talk to an AI service. You get one when you sign up with a provider like Anthropic or OpenAI. It's free to start.
                 </span>
               </span>
             </div>
@@ -1063,7 +1064,7 @@
 
       <div class="theme-grid">
         <!-- GameBoy -->
-        <div class="theme-card selected" data-theme="gameboy" tabindex="0" role="radio" aria-checked="true">
+        <div class="theme-card" data-theme="gameboy" tabindex="0" role="radio" aria-checked="false">
           <div class="theme-preview preview-gameboy">
             <div class="theme-selected-badge">SELECTED</div>
             <div class="preview-gameboy-inner">
@@ -1077,8 +1078,8 @@
           </div>
         </div>
 
-        <!-- Cyberpunk -->
-        <div class="theme-card" data-theme="cyberpunk" tabindex="0" role="radio" aria-checked="false">
+        <!-- Sims -->
+        <div class="theme-card" data-theme="sims" tabindex="0" role="radio" aria-checked="false">
           <div class="theme-preview preview-corporate">
             <div class="theme-selected-badge">SELECTED</div>
             <div class="preview-corporate-inner">
@@ -1089,13 +1090,13 @@
             </div>
           </div>
           <div class="theme-info">
-            <div class="theme-name">🌃 Cyberpunk</div>
-            <div class="theme-desc">Neon terminals, hacker aesthetic</div>
+            <div class="theme-name">🏠 Sims</div>
+            <div class="theme-desc">Cozy virtual office life</div>
           </div>
         </div>
 
         <!-- Executive -->
-        <div class="theme-card" data-theme="executive" tabindex="0" role="radio" aria-checked="false">
+        <div class="theme-card selected" data-theme="executive" tabindex="0" role="radio" aria-checked="true">
           <div class="theme-preview preview-retro">
             <div class="theme-selected-badge">SELECTED</div>
             <div class="preview-retro-inner" style="background: linear-gradient(135deg, #1a1a2e, #16213e);">
@@ -1112,7 +1113,7 @@
       <div class="btn-row">
         <button class="btn btn-ghost" id="btnStep4Back">← Back</button>
         <div class="btn-row-right">
-          <button class="btn btn-primary" id="btnFinish">Launch FleetKit 🚀</button>
+          <button class="btn btn-primary" id="btnFinish">Launch SpawnKit 🚀</button>
         </div>
       </div>
     </div>
@@ -1151,7 +1152,7 @@
 
   <script>
     /* ═══════════════════════════════════════════════════
-       FleetKit Setup Wizard — Logic
+       SpawnKit Setup Wizard — Logic
        ═══════════════════════════════════════════════════ */
 
     // ── State ───────────────────────────────────────
@@ -1162,7 +1163,7 @@
       aiProvider: null,       // 'apiKey' | 'openclaw' | 'skip'
       apiKey: null,
       providerName: null,     // e.g. 'Anthropic (Claude)'
-      theme: 'gameboy',
+      theme: 'executive',
       demoMode: false,
       openclawConfigFound: false
     };
@@ -1493,9 +1494,9 @@
 
       const themeNames = {
         gameboy: '🎮 GameBoy',
-        corporate: '🏢 Corporate',
-        retro: '🌈 Retro Neon',
-        minimal: '✨ Minimal'
+        sims: '🏠 Sims',
+        executive: '🏢 Executive',
+        
       };
       $('#finishTheme').textContent = themeNames[state.theme] || state.theme;
 

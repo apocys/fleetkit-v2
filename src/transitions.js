@@ -1,5 +1,5 @@
 /**
- * FleetKit v2 — Smooth Page Transitions
+ * SpawnKit v2 — Smooth Page Transitions
  * ══════════════════════════════════════
  * 
  * When switching themes via the gear icon:
@@ -73,7 +73,7 @@
                 
                 body::after {
                     visibility: visible !important;
-                    content: "Nice try! AI agents can't be printed. 🤖\\A\\AThey exist in the digital realm only.\\A\\A— FleetKit v2";
+                    content: "Nice try! AI agents can't be printed. 🤖\\A\\AThey exist in the digital realm only.\\A\\A— SpawnKit v2";
                     position: fixed;
                     top: 50%;
                     left: 50%;
@@ -135,10 +135,10 @@
         const start = Date.now();
 
         function tryPatch() {
-            if (typeof global.switchTheme === 'function') {
-                const originalSwitch = global.switchTheme;
+            if (typeof window.switchTheme === 'function') {
+                const originalSwitch = window.switchTheme;
                 
-                global.switchTheme = function(themeId) {
+                window.switchTheme = function(themeId) {
                     const themes = {
                         gameboy:   '../office-gameboy/index.html',
                         cyberpunk: '../office-cyberpunk/index.html',
@@ -152,7 +152,7 @@
                     }
 
                     // Save preference
-                    localStorage.setItem('fleetkit-theme', themeId);
+                    localStorage.setItem('spawnkit-theme', themeId);
                     
                     // Fade out then navigate (boot param triggers boot sequence)
                     fadeOutAndNavigate(url + '?boot=true');
@@ -179,10 +179,10 @@
         const start = Date.now();
 
         function tryPatch() {
-            if (typeof global.selectTheme === 'function') {
-                const originalSelect = global.selectTheme;
+            if (typeof window.selectTheme === 'function') {
+                const originalSelect = window.selectTheme;
                 
-                global.selectTheme = function(themeId) {
+                window.selectTheme = function(themeId) {
                     const themes = {
                         gameboy:   '../office-gameboy/index.html',
                         cyberpunk: '../office-cyberpunk/index.html',
@@ -195,11 +195,11 @@
                         return;
                     }
 
-                    localStorage.setItem('fleetkit-theme', themeId);
+                    localStorage.setItem('spawnkit-theme', themeId);
                     
                     // Show loading state
-                    if (typeof global.showLoading === 'function') {
-                        global.showLoading('Loading ' + themeId + ' Office...');
+                    if (typeof window.showLoading === 'function') {
+                        window.showLoading('Loading ' + themeId + ' Office...');
                     }
                     
                     // Brief delay for loading animation, then fade out
@@ -226,9 +226,9 @@
 
     // ── Export ──────────────────────────────────────────────────────
 
-    if (!global.FleetKit) global.FleetKit = {};
+    if (!window.SpawnKit) window.SpawnKit = {};
 
-    global.FleetKit.transitions = {
+    window.SpawnKit.transitions = {
         init: init,
         fadeOut: fadeOutAndNavigate,
         fadeIn: fadeInOnLoad

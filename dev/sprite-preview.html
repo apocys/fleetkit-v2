@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>FleetKit v2 — Sprite Preview</title>
+    <title>SpawnKit v2 — Sprite Preview</title>
     <style>
         body { background: #111; color: #fff; font-family: monospace; padding: 20px; }
         h1 { color: #00ff41; }
@@ -14,7 +14,7 @@
     </style>
 </head>
 <body>
-    <h1>🎮 FleetKit v2 — Sprite Preview</h1>
+    <h1>🎮 SpawnKit v2 — Sprite Preview</h1>
     <p>All 5 characters × 8 animation frames @ 4x scale (64×64px)</p>
     <div id="preview"></div>
     
@@ -27,7 +27,7 @@
         const SCALE = 4;
         const SIZE = 16 * SCALE;
         
-        const chars = FleetKitSprites.getCharacterIds();
+        const chars = SpawnKitSprites.getCharacterIds();
         const labels = { hunter: '💰 Hunter (CRO)', forge: '🔧 Forge (CTO)', echo: '📢 Echo (CMO)', atlas: '📊 Atlas (COO)', sentinel: '🔍 Sentinel' };
         const frames = ['idle_1','idle_2','walk_right_1','walk_right_2','working_1','working_2','celebrating_1','celebrating_2'];
         
@@ -39,7 +39,7 @@
             
             const row = section.querySelector('.row');
             frames.forEach(frame => {
-                const charData = FleetKitSprites.characters[id];
+                const charData = SpawnKitSprites.characters[id];
                 if (!charData || !charData.frames[frame]) return;
                 
                 const wrapper = document.createElement('div');
@@ -49,7 +49,7 @@
                 canvas.style.width = SIZE + 'px';
                 canvas.style.height = SIZE + 'px';
                 const ctx = canvas.getContext('2d');
-                FleetKitSprites.renderFrame(ctx, id, frame, 0, 0, SCALE);
+                SpawnKitSprites.renderFrame(ctx, id, frame, 0, 0, SCALE);
                 wrapper.appendChild(canvas);
                 
                 const label = document.createElement('div');
@@ -63,7 +63,7 @@
         // All together
         const allCanvas = document.getElementById('allChars');
         const actx = allCanvas.getContext('2d');
-        FleetKitSprites.renderAll(actx, 'idle_1', SCALE, 10, 5, 15);
+        SpawnKitSprites.renderAll(actx, 'idle_1', SCALE, 10, 5, 15);
     </script>
 </body>
 </html>

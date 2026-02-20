@@ -34,22 +34,22 @@
     }
   };
 
-  // ─── Sub-agent name pool (Pokémon trainers via FleetKitNames) ──
+  // ─── Sub-agent name pool (Pokémon trainers via SpawnKitNames) ──
   let stagiaireCounter = 0;
   
   function getSubAgentDisplayName(index) {
-    if (window.FleetKitNames) return FleetKitNames.getSubAgentName('gameboy', index);
+    if (window.SpawnKitNames) return SpawnKitNames.getSubAgentName('gameboy', index);
     const fallback = ['ROOKIE #1', 'YOUNGSTER #1', 'BUG CATCHER #1'];
     return fallback[index % fallback.length];
   }
   
   function resolveObjectName(objectId) {
-    if (window.FleetKitNames) return FleetKitNames.resolveObject('gameboy', objectId);
+    if (window.SpawnKitNames) return SpawnKitNames.resolveObject('gameboy', objectId);
     return objectId;
   }
   
   function resolveAgentName(canonicalId, field) {
-    if (window.FleetKitNames) return FleetKitNames.resolve('gameboy', canonicalId, field);
+    if (window.SpawnKitNames) return SpawnKitNames.resolve('gameboy', canonicalId, field);
     const fallback = { hunter: 'TRADER', forge: 'HACKER', echo: 'BARD', atlas: 'SCRIBE', sentinel: 'WATCHER' };
     return fallback[canonicalId] || canonicalId;
   }
@@ -955,21 +955,34 @@
     });
 
     console.log('🎮 [MissionAdapter] ✅ GameBoy theme registered with MissionController!');
-    console.log('🎮 [MissionAdapter] Demo will start in 3 seconds...');
+    console.log('🎮 [MissionAdapter] Checking for live data...');
 
-    // Start demo mode automatically after a short delay
-    setTimeout(() => {
-      if (typeof MissionController !== 'undefined' && MissionController.demo) {
-        console.log('🎮 ═══════════════════════════════════════');
-        console.log('🎮  DEMO MODE — The Pokémon Moment! 🎮');
-        console.log('🎮 ═══════════════════════════════════════');
-        MissionController.demo({ loop: true, pauseBetween: 4000 });
+    // Start demo mode ONLY if no live data is available
+    setTimeout(async () => {
+      if (typeof MissionController === 'undefined' || !MissionController.demo) return;
+      
+      // Check if live data is available (Electron + OpenClaw installed)
+      let hasLiveData = false;
+      try {
+        if (window.spawnkitAPI && typeof window.spawnkitAPI.isAvailable === 'function') {
+          hasLiveData = await window.spawnkitAPI.isAvailable();
+        }
+      } catch (e) { /* not in Electron context */ }
+      
+      if (hasLiveData) {
+        console.log('🎮 [MissionAdapter] Live data detected — demo mode SKIPPED');
+        return;
       }
+      
+      console.log('🎮 ═══════════════════════════════════════');
+      console.log('🎮  DEMO MODE — No live data, showing showcase');
+      console.log('🎮 ═══════════════════════════════════════');
+      MissionController.demo({ loop: true, pauseBetween: 4000 });
     }, 3000);
   }
 
   // ── Expose globally ─────────────────────────────────────────────
-  global.initMissionAdapter = initMissionAdapter;
+  window.initMissionAdapter = initMissionAdapter;
 
   console.log('🎮 GameBoy Mission Adapter loaded — waiting for initMissionAdapter() call');
 

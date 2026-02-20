@@ -1,5 +1,5 @@
 /**
- * FleetKit v2 — Universal Mission Controller
+ * SpawnKit v2 — Universal Mission Controller
  * ═══════════════════════════════════════════
  * 
  * The Pokémon-style gameplay core. This module orchestrates ALL mission
@@ -10,16 +10,16 @@
  * you're on a Game Boy, GBA, or DS. The theme is just the renderer.
  * 
  * Events consumed:
- *   FleetKit.emit('mission:new', { text, assignedTo, priority })
- *   FleetKit.emit('cron:trigger', { name, schedule, owner })
- *   FleetKit.emit('subagent:spawn', { name, task, parentAgent })
- *   FleetKit.emit('subagent:complete', { id, result })
- *   FleetKit.emit('mission:progress', { missionId, progress, agent })
- *   FleetKit.emit('mission:complete', { missionId })
+ *   SpawnKit.emit('mission:new', { text, assignedTo, priority })
+ *   SpawnKit.emit('cron:trigger', { name, schedule, owner })
+ *   SpawnKit.emit('subagent:spawn', { name, task, parentAgent })
+ *   SpawnKit.emit('subagent:complete', { id, result })
+ *   SpawnKit.emit('mission:progress', { missionId, progress, agent })
+ *   SpawnKit.emit('mission:complete', { missionId })
  * 
  * Events emitted:
- *   FleetKit.emit('mc:phase', { missionId, phase, data })
- *   FleetKit.emit('mc:state', { state })
+ *   SpawnKit.emit('mc:phase', { missionId, phase, data })
+ *   SpawnKit.emit('mc:state', { state })
  * 
  * @author Forge (CTO)
  * @version 2.0.0
@@ -211,7 +211,7 @@
       this._theme = callbacks;
       this._log('Theme registered successfully');
 
-      // Auto-bind FleetKit events if not already done
+      // Auto-bind SpawnKit events if not already done
       if (!this._eventsBound) {
         this._bindEvents();
       }
@@ -228,20 +228,20 @@
 
     _bindEvents() {
       if (this._eventsBound) return;
-      if (typeof FleetKit === 'undefined' || !FleetKit?.on) {
-        this._log('FleetKit not available — skipping event binding');
+      if (typeof SpawnKit === 'undefined' || !SpawnKit?.on) {
+        this._log('SpawnKit not available — skipping event binding');
         return;
       }
 
-      FleetKit.on('mission:new', (data) => this.executeMission(data));
-      FleetKit.on('mission:progress', (data) => this._handleMissionProgress(data));
-      FleetKit.on('mission:complete', (data) => this._handleMissionComplete(data));
-      FleetKit.on('cron:trigger', (data) => this.triggerCron(data));
-      FleetKit.on('subagent:spawn', (data) => this.spawnSubAgent(data));
-      FleetKit.on('subagent:complete', (data) => this._handleSubAgentComplete(data));
+      SpawnKit.on('mission:new', (data) => this.executeMission(data));
+      SpawnKit.on('mission:progress', (data) => this._handleMissionProgress(data));
+      SpawnKit.on('mission:complete', (data) => this._handleMissionComplete(data));
+      SpawnKit.on('cron:trigger', (data) => this.triggerCron(data));
+      SpawnKit.on('subagent:spawn', (data) => this.spawnSubAgent(data));
+      SpawnKit.on('subagent:complete', (data) => this._handleSubAgentComplete(data));
 
       this._eventsBound = true;
-      this._log('FleetKit events bound');
+      this._log('SpawnKit events bound');
     },
 
     // ── Logging ───────────────────────────────────────────────────
@@ -254,14 +254,14 @@
 
     _emitPhase(missionId, phase, data) {
       this._log(`Phase: ${phase}`, data || '');
-      if (typeof FleetKit !== 'undefined' && FleetKit?.emit) {
-        FleetKit.emit('mc:phase', { missionId, phase, data });
+      if (typeof SpawnKit !== 'undefined' && SpawnKit?.emit) {
+        SpawnKit.emit('mc:phase', { missionId, phase, data });
       }
     },
 
     _emitState() {
-      if (typeof FleetKit !== 'undefined' && FleetKit?.emit) {
-        FleetKit.emit('mc:state', { state: this.getState() });
+      if (typeof SpawnKit !== 'undefined' && SpawnKit?.emit) {
+        SpawnKit.emit('mc:state', { state: this.getState() });
       }
     },
 
@@ -1066,7 +1066,7 @@
       const signal = this._demoAbort.signal;
 
       console.log('🎮 ═══════════════════════════════════════');
-      console.log('🎮  FLEETKIT MISSION CONTROLLER — DEMO');
+      console.log('🎮  SPAWNKIT MISSION CONTROLLER — DEMO');
       console.log('🎮  Press MissionController.stopDemo()');
       console.log('🎮 ═══════════════════════════════════════');
 
@@ -1075,7 +1075,7 @@
           // ── ACT 1: A mission arrives ──────────────────
           console.log('🎮 Act 1: Mission arrives...');
           await this.executeMission({
-            text: 'Build FleetKit v2 Dashboard',
+            text: 'Build SpawnKit v2 Dashboard',
             assignedTo: this._agents().slice(0, 3), // First 3 agents
             priority: 'high',
           });
@@ -1131,7 +1131,7 @@
           // ── ACT 4: Another mission → big celebration ──
           console.log('🎮 Act 4: Final mission — team celebration!');
           await this.executeMission({
-            text: 'Ship FleetKit v2 to Production 🚀',
+            text: 'Ship SpawnKit v2 to Production 🚀',
             assignedTo: this._agents(), // Everyone!
             priority: 'critical',
           });
@@ -1198,12 +1198,12 @@
   };
 
   // ── Expose globally ─────────────────────────────────────────────
-  global.MissionController = MissionController;
+  window.MissionController = MissionController;
 
-  // Auto-bind events when FleetKit is available
+  // Auto-bind events when SpawnKit is available
   if (typeof document !== 'undefined') {
     const tryBind = () => {
-      if (typeof FleetKit !== 'undefined' && FleetKit?.on) {
+      if (typeof SpawnKit !== 'undefined' && SpawnKit?.on) {
         MissionController._bindEvents();
       }
     };

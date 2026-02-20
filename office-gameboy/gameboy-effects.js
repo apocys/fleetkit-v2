@@ -1578,6 +1578,6 @@
   }
 
   // ─── Expose globally ────────────────────────────────────────────
-  global.GameBoyFX = GameBoyFX;
+  window.GameBoyFX = GameBoyFX;
 
 })(typeof window !== 'undefined' ? window : this);

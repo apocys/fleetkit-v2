@@ -1,8 +1,8 @@
 /**
- * FleetKit v2 — OpenClaw Integration Layer (Helpers)
+ * SpawnKit v2 — OpenClaw Integration Layer (Helpers)
  * ════════════════════════════════════════════════════
  *
- * Makes FleetKit feel like the BEST OpenClaw frontend ever.
+ * Makes SpawnKit feel like the BEST OpenClaw frontend ever.
  * Surfaces all OpenClaw power through beautiful, intuitive UX.
  *
  * Features:
@@ -13,7 +13,7 @@
  *   5. Contextual Tooltips — Hover help for all interactive elements
  *   6. Welcome Messages — Time-based greetings on load
  *
- * Dependencies: FleetKit (data-bridge.js), FleetKitNames (theme-names.js)
+ * Dependencies: SpawnKit (data-bridge.js), SpawnKitNames (theme-names.js)
  * Optional: MissionController (mission-controller.js)
  *
  * Pure JS, file:// compatible, no external dependencies.
@@ -1045,8 +1045,8 @@ window.OpenClawHelpers = (() => {
         e.preventDefault();
         closeQuickActions();
         // Trigger achievements/stats panel if available
-        if (typeof FleetKitAchievements !== 'undefined' && FleetKitAchievements.showStatsOverlay) {
-          FleetKitAchievements.showStatsOverlay();
+        if (typeof SpawnKitAchievements !== 'undefined' && SpawnKitAchievements.showStatsOverlay) {
+          SpawnKitAchievements.showStatsOverlay();
         }
       }
     });
@@ -1342,7 +1342,7 @@ window.OpenClawHelpers = (() => {
 
   function getAgentsForTheme() {
     const agentIds = ['hunter', 'forge', 'echo', 'atlas', 'sentinel'];
-    const names = window.FleetKitNames;
+    const names = window.SpawnKitNames;
 
     return agentIds.map(id => {
       const displayName = names?.resolve ? names.resolve(_theme, id) : id;
@@ -1410,9 +1410,9 @@ window.OpenClawHelpers = (() => {
     // Close form
     closeMissionForm();
 
-    // Fire mission via FleetKit event bus
-    if (typeof FleetKit !== 'undefined' && FleetKit?.emit) {
-      FleetKit.emit('mission:new', {
+    // Fire mission via SpawnKit event bus
+    if (typeof SpawnKit !== 'undefined' && SpawnKit?.emit) {
+      SpawnKit.emit('mission:new', {
         text: text,
         assignedTo: assignedTo,
         priority: _missionPriority === 'urgent' ? 'critical' : _missionPriority,
@@ -1438,7 +1438,7 @@ window.OpenClawHelpers = (() => {
   function buildAgentDetail(agent) {
     if (_agentDetailEl) _agentDetailEl.remove();
 
-    const names = window.FleetKitNames;
+    const names = window.SpawnKitNames;
     const themeInfo = names?.[_theme]?.[agent?.id] || null;
     const displayName = themeInfo?.name || agent?.name || 'Unknown';
     const roleTitle = themeInfo?.title || `${agent?.name || 'Unknown'}, ${agent?.role || 'Agent'}`;
@@ -1598,10 +1598,10 @@ window.OpenClawHelpers = (() => {
 
     let agent = agentIdOrObj;
 
-    // If given an ID string, look up in FleetKit.data
+    // If given an ID string, look up in SpawnKit.data
     if (typeof agentIdOrObj === 'string') {
-      if (typeof FleetKit !== 'undefined' && FleetKit?.data?.agents) {
-        agent = (FleetKit.data?.agents || []).find(a => a?.id === agentIdOrObj);
+      if (typeof SpawnKit !== 'undefined' && SpawnKit?.data?.agents) {
+        agent = (SpawnKit.data?.agents || []).find(a => a?.id === agentIdOrObj);
       }
       if (!agent) {
         agent = { id: agentIdOrObj, name: agentIdOrObj, role: 'Unknown', status: 'offline' };
@@ -1642,7 +1642,7 @@ window.OpenClawHelpers = (() => {
   function updateStatusBar() {
     if (!_statusBarEl) return;
 
-    const data = (typeof FleetKit !== 'undefined' && FleetKit?.data) ? FleetKit.data : null;
+    const data = (typeof SpawnKit !== 'undefined' && SpawnKit?.data) ? SpawnKit.data : null;
     if (!data) {
       _statusBarEl.innerHTML = '<span class="oc-status-segment">⏳ Loading team data...</span>';
       return;
@@ -1656,8 +1656,8 @@ window.OpenClawHelpers = (() => {
     // Get streak & rank from achievements
     let streakText = '';
     let rankText = '';
-    if (typeof FleetKitAchievements !== 'undefined') {
-      const stats = FleetKitAchievements?.getStats ? FleetKitAchievements.getStats() : null;
+    if (typeof SpawnKitAchievements !== 'undefined') {
+      const stats = SpawnKitAchievements?.getStats ? SpawnKitAchievements.getStats() : null;
       if (stats) {
         if (stats?.streak > 0) streakText = `🔥 ${stats.streak}-day streak`;
         if (stats?.rank) rankText = `${stats.rank?.icon || '💎'} ${stats.rank?.name || 'Diamond'}`;
@@ -1693,8 +1693,8 @@ window.OpenClawHelpers = (() => {
     if (rankText) {
       segments.push(makeStatusSep());
       segments.push(makeStatusSegment(rankText, () => {
-        if (typeof FleetKitAchievements !== 'undefined' && FleetKitAchievements.showStatsOverlay) {
-          FleetKitAchievements.showStatsOverlay();
+        if (typeof SpawnKitAchievements !== 'undefined' && SpawnKitAchievements.showStatsOverlay) {
+          SpawnKitAchievements.showStatsOverlay();
         }
       }));
     }
@@ -1799,7 +1799,7 @@ window.OpenClawHelpers = (() => {
     let msg = messages[Math.floor(Math.random() * messages.length)];
 
     // Replace placeholders
-    const data = (typeof FleetKit !== 'undefined' && FleetKit?.data) ? FleetKit.data : null;
+    const data = (typeof SpawnKit !== 'undefined' && SpawnKit?.data) ? SpawnKit.data : null;
     const pendingMissions = data?.missions
       ? data.missions.filter(m => m?.status === 'in_progress' || m?.status === 'pending').length
       : 0;
@@ -1856,8 +1856,8 @@ window.OpenClawHelpers = (() => {
     const body = document.createElement('div');
     body.className = 'oc-panel-body';
 
-    const agents = (typeof FleetKit !== 'undefined' && FleetKit?.data?.agents) ? FleetKit.data.agents : [];
-    const names = window.FleetKitNames;
+    const agents = (typeof SpawnKit !== 'undefined' && SpawnKit?.data?.agents) ? SpawnKit.data.agents : [];
+    const names = window.SpawnKitNames;
 
     if (agents.length === 0) {
       body.innerHTML = '<div style="text-align:center;padding:20px;opacity:0.6;">No team members found</div>';
@@ -1892,7 +1892,7 @@ window.OpenClawHelpers = (() => {
     }
 
     // Subagents section
-    const subagents = (typeof FleetKit !== 'undefined' && FleetKit?.data?.subagents) ? FleetKit.data.subagents : [];
+    const subagents = (typeof SpawnKit !== 'undefined' && SpawnKit?.data?.subagents) ? SpawnKit.data.subagents : [];
     if (subagents.length > 0) {
       const subLabel = document.createElement('div');
       subLabel.className = 'oc-section-label';
@@ -1962,7 +1962,7 @@ window.OpenClawHelpers = (() => {
     const body = document.createElement('div');
     body.className = 'oc-panel-body';
 
-    const missions = (typeof FleetKit !== 'undefined' && FleetKit?.data?.missions) ? FleetKit.data.missions : [];
+    const missions = (typeof SpawnKit !== 'undefined' && SpawnKit?.data?.missions) ? SpawnKit.data.missions : [];
 
     if (missions.length === 0) {
       body.innerHTML = '<div style="text-align:center;padding:20px;opacity:0.6;">No missions yet. Press X to create one!</div>';
@@ -2032,8 +2032,8 @@ window.OpenClawHelpers = (() => {
   function handleMemoryAction() {
     showToast('🧠 Checking team knowledge base...');
     // In real OpenClaw integration, this would read MEMORY.md
-    if (typeof FleetKit !== 'undefined' && FleetKit?.emit) {
-      FleetKit.emit('mission:new', {
+    if (typeof SpawnKit !== 'undefined' && SpawnKit?.emit) {
+      SpawnKit.emit('mission:new', {
         text: 'Review recent team knowledge and summarize key context',
         assignedTo: ['atlas'],
         priority: 'normal',
@@ -2048,8 +2048,8 @@ window.OpenClawHelpers = (() => {
 
   function handleEmailAction() {
     showToast('📧 Checking inbox...');
-    if (typeof FleetKit !== 'undefined' && FleetKit?.emit) {
-      FleetKit.emit('mission:new', {
+    if (typeof SpawnKit !== 'undefined' && SpawnKit?.emit) {
+      SpawnKit.emit('mission:new', {
         text: 'Check email inbox for urgent messages and upcoming calendar events',
         assignedTo: ['atlas'],
         priority: 'normal',
@@ -2138,8 +2138,8 @@ window.OpenClawHelpers = (() => {
   }
 
   function countAgentMissions(agentId) {
-    if (typeof FleetKit === 'undefined' || !FleetKit?.data?.missions) return 0;
-    return (FleetKit.data?.missions || []).filter(m => m?.assignedTo?.includes?.(agentId)).length;
+    if (typeof SpawnKit === 'undefined' || !SpawnKit?.data?.missions) return 0;
+    return (SpawnKit.data?.missions || []).filter(m => m?.assignedTo?.includes?.(agentId)).length;
   }
 
   // ══════════════════════════════════════════════════════════════
@@ -2237,13 +2237,13 @@ window.OpenClawHelpers = (() => {
         setTimeout(() => showWelcome(), 2000);
       }
 
-      // 6. Listen for FleetKit data updates to refresh status bar
-      if (typeof FleetKit !== 'undefined' && FleetKit?.on) {
-        FleetKit.on('data:refresh', () => updateStatusBar());
-        FleetKit.on('mission:new', () => {
+      // 6. Listen for SpawnKit data updates to refresh status bar
+      if (typeof SpawnKit !== 'undefined' && SpawnKit?.on) {
+        SpawnKit.on('data:refresh', () => updateStatusBar());
+        SpawnKit.on('mission:new', () => {
           setTimeout(updateStatusBar, 500);
         });
-        FleetKit.on('mission:complete', () => {
+        SpawnKit.on('mission:complete', () => {
           setTimeout(updateStatusBar, 500);
         });
       }
