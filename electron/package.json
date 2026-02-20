@@ -1,17 +1,18 @@
 {
-  "name": "fleetkit",
+  "name": "spawnkit",
   "version": "2.0.0",
-  "description": "Your AI team, visualized. Pokémon-style virtual office for AI agents.",
+  "description": "Your AI executive team, on your desktop. Manage agents in a beautiful virtual office.",
   "main": "main.js",
-  "author": "FleetKit Team <hello@fleetkit.dev>",
+  "author": "SpawnKit Team <hello@spawnkit.ai>",
   "license": "MIT",
-  "homepage": "https://fleetkit.dev",
+  "homepage": "https://spawnkit.ai",
   "scripts": {
     "start": "electron .",
     "build": "electron-builder",
-    "build:mac": "electron-builder --mac",
-    "build:win": "electron-builder --win",
-    "build:linux": "electron-builder --linux"
+    "build:mac": "bash prebuild.sh && electron-builder --mac",
+    "build:win": "bash prebuild.sh && electron-builder --win",
+    "build:linux": "bash prebuild.sh && electron-builder --linux",
+    "prebuild": "bash prebuild.sh"
   },
   "dependencies": {
     "electron-store": "^8.1.0"
@@ -21,20 +22,28 @@
     "electron-builder": "^25.0.0"
   },
   "build": {
-    "appId": "dev.fleetkit.app",
-    "productName": "FleetKit",
+    "appId": "ai.spawnkit.app",
+    "productName": "SpawnKit",
     "mac": {
       "category": "public.app-category.developer-tools",
       "icon": "assets/icon.icns",
-      "target": ["dmg", "zip"]
+      "target": [
+        "dmg",
+        "zip"
+      ]
     },
     "win": {
       "icon": "assets/icon.ico",
-      "target": ["nsis"]
+      "target": [
+        "nsis"
+      ]
     },
     "linux": {
       "icon": "assets/icon.png",
-      "target": ["AppImage", "deb"]
+      "target": [
+        "AppImage",
+        "deb"
+      ]
     },
     "files": [
       "main.js",
@@ -42,20 +51,31 @@
       "data-provider.js",
       "renderer/**",
       "assets/**",
-      "../src/**",
-      "../office-gameboy/**",
-      "../office-cyberpunk/**",
-      "../office-executive/**",
-      "../lib/**",
-      "../landing/**"
+      "office-executive/**",
+      "office-gameboy/**",
+      "office-gameboy-color/**",
+      "office-sims/**",
+      "office-simcity/**",
+      "src/**",
+      "lib/**",
+      "sprites/**",
+      "dashboard.html"
     ],
     "extraResources": [],
     "asar": true,
     "dmg": {
-      "title": "FleetKit ${version}",
+      "title": "SpawnKit ${version}",
       "contents": [
-        { "x": 130, "y": 220 },
-        { "x": 410, "y": 220, "type": "link", "path": "/Applications" }
+        {
+          "x": 130,
+          "y": 220
+        },
+        {
+          "x": 410,
+          "y": 220,
+          "type": "link",
+          "path": "/Applications"
+        }
       ]
     },
     "nsis": {
