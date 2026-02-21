@@ -2,12 +2,6 @@
 dist/
 node_modules/
 
-# Pre-build copies (originals live in parent dirs)
-office-executive/
-office-gameboy/
-office-gameboy-color/
-office-sims/
-src/
+# Pre-build copies
 lib/
 sprites/
-dashboard.html

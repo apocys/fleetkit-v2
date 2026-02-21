@@ -1,0 +1,98 @@
+{
+  "name": "spawnkit-gameboy-office",
+  "version": "2.0.0",
+  "description": "GameBoy-style virtual office with interactive mission mechanics for SpawnKit v2",
+  "main": "index.html",
+  "scripts": {
+    "start": "python3 -m http.server 8080",
+    "serve": "npx serve .",
+    "demo": "open index.html"
+  },
+  "files": [
+    "index.html",
+    "gameboy-office.js",
+    "gameboy-map.js", 
+    "gameboy-characters.js",
+    "gameboy-state-bridge.js",
+    "demo.js",
+    "README.md",
+    "COMPARISON.md"
+  ],
+  "keywords": [
+    "gameboy",
+    "retro",
+    "virtual-office", 
+    "pixi.js",
+    "pixel-art",
+    "mission-system",
+    "ai-agents"
+  ],
+  "author": "Echo (CMO) - SpawnKit Team",
+  "license": "MIT",
+  "dependencies": {
+    "pixi.js": "^8.6.1"
+  },
+  "devDependencies": {},
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/openclaw/spawnkit-v2"
+  },
+  "features": {
+    "visual_style": [
+      "GameBoy green monochrome palette",
+      "Chunky pixel borders (2-3px)",
+      "Dot matrix background texture", 
+      "4-shade dithering patterns",
+      "Press Start 2P pixel font",
+      "No anti-aliasing - crisp pixels"
+    ],
+    "mission_system": [
+      "CEO-led mission briefings at whiteboard",
+      "Team gathering with pathfinding animation",
+      "Task breakdown as floating text bubbles",
+      "Progress bars above workstations",
+      "Sub-agent spawning (stagiaire characters)",
+      "Document carrying between agents",
+      "Mission completion celebrations"
+    ],
+    "interactive_elements": [
+      "Mission Board - displays active tasks",
+      "Mailbox - flashes for heartbeat notifications",
+      "Phone/Alarm - rings for cron jobs",
+      "Coffee Station - animated steam effects",
+      "File Cabinets - for memory search activities",
+      "Click handlers for all elements"
+    ],
+    "character_enhancements": [
+      "Authentic GameBoy sprite design",
+      "Walk cycle with vertical bobbing",
+      "Working animation (desk bobbing)",
+      "Celebration bouncing animation",
+      "Contextual retro speech bubbles",
+      "Character-specific green palette colors"
+    ],
+    "gameboy_effects": [
+      "Subtle screen flicker every 2 seconds",
+      "Dot matrix overlay animation",
+      "Authentic startup sequence",
+      "Cheat code system (Konami, Matrix, Rainbow)",
+      "Save/load state management"
+    ]
+  },
+  "quality_bar": "Managing a team in a GameBoy RPG - charming, interactive, purposeful movement",
+  "browser_support": {
+    "chrome": ">=88",
+    "firefox": ">=85", 
+    "safari": ">=14",
+    "edge": ">=88"
+  },
+  "performance": {
+    "target_fps": 60,
+    "resolution": "800x600",
+    "memory_usage": "<50MB",
+    "startup_time": "<3s"
+  }
+}
