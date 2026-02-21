@@ -1615,5 +1615,316 @@ if (window.SpawnKit && SpawnKit.startLive) {
 
 console.log('[SpawnKit HQ] Green Iso theme initialized. Mode:', window.SpawnKit ? SpawnKit.mode : 'standalone');
 </script>
+
+<!-- SpawnKit Shared Panels Integration -->
+<script src="../src/spawnkit-panels.js"></script>
+<script>
+    // Initialize SpawnKit Panels for Green Iso theme
+    SpawnKitPanels.init({ theme: 'green-iso' });
+
+    // Wire Green Iso interactions to panels
+    document.addEventListener('click', function(e) {
+        // Agent character click → detail panel
+        var character = e.target.closest('.character, [data-agent]');
+        if (character && character.dataset.agent) {
+            SpawnKitPanels.openAgentDetail(character.dataset.agent);
+            return;
+        }
+
+        // Furniture/room interactions
+        var furniture = e.target.closest('.furniture, .room-object');
+        if (furniture) {
+            var furnitureType = furniture.dataset.furniture || furniture.className;
+            if (furnitureType.includes('desk') || furnitureType.includes('computer')) {
+                SpawnKitPanels.openMissionsOverlay();
+            } else if (furnitureType.includes('bookshelf') || furnitureType.includes('filing')) {
+                SpawnKitPanels.openMemoryOverlay();
+            } else if (furnitureType.includes('phone') || furnitureType.includes('conference')) {
+                SpawnKitPanels.openChatOverlay();
+            }
+            return;
+        }
+
+        // Panel triggers
+        var panelTrigger = e.target.closest('[data-panel]');
+        if (panelTrigger) {
+            var panelType = panelTrigger.dataset.panel;
+            switch(panelType) {
+                case 'logs':
+                    SpawnKitPanels.openLogsOverlay();
+                    break;
+                case 'chat':
+                    SpawnKitPanels.openChatOverlay();
+                    break;
+                case 'cron':
+                    SpawnKitPanels.openCronOverlay();
+                    break;
+                case 'memory':
+                    SpawnKitPanels.openMemoryOverlay();
+                    break;
+                case 'missions':
+                    SpawnKitPanels.openMissionsOverlay();
+                    break;
+                case 'cockpit':
+                    SpawnKitPanels.openCockpitOverlay();
+                    break;
+            }
+        }
+    });
+
+    // Green Iso bonus interactions
+    function addGreenIsoInteractions() {
+        // Agent pathfinding to meeting room during brainstorms
+        function moveAgentToMeetingRoom(agentId) {
+            var agent = document.querySelector('[data-agent="' + agentId + '"]');
+            var meetingRoom = document.querySelector('.meeting-room, .conference-room');
+            if (agent && meetingRoom) {
+                // Simple animation to meeting room
+                var agentRect = agent.getBoundingClientRect();
+                var meetingRect = meetingRoom.getBoundingClientRect();
+                
+                agent.style.transition = 'transform 2s ease-in-out';
+                agent.style.transform = `translate(${meetingRect.left - agentRect.left + 20}px, ${meetingRect.top - agentRect.top + 20}px)`;
+                
+                setTimeout(() => {
+                    agent.style.transition = '';
+                    agent.style.transform = '';
+                }, 3000);
+            }
+        }
+
+        // Speech bubbles for current tasks
+        function showTaskSpeechBubble(agentElement, task) {
+            var existing = agentElement.querySelector('.task-bubble');
+            if (existing) existing.remove();
+
+            var bubble = document.createElement('div');
+            bubble.className = 'task-bubble';
+            bubble.style.cssText = `
+                position: absolute;
+                top: -40px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: rgba(0,0,0,0.9);
+                color: #4CAF50;
+                border: 1px solid #4CAF50;
+                padding: 6px 10px;
+                font-size: 10px;
+                font-family: 'Fira Code', monospace;
+                white-space: nowrap;
+                z-index: 100;
+                animation: greenIsoTaskBubble 3s ease-out forwards;
+                border-radius: 4px;
+                box-shadow: 0 0 10px rgba(76, 175, 80, 0.3);
+            `;
+            bubble.textContent = '> ' + task;
+            agentElement.style.position = 'relative';
+            agentElement.appendChild(bubble);
+            setTimeout(() => bubble.remove(), 3000);
+        }
+
+        // Furniture interaction hints
+        function addFurnitureHints() {
+            // Add click hints to furniture
+            var desks = document.querySelectorAll('.desk, .computer, .workstation');
+            desks.forEach(function(desk) {
+                if (!desk.dataset.furniture) desk.dataset.furniture = 'desk';
+                addInteractionHint(desk, 'Click for TODO panel');
+            });
+
+            var bookshelves = document.querySelectorAll('.bookshelf, .filing, .archive');
+            bookshelves.forEach(function(shelf) {
+                if (!shelf.dataset.furniture) shelf.dataset.furniture = 'bookshelf';
+                addInteractionHint(shelf, 'Click for Memory panel');
+            });
+
+            var phones = document.querySelectorAll('.phone, .conference, .meeting-room');
+            phones.forEach(function(phone) {
+                if (!phone.dataset.furniture) phone.dataset.furniture = 'phone';
+                addInteractionHint(phone, 'Click for Chat panel');
+            });
+        }
+
+        function addInteractionHint(element, hintText) {
+            element.addEventListener('mouseenter', function() {
+                var hint = document.createElement('div');
+                hint.className = 'interaction-hint';
+                hint.style.cssText = `
+                    position: absolute;
+                    top: -25px;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    background: rgba(0,0,0,0.8);
+                    color: #8BC34A;
+                    padding: 4px 8px;
+                    font-size: 9px;
+                    white-space: nowrap;
+                    border-radius: 3px;
+                    z-index: 150;
+                    pointer-events: none;
+                `;
+                hint.textContent = hintText;
+                element.style.position = 'relative';
+                element.appendChild(hint);
+            });
+
+            element.addEventListener('mouseleave', function() {
+                var hint = element.querySelector('.interaction-hint');
+                if (hint) hint.remove();
+            });
+        }
+
+        // Add CSS for Green Iso animations
+        var style = document.createElement('style');
+        style.textContent = `
+            @keyframes greenIsoTaskBubble {
+                0% { opacity: 0; transform: translateX(-50%) translateY(10px); }
+                10% { opacity: 1; transform: translateX(-50%) translateY(0); }
+                90% { opacity: 1; transform: translateX(-50%) translateY(0); }
+                100% { opacity: 0; transform: translateX(-50%) translateY(-10px); }
+            }
+            .green-iso-console {
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: rgba(0,0,0,0.9);
+                color: #4CAF50;
+                padding: 10px;
+                border: 1px solid #4CAF50;
+                font-family: 'Fira Code', monospace;
+                font-size: 12px;
+                min-width: 250px;
+                max-width: 400px;
+                max-height: 200px;
+                overflow-y: auto;
+                z-index: 200;
+                border-radius: 4px;
+                box-shadow: 0 0 20px rgba(76, 175, 80, 0.2);
+            }
+            .green-iso-console-line {
+                margin: 2px 0;
+                padding: 1px 0;
+                border-bottom: 1px solid rgba(76, 175, 80, 0.1);
+            }
+            .green-iso-hud {
+                position: fixed;
+                bottom: 20px;
+                left: 20px;
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+                z-index: 100;
+            }
+            .green-iso-hud-btn {
+                padding: 8px 12px;
+                background: rgba(0,0,0,0.8);
+                color: #4CAF50;
+                border: 1px solid #4CAF50;
+                font-family: 'Fira Code', monospace;
+                font-size: 10px;
+                cursor: pointer;
+                transition: all 0.2s;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+            }
+            .green-iso-hud-btn:hover {
+                background: rgba(76, 175, 80, 0.1);
+                box-shadow: 0 0 10px rgba(76, 175, 80, 0.3);
+            }
+        `;
+        document.head.appendChild(style);
+
+        // System console for live updates
+        function createSystemConsole() {
+            var console = document.createElement('div');
+            console.className = 'green-iso-console';
+            console.innerHTML = `
+                <div class="green-iso-console-line">SPAWNKIT_SYS_INIT_OK</div>
+                <div class="green-iso-console-line">FLEET_AGENTS_ONLINE: 6</div>
+                <div class="green-iso-console-line">PANEL_SYSTEM_READY</div>
+            `;
+            document.body.appendChild(console);
+
+            // Add periodic system messages
+            setInterval(function() {
+                var agents = SpawnKitPanels.getAgents();
+                var activeCount = Object.keys(agents).filter(function(id) {
+                    return agents[id].status !== 'idle';
+                }).length;
+                
+                var messages = [
+                    'HEARTBEAT_CHECK_OK',
+                    'FLEET_STATUS_NOMINAL',
+                    'ACTIVE_AGENTS: ' + activeCount,
+                    'MEMORY_SYNC_COMPLETE',
+                    'MISSION_QUEUE_UPDATED',
+                    'LOG_ROTATION_OK'
+                ];
+                
+                var line = document.createElement('div');
+                line.className = 'green-iso-console-line';
+                line.textContent = '[' + new Date().toLocaleTimeString() + '] ' + 
+                    messages[Math.floor(Math.random() * messages.length)];
+                console.appendChild(line);
+                
+                // Keep only last 10 lines
+                while (console.children.length > 10) {
+                    console.removeChild(console.firstChild);
+                }
+            }, 10000);
+        }
+
+        // Update agent states and show task bubbles
+        setInterval(function() {
+            var agents = SpawnKitPanels.getAgents();
+            Object.keys(agents).forEach(function(agentId) {
+                var agent = agents[agentId];
+                if (agent.status !== 'idle' && Math.random() < 0.1) {
+                    var agentElements = document.querySelectorAll('[data-agent="' + agentId + '"]');
+                    agentElements.forEach(function(el) {
+                        showTaskSpeechBubble(el, agent.task || 'Processing...');
+                    });
+                }
+            });
+        }, 8000);
+
+        // Initialize features
+        createSystemConsole();
+        addFurnitureHints();
+
+        // Random brainstorm meetings
+        setInterval(function() {
+            if (Math.random() < 0.1) {
+                var agents = Object.keys(SpawnKitPanels.getAgents());
+                var randomAgent = agents[Math.floor(Math.random() * agents.length)];
+                moveAgentToMeetingRoom(randomAgent);
+            }
+        }, 30000);
+    }
+
+    // Initialize Green Iso interactions
+    addGreenIsoInteractions();
+
+    // Add Green Iso HUD
+    function addGreenIsoHUD() {
+        var hud = document.createElement('div');
+        hud.className = 'green-iso-hud';
+        hud.innerHTML = `
+            <button class="green-iso-hud-btn" data-panel="cockpit">█ ADMIN TERM</button>
+            <button class="green-iso-hud-btn" data-panel="missions">█ TASK QUEUE</button>
+            <button class="green-iso-hud-btn" data-panel="logs">█ SYS LOGS</button>
+            <button class="green-iso-hud-btn" data-panel="chat">█ COMM LINK</button>
+            <button class="green-iso-hud-btn" data-panel="memory">█ MEM BANK</button>
+        `;
+        document.body.appendChild(hud);
+    }
+
+    // Initialize after a delay for proper loading
+    setTimeout(function() {
+        addGreenIsoHUD();
+    }, 1000);
+
+    console.log('💚 Green Iso theme loaded with all 18 SpawnKit features!');
+</script>
 </body>
 </html>

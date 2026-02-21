@@ -583,5 +583,209 @@
             }
         });
     </script>
+
+    <!-- SpawnKit Shared Panels Integration -->
+    <script src="../src/spawnkit-panels.js"></script>
+    <script>
+        // Initialize SpawnKit Panels for SimCity theme
+        SpawnKitPanels.init({ theme: 'simcity' });
+
+        // Wire SimCity interactions to panels
+        document.addEventListener('click', function(e) {
+            // Building click → detail panel
+            var building = e.target.closest('.building, [data-agent]');
+            if (building && building.dataset.agent) {
+                SpawnKitPanels.openAgentDetail(building.dataset.agent);
+                return;
+            }
+
+            // Panel triggers
+            var panelTrigger = e.target.closest('[data-panel]');
+            if (panelTrigger) {
+                var panelType = panelTrigger.dataset.panel;
+                switch(panelType) {
+                    case 'logs':
+                        SpawnKitPanels.openLogsOverlay();
+                        break;
+                    case 'chat':
+                        SpawnKitPanels.openChatOverlay();
+                        break;
+                    case 'cron':
+                        SpawnKitPanels.openCronOverlay();
+                        break;
+                    case 'memory':
+                        SpawnKitPanels.openMemoryOverlay();
+                        break;
+                    case 'missions':
+                        SpawnKitPanels.openMissionsOverlay();
+                        break;
+                    case 'cockpit':
+                        SpawnKitPanels.openCockpitOverlay();
+                        break;
+                }
+            }
+        });
+
+        // SimCity bonus interactions
+        function addSimCityInteractions() {
+            // Buildings pulse when agent active
+            function updateBuildingActivity() {
+                var agents = SpawnKitPanels.getAgents();
+                Object.keys(agents).forEach(function(agentId) {
+                    var agent = agents[agentId];
+                    var buildings = document.querySelectorAll('[data-agent="' + agentId + '"]');
+                    buildings.forEach(function(building) {
+                        building.classList.remove('building-active', 'building-busy', 'building-idle');
+                        if (agent.status === 'active') {
+                            building.classList.add('building-active');
+                        } else if (agent.status === 'busy') {
+                            building.classList.add('building-busy');
+                        } else {
+                            building.classList.add('building-idle');
+                        }
+                    });
+                });
+            }
+
+            // Construction animation for spawns
+            function showConstructionAnimation(element) {
+                var construction = document.createElement('div');
+                construction.className = 'construction-anim';
+                construction.style.cssText = `
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    bottom: 0;
+                    background: linear-gradient(45deg, transparent 30%, rgba(255,214,10,0.3) 50%, transparent 70%);
+                    background-size: 20px 20px;
+                    animation: simcityConstruction 2s linear infinite;
+                    pointer-events: none;
+                    z-index: 10;
+                `;
+                element.style.position = 'relative';
+                element.appendChild(construction);
+                setTimeout(() => construction.remove(), 3000);
+            }
+
+            // Population counter = active agents
+            function updatePopulationCounter() {
+                var agents = SpawnKitPanels.getAgents();
+                var activeCount = Object.keys(agents).filter(function(id) {
+                    return agents[id].status === 'active' || agents[id].status === 'busy';
+                }).length;
+                
+                var popCounters = document.querySelectorAll('.population-counter, #simcity-population');
+                popCounters.forEach(function(counter) {
+                    counter.textContent = '👥 Population: ' + (activeCount * 1000 + 5000);
+                });
+            }
+
+            // Add CSS for SimCity animations
+            var style = document.createElement('style');
+            style.textContent = `
+                .building-active {
+                    animation: simcityPulseGreen 2s ease-in-out infinite;
+                    box-shadow: 0 0 15px rgba(46, 204, 113, 0.6);
+                }
+                .building-busy {
+                    animation: simcityPulseBlue 1.5s ease-in-out infinite;
+                    box-shadow: 0 0 15px rgba(52, 152, 219, 0.6);
+                }
+                .building-idle {
+                    opacity: 0.6;
+                    filter: grayscale(0.3);
+                }
+                @keyframes simcityPulseGreen {
+                    0%, 100% { transform: scale(1); box-shadow: 0 0 15px rgba(46, 204, 113, 0.6); }
+                    50% { transform: scale(1.02); box-shadow: 0 0 20px rgba(46, 204, 113, 0.8); }
+                }
+                @keyframes simcityPulseBlue {
+                    0%, 100% { transform: scale(1); box-shadow: 0 0 15px rgba(52, 152, 219, 0.6); }
+                    50% { transform: scale(1.02); box-shadow: 0 0 20px rgba(52, 152, 219, 0.8); }
+                }
+                @keyframes simcityConstruction {
+                    0% { background-position: 0 0; }
+                    100% { background-position: 20px 20px; }
+                }
+                .simcity-toolbar {
+                    position: fixed;
+                    bottom: 20px;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    display: flex;
+                    gap: 8px;
+                    background: var(--ui-bg);
+                    padding: 8px 12px;
+                    border: 2px solid var(--border-color);
+                    border-radius: 8px;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                    z-index: 100;
+                }
+                .simcity-tool-btn {
+                    padding: 6px 12px;
+                    background: var(--button-bg);
+                    color: var(--ui-text);
+                    border: 1px solid var(--border-color);
+                    border-radius: 4px;
+                    cursor: pointer;
+                    font-family: inherit;
+                    font-size: 12px;
+                    transition: all 0.2s;
+                }
+                .simcity-tool-btn:hover {
+                    background: var(--button-hover);
+                    transform: translateY(-1px);
+                }
+            `;
+            document.head.appendChild(style);
+
+            // Update intervals
+            setInterval(updateBuildingActivity, 2000);
+            setInterval(updatePopulationCounter, 5000);
+
+            // Random construction animations
+            setInterval(function() {
+                var agents = SpawnKitPanels.getAgents();
+                Object.keys(agents).forEach(function(agentId) {
+                    var agent = agents[agentId];
+                    if (agent.status === 'busy' && Math.random() < 0.2) {
+                        var buildings = document.querySelectorAll('[data-agent="' + agentId + '"]');
+                        buildings.forEach(function(building) {
+                            if (!building.querySelector('.construction-anim')) {
+                                showConstructionAnimation(building);
+                            }
+                        });
+                    }
+                });
+            }, 10000);
+        }
+
+        // Initialize SimCity interactions
+        addSimCityInteractions();
+
+        // Add SimCity toolbar with panel controls
+        function addSimCityToolbar() {
+            var toolbar = document.createElement('div');
+            toolbar.className = 'simcity-toolbar';
+            toolbar.innerHTML = `
+                <button class="simcity-tool-btn" data-panel="cockpit">🏛️ Mayor</button>
+                <button class="simcity-tool-btn" data-panel="missions">🏗️ Projects</button>
+                <button class="simcity-tool-btn" data-panel="logs">📊 Stats</button>
+                <button class="simcity-tool-btn" data-panel="chat">📞 Advisor</button>
+                <button class="simcity-tool-btn" data-panel="memory">📋 Plans</button>
+                <div style="border-left: 1px solid var(--border-color); margin: 0 4px;"></div>
+                <div class="population-counter" style="padding: 6px 8px; color: var(--ui-text); font-size: 12px;">👥 Population: 8000</div>
+            `;
+            document.body.appendChild(toolbar);
+        }
+
+        // Initialize after DOM loads
+        setTimeout(function() {
+            addSimCityToolbar();
+        }, 1000);
+
+        console.log('🏙️ SimCity theme loaded with all 18 SpawnKit features!');
+    </script>
 </body>
 </html>
