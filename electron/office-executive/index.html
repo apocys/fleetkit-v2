@@ -652,6 +652,99 @@
         .exec-room--sentinel { grid-column: 3; grid-row: 3; }
 
         /* ═══════════════════════════════════════════════════
+           Fleet Communication Animations
+           ═══════════════════════════════════════════════════ */
+        
+        /* Pulse line between tiles */
+        @keyframes pulse-travel {
+            0% { opacity: 0; transform: translateY(0); }
+            20% { opacity: 1; }
+            80% { opacity: 1; }
+            100% { opacity: 0; transform: translateY(var(--pulse-distance)); }
+        }
+
+        @keyframes tile-receive-glow {
+            0% { box-shadow: 0 0 0 0 rgba(0,122,255,0.4); }
+            50% { box-shadow: 0 0 20px 4px rgba(0,122,255,0.3); }
+            100% { box-shadow: 0 0 0 0 rgba(0,122,255,0); }
+        }
+
+        @keyframes spawn-ripple {
+            0% { transform: scale(0.5); opacity: 0.6; }
+            100% { transform: scale(2.5); opacity: 0; }
+        }
+
+        @keyframes remote-streak {
+            0% { transform: translateX(100vw); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateX(0); opacity: 0; }
+        }
+
+        /* Fleet animation elements */
+        .fleet-pulse-dot {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: var(--exec-blue);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 10;
+            will-change: transform, opacity;
+            animation: pulse-travel 0.8s var(--ease-smooth) forwards;
+        }
+
+        .spawn-ripple {
+            position: absolute;
+            bottom: 8px;
+            right: 8px;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #FF9500;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 10;
+            will-change: transform, opacity;
+            animation: spawn-ripple 0.6s var(--ease-smooth) forwards;
+        }
+
+        .spawn-ripple::after {
+            content: '⚡';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 10px;
+            opacity: 0.8;
+        }
+
+        .remote-streak {
+            position: absolute;
+            top: 50%;
+            right: 0;
+            width: 24px;
+            height: 3px;
+            background: linear-gradient(90deg, transparent 0%, #34C759 50%, transparent 100%);
+            pointer-events: none;
+            z-index: 10;
+            will-change: transform, opacity;
+            animation: remote-streak 1s var(--ease-smooth) forwards;
+        }
+
+        .remote-streak::after {
+            content: '🌐';
+            position: absolute;
+            top: -8px;
+            right: -12px;
+            font-size: 12px;
+            line-height: 1;
+        }
+
+        .tile-receiving {
+            animation: tile-receive-glow 1s var(--ease-smooth) forwards;
+        }
+
+        /* ═══════════════════════════════════════════════════
            Meeting Room — Boardroom
            ═══════════════════════════════════════════════════ */
         .exec-room--meeting {
@@ -5439,6 +5532,137 @@
             closeSettingsPanel();
         };
 
+        /* ═══════════════════════════════════════════════
+           Fleet Communication Animation System
+           ═══════════════════════════════════════════════ */
+        
+        // CEO → C-Level Request Pulse Animation
+        window.animateCEOToAgent = function(targetRoomClass) {
+            const ceoRoom = document.querySelector('.exec-room--ceo');
+            const targetRoom = document.querySelector('.' + targetRoomClass);
+            if (!ceoRoom || !targetRoom) return;
+            
+            // Get positions
+            const ceoRect = ceoRoom.getBoundingClientRect();
+            const targetRect = targetRoom.getBoundingClientRect();
+            
+            // Calculate distance and position
+            const startX = ceoRect.left + ceoRect.width / 2;
+            const startY = ceoRect.bottom - 10;
+            const targetX = targetRect.left + targetRect.width / 2;
+            const targetY = targetRect.top + 10;
+            
+            const distance = Math.sqrt(Math.pow(targetX - startX, 2) + Math.pow(targetY - startY, 2));
+            
+            // Create pulse dot
+            const dot = document.createElement('div');
+            dot.className = 'fleet-pulse-dot';
+            dot.style.left = startX + 'px';
+            dot.style.top = startY + 'px';
+            dot.style.setProperty('--pulse-distance', (targetY - startY) + 'px');
+            
+            document.body.appendChild(dot);
+            
+            // Animate towards target
+            setTimeout(() => {
+                dot.style.left = targetX + 'px';
+                dot.style.top = targetY + 'px';
+            }, 50);
+            
+            // Add glow to target room when pulse arrives
+            setTimeout(() => {
+                targetRoom.classList.add('tile-receiving');
+                setTimeout(() => targetRoom.classList.remove('tile-receiving'), 1000);
+            }, 600);
+            
+            // Clean up pulse dot
+            setTimeout(() => {
+                if (dot.parentNode) dot.remove();
+            }, 1000);
+        };
+
+        // C-Level → Sub-Agent Spawn Ripple Animation  
+        window.animateSpawnRipple = function(roomClass) {
+            const room = document.querySelector('.' + roomClass);
+            if (!room) return;
+            
+            const ripple = document.createElement('div');
+            ripple.className = 'spawn-ripple';
+            room.appendChild(ripple);
+            
+            // Change status dot to busy during spawn
+            const statusDot = room.querySelector('.agent-status-dot');
+            if (statusDot) {
+                const originalClass = statusDot.className;
+                statusDot.className = 'agent-status-dot agent-status-dot--busy';
+                setTimeout(() => {
+                    statusDot.className = originalClass;
+                }, 2000);
+            }
+            
+            // Clean up ripple
+            setTimeout(() => ripple.remove(), 800);
+        };
+
+        // Remote Office → Agent Communication Streak
+        window.animateRemoteIncoming = function(targetRoomClass) {
+            const targetRoom = document.querySelector('.' + targetRoomClass);
+            if (!targetRoom) return;
+            
+            const targetRect = targetRoom.getBoundingClientRect();
+            
+            const streak = document.createElement('div');
+            streak.className = 'remote-streak';
+            streak.style.top = (targetRect.top + targetRect.height / 2) + 'px';
+            streak.style.right = '0px';
+            streak.style.width = (window.innerWidth - targetRect.right + 50) + 'px';
+            
+            document.body.appendChild(streak);
+            
+            // Animate towards target
+            setTimeout(() => {
+                streak.style.right = (window.innerWidth - targetRect.right) + 'px';
+            }, 50);
+            
+            // Add glow to target room when streak arrives
+            setTimeout(() => {
+                targetRoom.classList.add('tile-receiving');
+                setTimeout(() => targetRoom.classList.remove('tile-receiving'), 1000);
+            }, 800);
+            
+            // Clean up streak
+            setTimeout(() => {
+                if (streak.parentNode) streak.remove();
+            }, 1200);
+        };
+
+        // Demo: Random Fleet Activity Animations
+        window.startFleetAnimations = function() {
+            const agents = ['atlas', 'forge', 'hunter', 'echo', 'sentinel'];
+            
+            function triggerRandomAnimation() {
+                const action = Math.random();
+                const agent = agents[Math.floor(Math.random() * agents.length)];
+                
+                if (action < 0.4) {
+                    // CEO sends request to C-level (40% chance)
+                    animateCEOToAgent('exec-room--' + agent);
+                } else if (action < 0.7) {
+                    // C-level spawns sub-agent (30% chance)
+                    animateSpawnRipple('exec-room--' + agent);
+                } else {
+                    // Remote communication (30% chance)
+                    animateRemoteIncoming('exec-room--' + agent);
+                }
+            }
+            
+            // Start with initial animation after 2 seconds
+            setTimeout(triggerRandomAnimation, 2000);
+            
+            // Then continue with random intervals between 4-8 seconds
+            setInterval(triggerRandomAnimation, 4000 + Math.random() * 4000);
+        };
+
         document.addEventListener('DOMContentLoaded', function() {
             if (typeof SpawnKitUX !== 'undefined') {
                 SpawnKitUX.init({ theme: 'executive' });
@@ -5452,6 +5676,9 @@
             if (typeof SpawnKitUX !== 'undefined') {
                 SpawnKitUX.ready();
             }
+            
+            // Start fleet communication animations
+            startFleetAnimations();
 
             // Fleet client auto-refresh
             if (window.FleetClient) {
