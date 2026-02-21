@@ -4234,28 +4234,44 @@
             chatHistory.push({ role: 'user', text: text, time: timeStr });
             renderChatMessages();
 
-            // Determine target from route dropdown (NEW #6)
-            var routeDropdown = document.getElementById('chatRouteSelect');
-            var targetAgent = routeDropdown ? routeDropdown.value : 'ceo';
+            // Show typing indicator
+            chatHistory.push({ role: 'ai', text: '⌛ Thinking...', time: timeStr, typing: true });
+            renderChatMessages();
 
-            // Send via API — FIX #2: actually check success
-            if (API && typeof API.sendMission === 'function') {
-                try {
-                    var result = await API.sendMission(text, targetAgent);
-                    if (result && result.success) {
-                        var targetLabel = targetAgent === 'ceo' ? 'CEO inbox' : targetAgent + ' inbox';
-                        chatHistory.push({ role: 'system', text: '✅ Mission dispatched to ' + targetLabel, time: timeStr });
-                        renderChatMessages();
-                    } else {
-                        chatHistory.push({ role: 'system', text: '⚠️ Dispatch failed: ' + (result.error || 'Unknown error'), time: timeStr });
-                        renderChatMessages();
-                    }
-                } catch(e) {
-                    chatHistory.push({ role: 'system', text: '⚠️ Could not dispatch: ' + e.message, time: timeStr });
+            try {
+                // Send to live OpenClaw via fleet relay
+                const response = await fetch('https://fleet.spawnkit.ai/api/oc/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer sk-oc-proxy-spawnkit-2026',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ message: text })
+                });
+
+                // Remove typing indicator
+                chatHistory = chatHistory.filter(msg => !msg.typing);
+
+                if (!response.ok) {
+                    const error = await response.text();
+                    chatHistory.push({ role: 'system', text: '⚠️ Request failed: ' + error, time: timeStr });
                     renderChatMessages();
+                    return;
                 }
-            } else {
-                chatHistory.push({ role: 'system', text: '📡 API not connected — message queued', time: timeStr });
+
+                const data = await response.json();
+                if (data.ok && data.result && data.result.reply) {
+                    // Display AI response (XSS-safe)
+                    chatHistory.push({ role: 'ai', text: esc(data.result.reply), time: timeStr });
+                } else {
+                    chatHistory.push({ role: 'system', text: '⚠️ Invalid response: ' + JSON.stringify(data), time: timeStr });
+                }
+                renderChatMessages();
+
+            } catch (error) {
+                // Remove typing indicator
+                chatHistory = chatHistory.filter(msg => !msg.typing);
+                chatHistory.push({ role: 'system', text: '⚠️ Network error: ' + esc(error.message), time: timeStr });
                 renderChatMessages();
             }
         }
