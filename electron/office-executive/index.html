@@ -3010,6 +3010,222 @@
             display: flex; align-items: center; gap: 8px;
             font-size: 11px; color: var(--text-tertiary); margin-top: 4px;
         }
+
+        /* ═══════════════════════════════════════════════════
+           CEO COCKPIT — Full dashboard panel
+           ═══════════════════════════════════════════════════ */
+        .cockpit-overlay {
+            position: fixed; inset: 0; z-index: 200;
+            pointer-events: none; opacity: 0;
+            transition: opacity 0.3s var(--ease-smooth);
+        }
+        .cockpit-overlay.open { pointer-events: auto; opacity: 1; }
+        .cockpit-overlay.open .cockpit-backdrop { opacity: 1; }
+        .cockpit-overlay.open .cockpit-panel { transform: translateX(0); }
+        .cockpit-backdrop {
+            position: absolute; inset: 0;
+            background: rgba(0,0,0,0.5); opacity: 0;
+            transition: opacity 0.35s var(--ease-smooth);
+        }
+        .cockpit-panel {
+            position: absolute; top: 0; right: 0;
+            width: 520px; max-width: 95vw; height: 100%;
+            background: var(--bg-secondary);
+            border-left: 1px solid var(--border-medium);
+            display: flex; flex-direction: column;
+            transform: translateX(100%);
+            transition: transform 0.4s var(--ease-smooth);
+            box-shadow: -16px 0 48px rgba(0,0,0,0.12);
+        }
+        .cockpit-hero {
+            display: flex; align-items: center; gap: 18px;
+            padding: 24px 24px 20px;
+            background: linear-gradient(135deg, rgba(255,214,10,0.06), rgba(0,122,255,0.04));
+            border-bottom: 2px solid #FFD60A;
+        }
+        .cockpit-hero-avatar {
+            width: 64px; height: 64px;
+            border-radius: 50%; overflow: hidden;
+            flex-shrink: 0; border: 3px solid #FFD60A;
+            position: relative;
+        }
+        .cockpit-hero-avatar svg { width: 100%; height: 100%; display: block; }
+        .cockpit-hero-crown {
+            position: absolute; top: -10px; left: 50%;
+            transform: translateX(-50%); font-size: 18px;
+            filter: drop-shadow(0 1px 3px rgba(0,0,0,0.2)); z-index: 3;
+        }
+        .cockpit-hero-status {
+            position: absolute; bottom: 2px; right: 2px;
+            width: 14px; height: 14px; border-radius: 50%;
+            background: var(--status-active);
+            border: 2.5px solid var(--bg-secondary); z-index: 2;
+        }
+        .cockpit-hero-info { flex: 1; min-width: 0; }
+        .cockpit-hero-name { font-size: 20px; font-weight: 800; color: var(--text-primary); }
+        .cockpit-hero-role { font-size: 13px; color: var(--text-tertiary); font-weight: 500; }
+        .cockpit-hero-task {
+            font-size: 12px; color: var(--exec-blue);
+            margin-top: 4px; font-weight: 500;
+        }
+        .cockpit-close {
+            width: 32px; height: 32px;
+            display: flex; align-items: center; justify-content: center;
+            border: none; background: rgba(0,0,0,0.06); color: var(--text-secondary);
+            border-radius: 8px; cursor: pointer; font-size: 16px;
+            transition: all 0.2s var(--ease-smooth); font-family: inherit;
+            flex-shrink: 0;
+        }
+        .cockpit-close:hover { background: rgba(0,0,0,0.1); color: var(--text-primary); }
+        .cockpit-body {
+            flex: 1; overflow-y: auto; padding: 0;
+            scrollbar-width: thin; scrollbar-color: var(--exec-gray-300) transparent;
+        }
+        .cockpit-body::-webkit-scrollbar { width: 4px; }
+        .cockpit-body::-webkit-scrollbar-thumb { background: var(--exec-gray-300); border-radius: 2px; }
+        .cockpit-section {
+            padding: 18px 24px;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+        .cockpit-section:last-child { border-bottom: none; }
+        .cockpit-section-title {
+            font-size: 11px; font-weight: 600; color: var(--text-tertiary);
+            text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px;
+            display: flex; align-items: center; gap: 6px;
+        }
+        .cockpit-metrics {
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
+        }
+        .cockpit-metric {
+            padding: 10px 12px; background: var(--bg-tertiary);
+            border-radius: 10px; text-align: center;
+        }
+        .cockpit-metric-value {
+            font-size: 18px; font-weight: 800; color: var(--text-primary);
+        }
+        .cockpit-metric-label {
+            font-size: 10px; color: var(--text-tertiary); margin-top: 2px;
+            text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        /* Quick actions row */
+        .cockpit-actions {
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
+            padding: 14px 24px;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+        .cockpit-action-btn {
+            display: flex; flex-direction: column; align-items: center; gap: 4px;
+            padding: 12px 8px; background: var(--bg-tertiary);
+            border: 1px solid var(--border-subtle); border-radius: 10px;
+            cursor: pointer; font-family: var(--font-family);
+            transition: all 0.2s var(--ease-smooth);
+        }
+        .cockpit-action-btn:hover {
+            background: var(--exec-blue-muted); border-color: rgba(0,122,255,0.2);
+            transform: translateY(-1px);
+        }
+        .cockpit-action-icon { font-size: 20px; }
+        .cockpit-action-label {
+            font-size: 11px; font-weight: 600; color: var(--text-secondary);
+        }
+        /* Sub-agent list in cockpit */
+        .cockpit-subagent {
+            display: flex; align-items: center; gap: 10px;
+            padding: 8px 12px; background: var(--bg-tertiary);
+            border-radius: 8px; margin-bottom: 6px;
+        }
+        .cockpit-subagent:last-child { margin-bottom: 0; }
+        .cockpit-subagent-dot {
+            width: 8px; height: 8px; border-radius: 50%;
+            flex-shrink: 0;
+        }
+        .cockpit-subagent-dot--running { background: #FF453A; animation: statusPulse 2s ease-in-out infinite; }
+        .cockpit-subagent-dot--done { background: var(--status-active); }
+        .cockpit-subagent-name {
+            font-size: 12px; font-weight: 600; color: var(--text-primary); flex: 1;
+        }
+        .cockpit-subagent-meta {
+            font-size: 10px; color: var(--text-tertiary);
+        }
+        .cockpit-subagent-progress {
+            width: 40px; height: 4px; background: var(--exec-gray-100);
+            border-radius: 2px; overflow: hidden; flex-shrink: 0;
+        }
+        .cockpit-subagent-progress-fill {
+            height: 100%; background: var(--exec-blue);
+            border-radius: 2px; transition: width 0.3s;
+        }
+        /* Mini timeline in cockpit */
+        .cockpit-timeline {
+            display: flex; align-items: flex-end; gap: 1px;
+            height: 48px; padding: 0 2px;
+        }
+        .cockpit-timeline-slot {
+            flex: 1; display: flex; flex-direction: column;
+            align-items: center; justify-content: flex-end; gap: 2px;
+        }
+        .cockpit-timeline-bar {
+            width: 100%; min-width: 8px; border-radius: 3px 3px 0 0;
+            background: var(--exec-gray-100);
+            transition: background 0.2s, height 0.3s;
+        }
+        .cockpit-timeline-bar.has-event { background: var(--exec-blue); }
+        .cockpit-timeline-bar.current { background: var(--status-active); box-shadow: 0 0 6px rgba(48,209,88,0.4); }
+        .cockpit-timeline-bar.past { background: var(--exec-gray-200); }
+        .cockpit-timeline-label {
+            font-size: 8px; color: var(--text-tertiary); font-weight: 500;
+            line-height: 1;
+        }
+        .cockpit-timeline-label.current { color: var(--status-active); font-weight: 700; }
+        /* Mini chat in cockpit */
+        .cockpit-mini-chat {
+            display: flex; flex-direction: column; gap: 6px;
+            max-height: 180px; overflow-y: auto;
+        }
+        .cockpit-chat-msg {
+            display: flex; gap: 8px; align-items: flex-start;
+            padding: 6px 10px; border-radius: 8px; font-size: 12px; line-height: 1.4;
+        }
+        .cockpit-chat-msg--user { background: rgba(0,122,255,0.06); }
+        .cockpit-chat-msg--system { background: var(--bg-tertiary); }
+        .cockpit-chat-role {
+            font-weight: 700; font-size: 10px; color: var(--text-tertiary);
+            white-space: nowrap; min-width: 40px;
+        }
+        .cockpit-chat-text { color: var(--text-secondary); flex: 1; }
+        .cockpit-chat-open {
+            display: flex; align-items: center; justify-content: center;
+            gap: 6px; padding: 10px 16px; margin-top: 8px;
+            background: var(--exec-blue); color: #fff;
+            border: none; border-radius: 10px;
+            font-size: 13px; font-weight: 600; cursor: pointer;
+            font-family: var(--font-family);
+            transition: all 0.2s var(--ease-smooth);
+            width: 100%;
+        }
+        .cockpit-chat-open:hover { background: var(--exec-blue-hover); transform: translateY(-1px); }
+
+        /* ═══════════════════════════════════════════════════
+           Chat Quick Actions
+           ═══════════════════════════════════════════════════ */
+        .chat-quick-actions {
+            display: flex; gap: 6px; padding: 8px 20px;
+            border-top: 1px solid var(--border-subtle);
+            overflow-x: auto; flex-shrink: 0;
+        }
+        .chat-quick-btn {
+            display: inline-flex; align-items: center; gap: 4px;
+            padding: 5px 12px; background: var(--bg-tertiary);
+            border: 1px solid var(--border-subtle); border-radius: 20px;
+            cursor: pointer; font-family: var(--font-family);
+            font-size: 11px; font-weight: 500; color: var(--text-secondary);
+            white-space: nowrap; transition: all 0.2s var(--ease-smooth);
+        }
+        .chat-quick-btn:hover {
+            background: var(--exec-blue-muted);
+            border-color: rgba(0,122,255,0.2);
+            color: var(--exec-blue);
+        }
     </style>
 </head>
 <body>
@@ -3621,6 +3837,14 @@
             <div class="chat-messages" id="chatMessages">
                 <div class="chat-empty" id="chatEmpty">No messages yet. Send a mission to the CEO.</div>
             </div>
+            <div class="chat-quick-actions" id="chatQuickActions">
+                <button class="chat-quick-btn" data-cmd="spawn">🚀 Spawn Agent</button>
+                <button class="chat-quick-btn" data-cmd="status">📊 Fleet Status</button>
+                <button class="chat-quick-btn" data-cmd="logs">📜 View Logs</button>
+                <button class="chat-quick-btn" data-cmd="audit">🛡️ Run Audit</button>
+                <button class="chat-quick-btn" data-cmd="crons">📅 Cron Jobs</button>
+                <button class="chat-quick-btn" data-cmd="memory">🧠 Memory</button>
+            </div>
             <div class="chat-input-bar">
                 <select id="chatRouteSelect" style="padding:4px 8px;border-radius:8px;border:1px solid var(--border-medium);background:var(--bg-tertiary);color:var(--text-secondary);font-size:11px;font-family:var(--font-family);cursor:pointer;flex-shrink:0;" title="Route message to...">
                     <option value="ceo">📬 Direct to CEO</option>
@@ -3630,7 +3854,7 @@
                     <option value="echo">📢 Via Echo (CMO)</option>
                     <option value="sentinel">🛡️ Via Sentinel (QA)</option>
                 </select>
-                <input class="chat-input" id="chatInput" type="text" placeholder="Send a mission..." autocomplete="off" spellcheck="false" style="flex:1;" />
+                <input class="chat-input" id="chatInput" type="text" placeholder="Message the fleet..." autocomplete="off" spellcheck="false" style="flex:1;" />
                 <button class="chat-send" id="chatSend" aria-label="Send">↑</button>
             </div>
         </div>
@@ -3730,6 +3954,32 @@
             <div class="logs-status" id="logsStatus">
                 <span><span class="logs-live-dot"></span>Live — auto-refreshing every 5s</span>
                 <span id="logsCount">0 entries</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ CEO Cockpit Panel ═══ -->
+    <div class="cockpit-overlay" id="cockpitOverlay" role="dialog" aria-modal="true" aria-label="CEO Cockpit">
+        <div class="cockpit-backdrop" id="cockpitBackdrop"></div>
+        <div class="cockpit-panel">
+            <div class="cockpit-hero">
+                <div class="cockpit-hero-avatar">
+                    <svg><use href="#avatar-ceo"/></svg>
+                    <div class="cockpit-hero-crown">👑</div>
+                    <div class="cockpit-hero-status"></div>
+                </div>
+                <div class="cockpit-hero-info">
+                    <div class="cockpit-hero-name" id="cockpitName">ApoMac</div>
+                    <div class="cockpit-hero-role">Chief Executive Officer</div>
+                    <div class="cockpit-hero-task" id="cockpitTask">Orchestrating fleet operations</div>
+                </div>
+                <button class="cockpit-close" id="cockpitClose" aria-label="Close cockpit">×</button>
+            </div>
+            <div class="cockpit-actions" id="cockpitActions">
+                <!-- Quick actions populated by JS -->
+            </div>
+            <div class="cockpit-body" id="cockpitBody">
+                <!-- Content populated by JS -->
             </div>
         </div>
     </div>
@@ -4142,6 +4392,11 @@
         var detailClose    = document.getElementById('detailClose');
 
         async function openDetailPanel(agentId) {
+            // CEO goes to cockpit panel
+            if (agentId === 'ceo' && typeof openCockpitPanel === 'function') {
+                openCockpitPanel();
+                return;
+            }
             closeMailbox();
             closeTodoPanel();
 
@@ -5889,6 +6144,240 @@
         }
 
         /* FIX #17/#10: Idle state now handled by #10 initIdleVisuals below */
+
+        /* ═══════════════════════════════════════════════
+           CEO COCKPIT — Full Dashboard Panel (#3 Critical)
+           ═══════════════════════════════════════════════ */
+        var cockpitOverlay = document.getElementById('cockpitOverlay');
+        var cockpitBackdrop = document.getElementById('cockpitBackdrop');
+        var cockpitCloseBtn = document.getElementById('cockpitClose');
+        var cockpitBody = document.getElementById('cockpitBody');
+        var cockpitActions = document.getElementById('cockpitActions');
+
+        function openCockpitPanel() {
+            closeAllPanels();
+
+            // Set hero info
+            var ceoAgent = AGENTS.ceo;
+            document.getElementById('cockpitName').textContent = ceoAgent.name;
+            document.getElementById('cockpitTask').textContent = ceoAgent.task;
+
+            // Quick actions
+            cockpitActions.innerHTML = '';
+            var actions = [
+                {icon:'🚀',label:'Spawn Agent',action:function(){closeCockpitPanel();openChatPanel();chatInput.value='Spawn a new sub-agent for ';chatInput.focus();}},
+                {icon:'📊',label:'Fleet Status',action:function(){closeCockpitPanel();showToast('Fleet: 5 active, 1 idle, 2 sub-agents running');}},
+                {icon:'📜',label:'View Logs',action:function(){closeCockpitPanel();openLogsPanel();}},
+                {icon:'🛡️',label:'Run Audit',action:function(){closeCockpitPanel();showToast('Sentinel audit triggered — results in ~2 min');}},
+                {icon:'📅',label:'Cron Jobs',action:function(){closeCockpitPanel();openCronPanel();}},
+                {icon:'🧠',label:'Memory',action:function(){closeCockpitPanel();openMemoryPanel();}}
+            ];
+            actions.forEach(function(a){
+                var btn = document.createElement('button');
+                btn.className = 'cockpit-action-btn';
+                btn.innerHTML = '<span class="cockpit-action-icon">' + a.icon + '</span><span class="cockpit-action-label">' + a.label + '</span>';
+                btn.addEventListener('click', a.action);
+                cockpitActions.appendChild(btn);
+            });
+
+            // Build body
+            var html = '';
+
+            // Fleet metrics overview
+            var activeCount = Object.keys(AGENTS).filter(function(k){return AGENTS[k].status!=='idle';}).length;
+            var idleCount = Object.keys(AGENTS).length - activeCount;
+            var runningMissions = DEMO.missions.filter(function(m){return m.status==='running';}).length;
+            var totalTokens = '252.7K';
+            html += '<div class="cockpit-section"><div class="cockpit-section-title">📊 Fleet Overview</div>';
+            html += '<div class="cockpit-metrics">';
+            html += '<div class="cockpit-metric"><div class="cockpit-metric-value">' + activeCount + '</div><div class="cockpit-metric-label">Active</div></div>';
+            html += '<div class="cockpit-metric"><div class="cockpit-metric-value">' + idleCount + '</div><div class="cockpit-metric-label">Idle</div></div>';
+            html += '<div class="cockpit-metric"><div class="cockpit-metric-value">' + runningMissions + '</div><div class="cockpit-metric-label">Missions</div></div>';
+            html += '<div class="cockpit-metric"><div class="cockpit-metric-value">' + totalTokens + '</div><div class="cockpit-metric-label">Tokens</div></div>';
+            html += '</div></div>';
+
+            // Active sub-agents
+            html += '<div class="cockpit-section"><div class="cockpit-section-title">🔴 Active Sub-Agents</div>';
+            var runningMissionsList = DEMO.missions.filter(function(m){return m.status==='running';});
+            if (runningMissionsList.length > 0) {
+                runningMissionsList.forEach(function(m) {
+                    var pct = Math.round(m.progress * 100);
+                    html += '<div class="cockpit-subagent">';
+                    html += '<div class="cockpit-subagent-dot cockpit-subagent-dot--running"></div>';
+                    html += '<div class="cockpit-subagent-name">' + m.name + '</div>';
+                    html += '<div class="cockpit-subagent-meta">' + m.parent + ' • ' + m.duration + '</div>';
+                    html += '<div class="cockpit-subagent-progress"><div class="cockpit-subagent-progress-fill" style="width:' + pct + '%"></div></div>';
+                    html += '<span style="font-size:10px;font-weight:600;color:var(--exec-blue)">' + pct + '%</span>';
+                    html += '</div>';
+                });
+            }
+            var doneMissions = DEMO.missions.filter(function(m){return m.status==='completed';});
+            doneMissions.forEach(function(m) {
+                html += '<div class="cockpit-subagent" style="opacity:0.6">';
+                html += '<div class="cockpit-subagent-dot cockpit-subagent-dot--done"></div>';
+                html += '<div class="cockpit-subagent-name">' + m.name + '</div>';
+                html += '<div class="cockpit-subagent-meta">✅ ' + m.duration + '</div>';
+                html += '</div>';
+            });
+            html += '</div>';
+
+            // Today's cron mini-timeline
+            html += '<div class="cockpit-section"><div class="cockpit-section-title">📅 Today\'s Schedule</div>';
+            var now = new Date();
+            var currentH = now.getHours();
+            var eventHours = {};
+            DEMO.crons.forEach(function(c) {
+                var m = (c.schedule||'').match(/(\d{1,2}):(\d{2})/);
+                if (m) eventHours[parseInt(m[1])] = c.name;
+            });
+            html += '<div class="cockpit-timeline">';
+            for (var h = 6; h <= 22; h++) {
+                var isCurrent = (h === currentH);
+                var isPast = (h < currentH);
+                var hasEv = eventHours[h];
+                var barH = hasEv ? 32 : 10;
+                var cls = hasEv ? ' has-event' : '';
+                if (isCurrent) cls += ' current';
+                else if (isPast) cls += ' past';
+                html += '<div class="cockpit-timeline-slot" title="' + (hasEv||h+':00') + '">';
+                html += '<div class="cockpit-timeline-bar' + cls + '" style="height:' + barH + 'px"></div>';
+                if (h % 2 === 0 || isCurrent) {
+                    html += '<div class="cockpit-timeline-label' + (isCurrent?' current':'') + '">' + h + 'h</div>';
+                }
+                html += '</div>';
+            }
+            html += '</div>';
+            // List today's events
+            html += '<div style="margin-top:10px;">';
+            DEMO.crons.filter(function(c){return c.status==='active';}).slice(0,5).forEach(function(c) {
+                html += '<div style="display:flex;align-items:center;gap:8px;padding:4px 0;font-size:12px;">';
+                html += '<span>' + c.icon + '</span>';
+                html += '<span style="font-weight:500;color:var(--text-primary)">' + c.name + '</span>';
+                html += '<span style="color:var(--text-tertiary);margin-left:auto;font-size:11px">' + c.schedule + '</span>';
+                html += '</div>';
+            });
+            html += '</div></div>';
+
+            // Mini chat preview — last 5 messages
+            html += '<div class="cockpit-section"><div class="cockpit-section-title">💬 Recent Conversation</div>';
+            html += '<div class="cockpit-mini-chat">';
+            var chatMsgs = (chatHistory.length > 0 ? chatHistory : DEMO.chatHistory).slice(-5);
+            chatMsgs.forEach(function(m) {
+                var cls = m.role === 'user' ? ' cockpit-chat-msg--user' : ' cockpit-chat-msg--system';
+                html += '<div class="cockpit-chat-msg' + cls + '">';
+                html += '<span class="cockpit-chat-role">' + (m.role === 'user' ? '👤 Kira' : '🤖 CEO') + '</span>';
+                html += '<span class="cockpit-chat-text">' + (m.text.length>100?m.text.substring(0,100)+'…':m.text) + '</span>';
+                html += '</div>';
+            });
+            html += '</div>';
+            html += '<button class="cockpit-chat-open" id="cockpitChatOpen">💬 Open Full Chat</button>';
+            html += '</div>';
+
+            // Agent fleet status grid
+            html += '<div class="cockpit-section"><div class="cockpit-section-title">👥 Fleet Status</div>';
+            html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">';
+            Object.keys(AGENTS).forEach(function(id) {
+                if (id === 'ceo') return;
+                var a = AGENTS[id];
+                var statusColor = (a.status==='idle') ? 'var(--status-idle)' : (a.status==='busy'||a.status==='building') ? 'var(--status-busy)' : 'var(--status-active)';
+                var met = DEMO.logMetrics[id] || {};
+                html += '<div style="padding:10px 12px;background:var(--bg-tertiary);border-radius:8px;border-left:3px solid ' + a.color + ';">';
+                html += '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">';
+                html += '<div style="width:6px;height:6px;border-radius:50%;background:' + statusColor + ';flex-shrink:0"></div>';
+                html += '<span style="font-size:13px;font-weight:600;color:var(--text-primary)">' + a.name + '</span>';
+                html += '<span style="font-size:10px;color:var(--text-tertiary);margin-left:auto">' + (met.model||'—') + '</span>';
+                html += '</div>';
+                html += '<div style="font-size:11px;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + (a.task||'—') + '</div>';
+                html += '<div style="font-size:10px;color:var(--text-tertiary);margin-top:2px">' + (met.tokens||'—') + ' tokens • ' + (met.uptime||'—') + '</div>';
+                html += '</div>';
+            });
+            html += '</div></div>';
+
+            cockpitBody.innerHTML = html;
+
+            // Wire open chat button
+            var chatOpenBtn = document.getElementById('cockpitChatOpen');
+            if (chatOpenBtn) {
+                chatOpenBtn.addEventListener('click', function() {
+                    closeCockpitPanel();
+                    openChatPanel();
+                });
+            }
+
+            cockpitOverlay.classList.add('open');
+            cockpitCloseBtn.focus();
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeCockpitPanel() {
+            cockpitOverlay.classList.remove('open');
+            document.body.style.overflow = '';
+        }
+
+        cockpitBackdrop.addEventListener('click', closeCockpitPanel);
+        cockpitCloseBtn.addEventListener('click', closeCockpitPanel);
+
+        // Override CEO click to open cockpit instead of detail panel
+        document.querySelectorAll('[data-agent="ceo"]').forEach(function(el) {
+            el.addEventListener('click', function(e) {
+                if (e.target.closest('.ceo-mailbox')) return; // Don't intercept mailbox clicks
+                e.stopPropagation();
+                openCockpitPanel();
+            }, true); // Use capture to beat the generic handler
+        });
+
+        // Escape handler for cockpit
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && cockpitOverlay.classList.contains('open')) {
+                closeCockpitPanel();
+                e.stopImmediatePropagation();
+            }
+        });
+
+        /* ═══════════════════════════════════════════════
+           Chat Quick Actions (#4)
+           ═══════════════════════════════════════════════ */
+        (function initChatQuickActions() {
+            var quickActions = document.getElementById('chatQuickActions');
+            if (!quickActions) return;
+
+            var commandMap = {
+                'spawn': 'Spawn a new sub-agent for: ',
+                'status': '/status — check fleet status',
+                'logs': '/logs — show recent activity',
+                'audit': '@sentinel run a full audit',
+                'crons': '/crons — list scheduled jobs',
+                'memory': '/memory — show MEMORY.md'
+            };
+
+            quickActions.addEventListener('click', function(e) {
+                var btn = e.target.closest('.chat-quick-btn');
+                if (!btn) return;
+                var cmd = btn.dataset.cmd;
+                var text = commandMap[cmd];
+                if (!text) return;
+
+                // Special actions that open panels
+                if (cmd === 'logs') { closeChatPanel(); openLogsPanel(); return; }
+                if (cmd === 'crons') { closeChatPanel(); openCronPanel(); return; }
+                if (cmd === 'memory') { closeChatPanel(); openMemoryPanel(); return; }
+
+                // For spawn/status/audit, insert into chat
+                chatInput.value = text;
+                chatInput.focus();
+                if (cmd !== 'spawn') {
+                    // Auto-send for status/audit
+                    sendChatMessage();
+                }
+            });
+        })();
+
+        // Include cockpit in closeAllPanels
+        var _closeAllBeforeCockpit = closeAllPanels;
+        closeAllPanels = function() {
+            _closeAllBeforeCockpit();
+            closeCockpitPanel();
+        };
 
         /* ═══════════════════════════════════════════════
            FIX #9 SS+: Enhanced Agent Builder (works in demo mode)
