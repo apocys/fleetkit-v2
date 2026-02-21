@@ -54,7 +54,9 @@ contextBridge.exposeInMainWorld('spawnkitAPI', {
   getAgentInfo: (id) => ipcRenderer.invoke('spawnkit:getAgentInfo', id),
   getMetrics: () => ipcRenderer.invoke('spawnkit:getMetrics'),
   getAll: () => ipcRenderer.invoke('spawnkit:getAll'),
-  getTranscript: (sessionId, limit) => ipcRenderer.invoke('spawnkit:getTranscript', sessionId, limit),
+  getTranscript: (sessionKey, limit) => ipcRenderer.invoke('spawnkit:getTranscript', sessionKey, limit),
+  getTodoList: () => ipcRenderer.invoke('spawnkit:getTodoList'),
+  getSkills: () => ipcRenderer.invoke('spawnkit:getSkills'),
   sendMission: (task) => ipcRenderer.invoke('spawnkit:sendMission', task),
   invalidateCache: () => ipcRenderer.invoke('spawnkit:invalidateCache'),
   onUpdate: (callback) => ipcRenderer.on('spawnkit:update', (_, data) => callback(data))

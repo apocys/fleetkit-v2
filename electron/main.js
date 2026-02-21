@@ -394,17 +394,6 @@ function createMenu() {
               }
             },
             {
-              label: '🎮 GameBoy',
-              type: 'checkbox',
-              checked: store.get('theme', 'simcity') === 'gameboy',
-              click: async () => {
-                const result = await switchTheme('gameboy');
-                if (!result.success) {
-                  showError('Theme Error', result.error);
-                }
-              }
-            },
-            {
               label: '🎮 GameBoy Color',
               type: 'checkbox',
               checked: store.get('theme', 'simcity') === 'gameboy-color',
@@ -714,6 +703,8 @@ try {
   ipcMain.handle('spawnkit:getAll', () => ({ agents: [], subagents: [], crons: [], metrics: {}, meta: { mode: 'fallback' } }));
   ipcMain.handle('spawnkit:invalidateCache', () => true);
   ipcMain.handle('spawnkit:getTranscript', () => []);
+  ipcMain.handle('spawnkit:getTodoList', () => null);
+  ipcMain.handle('spawnkit:getSkills', () => []);
   ipcMain.handle('spawnkit:sendMission', () => ({ success: false, error: 'Data provider not loaded' }));
 }
 

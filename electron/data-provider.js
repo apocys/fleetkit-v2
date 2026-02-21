@@ -705,6 +705,137 @@ class OpenClawDataProvider {
     return this._setCache('metrics', metrics);
   }
   
+  // ── Transcript (read session messages) ─────────────────────────────────────
+  
+  async getTranscript(sessionKey, limit = 50) {
+    if (!this.openclawRoot) return [];
+    
+    try {
+      // Find the session file — check main sessions and subagent sessions
+      const mainDir = path.join(this.openclawRoot, 'agents', 'main', 'sessions');
+      if (!fs.existsSync(mainDir)) return [];
+      
+      // For main session, find the most recent boot file
+      let sessionFile = null;
+      
+      if (!sessionKey || sessionKey === 'agent:main:main') {
+        const bootFiles = fs.readdirSync(mainDir)
+          .filter(f => f.startsWith('boot-') && f.endsWith('.jsonl'))
+          .sort()
+          .reverse();
+        if (bootFiles.length > 0) {
+          sessionFile = path.join(mainDir, bootFiles[0]);
+        }
+      } else {
+        // For subagent sessions, extract UUID and find the file
+        const uuidMatch = sessionKey.match(/([a-f0-9-]{36})$/);
+        if (uuidMatch) {
+          const candidate = path.join(mainDir, `${uuidMatch[1]}.jsonl`);
+          if (fs.existsSync(candidate)) {
+            sessionFile = candidate;
+          }
+        }
+      }
+      
+      if (!sessionFile || !fs.existsSync(sessionFile)) return [];
+      
+      // Read last N lines for messages
+      const content = fs.readFileSync(sessionFile, 'utf8');
+      const lines = content.split('\n').filter(l => l.trim());
+      const messages = [];
+      
+      for (const line of lines.slice(-limit * 3)) { // Read extra lines to find enough messages
+        try {
+          const entry = JSON.parse(line);
+          if (entry.type === 'message' || entry.role) {
+            const role = entry.role || (entry.type === 'message' ? 'unknown' : null);
+            if (!role) continue;
+            
+            let text = '';
+            if (typeof entry.content === 'string') {
+              text = entry.content;
+            } else if (Array.isArray(entry.content)) {
+              text = entry.content
+                .filter(c => c.type === 'text')
+                .map(c => c.text)
+                .join('\n');
+            }
+            
+            if (text && text.length > 0) {
+              messages.push({
+                role: role,
+                text: text.substring(0, 2000),
+                timestamp: entry.timestamp || null,
+                model: entry.model || null
+              });
+            }
+          }
+        } catch (e) { /* skip unparseable lines */ }
+      }
+      
+      return messages.slice(-limit);
+    } catch (e) {
+      return [];
+    }
+  }
+  
+  // ── TODO List (read TODO.md) ──────────────────────────────────────────────
+  
+  async getTodoList() {
+    if (!this.workspace) return null;
+    const todoPath = path.join(this.workspace, 'TODO.md');
+    const content = safeReadText(todoPath);
+    if (!content) return null;
+    return {
+      content: content.substring(0, 8000),
+      size: content.length,
+      lastModified: fs.statSync(todoPath).mtimeMs
+    };
+  }
+  
+  // ── Skills (read from OpenClaw config) ────────────────────────────────────
+  
+  async getSkills() {
+    if (!this.openclawRoot) return [];
+    const configPath = path.join(this.openclawRoot, 'openclaw.json');
+    const config = safeReadJSON(configPath);
+    if (!config) return [];
+    
+    const skills = [];
+    // Extract skills from config
+    if (config.skills) {
+      for (const [name, skill] of Object.entries(config.skills)) {
+        skills.push({
+          name: name,
+          description: skill.description || '',
+          location: skill.location || '',
+          enabled: skill.enabled !== false
+        });
+      }
+    }
+    
+    // Also check workspace skills directory
+    const skillsDir = path.join(this.workspace || '', 'skills');
+    if (this.workspace && fs.existsSync(skillsDir)) {
+      const dirs = fs.readdirSync(skillsDir).filter(d => {
+        return fs.existsSync(path.join(skillsDir, d, 'SKILL.md'));
+      });
+      for (const dir of dirs) {
+        if (!skills.find(s => s.name === dir)) {
+          const skillMd = safeReadText(path.join(skillsDir, dir, 'SKILL.md'));
+          skills.push({
+            name: dir,
+            description: skillMd ? skillMd.substring(0, 200) : '',
+            location: path.join(skillsDir, dir),
+            enabled: true
+          });
+        }
+      }
+    }
+    
+    return skills;
+  }
+  
   // ── Full Refresh (all data at once) ───────────────────────────────────────
   
   async getAll() {
@@ -762,6 +893,9 @@ function registerIPC(ipcMain) {
   ipcMain.handle('spawnkit:getMetrics', () => provider.getMetrics());
   ipcMain.handle('spawnkit:getAll', () => provider.getAll());
   ipcMain.handle('spawnkit:invalidateCache', () => { provider.invalidateCache(); return true; });
+  ipcMain.handle('spawnkit:getTranscript', (e, sessionKey, limit) => provider.getTranscript(sessionKey, limit));
+  ipcMain.handle('spawnkit:getTodoList', () => provider.getTodoList());
+  ipcMain.handle('spawnkit:getSkills', () => provider.getSkills());
   
   return provider;
 }
