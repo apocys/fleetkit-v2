@@ -3281,7 +3281,8 @@
 
         function openMailbox(e) {
             if (e) e.stopPropagation();
-            closeTodoPanel(); // Close TODO panel if open
+            closeTodoPanel();
+            closeDetailPanel();
             mailboxOverlay.classList.add('open');
             mailboxClose.focus();
             document.body.style.overflow = 'hidden';
@@ -3512,77 +3513,139 @@
            TODO Panel — Open / Close
            ═══════════════════════════════════════════════ */
 
-        function openTodoPanel(agentId) {
-            closeMailbox(); // Close mailbox if open
+        /* ═══════════════════════════════════════════════
+           Agent Detail Panel — NEW (Feature 1)
+           Uses the new detail-overlay with rich content
+           ═══════════════════════════════════════════════ */
+        var detailOverlay  = document.getElementById('detailOverlay');
+        var detailBackdrop = document.getElementById('detailBackdrop');
+        var detailClose    = document.getElementById('detailClose');
+
+        function openDetailPanel(agentId) {
+            closeMailbox();
+            closeTodoPanel();
 
             var agent = AGENTS[agentId];
-            var todoData = LIVE_AGENT_DATA[agentId];
-            if (!agent || !todoData) return;
+            if (!agent) return;
 
-            // Update header
-            todoName.textContent = agent.name;
-            todoRole.textContent = agent.role;
-
-            // Update avatar
+            // Hero section
             var avatarId = AVATAR_MAP[agent.name];
+            var avatarEl = document.getElementById('detailAvatar');
             if (avatarId) {
-                todoAvatar.innerHTML = '<svg><use href="#' + avatarId + '"/></svg>';
+                avatarEl.innerHTML = '<svg><use href="#' + avatarId + '"/></svg><div class="detail-hero-status" id="detailStatusDot"></div>';
             } else {
-                todoAvatar.innerHTML = agent.name.charAt(0);
-                todoAvatar.style.background = agent.color;
-                todoAvatar.style.color = '#fff';
+                avatarEl.innerHTML = '<div style="width:64px;height:64px;border-radius:50%;background:' + agent.color + ';display:flex;align-items:center;justify-content:center;color:#fff;font-size:24px;font-weight:700">' + agent.name.charAt(0) + '</div>';
+            }
+            var sc = (agent.status === 'active' || agent.status === 'working') ? 'var(--status-active)' :
+                     (agent.status === 'busy' || agent.status === 'building') ? 'var(--status-busy)' : 'var(--status-idle)';
+            var dot = document.getElementById('detailStatusDot');
+            if (dot) dot.style.background = sc;
+
+            document.getElementById('detailName').textContent = agent.name;
+            document.getElementById('detailRole').textContent = agent.role;
+            document.getElementById('detailTask').textContent = agent.task || (agent.status === 'idle' ? '💤 Idle' : '—');
+
+            // Build body
+            var body = '';
+
+            // Metrics section
+            body += '<div class="detail-section"><div class="detail-section-title">Metrics</div>';
+            body += '<div class="detail-metrics">';
+            body += '<div class="detail-metric"><div class="detail-metric-value">' + (['active','working','busy','building'].indexOf(agent.status) >= 0 ? '🟢' : '💤') + '</div><div class="detail-metric-label">Status</div></div>';
+            body += '<div class="detail-metric"><div class="detail-metric-value">—</div><div class="detail-metric-label">Tokens Used</div></div>';
+            body += '<div class="detail-metric"><div class="detail-metric-value">—</div><div class="detail-metric-label">API Calls</div></div>';
+            body += '<div class="detail-metric"><div class="detail-metric-value">—</div><div class="detail-metric-label">Last Active</div></div>';
+            body += '</div></div>';
+
+            // Try to get live data for metrics
+            if (API) {
+                try {
+                    var info = API.getAgentInfo(agentId);
+                    if (info) {
+                        // Update metrics with live data if available
+                        var metricsData = API.getMetrics();
+                        if (metricsData && metricsData.agentBreakdown && metricsData.agentBreakdown[agentId]) {
+                            var ab = metricsData.agentBreakdown[agentId];
+                            body = body.replace('>—</div><div class="detail-metric-label">Tokens Used', '>' + (ab.tokens ? ab.tokens.toLocaleString() : '—') + '</div><div class="detail-metric-label">Tokens Used');
+                            body = body.replace('>—</div><div class="detail-metric-label">API Calls', '>' + (ab.apiCalls || '—') + '</div><div class="detail-metric-label">API Calls');
+                        }
+                    }
+                } catch(e) {}
             }
 
-            // Build content
-            var content = '';
+            // TODO list section — from live data or fallback
+            var todoData = LIVE_AGENT_DATA[agentId] || FALLBACK_AGENT_DATA[agentId];
+            if (todoData) {
+                body += '<div class="detail-section"><div class="detail-section-title">Current Task</div>';
+                body += '<div style="font-size:14px;font-weight:500;color:var(--text-primary)">' + (todoData.currentTask || agent.task || 'Idle') + '</div>';
+                body += '</div>';
 
-            // Current Task section
-            content += '<div class="todo-section">';
-            content += '<div class="todo-section-title">Current Task</div>';
-            content += '<div class="todo-current-task">' + todoData.currentTask + '</div>';
-            content += '</div>';
+                if (todoData.todos && todoData.todos.length) {
+                    body += '<div class="detail-section"><div class="detail-section-title">TODO List</div>';
+                    todoData.todos.forEach(function(todo) {
+                        body += '<div class="detail-todo-item' + (todo.status === 'done' ? ' detail-todo-item--done' : '') + '">';
+                        body += '<span class="detail-todo-icon">' + todo.icon + '</span>';
+                        body += '<span class="detail-todo-text">' + todo.text + '</span>';
+                        body += '</div>';
+                    });
+                    body += '</div>';
+                }
+            }
 
-            // TODO List section
-            content += '<div class="todo-section">';
-            content += '<div class="todo-section-title">TODO List</div>';
-            content += '<div class="todo-list">';
-            todoData.todos.forEach(function(todo) {
-                content += '<div class="todo-item todo-item--' + todo.status + '">';
-                content += '<span class="todo-icon">' + todo.icon + '</span>';
-                content += '<span class="todo-text">' + todo.text + '</span>';
-                content += '</div>';
-            });
-            content += '</div>';
-            content += '</div>';
+            // Skills section — chips (Feature 6)
+            var skills = DEFAULT_SKILLS[agentId] || [];
+            if (todoData && todoData.skills && todoData.skills.length) {
+                body += '<div class="detail-section"><div class="detail-section-title">Skills</div>';
+                body += '<div class="detail-skill-chips">';
+                todoData.skills.forEach(function(s) {
+                    body += '<span class="detail-skill-chip">' + s.name + '</span>';
+                });
+                body += '</div></div>';
+            } else if (skills.length) {
+                body += '<div class="detail-section"><div class="detail-section-title">Skills</div>';
+                body += '<div class="detail-skill-chips">';
+                skills.forEach(function(s) {
+                    body += '<span class="detail-skill-chip">' + s + '</span>';
+                });
+                body += '</div></div>';
+            }
 
-            // Skills section
-            content += '<div class="todo-section">';
-            content += '<div class="todo-section-title">Skills</div>';
-            content += '<div class="todo-skills">';
-            todoData.skills.forEach(function(skill) {
-                content += '<div class="skill-item">';
-                content += '<div class="skill-header">';
-                content += '<span class="skill-name">' + skill.name + '</span>';
-                content += '<span class="skill-percentage">' + skill.percentage + '%</span>';
-                content += '</div>';
-                content += '<div class="skill-bar">';
-                content += '<div class="skill-progress" style="width: ' + skill.percentage + '%"></div>';
-                content += '</div>';
-                content += '</div>';
-            });
-            content += '</div>';
-            content += '</div>';
+            // SOUL excerpt
+            if (API) {
+                try {
+                    var agentInfo = API.getAgentInfo(agentId);
+                    if (agentInfo && agentInfo.soul) {
+                        var excerpt = agentInfo.soul.substring(0, 500);
+                        body += '<div class="detail-section"><div class="detail-section-title">Soul (Personality)</div>';
+                        body += '<div class="detail-soul-excerpt">' + excerpt + (agentInfo.soul.length > 500 ? '…' : '') + '</div>';
+                        body += '</div>';
+                    }
+                } catch(e) {}
+            }
 
-            todoContent.innerHTML = content;
+            document.getElementById('detailBody').innerHTML = body;
 
-            // Show panel
-            todoOverlay.classList.add('open');
-            todoClose.focus();
+            detailOverlay.classList.add('open');
+            detailClose.focus();
             document.body.style.overflow = 'hidden';
+        }
+
+        function closeDetailPanel() {
+            detailOverlay.classList.remove('open');
+            document.body.style.overflow = '';
+        }
+
+        detailBackdrop.addEventListener('click', closeDetailPanel);
+        detailClose.addEventListener('click', closeDetailPanel);
+
+        /* Keep the old openTodoPanel as a wrapper for backwards compat */
+        function openTodoPanel(agentId) {
+            openDetailPanel(agentId);
         }
 
         function closeTodoPanel() {
             todoOverlay.classList.remove('open');
+            closeDetailPanel();
             document.body.style.overflow = '';
         }
 
@@ -3701,10 +3764,18 @@
         meetingBackdrop.addEventListener('click', closeMeetingPanel);
         meetingClose.addEventListener('click', closeMeetingPanel);
 
-        // Close panels on Escape
+        // Close panels on Escape — all overlays
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
-                if (todoOverlay.classList.contains('open')) {
+                if (document.getElementById('chatOverlay').classList.contains('open')) {
+                    closeChatPanel();
+                } else if (document.getElementById('cronOverlay').classList.contains('open')) {
+                    closeCronPanel();
+                } else if (document.getElementById('memoryOverlay').classList.contains('open')) {
+                    closeMemoryPanel();
+                } else if (detailOverlay.classList.contains('open')) {
+                    closeDetailPanel();
+                } else if (todoOverlay.classList.contains('open')) {
                     closeTodoPanel();
                 } else if (meetingOverlay.classList.contains('open')) {
                     closeMeetingPanel();
@@ -3798,6 +3869,19 @@
 
                 var unreadIndicator = msg.read ? '' : '<div class="mail-unread-dot" aria-hidden="true"></div>';
 
+                // Priority flag
+                var priorityFlag = '';
+                var pri = msg.priority || 'normal';
+                if (pri === 'urgent') priorityFlag = '<span class="mail-flag mail-flag--urgent">🔴 Urgent</span>';
+                else if (pri === 'info') priorityFlag = '<span class="mail-flag mail-flag--info">🟢 Info</span>';
+                else priorityFlag = '<span class="mail-flag mail-flag--normal">🟡 Normal</span>';
+
+                // Dispatch indicator
+                var dispatchHtml = '';
+                if (msg.assignedTo) {
+                    dispatchHtml = '<div class="mail-dispatch"><span>📨</span> <span class="mail-dispatch-arrow">→</span> <strong>' + msg.assignedTo + '</strong></div>';
+                }
+
                 item.innerHTML =
                     '<div class="mail-avatar" style="background: ' + msg.color + ';" aria-hidden="true">' + avatarContent + '</div>' +
                     '<div class="mail-content">' +
@@ -3806,6 +3890,8 @@
                             '<span class="mail-time">' + msg.time + '</span>' +
                         '</div>' +
                         '<div class="mail-preview">' + msg.text + '</div>' +
+                        '<div class="mail-flags">' + priorityFlag + '</div>' +
+                        dispatchHtml +
                     '</div>' + unreadIndicator;
 
                 // Click to mark as read
@@ -3903,15 +3989,11 @@
         commandInput.addEventListener('keydown', function(e) {
             if (e.key === 'Enter' && commandInput.value.trim()) {
                 var cmd = commandInput.value.trim();
-                // Send command to parent (dashboard.html)
-                if (window.parent !== window) {
-                    window.parent.postMessage({
-                        type: 'executive:command',
-                        command: cmd,
-                        timestamp: Date.now()
-                    }, '*');
-                }
                 commandInput.value = '';
+                // Open chat panel and send as mission
+                openChatPanel();
+                chatInput.value = cmd;
+                sendChatMessage();
             }
         });
 
@@ -4050,6 +4132,323 @@
 
         updateClock();
         setInterval(updateClock, 30000);
+
+        /* ═══════════════════════════════════════════════
+           CEO Chat Panel (Feature 2)
+           ═══════════════════════════════════════════════ */
+        var chatOverlay  = document.getElementById('chatOverlay');
+        var chatBackdrop = document.getElementById('chatBackdrop');
+        var chatCloseBtn = document.getElementById('chatClose');
+        var chatMsgsEl   = document.getElementById('chatMessages');
+        var chatInput    = document.getElementById('chatInput');
+        var chatSendBtn  = document.getElementById('chatSend');
+        var chatEmptyEl  = document.getElementById('chatEmpty');
+
+        function openChatPanel() {
+            closeAllPanels();
+            chatOverlay.classList.add('open');
+            chatInput.focus();
+            document.body.style.overflow = 'hidden';
+            loadChatTranscript();
+        }
+        function closeChatPanel() {
+            chatOverlay.classList.remove('open');
+            document.body.style.overflow = '';
+        }
+
+        document.getElementById('chatBtn').addEventListener('click', openChatPanel);
+        chatBackdrop.addEventListener('click', closeChatPanel);
+        chatCloseBtn.addEventListener('click', closeChatPanel);
+
+        function loadChatTranscript() {
+            if (!API) return;
+            try {
+                var transcript = API.getTranscript('agent:main:main');
+                if (transcript && transcript.length > 0) {
+                    chatHistory = transcript.slice(-50).map(function(m) {
+                        return {
+                            role: m.role === 'user' ? 'user' : 'system',
+                            text: m.text || m.content || '',
+                            time: m.timestamp ? new Date(m.timestamp).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}) : ''
+                        };
+                    });
+                    renderChatMessages();
+                }
+            } catch(e) { console.warn('Chat transcript load:', e); }
+        }
+
+        function renderChatMessages() {
+            if (chatHistory.length === 0) {
+                chatEmptyEl.style.display = '';
+                return;
+            }
+            chatEmptyEl.style.display = 'none';
+            chatMsgsEl.innerHTML = '';
+            chatHistory.forEach(function(m) {
+                var div = document.createElement('div');
+                div.className = 'chat-msg chat-msg--' + m.role;
+                var preview = m.text.length > 300 ? m.text.substring(0, 300) + '…' : m.text;
+                div.innerHTML = '<div>' + preview.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</div>' +
+                    (m.time ? '<div class="chat-msg-time">' + m.time + '</div>' : '');
+                chatMsgsEl.appendChild(div);
+            });
+            chatMsgsEl.scrollTop = chatMsgsEl.scrollHeight;
+        }
+
+        function sendChatMessage() {
+            var text = chatInput.value.trim();
+            if (!text) return;
+            chatInput.value = '';
+
+            var now = new Date();
+            var timeStr = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+            chatHistory.push({ role: 'user', text: text, time: timeStr });
+            renderChatMessages();
+
+            // Send via API
+            if (API && typeof API.sendMission === 'function') {
+                try {
+                    var result = API.sendMission(text);
+                    if (result && result.response) {
+                        chatHistory.push({ role: 'system', text: result.response, time: timeStr });
+                        renderChatMessages();
+                    } else {
+                        chatHistory.push({ role: 'system', text: '✅ Mission dispatched', time: timeStr });
+                        renderChatMessages();
+                    }
+                } catch(e) {
+                    chatHistory.push({ role: 'system', text: '⚠️ Could not dispatch: ' + e.message, time: timeStr });
+                    renderChatMessages();
+                }
+            } else {
+                chatHistory.push({ role: 'system', text: '📡 API not connected — message queued', time: timeStr });
+                renderChatMessages();
+            }
+        }
+
+        chatSendBtn.addEventListener('click', sendChatMessage);
+        chatInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') { e.preventDefault(); sendChatMessage(); }
+        });
+
+        // Auto-refresh chat every 10s when open
+        setInterval(function() {
+            if (chatOverlay.classList.contains('open')) loadChatTranscript();
+        }, 10000);
+
+        /* ═══════════════════════════════════════════════
+           Cron / Calendar Panel (Feature 4)
+           ═══════════════════════════════════════════════ */
+        var cronOverlay = document.getElementById('cronOverlay');
+        var cronBackdropEl = document.getElementById('cronBackdrop');
+        var cronCloseBtn = document.getElementById('cronClose');
+        var cronBody = document.getElementById('cronBody');
+
+        function openCronPanel() {
+            closeAllPanels();
+            cronOverlay.classList.add('open');
+            document.body.style.overflow = 'hidden';
+            renderCronJobs();
+        }
+        function closeCronPanel() {
+            cronOverlay.classList.remove('open');
+            document.body.style.overflow = '';
+        }
+
+        document.getElementById('cronBtn').addEventListener('click', openCronPanel);
+        cronBackdropEl.addEventListener('click', closeCronPanel);
+        cronCloseBtn.addEventListener('click', closeCronPanel);
+
+        function humanCron(schedule) {
+            if (!schedule) return '—';
+            var m = { '*/30 * * * *': 'Every 30 min', '0 * * * *': 'Every hour',
+                      '0 9 * * *': 'Daily 9:00', '0 9 * * 1': 'Mon 9:00',
+                      '*/5 * * * *': 'Every 5 min', '0 */2 * * *': 'Every 2h',
+                      '0 8 * * 1-5': 'Weekdays 8:00' };
+            return m[schedule] || schedule;
+        }
+
+        function renderCronJobs() {
+            var crons = liveCronData;
+            if (API && !crons) {
+                try { crons = API.getCrons(); } catch(e) {}
+            }
+
+            if (!crons || !Array.isArray(crons) || crons.length === 0) {
+                cronBody.innerHTML = '<div class="cron-empty">No cron jobs found.' +
+                    (API ? '' : '<br><br><em>Connect to OpenClaw to see live crons.</em>') + '</div>';
+                return;
+            }
+
+            // Group by owner
+            var groups = {};
+            crons.forEach(function(c) {
+                var owner = c.owner || 'System';
+                if (!groups[owner]) groups[owner] = [];
+                groups[owner].push(c);
+            });
+
+            var html = '';
+            Object.keys(groups).forEach(function(owner) {
+                html += '<div class="cron-group">';
+                html += '<div class="cron-group-title">' + owner + '</div>';
+                groups[owner].forEach(function(c) {
+                    var statusCls = c.status === 'active' ? 'active' : c.status === 'error' ? 'error' : 'paused';
+                    var icon = c.status === 'active' ? '⏰' : c.status === 'error' ? '❌' : '⏸️';
+                    var nextRun = c.nextRun ? new Date(c.nextRun).toLocaleString('en-GB', {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '—';
+                    html += '<div class="cron-item">';
+                    html += '<span class="cron-item-icon">' + icon + '</span>';
+                    html += '<div class="cron-item-info">';
+                    html += '<div class="cron-item-name">' + (c.name || c.id || 'Unnamed') + '</div>';
+                    html += '<div class="cron-item-schedule">' + humanCron(c.schedule) + '</div>';
+                    html += '<div class="cron-item-next">Next: ' + nextRun + '</div>';
+                    html += '</div>';
+                    html += '<span class="cron-item-status cron-item-status--' + statusCls + '">' + (c.status || 'unknown') + '</span>';
+                    html += '<button class="cron-toggle ' + (c.status === 'active' ? 'on' : '') + '" data-cron-id="' + (c.id || '') + '" aria-label="Toggle"></button>';
+                    html += '</div>';
+                });
+                html += '</div>';
+            });
+            cronBody.innerHTML = html;
+
+            // Toggle click → toast
+            cronBody.querySelectorAll('.cron-toggle').forEach(function(btn) {
+                btn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    btn.classList.toggle('on');
+                    showToast('Connect to OpenClaw CLI to modify cron jobs');
+                });
+            });
+        }
+
+        /* ═══════════════════════════════════════════════
+           Memory View Panel (Feature 5)
+           ═══════════════════════════════════════════════ */
+        var memoryOverlay = document.getElementById('memoryOverlay');
+        var memoryBackdropEl = document.getElementById('memoryBackdrop');
+        var memoryCloseBtn = document.getElementById('memoryClose');
+        var memoryBody = document.getElementById('memoryBody');
+
+        function openMemoryPanel() {
+            closeAllPanels();
+            memoryOverlay.classList.add('open');
+            document.body.style.overflow = 'hidden';
+            renderMemory();
+        }
+        function closeMemoryPanel() {
+            memoryOverlay.classList.remove('open');
+            document.body.style.overflow = '';
+        }
+
+        document.getElementById('memoryBtn').addEventListener('click', openMemoryPanel);
+        memoryBackdropEl.addEventListener('click', closeMemoryPanel);
+        memoryCloseBtn.addEventListener('click', closeMemoryPanel);
+
+        function renderMarkdown(md) {
+            if (!md) return '<em>No content</em>';
+            return md
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+                .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+                .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+                .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                .replace(/`(.+?)`/g, '<code>$1</code>')
+                .replace(/^- (.+)$/gm, '<li>$1</li>')
+                .replace(/\n{2,}/g, '<br><br>')
+                .replace(/\n/g, '<br>');
+        }
+
+        function renderMemory() {
+            var mem = liveMemoryData;
+            if (API && !mem) {
+                try { mem = API.getMemory(); } catch(e) {}
+            }
+
+            if (!mem) {
+                memoryBody.innerHTML = '<div class="cron-empty">No memory data available.' +
+                    (API ? '' : '<br><br><em>Connect to OpenClaw to see fleet memory.</em>') + '</div>';
+                return;
+            }
+
+            var html = '';
+
+            // Golden rules — extract 🔴 sections from long-term
+            if (mem.longTerm && mem.longTerm.content) {
+                var content = mem.longTerm.content;
+                var goldenMatch = content.match(/## 🔴[^\n]*\n[\s\S]*?(?=\n## |$)/g);
+                if (goldenMatch && goldenMatch.length > 0) {
+                    html += '<div class="memory-section">';
+                    html += '<div class="memory-section-title">Golden Rules</div>';
+                    goldenMatch.forEach(function(rule) {
+                        html += '<div class="memory-golden-rules">';
+                        html += '<div class="memory-content-md">' + renderMarkdown(rule.trim()) + '</div>';
+                        html += '</div>';
+                    });
+                    html += '</div>';
+                }
+
+                // Full MEMORY.md
+                html += '<div class="memory-section">';
+                html += '<div class="memory-section-title">MEMORY.md <span style="font-weight:400;color:var(--text-tertiary);text-transform:none;letter-spacing:0">(' + (mem.longTerm.size ? (mem.longTerm.size / 1024).toFixed(1) + ' KB' : '—') + ')</span></div>';
+                html += '<div class="memory-content-md">' + renderMarkdown(content.substring(0, 3000)) + '</div>';
+                if (content.length > 3000) {
+                    html += '<div style="color:var(--text-tertiary);font-size:11px;margin-top:8px">…truncated (' + content.length + ' chars total)</div>';
+                }
+                html += '</div>';
+            }
+
+            // Daily memory files
+            if (mem.daily && mem.daily.length > 0) {
+                html += '<div class="memory-section">';
+                html += '<div class="memory-section-title">Daily Notes</div>';
+                html += '<div class="memory-daily-list">';
+                mem.daily.slice(0, 14).forEach(function(d) {
+                    html += '<div class="memory-daily-item">';
+                    html += '<span class="memory-daily-item-date">' + (d.date || d.name || '—') + '</span>';
+                    html += '<span>' + (d.preview || d.description || 'Daily log') + '</span>';
+                    html += '<span class="memory-daily-item-size">' + (d.size ? (d.size / 1024).toFixed(1) + ' KB' : '') + '</span>';
+                    html += '</div>';
+                });
+                html += '</div>';
+                html += '</div>';
+            }
+
+            // Heartbeat state
+            if (mem.heartbeat) {
+                html += '<div class="memory-section">';
+                html += '<div class="memory-section-title">Heartbeat State</div>';
+                html += '<div class="memory-content-md"><pre style="font-size:11px;background:var(--bg-tertiary);padding:10px;border-radius:8px;overflow-x:auto">' + JSON.stringify(mem.heartbeat, null, 2).replace(/</g,'&lt;') + '</pre></div>';
+                html += '</div>';
+            }
+
+            // Read-only label
+            html += '<div class="memory-section">';
+            html += '<div class="memory-readonly">🔒 Only the CEO can edit memory</div>';
+            html += '</div>';
+
+            memoryBody.innerHTML = html;
+        }
+
+        /* Toast helper */
+        function showToast(msg) {
+            var t = document.getElementById('execToast');
+            if (!t) return;
+            t.textContent = msg;
+            t.classList.add('show');
+            clearTimeout(t._timer);
+            t._timer = setTimeout(function() { t.classList.remove('show'); }, 2500);
+        }
+
+        /* Close all panels helper */
+        function closeAllPanels() {
+            closeMailbox();
+            closeTodoPanel();
+            closeMeetingPanel();
+            closeDetailPanel();
+            closeChatPanel();
+            closeCronPanel();
+            closeMemoryPanel();
+        }
 
         /* ═══════════════════════════════════════════════
            Announce readiness to parent
