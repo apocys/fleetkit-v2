@@ -928,15 +928,28 @@
     });
 
     console.log('🎮 [MissionAdapter] ✅ GameBoy Color theme registered with MissionController!');
-    console.log('🎮 [MissionAdapter] Demo will start in 3 seconds...');
+    console.log('🎮 [MissionAdapter] Checking for live data...');
 
-    setTimeout(() => {
-      if (typeof MissionController !== 'undefined' && MissionController.demo) {
-        console.log('🎮 ═══════════════════════════════════════');
-        console.log('🎮  DEMO MODE — The GBC Color Moment! 🎮');
-        console.log('🎮 ═══════════════════════════════════════');
-        MissionController.demo({ loop: true, pauseBetween: 4000 });
+    // Start demo mode ONLY if no live data is available
+    setTimeout(async () => {
+      if (typeof MissionController === 'undefined' || !MissionController.demo) return;
+      
+      let hasLiveData = false;
+      try {
+        if (window.spawnkitAPI && typeof window.spawnkitAPI.isAvailable === 'function') {
+          hasLiveData = await window.spawnkitAPI.isAvailable();
+        }
+      } catch (e) { /* not in Electron context */ }
+      
+      if (hasLiveData) {
+        console.log('🎮 [MissionAdapter] Live data detected — demo mode SKIPPED');
+        return;
       }
+      
+      console.log('🎮 ═══════════════════════════════════════');
+      console.log('🎮  DEMO MODE — No live data, showing showcase');
+      console.log('🎮 ═══════════════════════════════════════');
+      MissionController.demo({ loop: true, pauseBetween: 4000 });
     }, 3000);
   }
 
