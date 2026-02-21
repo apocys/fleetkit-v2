@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SpawnKit — Choose Your Theme</title>
+<meta name="description" content="Choose your SpawnKit theme - Executive, Green Iso, GameBoy, Sims, or SimCity">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23007AFF'/%3E%3Ctext x='16' y='23' text-anchor='middle' font-family='system-ui' font-size='18' font-weight='bold' fill='white'%3ES%3C/text%3E%3C/svg%3E">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+--bg:#F2F2F7;--bg2:#FFFFFF;--bg3:#E5E5EA;--surface:#FFFFFF;--surface2:#F2F2F7;
+--text:#1C1C1E;--text2:#3C3C43;--text3:#8E8E93;
+--accent:#007AFF;--accent2:#007AFF;--accent-glow:rgba(0,122,255,.25);
+--green:#34C759;--green2:#FFFFFF;--green-glow:rgba(52,199,89,.3);
+--error:#FF3B30;--warning:#FF9500;
+--radius:12px;--radius-lg:20px;
+--font-body:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text','Helvetica Neue',sans-serif;
+--transition:all .3s cubic-bezier(.4,0,.2,1);
+}
+
+html{scroll-behavior:smooth;font-size:16px}
+body{font-family:var(--font-body);background:var(--bg);color:var(--text);line-height:1.6;overflow-x:hidden;-webkit-font-smoothing:antialiased;min-height:100vh}
+
+/* === NAV === */
+.nav{position:fixed;top:0;left:0;right:0;z-index:1000;padding:1rem 2rem;display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,.9);backdrop-filter:blur(16px);border-bottom:1px solid rgba(0,0,0,.06)}
+.nav-logo{font-family:var(--font-body);font-size:.9rem;color:var(--accent);letter-spacing:1px;display:flex;align-items:center;gap:.5rem;font-weight:700}
+.nav-logo .dot{width:8px;height:8px;background:var(--accent);border-radius:50%;animation:pulse-dot 2s ease infinite}
+.nav-links{display:flex;align-items:center;gap:2rem}
+.nav-links a{color:var(--text2);font-size:.875rem;font-weight:500;transition:var(--transition);text-decoration:none}
+.nav-links a:hover{color:var(--text)}
+.nav-cta{background:var(--accent);color:#fff!important;padding:.5rem 1.25rem;border-radius:8px;font-weight:600;font-size:.8rem;text-decoration:none}
+.nav-cta:hover{background:var(--accent2);transform:translateY(-1px)}
+
+/* === MAIN CONTENT === */
+.container{max-width:1200px;margin:0 auto;padding:0 2rem}
+.main{padding:6rem 2rem 4rem;min-height:100vh;display:flex;flex-direction:column}
+
+.header{text-align:center;margin-bottom:4rem}
+.page-title{font-family:var(--font-body);font-size:clamp(2rem,5vw,3rem);line-height:1.2;margin-bottom:1rem;font-weight:700;color:var(--text)}
+.page-subtitle{font-size:clamp(1rem,2.5vw,1.25rem);color:var(--text2);margin-bottom:.5rem;font-weight:500}
+.page-desc{color:var(--text3);font-size:1rem;max-width:600px;margin:0 auto}
+
+.themes-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:2rem;margin-bottom:3rem}
+
+.theme-card{background:var(--surface);border:1px solid rgba(0,0,0,.06);border-radius:var(--radius);padding:2rem;transition:var(--transition);text-decoration:none;color:inherit;display:block;box-shadow:0 1px 3px rgba(0,0,0,0.06)}
+.theme-card:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.08);text-decoration:none;color:inherit}
+
+.theme-icon{font-size:3rem;margin-bottom:1rem;display:block}
+.theme-title{font-family:var(--font-body);font-size:1.25rem;margin-bottom:.75rem;font-weight:600;color:var(--text)}
+.theme-desc{color:var(--text2);font-size:.9rem;line-height:1.5;margin-bottom:1.5rem}
+
+.theme-meta{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem}
+.status-badge{display:inline-flex;align-items:center;gap:.25rem;padding:.25rem .75rem;border-radius:50px;font-size:.75rem;font-weight:600}
+.status-badge.live{background:rgba(52,199,89,.1);color:var(--green)}
+.status-badge.beta{background:rgba(255,149,0,.1);color:var(--warning)}
+.status-badge.dev{background:rgba(0,122,255,.1);color:var(--accent)}
+
+.launch-btn{display:inline-flex;align-items:center;gap:.5rem;padding:.75rem 1.5rem;background:var(--accent);color:#fff;border:none;border-radius:8px;font-weight:600;font-size:.9rem;cursor:pointer;transition:var(--transition);text-decoration:none}
+.launch-btn:hover{background:var(--accent);transform:translateY(-1px);box-shadow:0 4px 16px var(--accent-glow);color:#fff;text-decoration:none}
+
+/* === FOOTER === */
+.footer{margin-top:auto;padding:3rem 0;background:var(--bg3);border-top:1px solid rgba(0,0,0,.06);text-align:center}
+.footer-text{color:var(--text3);font-size:.85rem}
+
+/* === ANIMATIONS === */
+@keyframes pulse-dot{0%,100%{opacity:1}50%{opacity:.5}}
+
+/* === RESPONSIVE === */
+@media (max-width: 768px) {
+  .nav{padding:.75rem 1rem}
+  .nav-links{gap:1rem}
+  .nav-links a{font-size:.8rem}
+  .nav-cta{padding:.4rem 1rem;font-size:.75rem}
+  
+  .main{padding:5rem 1rem 3rem}
+  .themes-grid{grid-template-columns:1fr;gap:1.5rem}
+  .theme-card{padding:1.5rem}
+  .theme-icon{font-size:2.5rem}
+}
+</style>
+</head>
+<body>
+  <!-- Navigation -->
+  <nav class="nav">
+    <div class="nav-logo">
+      <span class="dot"></span>
+      SPAWNKIT
+    </div>
+    <div class="nav-links">
+      <a href="../landing/">Home</a>
+      <a href="../download/">Download</a>
+      <a href="https://github.com/apocys/spawnkit-v2">GitHub</a>
+      <a href="../admin-hub.html" class="nav-cta">Admin Hub</a>
+    </div>
+  </nav>
+
+  <main class="main">
+    <div class="container">
+      <!-- Header -->
+      <div class="header">
+        <h1 class="page-title">Choose Your Theme</h1>
+        <p class="page-subtitle">Experience SpawnKit in different visual styles</p>
+        <p class="page-desc">Each theme offers a unique perspective on your AI agent workspace</p>
+      </div>
+
+      <!-- Themes Grid -->
+      <div class="themes-grid">
+        <!-- Executive Theme -->
+        <a href="office-executive/" class="theme-card">
+          <div class="theme-icon">💼</div>
+          <h3 class="theme-title">Executive</h3>
+          <p class="theme-desc">Professional corporate environment with clean UI, perfect for business workflows and team collaboration.</p>
+          <div class="theme-meta">
+            <span class="status-badge live">Live</span>
+          </div>
+          <div class="launch-btn">
+            Launch →
+          </div>
+        </a>
+
+        <!-- Green Iso Theme -->
+        <a href="office-green-iso/" class="theme-card">
+          <div class="theme-icon">🌿</div>
+          <h3 class="theme-title">Green Iso</h3>
+          <p class="theme-desc">Eco-friendly isometric view with natural colors and sustainable design aesthetics.</p>
+          <div class="theme-meta">
+            <span class="status-badge live">Live</span>
+          </div>
+          <div class="launch-btn">
+            Launch →
+          </div>
+        </a>
+
+        <!-- GameBoy Theme -->
+        <a href="office-gameboy/" class="theme-card">
+          <div class="theme-icon">🎮</div>
+          <h3 class="theme-title">GameBoy</h3>
+          <p class="theme-desc">Nostalgic retro gaming interface with monochrome green aesthetics and pixel-perfect design.</p>
+          <div class="theme-meta">
+            <span class="status-badge live">Live</span>
+          </div>
+          <div class="launch-btn">
+            Launch →
+          </div>
+        </a>
+
+        <!-- Sims Theme -->
+        <a href="office-sims/" class="theme-card">
+          <div class="theme-icon">🏠</div>
+          <h3 class="theme-title">Sims</h3>
+          <p class="theme-desc">Life simulation style with colorful, cheerful interface reminiscent of the classic Sims games.</p>
+          <div class="theme-meta">
+            <span class="status-badge beta">Beta</span>
+          </div>
+          <div class="launch-btn">
+            Launch →
+          </div>
+        </a>
+
+        <!-- SimCity Theme -->
+        <a href="office-simcity/" class="theme-card">
+          <div class="theme-icon">🏙️</div>
+          <h3 class="theme-title">SimCity</h3>
+          <p class="theme-desc">Urban planning perspective with city-building elements and strategic overview capabilities.</p>
+          <div class="theme-meta">
+            <span class="status-badge dev">Development</span>
+          </div>
+          <div class="launch-btn">
+            Launch →
+          </div>
+        </a>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-text">SpawnKit © 2026 — Built with 🍎</div>
+  </footer>
+</body>
+</html>
