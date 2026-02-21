@@ -487,6 +487,10 @@
 
     <!-- Core Scripts with dependency verification -->
     <script>
+        // Real Data Configuration for Sycopa's fleet-relay
+        window.OC_RELAY_URL = 'https://fleet.spawnkit.ai';
+        window.OC_RELAY_TOKEN = 'sk-oc-proxy-spawnkit-2026';
+        
         // Load dependencies with graceful fallback
         async function loadDependencies() {
             const dependencies = [
