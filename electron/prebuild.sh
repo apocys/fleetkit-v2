@@ -11,7 +11,7 @@ echo "🔧 Pre-build: Copying app content for packaging..."
 rm -rf "$SCRIPT_DIR/office-executive" "$SCRIPT_DIR/office-gameboy-color" "$SCRIPT_DIR/office-sims" "$SCRIPT_DIR/office-simcity" "$SCRIPT_DIR/src" "$SCRIPT_DIR/dashboard.html" "$SCRIPT_DIR/lib"
 
 # Copy office themes
-for theme in executive gameboy-color sims simcity; do
+for theme in executive gameboy-color sims simcity green-iso; do
   if [ -d "$ROOT_DIR/office-$theme" ]; then
     cp -R "$ROOT_DIR/office-$theme" "$SCRIPT_DIR/office-$theme"
     echo "  ✅ office-$theme"

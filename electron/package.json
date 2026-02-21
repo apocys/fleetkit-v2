@@ -1,6 +1,6 @@
 {
   "name": "spawnkit",
-  "version": "2.3.0",
+  "version": "3.0.0",
   "description": "Your AI executive team, on your desktop. Manage agents in a beautiful virtual office.",
   "main": "main.js",
   "author": "SpawnKit Team <hello@spawnkit.ai>",
@@ -57,6 +57,7 @@
       "office-gameboy-color/**",
       "office-sims/**",
       "office-simcity/**",
+      "office-green-iso/**",
       "src/**",
       "lib/**",
       "sprites/**",
