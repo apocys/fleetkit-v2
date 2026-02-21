@@ -69,6 +69,9 @@ contextBridge.exposeInMainWorld('spawnkitAPI', {
   // Active subagents (FIX #7)
   getActiveSubagents: () => ipcRenderer.invoke('spawnkit:getActiveSubagents'),
   
+  // Agent logs — real-time log viewer (SS+ FIX #1)
+  getAgentLogs: (agentId, limit) => ipcRenderer.invoke('spawnkit:getAgentLogs', agentId, limit),
+  
   // Agent editing (NEW #4)
   saveAgentSoul: (agentId, data) => ipcRenderer.invoke('spawnkit:saveAgentSoul', agentId, data),
   

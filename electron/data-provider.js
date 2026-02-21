@@ -1183,6 +1183,124 @@ class OpenClawDataProvider {
     }
   }
   
+  // ── Agent Logs (Real-time Log Viewer — FIX #1 for SS+) ──────────────────────
+  
+  async getAgentLogs(agentId, limit = 50) {
+    if (!this.openclawRoot) return [];
+    
+    try {
+      // Determine session directory based on agent
+      let sessionsDir;
+      if (!agentId || agentId === 'kira' || agentId === 'ceo') {
+        sessionsDir = path.join(this.openclawRoot, 'agents', 'main', 'sessions');
+      } else {
+        // Check subagent runs for the agent's most recent session
+        const agentDirMap = {
+          'hunter': 'hunter',
+          'forge': 'cto-forge',
+          'atlas': null,
+          'echo': null,
+          'sentinel': 'sentinel'
+        };
+        const dirName = agentDirMap[agentId];
+        if (dirName) {
+          const candidateDir = path.join(this.openclawRoot, 'agents', dirName, 'sessions');
+          if (fs.existsSync(candidateDir)) {
+            sessionsDir = candidateDir;
+          }
+        }
+        // Fallback: look in main agent sessions (subagent runs)
+        if (!sessionsDir) {
+          sessionsDir = path.join(this.openclawRoot, 'agents', 'main', 'sessions');
+        }
+      }
+      
+      if (!sessionsDir || !fs.existsSync(sessionsDir)) return [];
+      
+      // Find the most recent session file
+      const files = fs.readdirSync(sessionsDir)
+        .filter(f => f.endsWith('.jsonl') && !f.includes('.deleted.'))
+        .map(f => ({ name: f, path: path.join(sessionsDir, f), mtime: fs.statSync(path.join(sessionsDir, f)).mtimeMs }))
+        .sort((a, b) => b.mtime - a.mtime);
+      
+      if (files.length === 0) return [];
+      
+      // For non-CEO agents, also check subagent runs to find their session
+      let targetFile = files[0].path;
+      if (agentId && agentId !== 'kira' && agentId !== 'ceo') {
+        const runsPath = path.join(this.openclawRoot, 'subagents', 'runs.json');
+        const runsData = safeReadJSON(runsPath);
+        if (runsData && runsData.runs) {
+          // Find most recent run for this agent
+          let bestRun = null;
+          let bestTime = 0;
+          for (const [runId, run] of Object.entries(runsData.runs)) {
+            const label = (run.label || '').toLowerCase();
+            if (label.startsWith(agentId)) {
+              const t = run.createdAt || 0;
+              if (t > bestTime) {
+                bestTime = t;
+                bestRun = run;
+              }
+            }
+          }
+          // If found a subagent session file, use it
+          if (bestRun && bestRun.childSessionKey) {
+            const uuidMatch = bestRun.childSessionKey.match(/([a-f0-9-]{36})$/);
+            if (uuidMatch) {
+              const mainDir = path.join(this.openclawRoot, 'agents', 'main', 'sessions');
+              const candidate = path.join(mainDir, `${uuidMatch[1]}.jsonl`);
+              if (fs.existsSync(candidate)) {
+                targetFile = candidate;
+              }
+            }
+          }
+        }
+      }
+      
+      // Read last N lines and parse log entries
+      const lastLines = readLastLines(targetFile, limit * 2); // Read extra to filter
+      const logs = [];
+      
+      for (const line of lastLines) {
+        try {
+          const entry = JSON.parse(line);
+          
+          if (entry.type === 'message' && entry.message) {
+            const msg = entry.message;
+            let text = '';
+            if (typeof msg.content === 'string') {
+              text = msg.content;
+            } else if (Array.isArray(msg.content)) {
+              text = msg.content.filter(c => c.type === 'text').map(c => c.text).join(' ');
+            }
+            
+            if (text) {
+              logs.push({
+                timestamp: entry.timestamp || null,
+                role: msg.role || 'unknown',
+                text: text.substring(0, 150),
+                model: msg.model || null
+              });
+            }
+          } else if (entry.type === 'summary' || entry.type === 'result') {
+            logs.push({
+              timestamp: entry.timestamp || null,
+              role: 'system',
+              text: entry.summary || entry.result || JSON.stringify(entry).substring(0, 150),
+              model: null
+            });
+          }
+        } catch (e) { /* skip unparseable */ }
+      }
+      
+      return logs.slice(-limit);
+    } catch (e) {
+      console.error('[SpawnKit DataProvider] Error reading agent logs:', e.message);
+      return [];
+    }
+  }
+  
   // ── Per-Agent Metrics ──────────────────────────────────────────────────────
   
   async getAgentMetrics(agentId) {
@@ -1321,6 +1439,9 @@ function registerIPC(ipcMain) {
   
   // FIX #4: Per-agent metrics
   ipcMain.handle('spawnkit:getAgentMetrics', (e, agentId) => provider.getAgentMetrics(agentId));
+  
+  // FIX #1 SS+: Agent logs for real-time log viewer
+  ipcMain.handle('spawnkit:getAgentLogs', (e, agentId, limit) => provider.getAgentLogs(agentId, limit));
   
   // NEW #4: Save agent SOUL.md
   ipcMain.handle('spawnkit:saveAgentSoul', (e, agentId, data) => provider.saveAgentSoul(agentId, data));
