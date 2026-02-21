@@ -2975,7 +2975,8 @@
         } catch(e) {}
 
         /* Check if spawnkitAPI is available (Electron preload) */
-        var API = (typeof window.spawnkitAPI !== 'undefined' && typeof window.spawnkitAPI.isAvailable === 'function' && window.spawnkitAPI.isAvailable()) ? window.spawnkitAPI : null;
+        // spawnkitAPI reference — isAvailable() is async, resolved at init time
+        var API = (typeof window.spawnkitAPI !== 'undefined') ? window.spawnkitAPI : null;
 
         var AGENTS = {
             ceo:      { name: setupConfig.userName || 'ApoMac', role: setupConfig.ceoName || 'CEO', color: '#007AFF', status: 'active', task: 'Orchestrating fleet operations' },
@@ -3001,6 +3002,15 @@
         var liveCronData = null;
         var liveMemoryData = null;
         var chatHistory = [];
+
+        /* Pre-fetch cron + memory data for panels */
+        function prefetchPanelData() {
+            if (!API) return;
+            try { liveCronData = API.getCrons(); } catch(e) {}
+            try { liveMemoryData = API.getMemory(); } catch(e) {}
+        }
+        prefetchPanelData();
+        setInterval(prefetchPanelData, 30000);
 
         /* SVG avatar ID map for mailbox rendering */
         var AVATAR_MAP = {
@@ -3216,28 +3226,7 @@
         var meetingClose    = document.getElementById('meetingClose');
         var meetingContent  = document.getElementById('meetingContent');
         
-        // Chat Panel elements
-        var chatBtn         = document.getElementById('chatBtn');
-        var chatOverlay     = document.getElementById('chatOverlay');
-        var chatBackdrop    = document.getElementById('chatBackdrop');
-        var chatClose       = document.getElementById('chatClose');
-        var chatMessages    = document.getElementById('chatMessages');
-        var chatInput       = document.getElementById('chatInput');
-        var chatSend        = document.getElementById('chatSend');
-        
-        // Cron Panel elements
-        var cronBtn         = document.getElementById('cronBtn');
-        var cronOverlay     = document.getElementById('cronOverlay');
-        var cronBackdrop    = document.getElementById('cronBackdrop');
-        var cronClose       = document.getElementById('cronClose');
-        var cronContent     = document.getElementById('cronContent');
-        
-        // Memory Panel elements  
-        var memoryBtn       = document.getElementById('memoryBtn');
-        var memoryOverlay   = document.getElementById('memoryOverlay');
-        var memoryBackdrop  = document.getElementById('memoryBackdrop');
-        var memoryClose     = document.getElementById('memoryClose');
-        var memoryContent   = document.getElementById('memoryContent');
+        // Chat/Cron/Memory panel elements — declared in unified implementation below
 
         /* ═══════════════════════════════════════════════
            View Toggle — Grid / Hierarchy
@@ -3298,216 +3287,7 @@
         mailboxBackdrop.addEventListener('click', closeMailbox);
         mailboxClose.addEventListener('click', closeMailbox);
         
-        /* ═══════════════════════════════════════════════
-           Chat Panel — Open / Close
-           ═══════════════════════════════════════════════ */
-           
-        function openChat() {
-            closeTodoPanel();
-            closeMailbox();
-            closeCron();
-            closeMemory();
-            closeMeetingPanel();
-            
-            chatOverlay.classList.add('open');
-            chatInput.focus();
-            document.body.style.overflow = 'hidden';
-            
-            // Load recent messages for context
-            loadChatHistory();
-        }
-        
-        function closeChat() {
-            chatOverlay.classList.remove('open');
-            document.body.style.overflow = '';
-            chatBtn.focus();
-        }
-        
-        async function loadChatHistory() {
-            if (!window.spawnkitAPI || !await window.spawnkitAPI.isAvailable()) {
-                chatMessages.innerHTML = '<div class="chat-empty">No SpawnKit connection</div>';
-                return;
-            }
-            
-            try {
-                const transcript = await window.spawnkitAPI.getTranscript('agent:main:main', 10);
-                if (transcript.length === 0) {
-                    chatMessages.innerHTML = '<div class="chat-empty">No messages yet. Start a conversation!</div>';
-                    return;
-                }
-                
-                chatMessages.innerHTML = '';
-                transcript.forEach(msg => {
-                    const messageEl = document.createElement('div');
-                    messageEl.className = 'chat-message chat-message--' + (msg.role === 'user' ? 'user' : 'assistant');
-                    messageEl.innerHTML = 
-                        '<div class="chat-message-role">' + (msg.role === 'user' ? 'Kira' : 'ApoMac') + '</div>' +
-                        '<div class="chat-message-text">' + (msg.text || '').substring(0, 200) + '</div>' +
-                        '<div class="chat-message-time">' + (msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString() : 'Now') + '</div>';
-                    chatMessages.appendChild(messageEl);
-                });
-                
-                chatMessages.scrollTop = chatMessages.scrollHeight;
-            } catch (e) {
-                chatMessages.innerHTML = '<div class="chat-empty">Failed to load chat history</div>';
-            }
-        }
-        
-        function sendChatMessage() {
-            const message = chatInput.value.trim();
-            if (!message) return;
-            
-            // Add user message to chat
-            const messageEl = document.createElement('div');
-            messageEl.className = 'chat-message chat-message--user';
-            messageEl.innerHTML = 
-                '<div class="chat-message-role">You</div>' +
-                '<div class="chat-message-text">' + message + '</div>' +
-                '<div class="chat-message-time">Now</div>';
-            chatMessages.appendChild(messageEl);
-            chatInput.value = '';
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-            
-            // Send via spawnkitAPI (if available)
-            if (window.spawnkitAPI && window.spawnkitAPI.sendMission) {
-                window.spawnkitAPI.sendMission(message);
-            }
-        }
-        
-        chatBtn.addEventListener('click', openChat);
-        chatBackdrop.addEventListener('click', closeChat);
-        chatClose.addEventListener('click', closeChat);
-        chatSend.addEventListener('click', sendChatMessage);
-        chatInput.addEventListener('keypress', e => {
-            if (e.key === 'Enter') sendChatMessage();
-        });
-        
-        /* ═══════════════════════════════════════════════
-           Cron Panel — Open / Close  
-           ═══════════════════════════════════════════════ */
-           
-        function openCron() {
-            closeTodoPanel();
-            closeMailbox();
-            closeChat();
-            closeMemory();
-            closeMeetingPanel();
-            
-            cronOverlay.classList.add('open');
-            document.body.style.overflow = 'hidden';
-            
-            loadCronJobs();
-        }
-        
-        function closeCron() {
-            cronOverlay.classList.remove('open');
-            document.body.style.overflow = '';
-            cronBtn.focus();
-        }
-        
-        async function loadCronJobs() {
-            if (!window.spawnkitAPI || !await window.spawnkitAPI.isAvailable()) {
-                cronContent.innerHTML = '<div class="cron-empty">No SpawnKit connection</div>';
-                return;
-            }
-            
-            try {
-                const crons = await window.spawnkitAPI.getCrons();
-                if (crons.length === 0) {
-                    cronContent.innerHTML = '<div class="cron-empty">No cron jobs scheduled</div>';
-                    return;
-                }
-                
-                let html = '<div class="cron-list">';
-                crons.forEach(cron => {
-                    const status = cron.enabled ? 'enabled' : 'disabled';
-                    const lastRun = cron.lastRun ? new Date(cron.lastRun).toLocaleString() : 'Never';
-                    html += 
-                        '<div class="cron-item cron-item--' + status + '">' +
-                        '<div class="cron-item-header">' +
-                        '<span class="cron-item-name">' + (cron.name || cron.jobId) + '</span>' +
-                        '<span class="cron-item-status">' + status + '</span>' +
-                        '</div>' +
-                        '<div class="cron-item-schedule">' + (cron.schedule || 'Unknown schedule') + '</div>' +
-                        '<div class="cron-item-lastrun">Last: ' + lastRun + '</div>' +
-                        '</div>';
-                });
-                html += '</div>';
-                cronContent.innerHTML = html;
-            } catch (e) {
-                cronContent.innerHTML = '<div class="cron-empty">Failed to load cron jobs</div>';
-            }
-        }
-        
-        cronBtn.addEventListener('click', openCron);
-        cronBackdrop.addEventListener('click', closeCron);
-        cronClose.addEventListener('click', closeCron);
-        
-        /* ═══════════════════════════════════════════════
-           Memory Panel — Open / Close
-           ═══════════════════════════════════════════════ */
-           
-        function openMemory() {
-            closeTodoPanel();
-            closeMailbox();
-            closeChat();  
-            closeCron();
-            closeMeetingPanel();
-            
-            memoryOverlay.classList.add('open');
-            document.body.style.overflow = 'hidden';
-            
-            loadMemoryData();
-        }
-        
-        function closeMemory() {
-            memoryOverlay.classList.remove('open');
-            document.body.style.overflow = '';
-            memoryBtn.focus();
-        }
-        
-        async function loadMemoryData() {
-            if (!window.spawnkitAPI || !await window.spawnkitAPI.isAvailable()) {
-                memoryContent.innerHTML = '<div class="memory-empty">No SpawnKit connection</div>';
-                return;
-            }
-            
-            try {
-                const memory = await window.spawnkitAPI.getMemory();
-                if (!memory || !memory.content) {
-                    memoryContent.innerHTML = '<div class="memory-empty">No memory data</div>';
-                    return;
-                }
-                
-                // Show memory content with sections
-                const lines = memory.content.split('\n');
-                let html = '<div class="memory-content">';
-                let inSection = false;
-                
-                for (let line of lines.slice(0, 50)) { // First 50 lines
-                    if (line.startsWith('## ')) {
-                        if (inSection) html += '</div>';
-                        html += '<div class="memory-section"><h3>' + line.substring(3) + '</h3>';
-                        inSection = true;
-                    } else if (line.startsWith('### ')) {
-                        html += '<h4>' + line.substring(4) + '</h4>';
-                    } else if (line.trim()) {
-                        html += '<p>' + line + '</p>';
-                    }
-                }
-                
-                if (inSection) html += '</div>';
-                html += '</div>';
-                
-                memoryContent.innerHTML = html;
-            } catch (e) {
-                memoryContent.innerHTML = '<div class="memory-empty">Failed to load memory</div>';
-            }
-        }
-        
-        memoryBtn.addEventListener('click', openMemory);
-        memoryBackdrop.addEventListener('click', closeMemory);
-        memoryClose.addEventListener('click', closeMemory);
+        /* Chat/Cron/Memory panels — see unified implementation below (Forge v3) */
 
         /* ═══════════════════════════════════════════════
            TODO Panel — Open / Close
@@ -3825,7 +3605,7 @@
                         hour: '2-digit', minute: '2-digit', hour12: false 
                     }) : 'Now',
                     text: (msg.text || '').substring(0, 120) + (msg.text?.length > 120 ? '...' : ''),
-                    read: Math.random() > 0.3 // Mark 70% as read
+                    read: true // All transcript messages are already "read"
                 })).reverse().slice(0, 6);
                 
                 if (LIVE_MESSAGES.length === 0) {
