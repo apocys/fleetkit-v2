@@ -280,7 +280,12 @@
     pointer-events: auto; opacity: 1;
   }
   .v-detail-overlay.open .v-detail-backdrop { opacity: 1; }
-  .v-detail-overlay.open .v-detail-panel { transform: translateX(0); }
+  .v-detail-overlay.open .v-detail-panel { transform: translateX(0); animation: vDetailPop 400ms cubic-bezier(0.25, 1, 0.5, 1); }
+  @keyframes vDetailPop {
+    0% { transform: translateX(100%); box-shadow: none; }
+    60% { transform: translateX(-6px); }
+    100% { transform: translateX(0); }
+  }
   .v-detail-backdrop {
     position: absolute; inset: 0;
     background: rgba(0, 0, 0, 0.5); opacity: 0;
@@ -926,9 +931,46 @@ const AGENT_CHAR = {
 const ground = [];
 const objects = [];
 
+// Collision grid — tracks which tiles are occupied by objects/agents
+const occupied = [];
 for (let r = 0; r < MAP; r++) {
   ground[r] = new Array(MAP).fill(0);
   objects[r] = new Array(MAP).fill(null);
+  occupied[r] = new Array(MAP).fill(false);
+}
+
+// Helper: check if a tile position is clear for character movement
+function isTileClear(c, r, excludeChar) {
+  const tc = Math.round(c - 0.5), tr = Math.round(r - 0.5);
+  if (tc < 0 || tc >= MAP || tr < 0 || tr >= MAP) return false;
+  // Check against all other characters (not NPCs for now — they are smaller)
+  for (const ch of chars) {
+    if (ch === excludeChar) continue;
+    if (ch.decommissioning) continue;
+    const dc = Math.abs(ch.c - c), dr = Math.abs(ch.r - r);
+    if (dc < 0.5 && dr < 0.5) return false;
+  }
+  return true;
+}
+
+// Find adjacent empty tile near a destination (for meeting stops)
+function findAdjacentEmpty(destC, destR, excludeChar) {
+  const offsets = [
+    [1, 0],[0, 1],[-1, 0],[0, -1],
+    [1, 1],[-1, 1],[1, -1],[-1, -1],
+    [2, 0],[0, 2],[-2, 0],[0, -2]
+  ];
+  for (const [dc, dr] of offsets) {
+    const nc = destC + dc * 0.8, nr = destR + dr * 0.8;
+    // Convert float tile coords to int grid indices
+    const gc = Math.round(nc - 0.5), gr = Math.round(nr - 0.5);
+    if (gc < 0 || gc >= MAP || gr < 0 || gr >= MAP) continue;
+    if (ground[gr][gc] === 1 && !objects[gr][gc]) {
+      if (isTileClear(nc, nr, excludeChar)) return {c: gc + 0.5, r: gr + 0.5};
+    }
+  }
+  // Fallback: return a slight offset from dest
+  return {c: destC + 0.5, r: destR};
 }
 
 let _seed = 42;
@@ -1075,6 +1117,63 @@ const decoSpots = [
 decoSpots.forEach(([r,c]) => {
   if (!objects[r][c] && ground[r][c] !== 1) O(r, c, deco[Math.floor(rng() * deco.length)]);
 });
+
+// ── Fill interior vegetation gaps (rows 3-17, cols 2-17) ──────────
+// Near-path decorations (flowers, small plants, small stones)
+const nearPathDeco = [
+  ...flowers,
+  'rock_smallA_NE','rock_smallB_NE','stone_smallA_NE','stone_smallB_NE',
+  'plant_bushSmall_NE'
+];
+// Open-area decorations (bushes, stumps, mushrooms)
+const openAreaDeco = [
+  'plant_bush_NE','plant_bushSmall_NE',
+  'stump_round_NE','stump_old_NE',
+  'mushroom_red_NE','mushroom_tan_NE',
+  'rock_smallA_NE','rock_smallB_NE',
+  ...flowers
+];
+
+function isNearPath(r, c, radius) {
+  for (let dr = -radius; dr <= radius; dr++) {
+    for (let dc = -radius; dc <= radius; dc++) {
+      const nr = r + dr, nc = c + dc;
+      if (nr >= 0 && nr < MAP && nc >= 0 && nc < MAP && ground[nr][nc] === 1) return true;
+    }
+  }
+  return false;
+}
+
+for (let r = 3; r <= 17; r++) {
+  for (let c = 2; c <= 17; c++) {
+    // Skip path tiles and occupied tiles
+    if (ground[r][c] === 1) continue;
+    if (objects[r][c]) continue;
+    // Skip forest border tiles (already decorated with trees)
+    if (r <= 4 || r >= 17) continue;
+    if (c <= 1 || c >= 18) continue;
+    
+    let probability;
+    let pool;
+    if (isNearPath(r, c, 1)) {
+      // Near path: 65% chance of light decoration
+      probability = 0.65;
+      pool = nearPathDeco;
+    } else if (isNearPath(r, c, 2)) {
+      // 2 tiles from path: 55% chance, mixed
+      probability = 0.55;
+      pool = [...nearPathDeco, ...openAreaDeco];
+    } else {
+      // Open grass area: 45% chance, heavier deco
+      probability = 0.45;
+      pool = openAreaDeco;
+    }
+    
+    if (rng() < probability) {
+      O(r, c, pool[Math.floor(rng() * pool.length)]);
+    }
+  }
+}
 
 // ================================================================
 // IMAGE LOADING
@@ -1471,12 +1570,14 @@ function decideNextAction(ch) {
       ch.stateTimer = 0;
     } else if (roll < 0.65) {
       // Visit another agent
-      const others = chars.filter(o => o !== ch);
+      const others = chars.filter(o => o !== ch && !o.decommissioning);
+      if (others.length === 0) { ch.stateTimer = 5000 + Math.random() * 5000; return; }
       ch.meetTarget = others[Math.floor(Math.random() * others.length)];
       ch.state = STATE.WALKING_TO_AGENT;
-      // Walk to the path near the other agent's tent (not on top of it)
-      const target = ch.meetTarget.agent;
-      ch.path = findPath(ch.c, ch.r, target.col + 0.5, target.row + 0.5);
+      // Walk to an adjacent tile near the other agent's current position
+      const targetCh = ch.meetTarget;
+      const adj = findAdjacentEmpty(targetCh.c, targetCh.r, ch);
+      ch.path = findPath(ch.c, ch.r, adj.c, adj.r);
       ch.pathIdx = 0;
       ch.moving = true;
       ch.stateTimer = 0;
@@ -1575,12 +1676,24 @@ function updateChars(dt) {
             showBubble(ch, 'social');
           } else if (ch.state === STATE.WALKING_TO_AGENT) {
             ch.state = STATE.MEETING;
-            ch.stateTimer = 3000 + Math.random() * 5000;
+            ch.stateTimer = 4000 + Math.random() * 6000;
+            ch._meetBubbleTimer = 0; // track alternating bubbles
+            ch._meetBobble = 0;      // bobble phase
+            // Face toward the meeting target if they exist
+            if (ch.meetTarget && !ch.meetTarget.decommissioning) {
+              const dx = ch.meetTarget.c - ch.c;
+              const dy = ch.meetTarget.r - ch.r;
+              ch.facing = getFacing(dx || 0.001, dy || 0.001);
+              // Make the target face back
+              const target = ch.meetTarget;
+              target.facing = getFacing(-dx || -0.001, -dy || -0.001);
+            }
             // Show collab bubble
             showBubble(ch, 'collab');
           } else if (ch.state === STATE.RETURNING) {
             ch.state = STATE.WORKING;
             ch.stateTimer = 5000 + Math.random() * 10000;
+            ch.meetTarget = null;
             // Show work bubble
             showBubble(ch, 'work');
           }
@@ -1622,12 +1735,14 @@ function updateChars(dt) {
           // Pick a random idle routine
           const roll = Math.random();
           if (roll < 0.30) {
-            // Look around: cycle through facing directions
+            // Look around: rotate clockwise SE→SW→NW→NE→SE, slow steps (2-3s each)
             ch.idleRoutine = 'lookaround';
-            ch.idleRoutineTimer = 1200 + Math.random() * 800;
-            ch._lookDirs = ['NE','SE','SW','NW'];
-            ch._lookIdx = 0;
-            ch._lookStep = 0;
+            ch.idleRoutineTimer = 8000 + Math.random() * 4000; // total 8-12s
+            ch._lookDirs = ['SE','SW','NW','NE'];  // clockwise order
+            // Start from current facing direction's index (or default SE=0)
+            const startFacingIdx = ['SE','SW','NW','NE'].indexOf(ch.facing);
+            ch._lookIdx = startFacingIdx >= 0 ? startFacingIdx : 0;
+            ch._lookStep = 2200 + Math.random() * 800; // force first change after 2.2-3s
           } else if (roll < 0.55) {
             // Thinking: face tent briefly then return
             ch.idleRoutine = 'thinking';
@@ -1653,16 +1768,20 @@ function updateChars(dt) {
           ch.idleRoutineTimer -= dt;
           
           if (ch.idleRoutine === 'lookaround') {
-            ch._lookStep += dt;
-            if (ch._lookStep > 350) {
-              ch._lookStep = 0;
-              ch._lookIdx = (ch._lookIdx + 1) % ch._lookDirs.length;
-              ch.facing = ch._lookDirs[ch._lookIdx];
+            // Only change facing when truly idle (not moving, no transition)
+            if (!ch.moving) {
+              ch._lookStep -= dt;
+              if (ch._lookStep <= 0) {
+                // Rotate clockwise only (no opposite-direction flip)
+                ch._lookIdx = (ch._lookIdx + 1) % ch._lookDirs.length;
+                ch.facing = ch._lookDirs[ch._lookIdx];
+                ch._lookStep = 2200 + Math.random() * 800; // next change in 2.2–3s
+              }
             }
             if (ch.idleRoutineTimer <= 0) {
-              ch.facing = 'SE';
+              ch.facing = 'SE'; // settle on default SE
               ch.idleRoutine = null;
-              ch.idleRoutineCd = 3000 + Math.random() * 5000;
+              ch.idleRoutineCd = 4000 + Math.random() * 6000;
             }
           } else if (ch.idleRoutine === 'thinking') {
             if (ch._thinkPhase === 'face_tent' && ch.idleRoutineTimer < 700) {
@@ -1714,8 +1833,28 @@ function updateChars(dt) {
         showBubble(ch, 'work');
       }
       // Random social/collab bubble at campfire/meeting
-      if ((ch.state === STATE.AT_CAMPFIRE || ch.state === STATE.MEETING) && ch.bubbleCd <= 0 && !ch.bubble && Math.random() < 0.012) {
-        showBubble(ch, ch.state === STATE.AT_CAMPFIRE ? 'social' : 'collab');
+      if (ch.state === STATE.AT_CAMPFIRE && ch.bubbleCd <= 0 && !ch.bubble && Math.random() < 0.012) {
+        showBubble(ch, 'social');
+      }
+      // Meeting logic: face each other, alternating bubbles, bobble animation
+      if (ch.state === STATE.MEETING && ch.meetTarget && !ch.meetTarget.decommissioning) {
+        const tgt = ch.meetTarget;
+        // Keep facing toward each other continuously
+        const dx = tgt.c - ch.c;
+        const dy = tgt.r - ch.r;
+        if (Math.abs(dx) > 0.1 || Math.abs(dy) > 0.1) {
+          ch.facing = getFacing(dx, dy);
+        }
+        // Alternating speech bubble timer
+        if (typeof ch._meetBubbleTimer === 'undefined') ch._meetBubbleTimer = 0;
+        ch._meetBubbleTimer -= dt;
+        if (ch._meetBubbleTimer <= 0 && ch.bubbleCd <= 0 && !ch.bubble) {
+          showBubble(ch, 'collab');
+          ch._meetBubbleTimer = 2500 + Math.random() * 2000; // alternate ~2.5-4.5s
+        }
+        // Bobble: very slight Y offset oscillation stored in ch._meetBobble
+        if (typeof ch._meetBobble === 'undefined') ch._meetBobble = Math.random() * Math.PI * 2;
+        ch._meetBobble += dt * 0.003;
       }
       // Random emotion emoji
       if (!ch.emotionEmoji && Math.random() < 0.002) {
@@ -1796,7 +1935,11 @@ function drawChar(ch) {
   // Position: feet grounded at tile center
   const feetScreenY = s.y + DH * scale * 0.65;
   const drawX = s.x - metrics.centerX * imgScale;
-  const drawY = feetScreenY - metrics.feetY * imgScale;
+  // Apply subtle bobble during meetings
+  const bobbleY = (ch.state === STATE.MEETING && typeof ch._meetBobble !== 'undefined')
+    ? Math.sin(ch._meetBobble) * 2 * scale
+    : 0;
+  const drawY = feetScreenY - metrics.feetY * imgScale + bobbleY;
 
   // Elliptical shadow snug under feet — per-character offset for best alignment
   const shadowOffsets = {
@@ -2830,12 +2973,12 @@ requestAnimationFrame(checkReady);
 
     document.getElementById('vDetailBody').innerHTML = body;
     detailOverlay.classList.add('open');
-    document.body.style.overflow = 'hidden';
+    // NOTE: do NOT set body overflow hidden — causes "screen freeze" perception
   };
 
   window.closeVillageDetail = function() {
     detailOverlay.classList.remove('open');
-    document.body.style.overflow = '';
+    // NOTE: do NOT restore body overflow here
   };
 
   detailBackdrop.addEventListener('click', closeVillageDetail);
@@ -2856,12 +2999,12 @@ requestAnimationFrame(checkReady);
     closeAllPanels();
     chatOverlay.classList.add('open');
     chatInput.focus();
-    document.body.style.overflow = 'hidden';
+
     loadChatTranscript();
   }
   window.closeVillageChat = function() {
     chatOverlay.classList.remove('open');
-    document.body.style.overflow = '';
+
   };
 
   function loadChatTranscript() {
@@ -2944,12 +3087,12 @@ requestAnimationFrame(checkReady);
   function openMissionsPanel() {
     closeAllPanels();
     missionsOverlay.classList.add('open');
-    document.body.style.overflow = 'hidden';
+
     renderMissions();
   }
   window.closeMissionsPanel = function() {
     missionsOverlay.classList.remove('open');
-    document.body.style.overflow = '';
+
   };
 
   async function renderMissions() {
@@ -3017,12 +3160,12 @@ requestAnimationFrame(checkReady);
   function openCronPanel() {
     closeAllPanels();
     cronOverlay.classList.add('open');
-    document.body.style.overflow = 'hidden';
+
     renderCrons();
   }
   window.closeCronPanel = function() {
     cronOverlay.classList.remove('open');
-    document.body.style.overflow = '';
+
   };
 
   function humanCron(s) {
@@ -3094,12 +3237,12 @@ requestAnimationFrame(checkReady);
   function openMemoryPanel() {
     closeAllPanels();
     memoryOverlay.classList.add('open');
-    document.body.style.overflow = 'hidden';
+
     renderMemory();
   }
   window.closeMemoryPanel = function() {
     memoryOverlay.classList.remove('open');
-    document.body.style.overflow = '';
+
   };
 
   function renderMarkdown(md) {
@@ -3183,12 +3326,12 @@ requestAnimationFrame(checkReady);
   function openSettingsPanel() {
     closeAllPanels();
     settingsOverlay.classList.add('open');
-    document.body.style.overflow = 'hidden';
+
     renderSettings();
   }
   window.closeSettingsPanel = function() {
     settingsOverlay.classList.remove('open');
-    document.body.style.overflow = '';
+
   };
 
   async function renderSettings() {
