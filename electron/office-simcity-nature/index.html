@@ -1432,13 +1432,9 @@ const CHAR_METRICS = {
   'character-male-e':   { feetY: 197, headY: 90, centerX: 128, contentH: 107 },
 };
 
-// Sprite direction remap — no remap needed. Camera orbit in Blender:
-//   cam 315° → SE folder: front-right (face visible, walking screen ↘)
-//   cam 225° → SW folder: front-left  (face visible, walking screen ↙)
-//   cam 135° → NW folder: back-left   (back visible, walking screen ↖)
-//   cam  45° → NE folder: back-right  (back visible, walking screen ↗)
-// These match iso directions directly.
-const SPRITE_DIR_REMAP = { 'SE': 'SE', 'SW': 'SW', 'NW': 'NW', 'NE': 'NE' };
+// Sprite direction remap — confirmed by Kira via sprite-test.html:
+// Folders are mirrored left↔right. SE↔SW and NE↔NW need swapping.
+const SPRITE_DIR_REMAP = { 'SE': 'SW', 'SW': 'SE', 'NW': 'NE', 'NE': 'NW' };
 
 function drawChar(ch) {
   const anim = ch.moving ? 'walk' : 'idle';
