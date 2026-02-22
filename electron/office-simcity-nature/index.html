@@ -35,24 +35,44 @@
   .agent-label {
     position: fixed; pointer-events: auto; z-index: 50;
     transform: translate(-50%, -100%);
-    background: rgba(28, 28, 30, 0.78); backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border-radius: 980px; padding: 4px 12px 5px;
-    font-size: 11px; font-weight: 600; color: #f5f5f7;
-    white-space: nowrap; border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 980px;
     cursor: pointer;
-    transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
     font-family: 'Inter', -apple-system, sans-serif;
     letter-spacing: -0.005em;
+    /* Default: minimal dot-only mode */
+    background: transparent; border: none;
+    padding: 2px 6px;
+    font-size: 0; color: transparent;
+    white-space: nowrap;
+    opacity: 0.6;
   }
   .agent-label:hover {
-    background: rgba(52, 199, 89, 0.18);
-    border-color: rgba(52, 199, 89, 0.4);
+    background: rgba(28, 28, 30, 0.65); backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.1);
+    padding: 4px 12px 5px;
+    font-size: 11px; font-weight: 600; color: #f5f5f7;
+    opacity: 1;
     transform: translate(-50%, -100%) translateY(-1px);
+  }
+  .agent-label.selected {
+    background: rgba(28, 28, 30, 0.78); backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(52, 199, 89, 0.35);
+    padding: 4px 12px 5px;
+    font-size: 11px; font-weight: 600; color: #f5f5f7;
+    opacity: 1;
   }
   .agent-label .dot {
     display: inline-block; width: 7px; height: 7px; border-radius: 50%;
     margin-right: 5px; vertical-align: middle;
+    /* Dot always visible */
+    font-size: 0; color: transparent;
+  }
+  .agent-label:hover .dot,
+  .agent-label.selected .dot {
+    margin-right: 5px;
   }
 
   /* ── Info Panel (legacy, hidden) ──────────────────── */
@@ -1756,6 +1776,8 @@ function updateLabels() {
     el.style.left = s.x + 'px';
     el.style.top = ly + 'px';
     el.style.display = (s.x > -200 && s.x < cvs.width + 200 && ly > -80 && ly < cvs.height + 80) ? '' : 'none';
+    // Show full label only for selected agent
+    el.classList.toggle('selected', selectedAgentName === a.name);
   });
 }
 
