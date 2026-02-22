@@ -1492,16 +1492,17 @@ function drawChar(ch) {
   const drawX = s.x - metrics.centerX * imgScale;
   const drawY = feetScreenY - metrics.feetY * imgScale;
 
-  // Elliptical shadow under feet
+  // Elliptical shadow snug under feet (offset up slightly to account for 25° camera angle)
+  const shadowY = feetScreenY - 3 * scale;
   ctx.save();
-  const shW = 16 * scale;
-  const shH = 6 * scale;
-  const sg = ctx.createRadialGradient(s.x, feetScreenY, 0, s.x, feetScreenY, shW);
-  sg.addColorStop(0, 'rgba(10, 25, 10, 0.25)');
-  sg.addColorStop(0.6, 'rgba(10, 25, 10, 0.08)');
+  const shW = 14 * scale;
+  const shH = 5 * scale;
+  const sg = ctx.createRadialGradient(s.x, shadowY, 0, s.x, shadowY, shW);
+  sg.addColorStop(0, 'rgba(10, 25, 10, 0.22)');
+  sg.addColorStop(0.6, 'rgba(10, 25, 10, 0.06)');
   sg.addColorStop(1, 'rgba(10, 25, 10, 0)');
   ctx.beginPath();
-  ctx.ellipse(s.x, feetScreenY, shW, shH, 0, 0, Math.PI * 2);
+  ctx.ellipse(s.x, shadowY, shW, shH, 0, 0, Math.PI * 2);
   ctx.fillStyle = sg;
   ctx.fill();
   ctx.restore();
@@ -1513,16 +1514,16 @@ function drawChar(ch) {
     const glowW = shW * 1.8;
     const glowH = shH * 1.8;
     ctx.beginPath();
-    ctx.ellipse(s.x, feetScreenY, glowW, glowH, 0, 0, Math.PI * 2);
+    ctx.ellipse(s.x, shadowY, glowW, glowH, 0, 0, Math.PI * 2);
     const agentCol = ch.agent.color || '#34C759';
-    const gg = ctx.createRadialGradient(s.x, feetScreenY, 0, s.x, feetScreenY, glowW);
+    const gg = ctx.createRadialGradient(s.x, shadowY, 0, s.x, shadowY, glowW);
     gg.addColorStop(0, agentCol + Math.round(90 * pulse).toString(16).padStart(2,'0'));
     gg.addColorStop(0.6, agentCol + Math.round(40 * pulse).toString(16).padStart(2,'0'));
     gg.addColorStop(1, agentCol + '00');
     ctx.fillStyle = gg;
     ctx.fill();
     ctx.beginPath();
-    ctx.ellipse(s.x, feetScreenY, shW * 1.3, shH * 1.3, 0, 0, Math.PI * 2);
+    ctx.ellipse(s.x, shadowY, shW * 1.3, shH * 1.3, 0, 0, Math.PI * 2);
     ctx.strokeStyle = agentCol;
     ctx.lineWidth = 2 * scale * pulse;
     ctx.globalAlpha = 0.8 * pulse;
