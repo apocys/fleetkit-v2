@@ -1,0 +1,1164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SpawnKit — The Sims Office</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=VT323:wght@400&display=swap');
+
+        :root {
+            --sims-bg: #e8d5b7;
+            --sims-wall: #c5a572;
+            --sims-floor: #dcc8a0;
+            --sims-panel: #1a3a4a;
+            --sims-panel-light: #2a4858;
+            --sims-panel-lighter: #3a5868;
+            --sims-plumbob-green: #00ff00;
+            --sims-plumbob-yellow: #ffff00;
+            --sims-plumbob-red: #ff0000;
+            --sims-text-light: #e0e0e0;
+            --sims-text-dark: #2a2a2a;
+            --sims-accent: #5a8898;
+            --sims-gold: #d4aa44;
+            --sims-wood: #8b4513;
+            --sims-green: #228b22;
+            --sims-blue: #4169e1;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: var(--sims-bg);
+            color: var(--sims-text-dark);
+            font-family: 'VT323', monospace;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Title Bar */
+        .sims-title-bar {
+            width: 100%;
+            max-width: 1200px;
+            background: linear-gradient(180deg, var(--sims-panel-lighter) 0%, var(--sims-panel) 100%);
+            color: var(--sims-text-light);
+            text-align: center;
+            padding: 8px 16px;
+            font-size: 20px;
+            letter-spacing: 2px;
+            border-bottom: 2px solid var(--sims-accent);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .title-left, .title-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .title-center {
+            flex: 1;
+            text-align: center;
+        }
+
+        .plumbob-icon {
+            display: inline-block;
+            width: 14px;
+            height: 22px;
+            position: relative;
+            animation: plumbobPulse 2s ease-in-out infinite;
+        }
+
+        .plumbob-icon::before {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0; height: 0;
+            border-left: 7px solid transparent;
+            border-right: 7px solid transparent;
+            border-bottom: 14px solid var(--sims-plumbob-green);
+            filter: drop-shadow(0 0 4px rgba(0,255,0,0.6));
+        }
+
+        @keyframes plumbobPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .sims-clock {
+            font-size: 16px;
+            color: var(--sims-gold);
+            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+        }
+
+        /* Game Container */
+        #gameContainer {
+            position: relative;
+            background: var(--sims-bg);
+            max-width: 1200px;
+            width: 100%;
+            height: 600px;
+            border-left: 3px solid var(--sims-panel);
+            border-right: 3px solid var(--sims-panel);
+            overflow: hidden;
+        }
+
+        #gameCanvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            image-rendering: pixelated;
+            cursor: crosshair;
+        }
+
+        /* Control Buttons Overlay */
+        .control-overlay {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 100;
+            display: flex;
+            gap: 8px;
+        }
+
+        .control-btn {
+            background: rgba(26, 58, 74, 0.9);
+            color: var(--sims-text-light);
+            border: 1px solid var(--sims-accent);
+            padding: 6px 12px;
+            font-family: inherit;
+            font-size: 14px;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all 0.2s;
+            backdrop-filter: blur(2px);
+        }
+
+        .control-btn:hover {
+            background: var(--sims-accent);
+            transform: translateY(-1px);
+        }
+
+        .control-btn.active {
+            background: var(--sims-gold);
+            color: var(--sims-text-dark);
+            box-shadow: 0 0 8px rgba(212, 170, 68, 0.6);
+        }
+
+        /* Speed Controls */
+        .speed-controls {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 100;
+            display: flex;
+            gap: 4px;
+        }
+
+        .speed-btn {
+            background: rgba(26, 58, 74, 0.9);
+            color: var(--sims-text-light);
+            border: 1px solid var(--sims-accent);
+            padding: 4px 8px;
+            font-family: inherit;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all 0.2s;
+            backdrop-filter: blur(2px);
+        }
+
+        .speed-btn:hover {
+            background: var(--sims-accent);
+        }
+
+        .speed-btn.active {
+            background: var(--sims-gold);
+            color: var(--sims-text-dark);
+        }
+
+        /* Bottom Panel */
+        #simsPanel {
+            width: 100%;
+            max-width: 1200px;
+            background: linear-gradient(180deg, var(--sims-panel-light) 0%, var(--sims-panel) 100%);
+            border: 3px solid var(--sims-panel);
+            border-top: 3px solid var(--sims-accent);
+            color: var(--sims-text-light);
+            padding: 12px;
+            display: none; /* Hidden initially, shown when agent selected */
+        }
+
+        .panel-header {
+            text-align: center;
+            font-size: 18px;
+            color: var(--sims-gold);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .agent-portrait {
+            width: 48px;
+            height: 48px;
+            border: 2px solid var(--sims-accent);
+            border-radius: 50%;
+            background: var(--sims-panel-lighter);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .needs-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .need-bar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 4px;
+            background: rgba(58, 88, 104, 0.3);
+            border-radius: 4px;
+        }
+
+        .need-icon {
+            font-size: 16px;
+            width: 20px;
+            text-align: center;
+        }
+
+        .need-label {
+            min-width: 60px;
+            font-size: 14px;
+        }
+
+        .need-progress {
+            flex: 1;
+            height: 12px;
+            background: rgba(10, 32, 48, 0.8);
+            border: 1px solid var(--sims-accent);
+            border-radius: 6px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .need-fill {
+            height: 100%;
+            border-radius: 5px;
+            transition: width 0.8s ease, background-color 0.8s ease;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.3);
+        }
+
+        .need-fill.high { background: linear-gradient(90deg, #00aa00, #00ff00); }
+        .need-fill.medium { background: linear-gradient(90deg, #aaaa00, #ffff00); }
+        .need-fill.low { background: linear-gradient(90deg, #aa0000, #ff0000); }
+
+        .need-value {
+            position: absolute;
+            right: 4px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 10px;
+            color: white;
+            text-shadow: 0 0 2px black;
+        }
+
+        /* Relationship Web Toggle */
+        .relationship-toggle {
+            text-align: center;
+            margin-top: 8px;
+        }
+
+        .toggle-btn {
+            background: var(--sims-panel-lighter);
+            color: var(--sims-text-light);
+            border: 1px solid var(--sims-accent);
+            padding: 6px 12px;
+            font-family: inherit;
+            font-size: 14px;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        .toggle-btn:hover {
+            background: var(--sims-accent);
+        }
+
+        .toggle-btn.active {
+            background: var(--sims-gold);
+            color: var(--sims-text-dark);
+        }
+
+        /* Notification System */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--sims-panel);
+            color: var(--sims-text-light);
+            padding: 12px 16px;
+            border: 2px solid var(--sims-accent);
+            border-radius: 8px;
+            font-family: 'VT323', monospace;
+            font-size: 14px;
+            z-index: 1000;
+            max-width: 300px;
+            animation: slideIn 0.3s ease, slideOut 0.3s ease 2.7s forwards;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        @keyframes slideOut {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
+        }
+
+        /* Status Bar */
+        #statusBar {
+            width: 100%;
+            max-width: 1200px;
+            background: var(--sims-panel);
+            padding: 8px 16px;
+            font-size: 14px;
+            color: var(--sims-accent);
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            border-bottom: 2px solid #0a2a3a;
+        }
+
+        .status-item { 
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .status-sep { color: #2a4858; }
+
+        /* Responsive */
+        @media (max-width: 800px) {
+            #gameContainer {
+                height: 400px;
+            }
+            
+            .needs-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .control-overlay, .speed-controls {
+                position: static;
+                justify-content: center;
+                margin: 8px 0;
+            }
+            
+            .sims-title-bar {
+                flex-direction: column;
+                gap: 8px;
+                padding: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Title Bar -->
+    <div class="sims-title-bar">
+        <div class="title-left">
+            <span class="plumbob-icon"></span>
+            <span>SPAWNKIT</span>
+        </div>
+        <div class="title-center">THE SIMS OFFICE</div>
+        <div class="title-right">
+            <span class="sims-clock" id="gameClock">12:00</span>
+            <span class="plumbob-icon"></span>
+        </div>
+    </div>
+
+    <!-- Game Canvas Container -->
+    <div id="gameContainer">
+        <canvas id="gameCanvas" width="1200" height="600"></canvas>
+        
+        <!-- Control Overlay -->
+        <div class="control-overlay">
+            <button class="control-btn" id="buildModeBtn" title="Toggle Build Mode">🏗️ Build</button>
+            <button class="control-btn" id="relationshipBtn" title="Toggle Relationship Web">💕 Relations</button>
+        </div>
+        
+        <!-- Speed Controls -->
+        <div class="speed-controls">
+            <button class="speed-btn active" data-speed="1" title="Normal Speed">▶️</button>
+            <button class="speed-btn" data-speed="2" title="Fast Speed">⏩</button>
+            <button class="speed-btn" data-speed="4" title="Ultra Fast">⏭️</button>
+        </div>
+    </div>
+
+    <!-- Agent Panel (shown when agent selected) -->
+    <div id="simsPanel">
+        <div class="panel-header">
+            <div class="agent-portrait" id="selectedPortrait">🤖</div>
+            <div>
+                <div id="selectedName">Select an Agent</div>
+                <div id="selectedRole" style="font-size: 14px; color: var(--sims-accent);"></div>
+            </div>
+        </div>
+        
+        <div class="needs-container" id="needsContainer">
+            <!-- Needs bars populated by JavaScript -->
+        </div>
+        
+        <div class="relationship-toggle">
+            <button class="toggle-btn" id="relationshipToggle">Show Relationship Web</button>
+        </div>
+    </div>
+
+    <!-- Status Bar -->
+    <div id="statusBar">
+        <span class="status-item" id="statusAgents">👥 6 Agents Active</span>
+        <span class="status-sep">|</span>
+        <span class="status-item" id="statusMissions">📋 0 Missions</span>
+        <span class="status-sep">|</span>
+        <span class="status-item" id="statusMorale">😊 High Morale</span>
+        <span class="status-sep">|</span>
+        <span class="status-item" id="statusTime">🕐 Work Day</span>
+    </div>
+
+    <script>
+        // ═══════════════════════════════════════════════════════════════
+        // THE SIMS OFFICE - COMPLETE LIFE SIMULATION
+        // ═══════════════════════════════════════════════════════════════
+
+        class SimsOffice {
+            constructor() {
+                this.canvas = document.getElementById('gameCanvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.gameSpeed = 1;
+                this.buildMode = false;
+                this.showRelationships = false;
+                this.selectedAgent = null;
+                this.time = 0;
+                this.animationFrame = 0;
+                
+                // Audio context for ambient sounds
+                this.initAudio();
+                
+                // Agent definitions
+                this.agents = [
+                    {name:'ApoMac', role:'CEO', color:'#007AFF', x: 150, y: 100, targetX: 150, targetY: 100, room: 'ceo', mood: 'happy'},
+                    {name:'Forge', role:'CTO', color:'#FF9F0A', x: 400, y: 300, targetX: 400, targetY: 300, room: 'engineering', mood: 'focused'},
+                    {name:'Hunter', role:'CRO', color:'#FF453A', x: 800, y: 200, targetX: 800, targetY: 200, room: 'sales', mood: 'excited'},
+                    {name:'Echo', role:'CMO', color:'#0A84FF', x: 200, y: 400, targetX: 200, targetY: 400, room: 'creative', mood: 'inspired'},
+                    {name:'Sentinel', role:'Auditor', color:'#30D158', x: 600, y: 450, targetX: 600, targetY: 450, room: 'security', mood: 'alert'},
+                    {name:'Atlas', role:'COO', color:'#BF5AF2', x: 900, y: 400, targetX: 900, targetY: 400, room: 'operations', mood: 'busy'}
+                ];
+                
+                // Initialize agent properties
+                this.agents.forEach(agent => {
+                    agent.needs = {
+                        energy: 0.8 + Math.random() * 0.2,
+                        focus: 0.7 + Math.random() * 0.3,
+                        social: 0.5 + Math.random() * 0.4,
+                        motivation: 0.6 + Math.random() * 0.4,
+                        rest: 0.9 + Math.random() * 0.1
+                    };
+                    agent.walking = false;
+                    agent.walkCycle = 0;
+                    agent.thoughtBubble = null;
+                    agent.thoughtTimer = 0;
+                    agent.plumbobColor = this.getPlumbobColor(agent);
+                    agent.relationships = {};
+                    
+                    // Initialize relationships
+                    this.agents.forEach(other => {
+                        if (other !== agent) {
+                            agent.relationships[other.name] = 0.5 + Math.random() * 0.3;
+                        }
+                    });
+                });
+                
+                // Office layout
+                this.rooms = this.defineRooms();
+                
+                this.initEventListeners();
+                this.startGameLoop();
+                this.updateClock();
+                setInterval(() => this.updateClock(), 1000);
+                
+                // Start ambient behaviors
+                this.startAgentBehaviors();
+                
+                // Initialize with first agent selected
+                this.selectAgent(this.agents[0]);
+            }
+            
+            initAudio() {
+                try {
+                    this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    this.playAmbientSounds();
+                } catch (e) {
+                    console.log('Audio not available');
+                }
+            }
+            
+            playAmbientSounds() {
+                if (!this.audioContext) return;
+                
+                // Create subtle ambient sounds
+                setInterval(() => {
+                    if (Math.random() < 0.3) {
+                        this.playKeyboardSound();
+                    }
+                }, 2000 + Math.random() * 3000);
+                
+                setInterval(() => {
+                    if (Math.random() < 0.1) {
+                        this.playCoffeeSound();
+                    }
+                }, 10000 + Math.random() * 20000);
+            }
+            
+            playKeyboardSound() {
+                if (!this.audioContext) return;
+                const oscillator = this.audioContext.createOscillator();
+                const gainNode = this.audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(this.audioContext.destination);
+                
+                oscillator.frequency.setValueAtTime(800 + Math.random() * 200, this.audioContext.currentTime);
+                oscillator.type = 'square';
+                
+                gainNode.gain.setValueAtTime(0, this.audioContext.currentTime);
+                gainNode.gain.linearRampToValueAtTime(0.01, this.audioContext.currentTime + 0.01);
+                gainNode.gain.linearRampToValueAtTime(0, this.audioContext.currentTime + 0.05);
+                
+                oscillator.start(this.audioContext.currentTime);
+                oscillator.stop(this.audioContext.currentTime + 0.05);
+            }
+            
+            playCoffeeSound() {
+                if (!this.audioContext) return;
+                const oscillator = this.audioContext.createOscillator();
+                const gainNode = this.audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(this.audioContext.destination);
+                
+                oscillator.frequency.setValueAtTime(300, this.audioContext.currentTime);
+                oscillator.type = 'sawtooth';
+                
+                gainNode.gain.setValueAtTime(0, this.audioContext.currentTime);
+                gainNode.gain.linearRampToValueAtTime(0.005, this.audioContext.currentTime + 0.1);
+                gainNode.gain.linearRampToValueAtTime(0, this.audioContext.currentTime + 0.5);
+                
+                oscillator.start(this.audioContext.currentTime);
+                oscillator.stop(this.audioContext.currentTime + 0.5);
+            }
+            
+            defineRooms() {
+                return {
+                    ceo: { x: 50, y: 50, width: 200, height: 150, color: '#8B4513', name: "CEO's Corner Office", furniture: ['desk', 'bookshelf', 'window'] },
+                    engineering: { x: 300, y: 250, width: 250, height: 200, color: '#4169E1', name: "Engineering Lab", furniture: ['computers', 'server', 'soldering'] },
+                    sales: { x: 700, y: 100, width: 200, height: 180, color: '#FF453A', name: "Sales Pit", furniture: ['phone', 'whiteboard', 'trophies'] },
+                    creative: { x: 100, y: 350, width: 220, height: 180, color: '#0A84FF', name: "Creative Studio", furniture: ['design_wall', 'post_its', 'mood_board'] },
+                    security: { x: 500, y: 400, width: 180, height: 150, color: '#30D158', name: "Security Office", furniture: ['monitors', 'filing', 'red_phone'] },
+                    operations: { x: 800, y: 350, width: 220, height: 200, color: '#BF5AF2', name: "Operations Center", furniture: ['map_table', 'screens', 'schedule'] },
+                    breakroom: { x: 350, y: 100, width: 150, height: 100, color: '#228B22', name: "Break Room", furniture: ['coffee', 'table', 'microwave'] }
+                };
+            }
+            
+            initEventListeners() {
+                // Canvas click for agent selection
+                this.canvas.addEventListener('click', (e) => {
+                    const rect = this.canvas.getBoundingClientRect();
+                    const x = (e.clientX - rect.left) * (this.canvas.width / rect.width);
+                    const y = (e.clientY - rect.top) * (this.canvas.height / rect.height);
+                    
+                    this.handleCanvasClick(x, y);
+                });
+                
+                // Speed controls
+                document.querySelectorAll('.speed-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        document.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active'));
+                        btn.classList.add('active');
+                        this.gameSpeed = parseInt(btn.dataset.speed);
+                    });
+                });
+                
+                // Build mode toggle
+                document.getElementById('buildModeBtn').addEventListener('click', () => {
+                    this.buildMode = !this.buildMode;
+                    document.getElementById('buildModeBtn').classList.toggle('active', this.buildMode);
+                    this.showNotification(this.buildMode ? '🏗️ Build Mode ON' : '🏗️ Build Mode OFF');
+                });
+                
+                // Relationship toggle
+                document.getElementById('relationshipBtn').addEventListener('click', () => {
+                    this.showRelationships = !this.showRelationships;
+                    document.getElementById('relationshipBtn').classList.toggle('active', this.showRelationships);
+                    this.showNotification(this.showRelationships ? '💕 Showing Relationships' : '💕 Hiding Relationships');
+                });
+            }
+            
+            handleCanvasClick(x, y) {
+                // Check if clicking on an agent
+                for (const agent of this.agents) {
+                    const distance = Math.sqrt((x - agent.x) ** 2 + (y - agent.y) ** 2);
+                    if (distance < 30) {
+                        this.selectAgent(agent);
+                        this.showNotification(`Selected ${agent.name} - ${agent.role}`);
+                        return;
+                    }
+                }
+                
+                // If not clicking on an agent, hide panel
+                this.selectedAgent = null;
+                document.getElementById('simsPanel').style.display = 'none';
+            }
+            
+            selectAgent(agent) {
+                this.selectedAgent = agent;
+                document.getElementById('simsPanel').style.display = 'block';
+                document.getElementById('selectedName').textContent = agent.name;
+                document.getElementById('selectedRole').textContent = agent.role;
+                document.getElementById('selectedPortrait').textContent = this.getAgentEmoji(agent);
+                document.getElementById('selectedPortrait').style.backgroundColor = agent.color + '40';
+                
+                this.updateNeedsDisplay(agent);
+            }
+            
+            getAgentEmoji(agent) {
+                const emojis = {
+                    'CEO': '👑', 'CTO': '⚙️', 'CRO': '💰', 
+                    'CMO': '🎨', 'Auditor': '🔍', 'COO': '📊'
+                };
+                return emojis[agent.role] || '🤖';
+            }
+            
+            updateNeedsDisplay(agent) {
+                const container = document.getElementById('needsContainer');
+                const needsConfig = {
+                    energy: { icon: '⚡', label: 'Energy' },
+                    focus: { icon: '🧠', label: 'Focus' },
+                    social: { icon: '💬', label: 'Social' },
+                    motivation: { icon: '🎯', label: 'Motivation' },
+                    rest: { icon: '😴', label: 'Rest' }
+                };
+                
+                container.innerHTML = '';
+                
+                Object.entries(needsConfig).forEach(([key, config]) => {
+                    const value = agent.needs[key];
+                    const percentage = Math.round(value * 100);
+                    
+                    const needBar = document.createElement('div');
+                    needBar.className = 'need-bar';
+                    
+                    const fillClass = value > 0.7 ? 'high' : value > 0.4 ? 'medium' : 'low';
+                    
+                    needBar.innerHTML = `
+                        <div class="need-icon">${config.icon}</div>
+                        <div class="need-label">${config.label}</div>
+                        <div class="need-progress">
+                            <div class="need-fill ${fillClass}" style="width: ${percentage}%"></div>
+                            <div class="need-value">${percentage}%</div>
+                        </div>
+                    `;
+                    
+                    container.appendChild(needBar);
+                });
+            }
+            
+            getPlumbobColor(agent) {
+                const avgNeeds = Object.values(agent.needs).reduce((a, b) => a + b, 0) / Object.values(agent.needs).length;
+                if (avgNeeds > 0.7) return '#00ff00'; // Green
+                if (avgNeeds > 0.4) return '#ffff00'; // Yellow
+                return '#ff0000'; // Red
+            }
+            
+            startAgentBehaviors() {
+                // Update agent needs and behaviors
+                setInterval(() => {
+                    this.agents.forEach(agent => {
+                        this.updateAgentNeeds(agent);
+                        this.updateAgentMood(agent);
+                        this.maybeChangeAgentGoal(agent);
+                        this.updateThoughtBubbles(agent);
+                    });
+                }, 2000 / this.gameSpeed);
+                
+                // Agent walking and interactions
+                setInterval(() => {
+                    this.agents.forEach(agent => {
+                        this.updateAgentMovement(agent);
+                    });
+                }, 100 / this.gameSpeed);
+            }
+            
+            updateAgentNeeds(agent) {
+                // Simulate need changes based on work activities
+                const changes = {
+                    energy: -0.005 - Math.random() * 0.01,
+                    focus: -0.003 - Math.random() * 0.007,
+                    social: -0.002 + Math.random() * 0.004,
+                    motivation: -0.001 + Math.random() * 0.008,
+                    rest: -0.004 - Math.random() * 0.006
+                };
+                
+                Object.entries(changes).forEach(([need, change]) => {
+                    agent.needs[need] = Math.max(0, Math.min(1, agent.needs[need] + change));
+                });
+                
+                agent.plumbobColor = this.getPlumbobColor(agent);
+            }
+            
+            updateAgentMood(agent) {
+                const avgNeeds = Object.values(agent.needs).reduce((a, b) => a + b, 0) / Object.values(agent.needs).length;
+                
+                if (avgNeeds > 0.8) agent.mood = 'ecstatic';
+                else if (avgNeeds > 0.6) agent.mood = 'happy';
+                else if (avgNeeds > 0.4) agent.mood = 'neutral';
+                else if (avgNeeds > 0.2) agent.mood = 'stressed';
+                else agent.mood = 'miserable';
+            }
+            
+            maybeChangeAgentGoal(agent) {
+                if (Math.random() < 0.1) { // 10% chance every cycle
+                    const rooms = Object.keys(this.rooms);
+                    const targetRoom = rooms[Math.floor(Math.random() * rooms.length)];
+                    const room = this.rooms[targetRoom];
+                    
+                    agent.targetX = room.x + room.width / 2 + (Math.random() - 0.5) * 50;
+                    agent.targetY = room.y + room.height / 2 + (Math.random() - 0.5) * 50;
+                    agent.walking = true;
+                }
+            }
+            
+            updateAgentMovement(agent) {
+                const dx = agent.targetX - agent.x;
+                const dy = agent.targetY - agent.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (distance > 5) {
+                    const speed = 1 * this.gameSpeed;
+                    agent.x += (dx / distance) * speed;
+                    agent.y += (dy / distance) * speed;
+                    agent.walking = true;
+                    agent.walkCycle += 0.2 * this.gameSpeed;
+                } else {
+                    agent.walking = false;
+                }
+            }
+            
+            updateThoughtBubbles(agent) {
+                agent.thoughtTimer -= 16 * this.gameSpeed;
+                
+                if (agent.thoughtTimer <= 0 && Math.random() < 0.02) {
+                    const thoughts = ['💡', '⚠️', '✅', '🎉', '☕', '💭', '🔧', '📊', '🎯'];
+                    agent.thoughtBubble = thoughts[Math.floor(Math.random() * thoughts.length)];
+                    agent.thoughtTimer = 3000 + Math.random() * 2000;
+                }
+                
+                if (agent.thoughtTimer <= 0) {
+                    agent.thoughtBubble = null;
+                }
+            }
+            
+            updateClock() {
+                const now = new Date();
+                const hours = now.getHours().toString().padStart(2, '0');
+                const minutes = now.getMinutes().toString().padStart(2, '0');
+                document.getElementById('gameClock').textContent = `${hours}:${minutes}`;
+                
+                // Update status bar time indicator
+                const hour = now.getHours();
+                let timeStatus = '🌙 Night';
+                if (hour >= 6 && hour < 9) timeStatus = '🌅 Morning';
+                else if (hour >= 9 && hour < 17) timeStatus = '☀️ Work Day';
+                else if (hour >= 17 && hour < 22) timeStatus = '🌆 Evening';
+                
+                document.getElementById('statusTime').textContent = timeStatus;
+            }
+            
+            showNotification(message) {
+                // Remove existing notification
+                const existing = document.querySelector('.notification');
+                if (existing) existing.remove();
+                
+                const notification = document.createElement('div');
+                notification.className = 'notification';
+                notification.textContent = message;
+                document.body.appendChild(notification);
+                
+                setTimeout(() => notification.remove(), 3000);
+            }
+            
+            startGameLoop() {
+                const gameLoop = () => {
+                    this.time += 16 * this.gameSpeed;
+                    this.animationFrame++;
+                    
+                    this.render();
+                    
+                    // Update selected agent panel
+                    if (this.selectedAgent) {
+                        this.updateNeedsDisplay(this.selectedAgent);
+                    }
+                    
+                    requestAnimationFrame(gameLoop);
+                };
+                
+                gameLoop();
+            }
+            
+            render() {
+                const ctx = this.ctx;
+                ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                
+                // Draw background
+                ctx.fillStyle = '#e8d5b7';
+                ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                
+                // Draw rooms
+                this.drawRooms();
+                
+                // Draw build mode grid if enabled
+                if (this.buildMode) {
+                    this.drawBuildGrid();
+                }
+                
+                // Draw relationship lines if enabled
+                if (this.showRelationships) {
+                    this.drawRelationships();
+                }
+                
+                // Draw agents
+                this.agents.forEach(agent => {
+                    this.drawAgent(agent);
+                });
+            }
+            
+            drawRooms() {
+                const ctx = this.ctx;
+                
+                Object.entries(this.rooms).forEach(([key, room]) => {
+                    // Room floor
+                    ctx.fillStyle = room.color + '20';
+                    ctx.fillRect(room.x, room.y, room.width, room.height);
+                    
+                    // Room walls
+                    ctx.strokeStyle = room.color + '80';
+                    ctx.lineWidth = 3;
+                    ctx.strokeRect(room.x, room.y, room.width, room.height);
+                    
+                    // Room furniture (simplified)
+                    this.drawFurniture(room);
+                    
+                    // Room label
+                    ctx.fillStyle = room.color;
+                    ctx.font = 'bold 14px VT323';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(room.name, room.x + room.width/2, room.y - 5);
+                });
+            }
+            
+            drawFurniture(room) {
+                const ctx = this.ctx;
+                const centerX = room.x + room.width / 2;
+                const centerY = room.y + room.height / 2;
+                
+                ctx.fillStyle = '#8B4513';
+                
+                // Simple furniture representation
+                switch (room.name.split(' ')[0].toLowerCase()) {
+                    case "ceo's":
+                        // Desk
+                        ctx.fillRect(centerX - 30, centerY - 10, 60, 20);
+                        // Chair
+                        ctx.fillStyle = '#654321';
+                        ctx.fillRect(centerX - 8, centerY - 25, 16, 12);
+                        break;
+                    case 'engineering':
+                        // Multiple monitors
+                        ctx.fillStyle = '#333';
+                        ctx.fillRect(centerX - 40, centerY - 15, 25, 20);
+                        ctx.fillRect(centerX - 10, centerY - 15, 25, 20);
+                        ctx.fillRect(centerX + 20, centerY - 15, 25, 20);
+                        break;
+                    case 'sales':
+                        // Whiteboard
+                        ctx.fillStyle = '#f0f0f0';
+                        ctx.fillRect(centerX - 35, room.y + 10, 70, 40);
+                        // Phone
+                        ctx.fillStyle = '#333';
+                        ctx.fillRect(centerX - 15, centerY + 10, 30, 15);
+                        break;
+                    case 'creative':
+                        // Design wall with colorful post-its
+                        const colors = ['#ffff88', '#88ff88', '#ff88ff', '#88ffff'];
+                        for (let i = 0; i < 8; i++) {
+                            ctx.fillStyle = colors[i % colors.length];
+                            const x = room.x + 20 + (i % 4) * 20;
+                            const y = room.y + 20 + Math.floor(i / 4) * 25;
+                            ctx.fillRect(x, y, 15, 15);
+                        }
+                        break;
+                    case 'security':
+                        // Monitors wall
+                        ctx.fillStyle = '#333';
+                        for (let i = 0; i < 6; i++) {
+                            const x = room.x + 20 + (i % 3) * 30;
+                            const y = room.y + 20 + Math.floor(i / 3) * 25;
+                            ctx.fillRect(x, y, 25, 20);
+                        }
+                        break;
+                    case 'operations':
+                        // Map table
+                        ctx.fillStyle = '#8B4513';
+                        ctx.fillRect(centerX - 40, centerY - 20, 80, 40);
+                        // Screens around
+                        ctx.fillStyle = '#333';
+                        ctx.fillRect(centerX - 50, room.y + 10, 20, 15);
+                        ctx.fillRect(centerX + 30, room.y + 10, 20, 15);
+                        break;
+                    case 'break':
+                        // Coffee machine
+                        ctx.fillStyle = '#654321';
+                        ctx.fillRect(centerX - 10, centerY - 15, 20, 30);
+                        // Table
+                        ctx.fillStyle = '#8B4513';
+                        ctx.fillRect(centerX - 25, centerY + 10, 50, 15);
+                        break;
+                }
+            }
+            
+            drawBuildGrid() {
+                const ctx = this.ctx;
+                ctx.strokeStyle = 'rgba(90, 136, 152, 0.3)';
+                ctx.lineWidth = 1;
+                
+                // Draw grid lines
+                for (let x = 0; x < this.canvas.width; x += 50) {
+                    ctx.beginPath();
+                    ctx.moveTo(x, 0);
+                    ctx.lineTo(x, this.canvas.height);
+                    ctx.stroke();
+                }
+                
+                for (let y = 0; y < this.canvas.height; y += 50) {
+                    ctx.beginPath();
+                    ctx.moveTo(0, y);
+                    ctx.lineTo(this.canvas.width, y);
+                    ctx.stroke();
+                }
+            }
+            
+            drawRelationships() {
+                const ctx = this.ctx;
+                
+                for (let i = 0; i < this.agents.length; i++) {
+                    for (let j = i + 1; j < this.agents.length; j++) {
+                        const agent1 = this.agents[i];
+                        const agent2 = this.agents[j];
+                        const relationship = agent1.relationships[agent2.name] || 0.5;
+                        
+                        ctx.strokeStyle = `rgba(255, 192, 203, ${relationship})`;
+                        ctx.lineWidth = Math.max(1, relationship * 4);
+                        ctx.beginPath();
+                        ctx.moveTo(agent1.x, agent1.y);
+                        ctx.lineTo(agent2.x, agent2.y);
+                        ctx.stroke();
+                    }
+                }
+            }
+            
+            drawAgent(agent) {
+                const ctx = this.ctx;
+                
+                // Agent body (simple isometric character)
+                const bodySize = 16;
+                ctx.fillStyle = agent.color;
+                
+                // Walking animation
+                const walkOffset = agent.walking ? Math.sin(agent.walkCycle) * 2 : 0;
+                
+                // Body (ellipse for isometric view)
+                ctx.beginPath();
+                ctx.ellipse(agent.x, agent.y + walkOffset, bodySize/2, bodySize/3, 0, 0, 2 * Math.PI);
+                ctx.fill();
+                
+                // Head
+                ctx.fillStyle = '#ffdbac'; // Skin color
+                ctx.beginPath();
+                ctx.arc(agent.x, agent.y - bodySize/2 + walkOffset, bodySize/3, 0, 2 * Math.PI);
+                ctx.fill();
+                
+                // Mood indicator (facial expression)
+                ctx.fillStyle = '#333';
+                ctx.font = '12px Arial';
+                ctx.textAlign = 'center';
+                const moodEmoji = this.getMoodEmoji(agent.mood);
+                ctx.fillText(moodEmoji, agent.x, agent.y - bodySize/3 + walkOffset);
+                
+                // Plumbob (the iconic Sims diamond)
+                this.drawPlumbob(agent, walkOffset);
+                
+                // Agent name
+                ctx.fillStyle = agent.color;
+                ctx.font = 'bold 12px VT323';
+                ctx.fillText(agent.name, agent.x, agent.y + bodySize + 8 + walkOffset);
+                
+                // Thought bubble
+                if (agent.thoughtBubble) {
+                    this.drawThoughtBubble(agent, walkOffset);
+                }
+                
+                // Selection indicator
+                if (agent === this.selectedAgent) {
+                    ctx.strokeStyle = '#FFD700';
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    ctx.arc(agent.x, agent.y + walkOffset, bodySize + 5, 0, 2 * Math.PI);
+                    ctx.stroke();
+                }
+            }
+            
+            drawPlumbob(agent, walkOffset) {
+                const ctx = this.ctx;
+                const plumbobY = agent.y - 35 + walkOffset;
+                
+                // Plumbob rotation animation
+                const rotation = (this.animationFrame / 30) % (2 * Math.PI);
+                
+                ctx.save();
+                ctx.translate(agent.x, plumbobY);
+                ctx.rotate(rotation);
+                
+                // Plumbob shape (diamond)
+                ctx.fillStyle = agent.plumbobColor;
+                ctx.beginPath();
+                ctx.moveTo(0, -8);
+                ctx.lineTo(6, 0);
+                ctx.lineTo(0, 8);
+                ctx.lineTo(-6, 0);
+                ctx.closePath();
+                ctx.fill();
+                
+                // Plumbob glow
+                ctx.shadowColor = agent.plumbobColor;
+                ctx.shadowBlur = 10;
+                ctx.fill();
+                
+                ctx.restore();
+            }
+            
+            getMoodEmoji(mood) {
+                const moods = {
+                    'ecstatic': '😁',
+                    'happy': '😊',
+                    'neutral': '😐',
+                    'stressed': '😰',
+                    'miserable': '😫'
+                };
+                return moods[mood] || '🙂';
+            }
+            
+            drawThoughtBubble(agent, walkOffset) {
+                const ctx = this.ctx;
+                const bubbleX = agent.x + 25;
+                const bubbleY = agent.y - 40 + walkOffset;
+                
+                // Bubble background
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+                ctx.beginPath();
+                ctx.arc(bubbleX, bubbleY, 15, 0, 2 * Math.PI);
+                ctx.fill();
+                
+                // Bubble border
+                ctx.strokeStyle = '#ccc';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                
+                // Bubble tail
+                ctx.beginPath();
+                ctx.moveTo(bubbleX - 8, bubbleY + 8);
+                ctx.lineTo(agent.x + 8, agent.y - 15 + walkOffset);
+                ctx.lineTo(bubbleX - 4, bubbleY + 12);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+                
+                // Thought content
+                ctx.font = '16px Arial';
+                ctx.fillStyle = '#333';
+                ctx.textAlign = 'center';
+                ctx.fillText(agent.thoughtBubble, bubbleX, bubbleY + 4);
+            }
+        }
+
+        // Initialize the Sims Office when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            const office = new SimsOffice();
+            
+            // Theme Bridge Integration
+            window.addEventListener('message', function(event) {
+                if (event.data.type === 'spawnkit-data') {
+                    // Update office based on SpawnKit data
+                    const data = event.data.data;
+                    if (data && office) {
+                        // Update status bar with real data
+                        if (data.agents) {
+                            const activeAgents = data.agents.filter(a => a.status === 'active').length;
+                            document.getElementById('statusAgents').innerHTML = `👥 ${activeAgents}/${data.agents.length} Agents Active`;
+                        }
+                        
+                        if (data.missions) {
+                            const activeMissions = data.missions.filter(m => m.status === 'active' || m.status === 'in_progress').length;
+                            document.getElementById('statusMissions').innerHTML = `📋 ${activeMissions} Missions`;
+                        }
+                        
+                        // Update overall morale based on agent needs
+                        const avgMorale = office.agents.reduce((sum, agent) => {
+                            const agentMorale = Object.values(agent.needs).reduce((a, b) => a + b, 0) / Object.values(agent.needs).length;
+                            return sum + agentMorale;
+                        }, 0) / office.agents.length;
+                        
+                        let moraleText = '😊 High Morale';
+                        if (avgMorale < 0.3) moraleText = '😫 Low Morale';
+                        else if (avgMorale < 0.6) moraleText = '😐 Mixed Morale';
+                        
+                        document.getElementById('statusMorale').textContent = moraleText;
+                    }
+                }
+            });
+            
+            // Signal that the theme is ready
+            if (window.parent !== window) {
+                window.parent.postMessage({
+                    type: 'theme-ready',
+                    theme: 'sims'
+                }, '*');
+            }
+        });
+    </script>
+</body>
+</html>

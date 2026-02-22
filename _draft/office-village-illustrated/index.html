@@ -1,0 +1,3498 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🍂 Le Village d'Agents</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400&family=Cinzel:wght@400;600;700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    /* iOS Brand Tokens — Warm Village Adaptation */
+    --font-display: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+    --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+    --font-decorative: 'Cinzel', serif;
+    --font-serif: 'Crimson Text', Georgia, serif;
+
+    /* Apple sizing */
+    --text-xs: 0.75rem;
+    --text-sm: 0.875rem;
+    --text-base: 1.0625rem;
+    --text-lg: 1.25rem;
+
+    /* Spacing */
+    --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px;
+    --space-5: 20px; --space-6: 24px; --space-8: 32px;
+
+    /* Border Radius (Apple) */
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    --radius-xl: 20px;
+    --radius-pill: 980px;
+
+    /* Shadows (Apple elevation) */
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.2);
+    --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.25);
+    --shadow-lg: 0 8px 40px rgba(0, 0, 0, 0.35);
+
+    /* Animation */
+    --ease-apple: cubic-bezier(0.4, 0, 0.2, 1);
+    --ease-spring: cubic-bezier(0.25, 1, 0.5, 1);
+    --duration-fast: 150ms;
+    --duration-normal: 300ms;
+
+    /* Legacy warm tokens (used by Pixi/canvas) */
+    --parchment: rgba(42, 30, 18, 0.75);
+    --parchment-light: rgba(62, 45, 28, 0.65);
+    --text-warm: #f5e6c8;
+    --text-gold: #ffd700;
+    --border-warm: rgba(180, 140, 80, 0.4);
+
+    /* Product accent: warm gold */
+    --color-accent: #FF9500;
+    --color-accent-hover: #FFa726;
+    --color-accent-active: #e88a00;
+    --color-accent-light: rgba(255, 149, 0, 0.12);
+  }
+
+  body {
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    background-color: #1a120a;
+    background-image: url('../office-simcity/village-bg.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    font-family: var(--font-body, 'Inter', -apple-system, sans-serif);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    color: var(--text-warm);
+    cursor: default;
+    transition: background-position 0.3s ease-out;
+  }
+
+  /* ── Ambient Light Overlay ── */
+  #ambient-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background: radial-gradient(
+      ellipse 80% 70% at 48% 50%,
+      rgba(255, 160, 60, 0.06) 0%,
+      transparent 60%
+    ),
+    radial-gradient(
+      ellipse 100% 100% at 50% 50%,
+      transparent 50%,
+      rgba(10, 6, 2, 0.35) 100%
+    );
+  }
+
+  /* ── Loading Screen ── */
+  #loading-screen {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(ellipse at center, #2a1e12 0%, #0d0906 100%);
+    transition: opacity 1.2s ease-out;
+  }
+  #loading-screen.fade-out {
+    opacity: 0;
+    pointer-events: none;
+  }
+  #loading-screen .loading-text {
+    font-family: var(--font-decorative, 'Cinzel', serif);
+    font-size: 1.6rem;
+    color: var(--text-warm);
+    text-shadow: 0 0 20px rgba(255, 180, 60, 0.4);
+    animation: pulse-loading 2s ease-in-out infinite;
+    letter-spacing: 0.1em;
+  }
+  #loading-screen .loading-leaf {
+    font-size: 2.5rem;
+    margin-bottom: 1.2rem;
+    animation: spin-leaf 4s ease-in-out infinite;
+  }
+  @keyframes pulse-loading {
+    0%, 100% { opacity: 0.6; }
+    50% { opacity: 1; }
+  }
+  @keyframes spin-leaf {
+    0% { transform: rotate(0deg) scale(1); }
+    25% { transform: rotate(15deg) scale(1.1); }
+    50% { transform: rotate(0deg) scale(1); }
+    75% { transform: rotate(-15deg) scale(1.1); }
+    100% { transform: rotate(0deg) scale(1); }
+  }
+
+  /* ── Pixi Canvas ── */
+  #pixi-canvas {
+    position: fixed;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+  }
+
+  /* ── Hotspot Layer (clickable) ── */
+  #hotspot-layer {
+    position: fixed;
+    inset: 0;
+    z-index: 2;
+  }
+  .hotspot {
+    position: absolute;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    cursor: pointer;
+    transition: transform 0.2s ease;
+  }
+  .hotspot:hover {
+    transform: translate(-50%, -50%) scale(1.15);
+  }
+  .hotspot .hotspot-ring {
+    position: absolute;
+    inset: -8px;
+    border-radius: 50%;
+    border: 2px solid currentColor;
+    opacity: 0;
+    animation: hotspot-ping 3s ease-out infinite;
+  }
+  @keyframes hotspot-ping {
+    0% { transform: scale(0.8); opacity: 0.6; }
+    100% { transform: scale(1.6); opacity: 0; }
+  }
+  .hotspot .hotspot-label {
+    position: absolute;
+    top: -26px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: var(--font-body, 'Inter', sans-serif);
+    font-size: var(--text-xs, 0.75rem);
+    font-weight: 600;
+    white-space: nowrap;
+    color: var(--text-warm);
+    text-shadow: 0 1px 4px rgba(0,0,0,0.8), 0 0 10px rgba(0,0,0,0.5);
+    opacity: 0;
+    transition: opacity var(--duration-fast, 150ms) var(--ease-apple, ease);
+    pointer-events: none;
+    letter-spacing: 0.02em;
+  }
+  .hotspot:hover .hotspot-label {
+    opacity: 1;
+  }
+
+  /* ── UI Overlay ── */
+  #ui-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 10;
+    pointer-events: none;
+  }
+  #ui-overlay > * {
+    pointer-events: auto;
+  }
+
+  /* ── Top Banner — Apple Frosted Glass with warm tint ── */
+  #top-banner {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 52px;
+    padding: 0 var(--space-6, 24px);
+    background: rgba(42, 30, 18, 0.55);
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    border-bottom: 1px solid rgba(180, 140, 80, 0.18);
+  }
+  #top-banner h1 {
+    font-family: var(--font-decorative, 'Cinzel', serif);
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-warm);
+    text-shadow: 0 1px 4px rgba(0,0,0,0.5);
+    letter-spacing: 0.08em;
+  }
+
+  /* ── Season Badge — Apple Pill ── */
+  #season-badge {
+    position: absolute;
+    top: 12px;
+    right: 20px;
+    background: rgba(42, 30, 18, 0.55);
+    backdrop-filter: saturate(180%) blur(16px);
+    -webkit-backdrop-filter: saturate(180%) blur(16px);
+    border: 1px solid rgba(180, 140, 80, 0.22);
+    border-radius: var(--radius-pill, 980px);
+    padding: 6px 16px;
+    font-family: var(--font-body, 'Inter', sans-serif);
+    font-size: var(--text-xs, 0.75rem);
+    font-weight: 600;
+    color: var(--color-accent, #FF9500);
+    letter-spacing: 0.04em;
+  }
+
+  /* ── Stats Panel — Apple Card ── */
+  #stats-panel {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    background: rgba(36, 26, 16, 0.72);
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    border: 1px solid rgba(180, 140, 80, 0.18);
+    border-radius: var(--radius-lg, 16px);
+    padding: var(--space-4, 16px) var(--space-5, 20px);
+    min-width: 220px;
+    box-shadow: var(--shadow-lg, 0 8px 40px rgba(0,0,0,0.35));
+  }
+  #stats-panel .stat-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 8px);
+    padding: 5px 0;
+    font-family: var(--font-body, 'Inter', sans-serif);
+    font-size: var(--text-sm, 0.875rem);
+    line-height: 1.43;
+  }
+  #stats-panel .stat-row .stat-icon {
+    font-size: 1rem;
+    width: 22px;
+    text-align: center;
+  }
+  #stats-panel .stat-label {
+    color: rgba(245, 230, 200, 0.6);
+    font-weight: 400;
+    letter-spacing: -0.005em;
+  }
+  #stats-panel .stat-value {
+    color: var(--text-warm);
+    font-weight: 600;
+    margin-left: auto;
+    letter-spacing: -0.01em;
+  }
+
+  /* ── Activity Log — Apple Card ── */
+  #activity-log {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    background: rgba(36, 26, 16, 0.72);
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    border: 1px solid rgba(180, 140, 80, 0.18);
+    border-radius: var(--radius-lg, 16px);
+    padding: var(--space-3, 12px) var(--space-4, 16px);
+    min-width: 200px;
+    max-width: 260px;
+    box-shadow: var(--shadow-lg, 0 8px 40px rgba(0,0,0,0.35));
+    font-family: var(--font-body, 'Inter', sans-serif);
+    font-size: var(--text-sm, 0.875rem);
+  }
+  #activity-log .log-title {
+    font-family: var(--font-body, 'Inter', sans-serif);
+    font-size: var(--text-xs, 0.75rem);
+    font-weight: 600;
+    color: var(--color-accent, #FF9500);
+    letter-spacing: 0.06em;
+    margin-bottom: var(--space-2, 8px);
+    text-transform: uppercase;
+  }
+  #activity-log .log-entry {
+    padding: 3px 0;
+    color: rgba(245, 230, 200, 0.65);
+    line-height: 1.43;
+    font-size: var(--text-xs, 0.75rem);
+    opacity: 0;
+    transform: translateY(6px);
+    animation: log-appear 0.4s var(--ease-apple, ease-out) forwards;
+  }
+  @keyframes log-appear {
+    to { opacity: 1; transform: translateY(0); }
+  }
+  #activity-log .log-entry .log-time {
+    color: rgba(245, 230, 200, 0.4);
+    font-size: 0.72rem;
+    margin-right: 4px;
+  }
+
+  /* ── Hint Text ── */
+  #hint-text {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: var(--font-body, 'Inter', sans-serif);
+    font-size: var(--text-sm, 0.875rem);
+    color: rgba(245, 230, 200, 0.45);
+    text-shadow: 0 1px 4px rgba(0,0,0,0.6);
+    font-style: normal;
+    font-weight: 400;
+    letter-spacing: -0.005em;
+    pointer-events: none;
+    transition: opacity var(--duration-normal, 0.3s) var(--ease-apple, ease);
+  }
+
+  /* ── Building Popup — Apple Card ── */
+  #building-popup {
+    position: absolute;
+    z-index: 20;
+    background: rgba(36, 26, 16, 0.82);
+    backdrop-filter: saturate(180%) blur(24px);
+    -webkit-backdrop-filter: saturate(180%) blur(24px);
+    border: 1px solid rgba(180, 140, 80, 0.18);
+    border-radius: var(--radius-lg, 16px);
+    padding: 0;
+    min-width: 240px;
+    box-shadow: var(--shadow-lg, 0 8px 40px rgba(0,0,0,0.35));
+    opacity: 0;
+    transform: scale(0.92) translateY(8px);
+    pointer-events: none;
+    transition: none;
+    overflow: hidden;
+    font-family: var(--font-body, 'Inter', sans-serif);
+  }
+  #building-popup.visible {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+    pointer-events: auto;
+  }
+  #building-popup .popup-accent {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    border-radius: 16px 0 0 16px;
+  }
+  #building-popup .popup-header {
+    padding: var(--space-4, 16px) var(--space-5, 20px) var(--space-3, 12px);
+    border-bottom: 1px solid rgba(180, 140, 80, 0.12);
+  }
+  #building-popup .popup-name {
+    font-family: var(--font-decorative, 'Cinzel', serif);
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--text-warm);
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 8px);
+  }
+  #building-popup .popup-role {
+    font-family: var(--font-body, 'Inter', sans-serif);
+    font-size: var(--text-xs, 0.75rem);
+    color: rgba(245, 230, 200, 0.55);
+    margin-top: 2px;
+    font-style: normal;
+    font-weight: 400;
+    letter-spacing: -0.005em;
+  }
+  #building-popup .popup-body {
+    padding: var(--space-3, 12px) var(--space-5, 20px) var(--space-4, 16px);
+  }
+  #building-popup .popup-stat {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 8px);
+    padding: 4px 0;
+    font-size: var(--text-sm, 0.875rem);
+  }
+  #building-popup .popup-stat-label {
+    color: rgba(245, 230, 200, 0.55);
+    font-weight: 400;
+  }
+  #building-popup .popup-stat-value {
+    margin-left: auto;
+    font-weight: 600;
+    color: var(--text-warm);
+  }
+
+  /* ── Dismiss overlay ── */
+  #dismiss-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 15;
+    display: none;
+  }
+  #dismiss-overlay.active {
+    display: block;
+  }
+</style>
+</head>
+<body>
+
+<!-- Ambient Light Overlay -->
+<div id="ambient-overlay"></div>
+
+<!-- Loading Screen -->
+<div id="loading-screen">
+  <div class="loading-leaf">🍂</div>
+  <div class="loading-text">Le village se réveille…</div>
+</div>
+
+<!-- Pixi Canvas Container -->
+<div id="pixi-canvas"></div>
+
+<!-- Hotspot Layer -->
+<div id="hotspot-layer"></div>
+
+<!-- UI Overlay -->
+<div id="ui-overlay">
+  <!-- Top Banner -->
+  <div id="top-banner">
+    <h1>🍂 Le Village d'Agents</h1>
+  </div>
+
+  <!-- Season Badge -->
+  <div id="season-badge">🍂 Automne</div>
+
+  <!-- Stats Panel -->
+  <div id="stats-panel">
+    <div class="stat-row">
+      <span class="stat-icon">🏘️</span>
+      <span class="stat-label">Villageois</span>
+      <span class="stat-value" id="stat-villagers">6</span>
+    </div>
+    <div class="stat-row">
+      <span class="stat-icon">⭐</span>
+      <span class="stat-label">Niveau</span>
+      <span class="stat-value" id="stat-level">3 — Automne Doré</span>
+    </div>
+    <div class="stat-row">
+      <span class="stat-icon">🌾</span>
+      <span class="stat-label">Récolte</span>
+      <span class="stat-value" id="stat-tasks">47 tâches</span>
+    </div>
+    <div class="stat-row">
+      <span class="stat-icon">💰</span>
+      <span class="stat-label">Trésor</span>
+      <span class="stat-value" id="stat-treasury">€2,847</span>
+    </div>
+  </div>
+
+  <!-- Activity Log -->
+  <div id="activity-log">
+    <div class="log-title">📜 Journal du Village</div>
+    <div id="log-entries"></div>
+  </div>
+
+  <!-- Hint Text -->
+  <div id="hint-text">Cliquez sur un bâtiment pour voir les détails de l'agent</div>
+
+  <!-- Dismiss Overlay -->
+  <div id="dismiss-overlay"></div>
+
+  <!-- Building Popup -->
+  <div id="building-popup">
+    <div class="popup-accent" id="popup-accent"></div>
+    <div class="popup-header">
+      <div class="popup-name"><span>🏠</span> <span id="popup-name"></span></div>
+      <div class="popup-role" id="popup-role"></div>
+    </div>
+    <div class="popup-body">
+      <div class="popup-stat">
+        <span class="popup-stat-label">Status</span>
+        <span class="popup-stat-value" id="popup-status"></span>
+      </div>
+      <div class="popup-stat">
+        <span class="popup-stat-label">Tâches</span>
+        <span class="popup-stat-value" id="popup-tasks"></span>
+      </div>
+      <div class="popup-stat">
+        <span class="popup-stat-label">Focus</span>
+        <span class="popup-stat-value" id="popup-focus"></span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Libraries -->
+<script src="../lib/js/pixi.min.js"></script>
+<script src="../lib/js/anime.min.js"></script>
+
+<script>
+(function () {
+  'use strict';
+
+  // ── Building Data ──
+  const buildings = [
+    {
+      name: 'ApoMac', role: 'CEO — Le Maire', color: '#007AFF', colorHex: 0x007AFF,
+      x: 0.25, y: 0.25, tasks: 12, status: 'Actif', focus: 'Stratégie',
+      sprite: 'char-apomac.png', frameCount: 1,
+      bubbleMessages: [
+        '💡 Vision Q2 en cours…',
+        '🏰 Le village grandit !',
+        '📊 Analyse des métriques',
+        '🎯 Objectifs alignés',
+        '☕ Pause stratégique…',
+      ],
+      idleAction: 'thinking',
+    },
+    {
+      name: 'Forge', role: "CTO — L'Artisan", color: '#FF9F0A', colorHex: 0xFF9F0A,
+      x: 0.72, y: 0.22, tasks: 18, status: 'Actif', focus: 'Infrastructure',
+      sprite: 'char-forge.png', frameCount: 2,
+      bubbleMessages: [
+        '🔨 Compilation en cours…',
+        '⚡ Pipeline optimisé !',
+        '🔧 Refactoring…',
+        '🛠️ Build succeeded ✓',
+        '💻 Deploy v3.2.1',
+      ],
+      idleAction: 'hammering',
+    },
+    {
+      name: 'Hunter', role: 'CRO — Le Marchand', color: '#FF453A', colorHex: 0xFF453A,
+      x: 0.18, y: 0.52, tasks: 8, status: 'Actif', focus: 'Revenue',
+      sprite: 'char-hunter.png', frameCount: 2,
+      bubbleMessages: [
+        '🎯 Nouveau lead qualifié !',
+        '💰 Deal en négociation…',
+        '📈 +12% ce mois',
+        '🤝 Closing meeting',
+        '🏹 À la chasse !',
+      ],
+      idleAction: 'looking',
+    },
+    {
+      name: 'Echo', role: 'CMO — Le Crieur', color: '#0A84FF', colorHex: 0x0A84FF,
+      x: 0.78, y: 0.55, tasks: 15, status: 'Actif', focus: 'Communication',
+      sprite: 'char-echo.png', frameCount: 2,
+      bubbleMessages: [
+        '📢 Newsletter envoyée !',
+        '🎨 Nouveau design prêt',
+        '📝 Blog post en cours…',
+        '🐦 Thread viral ! 🔥',
+        '🎙️ Podcast enregistré',
+      ],
+      idleAction: 'waving',
+    },
+    {
+      name: 'Sentinel', role: 'Auditeur — Le Guetteur', color: '#30D158', colorHex: 0x30D158,
+      x: 0.28, y: 0.78, tasks: 22, status: 'Actif', focus: 'Qualité',
+      sprite: 'char-sentinel.png', frameCount: 2,
+      bubbleMessages: [
+        '🛡️ Audit terminé ✓',
+        '🔍 Vérification en cours…',
+        '✅ Aucune faille détectée',
+        '⚠️ Anomalie mineure…',
+        '👁️ Surveillance active',
+      ],
+      idleAction: 'watching',
+    },
+    {
+      name: 'Atlas', role: 'COO — Le Coordinateur', color: '#BF5AF2', colorHex: 0xBF5AF2,
+      x: 0.68, y: 0.75, tasks: 10, status: 'Actif', focus: 'Opérations',
+      sprite: 'char-atlas.png', frameCount: 2,
+      bubbleMessages: [
+        '📋 Sprint planifié',
+        '🗺️ Roadmap actualisée',
+        '⚙️ Process optimisé',
+        '🤖 Automation active',
+        '📊 KPIs on track',
+      ],
+      idleAction: 'organizing',
+    },
+  ];
+
+  // ── Points of Interest (destinations for purposeful movement) ──
+  const POI = {
+    campfire: { x: 0.48, y: 0.50, label: 'Place du village' },
+    well: { x: 0.55, y: 0.40, label: 'Le puits' },
+    market: { x: 0.35, y: 0.60, label: 'Le marché' },
+    bridge: { x: 0.60, y: 0.48, label: 'Le pont' },
+    garden: { x: 0.42, y: 0.35, label: 'Le jardin' },
+  };
+
+  const VILLAGE_CENTER = { x: 0.48, y: 0.50 };
+  const LEAF_COLORS = [0xFF8C00, 0xB22222, 0xFFD700, 0x8B4513, 0xCC5500, 0xDAA520];
+  const WIND_ANGLE = 0.15;
+
+  let W, H;
+  let app;
+  let mouseX = 0, mouseY = 0;
+  let parallaxEnabled = true;
+  let agentObjects = []; // populated by initVillagers
+
+  // ── Activity Log System ──
+  const activityLog = [];
+  function addLogEntry(text) {
+    const now = new Date();
+    const time = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+    activityLog.unshift({ time, text });
+    if (activityLog.length > 5) activityLog.pop();
+    renderLog();
+  }
+  function renderLog() {
+    const container = document.getElementById('log-entries');
+    if (!container) return;
+    container.innerHTML = activityLog.map((e, i) => 
+      `<div class="log-entry" style="animation-delay: ${i * 0.05}s"><span class="log-time">${e.time}</span>${e.text}</div>`
+    ).join('');
+  }
+
+  // Seed initial log entries
+  setTimeout(() => {
+    addLogEntry('🏘️ Le village s\'éveille…');
+    setTimeout(() => addLogEntry('🔥 Le feu de camp crépite'), 2000);
+    setTimeout(() => addLogEntry('🍂 Premières feuilles d\'automne'), 4000);
+  }, 2000);
+
+  // ── Preload Background ──
+  const bgImg = new Image();
+  bgImg.src = '../office-simcity/village-bg.png';
+
+  async function onReady() {
+    W = window.innerWidth;
+    H = window.innerHeight;
+    await initPixi();
+    initHotspots();
+    initParallax();
+    initDismiss();
+    initThemeBridge();
+    initActivityDriver();
+
+    // Fade out loading screen
+    const ls = document.getElementById('loading-screen');
+    ls.classList.add('fade-out');
+    setTimeout(() => { ls.style.display = 'none'; }, 1400);
+  }
+
+  if (bgImg.complete) {
+    onReady();
+  } else {
+    bgImg.onload = onReady;
+    bgImg.onerror = onReady;
+  }
+
+  // ── Pixi.js Setup ──
+  async function initPixi() {
+    app = new PIXI.Application({
+      width: W,
+      height: H,
+      backgroundAlpha: 0,
+      antialias: true,
+      resolution: Math.min(window.devicePixelRatio || 1, 2),
+      autoDensity: true,
+    });
+    document.getElementById('pixi-canvas').appendChild(app.view);
+    app.view.style.width = '100%';
+    app.view.style.height = '100%';
+
+    // Load character sprites
+    await PIXI.Assets.load([
+      'char-apomac.png',
+      'char-forge.png', 
+      'char-hunter.png',
+      'char-echo.png',
+      'char-sentinel.png',
+      'char-atlas.png'
+    ]);
+
+    // Containers (layered for proper depth)
+    const layers = {};
+    ['wind', 'dustMotes', 'riverSparkles', 'campfireGlow', 'smoke', 'shadows', 'leaves', 'embers', 'villagers', 'speechBubbles', 'hotspotGlows', 'fireflies', 'birds', 'topParticles'].forEach(name => {
+      layers[name] = new PIXI.Container();
+      app.stage.addChild(layers[name]);
+    });
+
+    // Start all systems
+    initSmoke(layers.smoke);
+    initLeaves(layers.leaves);
+    initRiverSparkles(layers.riverSparkles);
+    initCampfire(layers.campfireGlow, layers.embers);
+    initFireflies(layers.fireflies);
+    initDustMotes(layers.dustMotes);
+    initVillagers(layers.villagers, layers.shadows, layers.speechBubbles);
+    initWind(layers.wind);
+    initBirds(layers.birds);
+    initHotspotGlows(layers.hotspotGlows);
+
+    // Resize handler
+    window.addEventListener('resize', () => {
+      W = window.innerWidth;
+      H = window.innerHeight;
+      app.renderer.resize(W, H);
+    });
+  }
+
+  // ══════════════════════════════════════════
+  //  1. CHIMNEY SMOKE (improved — wispy, layered)
+  // ══════════════════════════════════════════
+  function initSmoke(container) {
+    const particles = [];
+
+    function spawnSmoke(bx, by) {
+      const g = new PIXI.Graphics();
+      const r = 4 + Math.random() * 6;
+      // Multi-layer smoke for depth
+      g.beginFill(0xCCBBAA, 0.15);
+      g.drawCircle(0, 0, r * 1.5);
+      g.endFill();
+      g.beginFill(0xDDCCBB, 0.3);
+      g.drawCircle(Math.random() * 2, Math.random() * 2, r);
+      g.endFill();
+      g.x = bx * W + (Math.random() - 0.5) * 8;
+      g.y = by * H - 15;
+      g.alpha = 0;
+      container.addChild(g);
+
+      particles.push({
+        g,
+        vx: (Math.random() - 0.3) * 0.25 + WIND_ANGLE * 0.4,
+        vy: -(0.6 + Math.random() * 0.8),
+        life: 0,
+        maxLife: 180 + Math.random() * 80,
+        startAlpha: 0.35 + Math.random() * 0.15,
+        wobblePhase: Math.random() * Math.PI * 2,
+        wobbleSpeed: 0.02 + Math.random() * 0.02,
+      });
+    }
+
+    buildings.forEach(b => {
+      setInterval(() => spawnSmoke(b.x, b.y - 0.03), 250 + Math.random() * 150);
+    });
+
+    app.ticker.add(() => {
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.life++;
+
+        // Fade in then out
+        const fadeIn = Math.min(1, p.life / 20);
+        const fadeOut = 1 - p.life / p.maxLife;
+        p.g.alpha = p.startAlpha * fadeIn * fadeOut;
+
+        // Wispy motion
+        p.wobblePhase += p.wobbleSpeed;
+        p.g.x += p.vx + Math.sin(p.wobblePhase) * 0.3;
+        p.g.y += p.vy;
+        p.g.scale.set(1 + p.life * 0.008);
+
+        if (p.life >= p.maxLife) {
+          container.removeChild(p.g);
+          p.g.destroy();
+          particles.splice(i, 1);
+        }
+      }
+    });
+  }
+
+  // ══════════════════════════════════════════
+  //  2. FALLING LEAVES (improved — realistic shapes)
+  // ══════════════════════════════════════════
+  function initLeaves(container) {
+    const leaves = [];
+    const MAX_LEAVES = 25;
+
+    function drawLeafShape(g, color, size) {
+      g.beginFill(color);
+      // Draw a more realistic leaf shape using bezier-like segments
+      g.moveTo(0, -size);
+      g.quadraticCurveTo(size * 0.8, -size * 0.3, size * 0.4, size * 0.2);
+      g.quadraticCurveTo(0, size * 0.8, 0, size);
+      g.quadraticCurveTo(0, size * 0.8, -size * 0.4, size * 0.2);
+      g.quadraticCurveTo(-size * 0.8, -size * 0.3, 0, -size);
+      g.endFill();
+      // Leaf vein
+      g.lineStyle(0.5, 0x000000, 0.15);
+      g.moveTo(0, -size);
+      g.lineTo(0, size);
+    }
+
+    function spawnLeaf() {
+      if (leaves.length >= MAX_LEAVES) return;
+      const color = LEAF_COLORS[Math.floor(Math.random() * LEAF_COLORS.length)];
+      const g = new PIXI.Graphics();
+      const size = 4 + Math.random() * 5;
+      drawLeafShape(g, color, size);
+      g.x = Math.random() * W;
+      g.y = -10;
+      g.alpha = 0.85;
+      g.pivot.set(0, 0);
+      container.addChild(g);
+
+      leaves.push({
+        g,
+        speed: 0.5 + Math.random() * 0.7,
+        sineOffset: Math.random() * Math.PI * 2,
+        sineAmp: 25 + Math.random() * 25,
+        sinePeriod: 2.5 + Math.random() * 2,
+        rotSpeed: (Math.random() - 0.5) * 0.04,
+        tumbleSpeed: 0.01 + Math.random() * 0.02,
+        tumblePhase: Math.random() * Math.PI * 2,
+        startX: g.x,
+        time: 0,
+      });
+    }
+
+    setInterval(spawnLeaf, 1200);
+    // Seed a few
+    for (let i = 0; i < 5; i++) {
+      setTimeout(() => {
+        spawnLeaf();
+        if (leaves.length > 0) {
+          leaves[leaves.length - 1].g.y = Math.random() * H * 0.6;
+        }
+      }, i * 200);
+    }
+
+    app.ticker.add((delta) => {
+      for (let i = leaves.length - 1; i >= 0; i--) {
+        const l = leaves[i];
+        l.time += delta / 60;
+        l.g.y += l.speed * delta;
+        l.g.x = l.startX + Math.sin(l.time * (Math.PI * 2) / l.sinePeriod + l.sineOffset) * l.sineAmp + l.time * WIND_ANGLE * 10;
+        l.g.rotation += l.rotSpeed * delta;
+
+        // Tumble effect — scale Y to simulate 3D rotation
+        l.tumblePhase += l.tumbleSpeed * delta;
+        l.g.scale.x = 0.7 + Math.abs(Math.sin(l.tumblePhase)) * 0.3;
+
+        // Fade near bottom
+        if (l.g.y > H * 0.82) {
+          l.g.alpha = Math.max(0, 0.85 * (1 - (l.g.y - H * 0.82) / (H * 0.18)));
+        }
+        if (l.g.y > H + 20) {
+          container.removeChild(l.g);
+          l.g.destroy();
+          leaves.splice(i, 1);
+        }
+      }
+    });
+  }
+
+  // ══════════════════════════════════════════
+  //  3. RIVER SPARKLES (improved — shimmer)
+  // ══════════════════════════════════════════
+  function initRiverSparkles(container) {
+    const sparkles = [];
+    const RIVER_Y_MIN = 0.42;
+    const RIVER_Y_MAX = 0.58;
+    const RIVER_X_MIN = 0.15;
+    const RIVER_X_MAX = 0.85;
+    const COUNT = 12;
+
+    for (let i = 0; i < COUNT; i++) {
+      const g = new PIXI.Graphics();
+      // Star-like sparkle shape
+      g.beginFill(0xFFFFFF);
+      g.drawCircle(0, 0, 1.2 + Math.random());
+      g.endFill();
+      g.beginFill(0xFFFFCC, 0.4);
+      g.drawCircle(0, 0, 3 + Math.random() * 2);
+      g.endFill();
+      g.x = (RIVER_X_MIN + Math.random() * (RIVER_X_MAX - RIVER_X_MIN)) * W;
+      g.y = (RIVER_Y_MIN + Math.random() * (RIVER_Y_MAX - RIVER_Y_MIN)) * H;
+      g.alpha = 0;
+      container.addChild(g);
+      sparkles.push({ g, phase: Math.random() * Math.PI * 2, speed: 3 + Math.random() * 3, driftX: 0.05 + Math.random() * 0.1 });
+    }
+
+    app.ticker.add((delta) => {
+      sparkles.forEach(s => {
+        s.phase += delta * 0.04 * s.speed;
+        s.g.alpha = Math.max(0, Math.sin(s.phase)) * 0.7;
+        s.g.x += s.driftX * delta; // slow river flow
+
+        if (s.g.alpha < 0.01 && Math.sin(s.phase + 0.1) > 0) {
+          s.g.x = (RIVER_X_MIN + Math.random() * (RIVER_X_MAX - RIVER_X_MIN)) * W;
+          s.g.y = (RIVER_Y_MIN + Math.random() * (RIVER_Y_MAX - RIVER_Y_MIN)) * H;
+        }
+        // Wrap around
+        if (s.g.x > RIVER_X_MAX * W) {
+          s.g.x = RIVER_X_MIN * W;
+        }
+      });
+    });
+  }
+
+  // ══════════════════════════════════════════
+  //  4. CAMPFIRE GLOW + EMBERS (improved — dynamic fire)
+  // ══════════════════════════════════════════
+  function initCampfire(glowContainer, emberContainer) {
+    const cx = VILLAGE_CENTER.x * W;
+    const cy = VILLAGE_CENTER.y * H;
+
+    // Multi-layer glow for realistic warmth
+    const layers = [];
+    const glowColors = [
+      { color: 0xFF4400, radius: 15, alpha: 0.12 },
+      { color: 0xFF8800, radius: 30, alpha: 0.08 },
+      { color: 0xFFA040, radius: 50, alpha: 0.05 },
+      { color: 0xFFCC44, radius: 8, alpha: 0.2 },
+    ];
+
+    glowColors.forEach(cfg => {
+      const g = new PIXI.Graphics();
+      g.beginFill(cfg.color, cfg.alpha);
+      g.drawCircle(0, 0, cfg.radius);
+      g.endFill();
+      g.x = cx;
+      g.y = cy;
+      glowContainer.addChild(g);
+      layers.push({ g, baseAlpha: cfg.alpha, baseRadius: cfg.radius });
+    });
+
+    // Fire particles (rising flame shapes)
+    const flames = [];
+    function spawnFlame() {
+      const g = new PIXI.Graphics();
+      const colors = [0xFF4400, 0xFF6600, 0xFFAA00, 0xFFCC00];
+      const color = colors[Math.floor(Math.random() * colors.length)];
+      const size = 2 + Math.random() * 3;
+      g.beginFill(color, 0.7);
+      g.moveTo(0, 0);
+      g.lineTo(-size * 0.5, size);
+      g.lineTo(0, size * 0.7);
+      g.lineTo(size * 0.5, size);
+      g.closePath();
+      g.endFill();
+      g.x = cx + (Math.random() - 0.5) * 12;
+      g.y = cy;
+      g.alpha = 0.8;
+      emberContainer.addChild(g);
+      flames.push({
+        g,
+        vx: (Math.random() - 0.5) * 0.3,
+        vy: -(1.5 + Math.random() * 2),
+        life: 0,
+        maxLife: 30 + Math.random() * 30,
+      });
+    }
+
+    setInterval(spawnFlame, 120);
+
+    // Embers (sparks)
+    const embers = [];
+    function spawnEmber() {
+      const g = new PIXI.Graphics();
+      const color = Math.random() > 0.5 ? 0xFF6600 : 0xFFAA00;
+      g.beginFill(color);
+      g.drawCircle(0, 0, 0.8 + Math.random() * 0.8);
+      g.endFill();
+      g.x = cx + (Math.random() - 0.5) * 14;
+      g.y = cy;
+      g.alpha = 0.9;
+      emberContainer.addChild(g);
+      embers.push({
+        g,
+        vx: (Math.random() - 0.5) * 1.2,
+        vy: -(1 + Math.random() * 2.5),
+        life: 0,
+        maxLife: 50 + Math.random() * 70,
+        gravity: 0.02,
+      });
+    }
+
+    setInterval(spawnEmber, 600);
+
+    app.ticker.add((delta) => {
+      // Glow flicker
+      const flicker = Math.sin(Date.now() * 0.01) * 0.3 + Math.sin(Date.now() * 0.023) * 0.2 + Math.random() * 0.1;
+      layers.forEach(l => {
+        l.g.alpha = l.baseAlpha * (0.7 + flicker * 0.5);
+        l.g.scale.set(0.9 + flicker * 0.15);
+      });
+
+      // Update flames
+      for (let i = flames.length - 1; i >= 0; i--) {
+        const f = flames[i];
+        f.life += delta;
+        f.g.x += f.vx * delta;
+        f.g.y += f.vy * delta;
+        f.g.alpha = 0.8 * (1 - f.life / f.maxLife);
+        f.g.scale.set(1 - f.life / f.maxLife * 0.5);
+        if (f.life >= f.maxLife) {
+          emberContainer.removeChild(f.g);
+          f.g.destroy();
+          flames.splice(i, 1);
+        }
+      }
+
+      // Update embers
+      for (let i = embers.length - 1; i >= 0; i--) {
+        const e = embers[i];
+        e.life += delta;
+        e.vy += e.gravity * delta;
+        e.g.x += e.vx * delta;
+        e.g.y += e.vy * delta;
+        e.g.alpha = 0.9 * (1 - e.life / e.maxLife);
+        if (e.life >= e.maxLife) {
+          emberContainer.removeChild(e.g);
+          e.g.destroy();
+          embers.splice(i, 1);
+        }
+      }
+    });
+  }
+
+  // ══════════════════════════════════════════
+  //  5. FIREFLIES (improved — warmer, varied)
+  // ══════════════════════════════════════════
+  function initFireflies(container) {
+    const fireflies = [];
+    const MAX = 14;
+
+    function spawnFirefly() {
+      if (fireflies.length >= MAX) return;
+      const g = new PIXI.Graphics();
+      const warmth = Math.random();
+      const coreColor = warmth > 0.5 ? 0xFFDD44 : 0xAAFF66;
+      // Soft glow halo
+      g.beginFill(coreColor, 0.08);
+      g.drawCircle(0, 0, 12);
+      g.endFill();
+      g.beginFill(coreColor, 0.2);
+      g.drawCircle(0, 0, 5);
+      g.endFill();
+      g.beginFill(0xFFFFFF);
+      g.drawCircle(0, 0, 1.5);
+      g.endFill();
+
+      let fx, fy;
+      if (Math.random() < 0.6) {
+        const side = Math.random();
+        if (side < 0.25) { fx = Math.random() * 0.15; fy = Math.random(); }
+        else if (side < 0.5) { fx = 0.85 + Math.random() * 0.15; fy = Math.random(); }
+        else if (side < 0.75) { fx = Math.random(); fy = Math.random() * 0.15; }
+        else { fx = Math.random(); fy = 0.85 + Math.random() * 0.15; }
+      } else {
+        fx = 0.1 + Math.random() * 0.8;
+        fy = 0.1 + Math.random() * 0.8;
+      }
+
+      g.x = fx * W;
+      g.y = fy * H;
+      g.alpha = 0;
+      container.addChild(g);
+
+      fireflies.push({
+        g,
+        baseX: g.x,
+        baseY: g.y,
+        phase: Math.random() * Math.PI * 2,
+        alphaPhase: Math.random() * Math.PI * 2,
+        driftX: (Math.random() - 0.5) * 0.15,
+        driftY: (Math.random() - 0.5) * 0.12,
+        life: 0,
+        maxLife: (10 + Math.random() * 6) * 60,
+      });
+    }
+
+    setInterval(spawnFirefly, 1800);
+    for (let i = 0; i < 4; i++) spawnFirefly();
+
+    app.ticker.add((delta) => {
+      for (let i = fireflies.length - 1; i >= 0; i--) {
+        const f = fireflies[i];
+        f.life += delta;
+        f.phase += delta * 0.012;
+        f.alphaPhase += delta * 0.04;
+
+        f.g.x = f.baseX + Math.sin(f.phase) * 25;
+        f.g.y = f.baseY + Math.cos(f.phase * 0.7) * 18;
+        f.baseX += f.driftX * delta;
+        f.baseY += f.driftY * delta;
+
+        // Blink pattern (on-off-on instead of smooth sine)
+        const raw = Math.sin(f.alphaPhase);
+        const pulse = raw > 0.3 ? 0.6 + (raw - 0.3) * 0.57 : raw > 0 ? raw * 0.4 : 0;
+        let lifeFade = 1;
+        if (f.life < 60) lifeFade = f.life / 60;
+        else if (f.life > f.maxLife - 60) lifeFade = (f.maxLife - f.life) / 60;
+
+        f.g.alpha = pulse * Math.max(0, lifeFade);
+
+        if (f.life >= f.maxLife) {
+          container.removeChild(f.g);
+          f.g.destroy();
+          fireflies.splice(i, 1);
+        }
+      }
+    });
+  }
+
+  // ══════════════════════════════════════════
+  //  NEW: DUST MOTES (floating golden particles)
+  // ══════════════════════════════════════════
+  function initDustMotes(container) {
+    const motes = [];
+    const MAX_MOTES = 30;
+
+    for (let i = 0; i < MAX_MOTES; i++) {
+      const g = new PIXI.Graphics();
+      const brightness = 0.3 + Math.random() * 0.4;
+      g.beginFill(0xFFDDAA, brightness);
+      g.drawCircle(0, 0, 0.5 + Math.random() * 1.2);
+      g.endFill();
+      g.x = Math.random() * W;
+      g.y = Math.random() * H;
+      g.alpha = 0;
+      container.addChild(g);
+      motes.push({
+        g,
+        phase: Math.random() * Math.PI * 2,
+        driftPhaseX: Math.random() * Math.PI * 2,
+        driftPhaseY: Math.random() * Math.PI * 2,
+        speedX: 0.003 + Math.random() * 0.005,
+        speedY: 0.002 + Math.random() * 0.004,
+        alphaSpeed: 0.008 + Math.random() * 0.012,
+        maxAlpha: brightness,
+      });
+    }
+
+    app.ticker.add((delta) => {
+      motes.forEach(m => {
+        m.driftPhaseX += m.speedX * delta;
+        m.driftPhaseY += m.speedY * delta;
+        m.phase += m.alphaSpeed * delta;
+
+        m.g.x += Math.sin(m.driftPhaseX) * 0.3 * delta + WIND_ANGLE * 0.05 * delta;
+        m.g.y += Math.cos(m.driftPhaseY) * 0.2 * delta - 0.02 * delta;
+        m.g.alpha = Math.max(0, Math.sin(m.phase)) * m.maxAlpha;
+
+        // Wrap
+        if (m.g.x > W + 10) m.g.x = -10;
+        if (m.g.x < -10) m.g.x = W + 10;
+        if (m.g.y < -10) { m.g.y = H + 10; m.g.x = Math.random() * W; }
+        if (m.g.y > H + 10) m.g.y = -10;
+      });
+    });
+  }
+
+  // ══════════════════════════════════════════
+  //  6. VILLAGER CHARACTER SPRITES
+  //     (with shadows, speech bubbles, idle animation, purposeful movement)
+  // ══════════════════════════════════════════
+  function initVillagers(container, shadowContainer, bubbleContainer) {
+    const agents = [];
+    const poiKeys = Object.keys(POI);
+
+    buildings.forEach((b, idx) => {
+      // ── Shadow (elliptical, on ground) ──
+      const shadow = new PIXI.Graphics();
+      shadow.beginFill(0x000000, 0.25);
+      shadow.drawEllipse(0, 4, 14, 5);
+      shadow.endFill();
+      shadow.x = b.x * W;
+      shadow.y = b.y * H;
+      shadowContainer.addChild(shadow);
+
+      // ── Name tag ──
+      const nameTag = new PIXI.Text(b.name, {
+        fontFamily: 'Cinzel, serif',
+        fontSize: 10,
+        fontWeight: '600',
+        fill: 0xf5e6c8,
+        stroke: 0x000000,
+        strokeThickness: 3,
+        align: 'center',
+      });
+      nameTag.anchor.set(0.5, 1);
+
+      // ── Status indicator (colored dot) ──
+      const statusDot = new PIXI.Graphics();
+      statusDot.beginFill(b.colorHex);
+      statusDot.drawCircle(0, 0, 3);
+      statusDot.endFill();
+      statusDot.beginFill(0xFFFFFF, 0.5);
+      statusDot.drawCircle(0, 0, 1.5);
+      statusDot.endFill();
+
+      // ── Character sprite with spritesheet support ──
+      const texture = PIXI.Texture.from(b.sprite);
+      let sprite;
+
+      if (b.frameCount > 1) {
+        // Extract first frame from spritesheet (234px = 2 frames of 117px)
+        const frameW = Math.floor(texture.width / b.frameCount);
+        const frame0 = new PIXI.Rectangle(0, 0, frameW, texture.height);
+        const frame1 = new PIXI.Rectangle(frameW, 0, frameW, texture.height);
+        const tex0 = new PIXI.Texture(texture.baseTexture, frame0);
+        const tex1 = new PIXI.Texture(texture.baseTexture, frame1);
+        sprite = new PIXI.Sprite(tex0);
+        sprite._frames = [tex0, tex1];
+        sprite._frameIdx = 0;
+      } else {
+        sprite = new PIXI.Sprite(texture);
+        sprite._frames = null;
+      }
+
+      sprite.anchor.set(0.5, 0.9);
+      sprite.scale.set(0.38);
+
+      // ── Outer glow ──
+      const outer = new PIXI.Graphics();
+      outer.beginFill(b.colorHex, 0.18);
+      outer.drawCircle(0, 0, 16);
+      outer.endFill();
+
+      // ── Speech bubble ──
+      const bubbleGroup = new PIXI.Container();
+      const bubbleText = new PIXI.Text('', {
+        fontFamily: 'Crimson Text, serif',
+        fontSize: 11,
+        fill: 0xf5e6c8,
+        stroke: 0x1a120a,
+        strokeThickness: 3,
+        wordWrap: true,
+        wordWrapWidth: 140,
+        align: 'center',
+      });
+      bubbleText.anchor.set(0.5, 1);
+      const bubbleBg = new PIXI.Graphics();
+      bubbleGroup.addChild(bubbleBg);
+      bubbleGroup.addChild(bubbleText);
+      bubbleGroup.alpha = 0;
+      bubbleGroup.visible = false;
+      bubbleContainer.addChild(bubbleGroup);
+
+      // ── Assemble group ──
+      const group = new PIXI.Container();
+      group.addChild(outer);
+      group.addChild(sprite);
+      group.addChild(nameTag);
+      group.addChild(statusDot);
+      group.x = b.x * W;
+      group.y = b.y * H;
+      container.addChild(group);
+
+      // Position name tag above sprite
+      nameTag.y = -sprite.height * 0.38 - 8;
+      statusDot.x = nameTag.width / 2 + 8;
+      statusDot.y = nameTag.y + 4;
+
+      agents.push({
+        group, outer, sprite, shadow, nameTag, statusDot,
+        bubbleGroup, bubbleText, bubbleBg,
+        building: b,
+        homeX: b.x, homeY: b.y,
+        targetX: b.x, targetY: b.y,
+        state: 'idle', // idle | walking_to_poi | at_poi | walking_home | meeting
+        progress: 0,
+        pauseTimer: 0,
+        speed: 0.0025 + Math.random() * 0.0015,
+        startX: b.x, startY: b.y,
+        walkTime: 0,
+        idleTime: 0,
+        bubbleTimer: 0,
+        bubbleVisible: false,
+        bubbleDuration: 0,
+        frameTimer: 0,
+        color: b.colorHex,
+        currentPoi: null,
+        meetPartner: null,
+        idx,
+      });
+    });
+
+    agentObjects = agents;
+
+    // ── Easing ──
+    function easeInOutCubic(t) {
+      return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+    }
+
+    // ── Show speech bubble ──
+    function showBubble(a) {
+      const msg = a.building.bubbleMessages[Math.floor(Math.random() * a.building.bubbleMessages.length)];
+      a.bubbleText.text = msg;
+
+      // Draw bubble background
+      a.bubbleBg.clear();
+      const pad = 8;
+      const bw = a.bubbleText.width + pad * 2;
+      const bh = a.bubbleText.height + pad * 2;
+      a.bubbleBg.beginFill(0x1a120a, 0.85);
+      a.bubbleBg.drawRoundedRect(-bw / 2, -bh, bw, bh, 8);
+      a.bubbleBg.endFill();
+      // Tail
+      a.bubbleBg.beginFill(0x1a120a, 0.85);
+      a.bubbleBg.moveTo(-4, 0);
+      a.bubbleBg.lineTo(4, 0);
+      a.bubbleBg.lineTo(0, 6);
+      a.bubbleBg.closePath();
+      a.bubbleBg.endFill();
+      // Border
+      a.bubbleBg.lineStyle(1, a.color, 0.4);
+      a.bubbleBg.drawRoundedRect(-bw / 2, -bh, bw, bh, 8);
+
+      a.bubbleText.y = -pad;
+
+      a.bubbleGroup.visible = true;
+      a.bubbleVisible = true;
+      a.bubbleDuration = 180 + Math.random() * 120; // 3-5 seconds
+      a.bubbleTimer = 0;
+    }
+
+    function hideBubble(a) {
+      a.bubbleVisible = false;
+      a.bubbleGroup.visible = false;
+      a.bubbleGroup.alpha = 0;
+    }
+
+    // ── Choose next destination ──
+    function chooseDestination(a) {
+      const roll = Math.random();
+      if (roll < 0.3) {
+        // Go to a POI
+        const poi = POI[poiKeys[Math.floor(Math.random() * poiKeys.length)]];
+        a.targetX = poi.x + (Math.random() - 0.5) * 0.04;
+        a.targetY = poi.y + (Math.random() - 0.5) * 0.04;
+        a.currentPoi = poi;
+        a.state = 'walking_to_poi';
+      } else if (roll < 0.5) {
+        // Meet another agent at campfire
+        const others = agents.filter(o => o !== a && o.state === 'idle');
+        if (others.length > 0) {
+          const partner = others[Math.floor(Math.random() * others.length)];
+          const meetX = VILLAGE_CENTER.x + (Math.random() - 0.5) * 0.05;
+          const meetY = VILLAGE_CENTER.y + (Math.random() - 0.5) * 0.05;
+          a.targetX = meetX - 0.02;
+          a.targetY = meetY;
+          a.state = 'walking_to_poi';
+          a.meetPartner = partner;
+          // Send partner to meet too
+          partner.targetX = meetX + 0.02;
+          partner.targetY = meetY;
+          partner.startX = partner.group.x / W;
+          partner.startY = partner.group.y / H;
+          partner.state = 'walking_to_poi';
+          partner.progress = 0;
+          partner.meetPartner = a;
+        } else {
+          // Fallback: go to campfire
+          a.targetX = VILLAGE_CENTER.x + (Math.random() - 0.5) * 0.06;
+          a.targetY = VILLAGE_CENTER.y + (Math.random() - 0.5) * 0.06;
+          a.state = 'walking_to_poi';
+        }
+      } else {
+        // Wander near home
+        a.targetX = a.homeX + (Math.random() - 0.5) * 0.08;
+        a.targetY = a.homeY + (Math.random() - 0.5) * 0.06;
+        a.state = 'walking_to_poi';
+      }
+      a.startX = a.group.x / W;
+      a.startY = a.group.y / H;
+      a.progress = 0;
+      a.pauseTimer = 0;
+    }
+
+    app.ticker.add((delta) => {
+      agents.forEach(a => {
+        const isWalking = a.state === 'walking_to_poi' || a.state === 'walking_home';
+
+        // ── Sprite frame animation ──
+        if (a.sprite._frames && a.sprite._frames.length > 1) {
+          a.frameTimer += delta;
+          if (isWalking) {
+            // Faster frame swap when walking
+            if (a.frameTimer > 15) {
+              a.frameTimer = 0;
+              a.sprite._frameIdx = (a.sprite._frameIdx + 1) % a.sprite._frames.length;
+              a.sprite.texture = a.sprite._frames[a.sprite._frameIdx];
+            }
+          } else {
+            // Slow idle frame swap
+            if (a.frameTimer > 45) {
+              a.frameTimer = 0;
+              a.sprite._frameIdx = (a.sprite._frameIdx + 1) % a.sprite._frames.length;
+              a.sprite.texture = a.sprite._frames[a.sprite._frameIdx];
+            }
+          }
+        }
+
+        // ── Walking animation ──
+        if (isWalking) {
+          a.walkTime += delta * 0.1;
+          // Bob up and down
+          a.sprite.y = Math.sin(a.walkTime * 4) * 2;
+          // Slight lean in direction of movement
+          const dx = a.targetX - a.startX;
+          a.sprite.rotation = Math.sin(a.walkTime * 5) * 0.06;
+          // Flip sprite based on direction
+          if (dx < -0.01) a.sprite.scale.x = -Math.abs(a.sprite.scale.x);
+          else if (dx > 0.01) a.sprite.scale.x = Math.abs(a.sprite.scale.x);
+        } else {
+          // ── Idle animation (breathing) ──
+          a.idleTime += delta * 0.02;
+          a.sprite.y = Math.sin(a.idleTime) * 1;
+          a.sprite.rotation = 0;
+          a.walkTime = 0;
+        }
+
+        // ── Shadow follows character ──
+        a.shadow.x = a.group.x;
+        a.shadow.y = a.group.y + 2;
+        a.shadow.alpha = 0.2 + (isWalking ? Math.abs(Math.sin(a.walkTime * 4)) * 0.05 : 0);
+        a.shadow.scale.set(isWalking ? 0.9 + Math.abs(Math.sin(a.walkTime * 4)) * 0.1 : 1);
+
+        // ── Name tag position ──
+        a.nameTag.y = -a.sprite.height * a.sprite.scale.y - 6;
+        a.statusDot.x = a.nameTag.width / 2 + 8;
+        a.statusDot.y = a.nameTag.y + 4;
+
+        // ── Speech bubble position & fade ──
+        a.bubbleGroup.x = a.group.x;
+        a.bubbleGroup.y = a.group.y + a.nameTag.y - 14;
+
+        if (a.bubbleVisible) {
+          a.bubbleTimer += delta;
+          // Fade in
+          if (a.bubbleTimer < 15) {
+            a.bubbleGroup.alpha = a.bubbleTimer / 15;
+          }
+          // Fade out
+          else if (a.bubbleTimer > a.bubbleDuration - 20) {
+            a.bubbleGroup.alpha = Math.max(0, (a.bubbleDuration - a.bubbleTimer) / 20);
+          } else {
+            a.bubbleGroup.alpha = 1;
+          }
+
+          if (a.bubbleTimer >= a.bubbleDuration) {
+            hideBubble(a);
+          }
+        }
+
+        // ── State machine ──
+        switch (a.state) {
+          case 'idle':
+            a.pauseTimer += delta;
+            // Random bubble while idle
+            if (!a.bubbleVisible && Math.random() < 0.0008) {
+              showBubble(a);
+            }
+            if (a.pauseTimer > 200 + Math.random() * 300) { // 3-8 sec
+              chooseDestination(a);
+            }
+            break;
+
+          case 'walking_to_poi':
+            a.progress = Math.min(1, a.progress + a.speed * delta);
+            const t1 = easeInOutCubic(a.progress);
+            a.group.x = (a.startX + (a.targetX - a.startX) * t1) * W;
+            a.group.y = (a.startY + (a.targetY - a.startY) * t1) * H;
+            if (a.progress >= 1) {
+              a.state = 'at_poi';
+              a.pauseTimer = 0;
+              // Show a bubble when arriving
+              if (Math.random() < 0.5) {
+                showBubble(a);
+              }
+            }
+            break;
+
+          case 'at_poi':
+            a.pauseTimer += delta;
+            // Random bubble while at POI
+            if (!a.bubbleVisible && Math.random() < 0.001) {
+              showBubble(a);
+            }
+            if (a.pauseTimer > 150 + Math.random() * 200) { // 2.5-5.8 sec
+              a.state = 'walking_home';
+              a.startX = a.group.x / W;
+              a.startY = a.group.y / H;
+              a.targetX = a.homeX;
+              a.targetY = a.homeY;
+              a.progress = 0;
+              a.pauseTimer = 0;
+              a.meetPartner = null;
+              a.currentPoi = null;
+            }
+            break;
+
+          case 'walking_home':
+            a.progress = Math.min(1, a.progress + a.speed * delta);
+            const t2 = easeInOutCubic(a.progress);
+            a.group.x = (a.startX + (a.targetX - a.startX) * t2) * W;
+            a.group.y = (a.startY + (a.targetY - a.startY) * t2) * H;
+            if (a.progress >= 1) {
+              a.state = 'idle';
+              a.pauseTimer = 0;
+            }
+            break;
+        }
+
+        // ── Subtle glow pulse ──
+        a.outer.alpha = 0.15 + Math.sin(Date.now() * 0.003 + a.idx) * 0.06;
+        // Status dot pulse
+        a.statusDot.alpha = 0.7 + Math.sin(Date.now() * 0.004 + a.idx * 2) * 0.3;
+      });
+    });
+  }
+
+  // ══════════════════════════════════════════
+  //  7. WIND PARTICLES (improved)
+  // ══════════════════════════════════════════
+  function initWind(container) {
+    const streaks = [];
+    const MAX_STREAKS = 10;
+
+    function spawnStreak() {
+      if (streaks.length >= MAX_STREAKS) return;
+      const g = new PIXI.Graphics();
+      const alpha = 0.04 + Math.random() * 0.04;
+      const len = 50 + Math.random() * 100;
+      g.beginFill(0xFFEECC, alpha);
+      g.drawRoundedRect(0, -0.8, len, 1.6, 0.8);
+      g.endFill();
+      g.x = -len;
+      g.y = Math.random() * H;
+      g.rotation = WIND_ANGLE * 0.3;
+      container.addChild(g);
+      streaks.push({
+        g, speed: 1.8 + Math.random() * 2.5, len,
+        life: 0,
+      });
+    }
+
+    setInterval(spawnStreak, 2500);
+
+    app.ticker.add((delta) => {
+      for (let i = streaks.length - 1; i >= 0; i--) {
+        const s = streaks[i];
+        s.g.x += s.speed * delta;
+        s.life += delta;
+        // Fade in/out
+        if (s.life < 30) s.g.alpha = (s.life / 30) * 0.08;
+        if (s.g.x > W + s.len) {
+          container.removeChild(s.g);
+          s.g.destroy();
+          streaks.splice(i, 1);
+        }
+      }
+    });
+  }
+
+  // ══════════════════════════════════════════
+  //  8. BIRD SILHOUETTES (improved — V-formation groups)
+  // ══════════════════════════════════════════
+  function initBirds(container) {
+    function drawBird(g, size) {
+      g.lineStyle(1.5, 0x2a1e12, 0.5);
+      g.moveTo(-size, 0);
+      g.quadraticCurveTo(-size * 0.5, -size * 0.5, 0, size * 0.15);
+      g.quadraticCurveTo(size * 0.5, -size * 0.5, size, 0);
+    }
+
+    function spawnBirdGroup() {
+      const count = 1 + Math.floor(Math.random() * 3);
+      const baseY = H * (0.05 + Math.random() * 0.2);
+      const speed = (W + 60) / (10 * 60);
+
+      for (let b = 0; b < count; b++) {
+        const g = new PIXI.Graphics();
+        const size = 5 + Math.random() * 4;
+        drawBird(g, size);
+        g.x = -20 - b * 25;
+        g.y = baseY + b * 12 * (b % 2 === 0 ? 1 : -1);
+        container.addChild(g);
+
+        let flapPhase = Math.random() * Math.PI * 2;
+        const birdSpeed = speed * (0.95 + Math.random() * 0.1);
+
+        const ticker = (delta) => {
+          g.x += birdSpeed * delta;
+          flapPhase += delta * 0.08;
+          g.y += Math.sin(flapPhase) * 0.25;
+          g.scale.y = 0.6 + Math.sin(flapPhase * 2.5) * 0.4;
+
+          if (g.x > W + 40) {
+            app.ticker.remove(ticker);
+            container.removeChild(g);
+            g.destroy();
+          }
+        };
+        app.ticker.add(ticker);
+      }
+    }
+
+    setTimeout(spawnBirdGroup, 4000);
+    setInterval(spawnBirdGroup, 18000 + Math.random() * 8000);
+  }
+
+  // ══════════════════════════════════════════
+  //  HOTSPOT GLOWS (Pixi layer)
+  // ══════════════════════════════════════════
+  function initHotspotGlows(container) {
+    buildings.forEach((b, idx) => {
+      const g = new PIXI.Graphics();
+      g.beginFill(b.colorHex, 0.15);
+      g.drawCircle(0, 0, 28);
+      g.endFill();
+      // Inner warmer glow
+      g.beginFill(b.colorHex, 0.1);
+      g.drawCircle(0, 0, 14);
+      g.endFill();
+      g.x = b.x * W;
+      g.y = b.y * H;
+      g.alpha = 0.25;
+      container.addChild(g);
+      b._glow = g;
+    });
+
+    app.ticker.add(() => {
+      buildings.forEach((b, idx) => {
+        if (b._glow) {
+          b._glow.alpha = 0.18 + Math.sin(Date.now() * 0.002 + idx) * 0.08;
+          b._glow.scale.set(0.95 + Math.sin(Date.now() * 0.0015 + idx * 2) * 0.06);
+        }
+      });
+    });
+  }
+
+  // ══════════════════════════════════════════
+  //  HTML HOTSPOTS (clickable layer)
+  // ══════════════════════════════════════════
+  function initHotspots() {
+    const layer = document.getElementById('hotspot-layer');
+    buildings.forEach((b, i) => {
+      const el = document.createElement('div');
+      el.className = 'hotspot';
+      el.style.left = (b.x * 100) + '%';
+      el.style.top = (b.y * 100) + '%';
+      el.style.color = b.color;
+
+      const ring = document.createElement('div');
+      ring.className = 'hotspot-ring';
+      ring.style.animationDelay = (i * 0.5) + 's';
+      el.appendChild(ring);
+
+      const label = document.createElement('div');
+      label.className = 'hotspot-label';
+      label.textContent = b.name;
+      el.appendChild(label);
+
+      el.addEventListener('click', (e) => {
+        e.stopPropagation();
+        showPopup(b, e);
+      });
+
+      el.addEventListener('mouseenter', () => {
+        if (b._glow) b._glow.alpha = 0.5;
+      });
+      el.addEventListener('mouseleave', () => {
+        if (b._glow) b._glow.alpha = 0.25;
+      });
+
+      layer.appendChild(el);
+    });
+  }
+
+  // ══════════════════════════════════════════
+  //  POPUP
+  // ══════════════════════════════════════════
+  function showPopup(b, e) {
+    const popup = document.getElementById('building-popup');
+    const dismiss = document.getElementById('dismiss-overlay');
+    const hint = document.getElementById('hint-text');
+
+    document.getElementById('popup-name').textContent = b.name;
+    document.getElementById('popup-role').textContent = b.role;
+    document.getElementById('popup-status').textContent = '✅ ' + b.status;
+    document.getElementById('popup-tasks').textContent = b.tasks;
+    document.getElementById('popup-focus').textContent = b.focus;
+    document.getElementById('popup-accent').style.background = b.color;
+
+    let px = b.x * W + 40;
+    let py = b.y * H - 60;
+    if (px + 260 > W) px = b.x * W - 280;
+    if (py + 200 > H) py = H - 210;
+    if (py < 60) py = 60;
+    if (px < 10) px = 10;
+
+    popup.style.left = px + 'px';
+    popup.style.top = py + 'px';
+
+    popup.classList.remove('visible');
+    dismiss.classList.add('active');
+    hint.style.opacity = '0';
+
+    requestAnimationFrame(() => {
+      popup.classList.add('visible');
+      if (typeof anime !== 'undefined') {
+        anime({
+          targets: popup,
+          opacity: [0, 1],
+          scale: [0.85, 1],
+          translateY: [10, 0],
+          duration: 350,
+          easing: 'easeOutBack',
+        });
+      }
+    });
+  }
+
+  function hidePopup() {
+    const popup = document.getElementById('building-popup');
+    const dismiss = document.getElementById('dismiss-overlay');
+    const hint = document.getElementById('hint-text');
+
+    if (typeof anime !== 'undefined') {
+      anime({
+        targets: popup,
+        opacity: [1, 0],
+        scale: [1, 0.9],
+        duration: 200,
+        easing: 'easeInQuad',
+        complete: () => {
+          popup.classList.remove('visible');
+        }
+      });
+    } else {
+      popup.classList.remove('visible');
+    }
+    dismiss.classList.remove('active');
+    hint.style.opacity = '1';
+  }
+
+  function initDismiss() {
+    document.getElementById('dismiss-overlay').addEventListener('click', hidePopup);
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') hidePopup();
+    });
+  }
+
+  // ══════════════════════════════════════════
+  //  PARALLAX (improved — smoother)
+  // ══════════════════════════════════════════
+  function initParallax() {
+    let targetBgX = 0, targetBgY = 0;
+    let currentBgX = 0, currentBgY = 0;
+
+    document.addEventListener('mousemove', (e) => {
+      mouseX = e.clientX;
+      mouseY = e.clientY;
+
+      if (!parallaxEnabled) return;
+
+      targetBgX = (e.clientX / W - 0.5) * -10;
+      targetBgY = (e.clientY / H - 0.5) * -8;
+    });
+
+    // Smooth lerp for parallax
+    function updateParallax() {
+      currentBgX += (targetBgX - currentBgX) * 0.08;
+      currentBgY += (targetBgY - currentBgY) * 0.08;
+
+      document.body.style.backgroundPosition = `calc(50% + ${currentBgX}px) calc(50% + ${currentBgY}px)`;
+
+      if (app && app.stage) {
+        app.stage.x += ((mouseX / W - 0.5) * 18 - app.stage.x) * 0.06;
+        app.stage.y += ((mouseY / H - 0.5) * 14 - app.stage.y) * 0.06;
+      }
+
+      requestAnimationFrame(updateParallax);
+    }
+    updateParallax();
+  }
+
+  // ══════════════════════════════════════════
+  //  ACTIVITY DRIVER (generates periodic log entries)
+  // ══════════════════════════════════════════
+  function initActivityDriver() {
+    const activities = [
+      () => { const b = buildings[Math.floor(Math.random() * buildings.length)]; return `${b.name} a terminé une tâche`; },
+      () => { const b = buildings[Math.floor(Math.random() * buildings.length)]; return `📬 Message reçu par ${b.name}`; },
+      () => '🔥 Le feu crépite doucement',
+      () => '🍂 Une bourrasque de feuilles !',
+      () => { const b = buildings[Math.floor(Math.random() * buildings.length)]; return `⚡ ${b.name} est en plein flow`; },
+      () => '🌅 La lumière dorée décline…',
+      () => { const b1 = buildings[Math.floor(Math.random() * buildings.length)]; const b2 = buildings.filter(b => b !== b1)[Math.floor(Math.random() * 5)]; return `🤝 ${b1.name} discute avec ${b2.name}`; },
+      () => '🦉 Un hibou observe le village',
+    ];
+
+    setInterval(() => {
+      const gen = activities[Math.floor(Math.random() * activities.length)];
+      addLogEntry(gen());
+    }, 8000 + Math.random() * 6000);
+  }
+
+  // ══════════════════════════════════════════
+  //  THEME BRIDGE
+  // ══════════════════════════════════════════
+  function initThemeBridge() {
+    try { parent.postMessage({ type: 'theme:ready' }, '*'); } catch (e) {}
+
+    window.addEventListener('message', (e) => {
+      if (!e.data || !e.data.type) return;
+
+      if (e.data.type === 'agent:update') {
+        const data = e.data;
+        const b = buildings.find(b => b.name === data.name);
+        if (b) {
+          if (data.tasks !== undefined) b.tasks = data.tasks;
+          if (data.status !== undefined) b.status = data.status;
+          if (data.focus !== undefined) b.focus = data.focus;
+        }
+      }
+
+      if (e.data.type === 'task:complete') {
+        spawnCelebration(e.data);
+        addLogEntry(`🎉 ${e.data.name || 'Agent'} a complété une tâche !`);
+      }
+    });
+  }
+
+  // ── Celebration particles ──
+  function spawnCelebration(data) {
+    if (!app) return;
+    const cx = VILLAGE_CENTER.x * W;
+    const cy = VILLAGE_CENTER.y * H;
+    const colors = [0xFFD700, 0xFF9F0A, 0x30D158, 0x007AFF, 0xBF5AF2, 0xFF453A];
+
+    for (let i = 0; i < 32; i++) {
+      const g = new PIXI.Graphics();
+      const color = colors[Math.floor(Math.random() * colors.length)];
+      // Mix of circles and stars
+      if (Math.random() > 0.5) {
+        g.beginFill(color);
+        g.drawCircle(0, 0, 2 + Math.random() * 3);
+        g.endFill();
+      } else {
+        // Star shape
+        g.beginFill(color);
+        for (let s = 0; s < 5; s++) {
+          const angle = (s * Math.PI * 2) / 5 - Math.PI / 2;
+          const x = Math.cos(angle) * 4;
+          const y = Math.sin(angle) * 4;
+          if (s === 0) g.moveTo(x, y);
+          else g.lineTo(x, y);
+          const innerAngle = angle + Math.PI / 5;
+          g.lineTo(Math.cos(innerAngle) * 2, Math.sin(innerAngle) * 2);
+        }
+        g.closePath();
+        g.endFill();
+      }
+      g.x = cx;
+      g.y = cy;
+      g.alpha = 1;
+      app.stage.addChild(g);
+
+      const angle = Math.random() * Math.PI * 2;
+      const speed = 3 + Math.random() * 5;
+      const vx = Math.cos(angle) * speed;
+      const vy = Math.sin(angle) * speed - 3;
+      let life = 0;
+      const maxLife = 70 + Math.random() * 50;
+      const rotSpeed = (Math.random() - 0.5) * 0.1;
+
+      const tick = (delta) => {
+        life += delta;
+        g.x += vx * delta;
+        g.y += (vy + life * 0.04) * delta;
+        g.rotation += rotSpeed * delta;
+        g.alpha = 1 - life / maxLife;
+        if (life >= maxLife) {
+          app.ticker.remove(tick);
+          app.stage.removeChild(g);
+          g.destroy();
+        }
+      };
+      app.ticker.add(tick);
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════
+  //  EXPOSE agentObjects + buildings for panel system
+  // ═══════════════════════════════════════════════════════
+  window.__villageBuildings = buildings;
+  window.__villageAgentObjects = function() { return agentObjects; };
+
+})();
+</script>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     VILLAGE ILLUSTRATED — EXECUTIVE PANELS & DATA BRIDGE
+     Ported from office-executive, themed for illustrated village
+     ═══════════════════════════════════════════════════════════════ -->
+
+<style>
+  /* ── Village Panel System — iOS Brand ── */
+  :root {
+    --vi-bg-panel: rgba(30, 22, 14, 0.88);
+    --vi-bg-panel-light: rgba(50, 38, 24, 0.85);
+    --vi-bg-panel-lighter: rgba(66, 50, 32, 0.82);
+    --vi-accent: #FF9500;
+    --vi-accent-hover: #FFa726;
+    --vi-accent-muted: rgba(255, 149, 0, 0.12);
+    --vi-accent-glow: rgba(255, 149, 0, 0.25);
+    --vi-text: #f5f0e8;
+    --vi-text-secondary: rgba(245, 240, 232, 0.7);
+    --vi-text-tertiary: rgba(245, 240, 232, 0.42);
+    --vi-border: rgba(180, 140, 80, 0.2);
+    --vi-border-strong: rgba(255, 149, 0, 0.35);
+    --vi-status-active: #30d158;
+    --vi-status-busy: #ffd60a;
+    --vi-status-idle: #636366;
+    --vi-scrollbar: rgba(180, 140, 80, 0.25);
+    --vi-panel-width: 380px;
+    --vi-font: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+    --vi-font-heading: 'Cinzel', serif;
+    --vi-ease: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* ── Status Bar (bottom) — Apple Frosted Glass ── */
+  #vi-statusbar {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    gap: var(--space-3, 12px);
+    height: 52px;
+    padding: 0 var(--space-5, 20px);
+    background: rgba(30, 22, 14, 0.65);
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    border-top: 1px solid rgba(180, 140, 80, 0.15);
+    font-family: var(--vi-font);
+    pointer-events: auto;
+  }
+
+  .vi-sb-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+  }
+
+  .vi-sb-item {
+    font-size: var(--text-xs, 0.75rem);
+    font-weight: 500;
+    color: var(--vi-text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    white-space: nowrap;
+    letter-spacing: -0.005em;
+  }
+
+  .vi-sb-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--vi-status-active);
+    animation: viPulse 2.5s ease-in-out infinite;
+  }
+  @keyframes viPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  .vi-sb-sep {
+    width: 1px; height: 14px;
+    background: var(--vi-border);
+  }
+
+  .vi-sb-action {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 14px;
+    background: transparent;
+    border: 1.5px solid var(--vi-border);
+    border-radius: var(--radius-pill, 980px);
+    cursor: pointer;
+    font-family: var(--vi-font);
+    font-size: var(--text-xs, 0.75rem);
+    font-weight: 500;
+    color: var(--vi-text-secondary);
+    transition: all var(--duration-fast, 150ms) var(--vi-ease);
+    white-space: nowrap;
+  }
+  .vi-sb-action:hover {
+    background: var(--vi-accent-muted);
+    border-color: var(--vi-accent);
+    color: var(--vi-accent);
+  }
+  .vi-sb-action-icon { font-size: 0.9rem; }
+
+  .vi-sb-cmd {
+    flex: 1;
+    position: relative;
+  }
+  .vi-sb-cmd input {
+    width: 100%;
+    height: 36px;
+    padding: 0 var(--space-4, 16px) 0 32px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1.5px solid var(--vi-border);
+    border-radius: var(--radius-sm, 8px);
+    color: var(--vi-text);
+    font-family: var(--vi-font);
+    font-size: var(--text-sm, 0.875rem);
+    font-weight: 400;
+    outline: none;
+    transition: border-color var(--duration-fast, 150ms) var(--vi-ease),
+                box-shadow var(--duration-fast, 150ms) var(--vi-ease);
+  }
+  .vi-sb-cmd input::placeholder { color: var(--vi-text-tertiary); }
+  .vi-sb-cmd input:focus {
+    border-color: var(--vi-accent);
+    box-shadow: 0 0 0 3px var(--vi-accent-muted);
+  }
+  .vi-sb-cmd .vi-cmd-icon {
+    position: absolute;
+    left: 10px; top: 50%;
+    transform: translateY(-50%);
+    color: var(--vi-text-tertiary);
+    font-size: 0.85rem;
+    pointer-events: none;
+  }
+
+  /* ── Slide-in Overlay Base ── */
+  .vi-overlay {
+    position: fixed; inset: 0;
+    z-index: 200;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s var(--vi-ease);
+  }
+  .vi-overlay.open {
+    pointer-events: auto;
+    opacity: 1;
+  }
+  .vi-overlay.open .vi-overlay-bg { opacity: 1; }
+  .vi-overlay.open .vi-panel { transform: translateX(0); }
+
+  .vi-overlay-bg {
+    position: absolute; inset: 0;
+    background: rgba(10, 6, 2, 0.6);
+    opacity: 0;
+    transition: opacity 0.35s var(--vi-ease);
+  }
+
+  .vi-panel {
+    position: absolute;
+    top: 0; right: 0;
+    width: var(--vi-panel-width);
+    max-width: 90vw;
+    height: 100%;
+    background: rgba(26, 18, 12, 0.92);
+    backdrop-filter: saturate(180%) blur(24px);
+    -webkit-backdrop-filter: saturate(180%) blur(24px);
+    border-left: 1px solid rgba(180, 140, 80, 0.12);
+    display: flex;
+    flex-direction: column;
+    transform: translateX(100%);
+    transition: transform 0.4s var(--vi-ease);
+    box-shadow: -8px 0 40px rgba(0, 0, 0, 0.4);
+    font-family: var(--vi-font);
+    color: var(--vi-text);
+  }
+
+  .vi-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-4, 16px) var(--space-5, 20px);
+    border-bottom: 1px solid rgba(180, 140, 80, 0.12);
+    flex-shrink: 0;
+  }
+
+  .vi-panel-title {
+    font-family: var(--vi-font);
+    font-size: var(--text-base, 1.0625rem);
+    font-weight: 600;
+    color: var(--vi-text);
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 8px);
+    letter-spacing: -0.01em;
+  }
+
+  .vi-panel-close {
+    width: 28px; height: 28px;
+    display: flex; align-items: center; justify-content: center;
+    border: none;
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--vi-text-secondary);
+    border-radius: var(--radius-round, 50%);
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all var(--duration-fast, 150ms) var(--vi-ease);
+    font-family: inherit;
+  }
+  .vi-panel-close:hover {
+    background: rgba(255, 255, 255, 0.14);
+    color: var(--vi-text);
+  }
+
+  .vi-panel-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0;
+    scrollbar-width: thin;
+    scrollbar-color: var(--vi-scrollbar) transparent;
+  }
+  .vi-panel-body::-webkit-scrollbar { width: 4px; }
+  .vi-panel-body::-webkit-scrollbar-thumb { background: var(--vi-scrollbar); border-radius: 2px; }
+
+  /* ── Panel Sections ── */
+  .vi-section {
+    padding: 16px 20px;
+    border-bottom: 1px solid rgba(180, 140, 80, 0.15);
+  }
+  .vi-section:last-child { border-bottom: none; }
+
+  .vi-section-title {
+    font-family: var(--vi-font);
+    font-size: var(--text-xs, 0.75rem);
+    font-weight: 600;
+    color: var(--vi-accent);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: var(--space-3, 12px);
+  }
+
+  /* ── Detail Panel (Agent) ── */
+  .vi-detail-hero {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 18px 20px;
+    border-bottom: 1px solid var(--vi-border);
+  }
+
+  .vi-detail-avatar {
+    width: 48px; height: 48px;
+    border-radius: var(--radius-md, 12px);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.4rem;
+    flex-shrink: 0;
+    border: 2px solid rgba(255, 255, 255, 0.12);
+    position: relative;
+  }
+
+  .vi-detail-status-dot {
+    position: absolute; bottom: 0; right: 0;
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    border: 2px solid var(--vi-bg-panel);
+    z-index: 2;
+  }
+
+  .vi-detail-info { flex: 1; min-width: 0; }
+  .vi-detail-name {
+    font-family: var(--vi-font-heading);
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--vi-text);
+  }
+  .vi-detail-role {
+    font-family: var(--vi-font);
+    font-size: var(--text-xs, 0.75rem);
+    color: var(--vi-text-tertiary);
+    font-style: normal;
+    font-weight: 400;
+  }
+  .vi-detail-task {
+    font-family: var(--vi-font);
+    font-size: var(--text-xs, 0.75rem);
+    color: var(--vi-accent);
+    margin-top: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-weight: 500;
+  }
+
+  .vi-metrics {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .vi-metric {
+    padding: var(--space-3, 12px);
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: var(--radius-md, 12px);
+    border: 1px solid rgba(180, 140, 80, 0.08);
+  }
+  .vi-metric-value {
+    font-family: var(--vi-font);
+    font-size: var(--text-base, 1.0625rem);
+    font-weight: 700;
+    color: var(--vi-text);
+    letter-spacing: -0.01em;
+  }
+  .vi-metric-label {
+    font-family: var(--vi-font);
+    font-size: var(--text-xs, 0.75rem);
+    font-weight: 400;
+    color: var(--vi-text-tertiary);
+    margin-top: 2px;
+  }
+
+  .vi-todo-item {
+    display: flex; align-items: center; gap: var(--space-2, 8px);
+    padding: 5px 0;
+    font-family: var(--vi-font);
+    font-size: var(--text-sm, 0.875rem);
+  }
+  .vi-todo-icon { width: 16px; text-align: center; flex-shrink: 0; }
+  .vi-todo-text { flex: 1; color: var(--vi-text); line-height: 1.3; }
+  .vi-todo-item--done .vi-todo-text {
+    color: var(--vi-text-tertiary);
+    text-decoration: line-through;
+  }
+
+  .vi-skill-chips {
+    display: flex; flex-wrap: wrap; gap: 6px;
+  }
+  .vi-skill-chip {
+    display: inline-flex; align-items: center; gap: 3px;
+    padding: 4px 12px;
+    background: var(--vi-accent-muted);
+    border: 1px solid rgba(255, 149, 0, 0.2);
+    border-radius: var(--radius-pill, 980px);
+    font-family: var(--vi-font);
+    font-size: var(--text-xs, 0.75rem);
+    font-weight: 500;
+    color: var(--vi-accent);
+  }
+
+  .vi-soul-excerpt {
+    font-family: var(--vi-font);
+    font-size: var(--text-sm, 0.875rem);
+    color: var(--vi-text-secondary);
+    line-height: 1.47;
+    letter-spacing: -0.005em;
+    white-space: pre-wrap;
+    max-height: 180px;
+    overflow-y: auto;
+  }
+
+  /* ── Chat Panel (slide up) ── */
+  .vi-chat-overlay {
+    position: fixed; inset: 0;
+    z-index: 250;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s var(--vi-ease);
+  }
+  .vi-chat-overlay.open {
+    pointer-events: auto;
+    opacity: 1;
+  }
+  .vi-chat-overlay.open .vi-overlay-bg { opacity: 1; }
+  .vi-chat-overlay.open .vi-chat-panel { transform: translateY(0); }
+
+  .vi-chat-panel {
+    position: absolute;
+    bottom: 0; right: 0;
+    width: 440px; max-width: 100vw;
+    height: 65vh;
+    background: rgba(26, 18, 12, 0.92);
+    backdrop-filter: saturate(180%) blur(24px);
+    -webkit-backdrop-filter: saturate(180%) blur(24px);
+    border-top-left-radius: var(--radius-xl, 20px);
+    border-left: 1px solid rgba(180, 140, 80, 0.12);
+    border-top: 1px solid rgba(180, 140, 80, 0.12);
+    display: flex; flex-direction: column;
+    transform: translateY(100%);
+    transition: transform 0.4s var(--vi-ease);
+    box-shadow: -8px -8px 40px rgba(0, 0, 0, 0.35);
+    font-family: var(--vi-font);
+    color: var(--vi-text);
+  }
+
+  .vi-chat-msgs {
+    flex: 1;
+    overflow-y: auto;
+    padding: 14px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--vi-scrollbar) transparent;
+  }
+  .vi-chat-msgs::-webkit-scrollbar { width: 4px; }
+  .vi-chat-msgs::-webkit-scrollbar-thumb { background: var(--vi-scrollbar); border-radius: 2px; }
+
+  .vi-chat-msg {
+    max-width: 80%;
+    padding: var(--space-2, 8px) var(--space-3, 12px);
+    border-radius: var(--radius-lg, 16px);
+    font-family: var(--vi-font);
+    font-size: var(--text-sm, 0.875rem);
+    line-height: 1.43;
+    animation: viChatIn 0.25s var(--vi-ease);
+  }
+  @keyframes viChatIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .vi-chat-msg--user {
+    align-self: flex-end;
+    background: var(--vi-accent);
+    color: #1a120a;
+    border-bottom-right-radius: 3px;
+  }
+  .vi-chat-msg--system {
+    align-self: flex-start;
+    background: var(--vi-bg-panel-light);
+    color: var(--vi-text);
+    border-bottom-left-radius: 3px;
+  }
+  .vi-chat-msg-time {
+    font-size: 0.65rem; opacity: 0.6; margin-top: 3px;
+  }
+  .vi-chat-msg--user .vi-chat-msg-time { text-align: right; }
+
+  .vi-chat-empty {
+    flex: 1; display: flex; align-items: center; justify-content: center;
+    font-family: var(--vi-font);
+    color: var(--vi-text-tertiary); font-size: var(--text-sm, 0.875rem); text-align: center;
+    padding: var(--space-8, 32px);
+    font-style: normal;
+    font-weight: 400;
+  }
+
+  .vi-chat-input-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 18px;
+    border-top: 1px solid var(--vi-border);
+    flex-shrink: 0;
+  }
+  .vi-chat-input {
+    flex: 1; height: 38px;
+    padding: 0 var(--space-4, 16px);
+    background: rgba(255, 255, 255, 0.06);
+    border: 1.5px solid var(--vi-border);
+    border-radius: var(--radius-pill, 980px);
+    color: var(--vi-text);
+    font-family: var(--vi-font);
+    font-size: var(--text-sm, 0.875rem);
+    font-weight: 400;
+    outline: none;
+    transition: border-color var(--duration-fast, 150ms) var(--vi-ease),
+                box-shadow var(--duration-fast, 150ms) var(--vi-ease);
+  }
+  .vi-chat-input:focus {
+    border-color: var(--vi-accent);
+    box-shadow: 0 0 0 3px var(--vi-accent-muted);
+  }
+  .vi-chat-input::placeholder { color: var(--vi-text-tertiary); }
+  .vi-chat-send {
+    width: 38px; height: 38px;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--vi-accent);
+    color: #1a120a;
+    border: none; border-radius: 50%;
+    cursor: pointer; font-size: 0.95rem;
+    font-weight: 700;
+    transition: all var(--duration-fast, 150ms) var(--vi-ease);
+    flex-shrink: 0;
+  }
+  .vi-chat-send:hover { background: var(--vi-accent-hover); transform: translateY(-1px); }
+
+  /* ── Cron / Side Panel Items ── */
+  .vi-cron-item {
+    display: flex; align-items: center; gap: var(--space-3, 12px);
+    padding: var(--space-3, 12px) var(--space-3, 12px);
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: var(--radius-md, 12px);
+    margin-bottom: var(--space-2, 8px);
+    border: 1px solid rgba(180, 140, 80, 0.06);
+    transition: background var(--duration-fast, 150ms) var(--vi-ease);
+  }
+  .vi-cron-item:last-child { margin-bottom: 0; }
+  .vi-cron-item:hover { background: rgba(255, 255, 255, 0.07); }
+  .vi-cron-icon { font-size: 1.1rem; flex-shrink: 0; }
+  .vi-cron-info { flex: 1; min-width: 0; }
+  .vi-cron-name {
+    font-family: var(--vi-font);
+    font-size: var(--text-sm, 0.875rem); font-weight: 600; color: var(--vi-text);
+    letter-spacing: -0.005em;
+  }
+  .vi-cron-schedule {
+    font-family: var(--vi-font);
+    font-size: var(--text-xs, 0.75rem); color: var(--vi-text-tertiary); margin-top: 1px;
+  }
+  .vi-cron-next {
+    font-family: var(--vi-font);
+    font-size: var(--text-xs, 0.75rem); color: var(--vi-accent); margin-top: 1px;
+    font-weight: 500;
+  }
+  .vi-cron-status {
+    display: inline-flex; align-items: center; justify-content: center;
+    padding: 3px 8px; border-radius: var(--radius-pill, 980px);
+    font-family: var(--vi-font);
+    font-size: 0.65rem; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.04em; flex-shrink: 0;
+  }
+  .vi-cron-status--active { background: rgba(92, 184, 92, 0.15); color: #5cb85c; }
+  .vi-cron-status--paused { background: rgba(240, 173, 78, 0.15); color: #c09440; }
+  .vi-cron-status--error  { background: rgba(217, 83, 79, 0.15); color: #d9534f; }
+
+  .vi-cron-empty {
+    padding: var(--space-8, 32px) var(--space-5, 20px);
+    text-align: center;
+    font-family: var(--vi-font);
+    color: var(--vi-text-tertiary);
+    font-size: var(--text-sm, 0.875rem);
+    font-style: normal;
+    font-weight: 400;
+  }
+
+  /* ── Memory markdown rendering ── */
+  .vi-md {
+    font-family: var(--vi-font);
+    font-size: var(--text-sm, 0.875rem); color: var(--vi-text-secondary);
+    line-height: 1.47;
+    letter-spacing: -0.005em;
+  }
+  .vi-md h1, .vi-md h2, .vi-md h3 {
+    color: var(--vi-text); margin: 12px 0 4px;
+    font-family: var(--vi-font-heading);
+  }
+  .vi-md h1 { font-size: var(--text-base, 1.0625rem); }
+  .vi-md h2 { font-size: var(--text-sm, 0.875rem); font-weight: 600; }
+  .vi-md h3 { font-size: var(--text-sm, 0.875rem); }
+  .vi-md ul, .vi-md ol { padding-left: 16px; margin: 4px 0; }
+  .vi-md li { margin: 2px 0; }
+  .vi-md strong { color: var(--vi-text); }
+  .vi-md code {
+    background: var(--vi-bg-panel-light);
+    padding: 1px 4px; border-radius: 3px;
+    font-size: 0.75rem;
+  }
+
+  .vi-golden-rules {
+    background: var(--vi-accent-muted);
+    border: 1px solid rgba(255, 149, 0, 0.15);
+    border-radius: var(--radius-md, 12px);
+    padding: var(--space-3, 12px) var(--space-4, 16px);
+    margin-bottom: var(--space-3, 12px);
+  }
+
+  .vi-daily-item {
+    display: flex; align-items: center; gap: var(--space-2, 8px);
+    padding: var(--space-2, 8px) var(--space-3, 12px);
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: var(--radius-sm, 8px);
+    font-family: var(--vi-font);
+    font-size: var(--text-xs, 0.75rem);
+    color: var(--vi-text-secondary);
+    margin-bottom: 4px;
+  }
+  .vi-daily-date {
+    font-weight: 600; color: var(--vi-text);
+    min-width: 72px;
+  }
+  .vi-daily-size {
+    color: var(--vi-text-tertiary);
+    margin-left: auto;
+  }
+
+  .vi-readonly {
+    display: flex; align-items: center; gap: 5px;
+    padding: var(--space-2, 8px) var(--space-3, 12px);
+    background: var(--vi-accent-muted);
+    border-radius: var(--radius-pill, 980px);
+    font-family: var(--vi-font);
+    font-size: var(--text-xs, 0.75rem);
+    color: var(--vi-accent);
+    font-weight: 500;
+    margin-top: var(--space-3, 12px);
+  }
+
+  /* ── Settings specific — Apple-style ── */
+  .vi-settings-row {
+    display: flex; align-items: center; gap: var(--space-2, 8px);
+    flex-wrap: wrap;
+    padding: var(--space-3, 12px);
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: var(--radius-md, 12px);
+    margin-bottom: var(--space-2, 8px);
+    border: 1px solid rgba(180, 140, 80, 0.06);
+  }
+  .vi-settings-row:last-child { margin-bottom: 0; }
+
+  .vi-settings-row input[type="password"] {
+    width: 140px; padding: 6px 10px;
+    border-radius: var(--radius-sm, 8px);
+    border: 1.5px solid var(--vi-border);
+    font-size: var(--text-xs, 0.75rem);
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--vi-text);
+    outline: none;
+    transition: border-color var(--duration-fast, 150ms) var(--vi-ease),
+                box-shadow var(--duration-fast, 150ms) var(--vi-ease);
+  }
+  .vi-settings-row input[type="password"]:focus {
+    border-color: var(--vi-accent);
+    box-shadow: 0 0 0 3px var(--vi-accent-muted);
+  }
+  .vi-settings-save {
+    padding: 6px 12px; border-radius: var(--radius-pill, 980px);
+    border: none; background: var(--vi-accent);
+    color: #1a120a; font-size: var(--text-xs, 0.75rem);
+    font-family: var(--vi-font);
+    cursor: pointer; font-weight: 600;
+    transition: all var(--duration-fast, 150ms) var(--vi-ease);
+  }
+  .vi-settings-save:hover { background: var(--vi-accent-hover); transform: translateY(-1px); }
+  .vi-settings-delete {
+    padding: 6px 10px; border-radius: var(--radius-pill, 980px);
+    border: 1.5px solid #ff453a;
+    background: transparent;
+    color: #ff453a; font-size: var(--text-xs, 0.75rem);
+    font-family: var(--vi-font);
+    cursor: pointer;
+    transition: all var(--duration-fast, 150ms) var(--vi-ease);
+  }
+  .vi-settings-delete:hover { background: rgba(255, 69, 58, 0.12); }
+
+  /* ── Mapping grid ── */
+  .vi-map-grid {
+    display: grid;
+    grid-template-columns: auto 20px auto;
+    gap: 4px 10px;
+    align-items: center;
+    padding: 6px 0;
+  }
+  .vi-map-grid .vi-map-label {
+    font-family: var(--vi-font);
+    font-size: var(--text-sm, 0.875rem); padding: 3px 0;
+  }
+  .vi-map-grid .vi-map-arrow {
+    font-size: var(--text-xs, 0.75rem); color: var(--vi-accent); text-align: center;
+  }
+  .vi-map-grid .vi-map-value {
+    font-family: var(--vi-font);
+    font-size: var(--text-sm, 0.875rem); padding: 3px 0; color: var(--vi-text-secondary);
+  }
+  .vi-map-header {
+    font-family: var(--vi-font);
+    font-size: 0.65rem; font-weight: 600;
+    color: var(--vi-text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  /* ── Toast — Apple Pill ── */
+  .vi-toast {
+    position: fixed; bottom: 64px; left: 50%;
+    transform: translateX(-50%) translateY(12px);
+    padding: var(--space-2, 8px) var(--space-5, 20px);
+    background: rgba(30, 22, 14, 0.88);
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    border: 1px solid rgba(180, 140, 80, 0.15);
+    color: var(--vi-text);
+    border-radius: var(--radius-pill, 980px);
+    font-family: var(--vi-font);
+    font-size: var(--text-sm, 0.875rem);
+    font-weight: 500;
+    z-index: 999;
+    opacity: 0;
+    transition: all var(--duration-normal, 300ms) var(--vi-ease);
+    pointer-events: none;
+    box-shadow: var(--shadow-lg, 0 8px 40px rgba(0,0,0,0.35));
+  }
+  .vi-toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* ── Adjust existing panels to not overlap statusbar ── */
+  #stats-panel { bottom: 60px; }
+  #activity-log { bottom: 60px; }
+  #hint-text { bottom: 56px; }
+
+  /* ── Responsive ── */
+  @media (max-width: 768px) {
+    #vi-statusbar {
+      flex-wrap: wrap;
+      gap: var(--space-2, 8px);
+      height: auto;
+      padding: var(--space-2, 8px) var(--space-3, 12px);
+    }
+    .vi-sb-info { width: 100%; justify-content: center; }
+    .vi-panel, .vi-chat-panel { width: 100vw; }
+    #top-banner h1 { font-size: 1rem; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .vi-overlay, .vi-chat-overlay, .vi-panel, .vi-chat-panel,
+    .vi-toast, .vi-sb-dot { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
+  }
+</style>
+
+<!-- ═══ Status Bar ═══ -->
+<div id="vi-statusbar">
+  <div class="vi-sb-info">
+    <div class="vi-sb-item">
+      <span class="vi-sb-dot" aria-hidden="true"></span>
+      <span>Le Village</span>
+    </div>
+    <div class="vi-sb-sep" aria-hidden="true"></div>
+    <div class="vi-sb-item">
+      <span>🏘️</span>
+      <span id="viAgentCount">6 Villageois</span>
+    </div>
+    <div class="vi-sb-sep" aria-hidden="true"></div>
+    <div class="vi-sb-item">
+      <span>⏰</span>
+      <span id="viClock">--:--</span>
+    </div>
+  </div>
+  <button class="vi-sb-action" id="viMissionsBtn">
+    <span class="vi-sb-action-icon">🎯</span><span>Missions</span>
+  </button>
+  <button class="vi-sb-action" id="viCronBtn">
+    <span class="vi-sb-action-icon">📅</span><span>Crons</span>
+  </button>
+  <button class="vi-sb-action" id="viMemoryBtn">
+    <span class="vi-sb-action-icon">🧠</span><span>Mémoire</span>
+  </button>
+  <button class="vi-sb-action" id="viChatBtn">
+    <span class="vi-sb-action-icon">💬</span><span>Chat</span>
+  </button>
+  <button class="vi-sb-action" id="viSettingsBtn">
+    <span class="vi-sb-action-icon">⚙️</span><span>Réglages</span>
+  </button>
+  <div class="vi-sb-cmd">
+    <input type="text" id="viCmdInput" placeholder="Envoyer un ordre au Maire..." autocomplete="off" spellcheck="false" />
+    <span class="vi-cmd-icon" aria-hidden="true">📜</span>
+  </div>
+</div>
+
+<!-- ═══ Agent Detail Panel ═══ -->
+<div class="vi-overlay" id="viDetailOverlay" role="dialog" aria-modal="true" aria-label="Détail de l'agent">
+  <div class="vi-overlay-bg" id="viDetailBg"></div>
+  <div class="vi-panel" style="width:400px;">
+    <div class="vi-detail-hero" id="viDetailHero">
+      <div class="vi-detail-avatar" id="viDetailAvatar">🏠</div>
+      <div class="vi-detail-info">
+        <div class="vi-detail-name" id="viDetailName">Agent</div>
+        <div class="vi-detail-role" id="viDetailRole">Rôle</div>
+        <div class="vi-detail-task" id="viDetailTask">—</div>
+      </div>
+      <button class="vi-panel-close" id="viDetailClose" aria-label="Fermer">×</button>
+    </div>
+    <div class="vi-panel-body" id="viDetailBody"></div>
+  </div>
+</div>
+
+<!-- ═══ CEO Chat Panel ═══ -->
+<div class="vi-chat-overlay" id="viChatOverlay" role="dialog" aria-modal="true" aria-label="Chat du Maire">
+  <div class="vi-overlay-bg" id="viChatBg"></div>
+  <div class="vi-chat-panel">
+    <div class="vi-panel-header">
+      <div class="vi-panel-title">
+        <span class="vi-sb-dot"></span>
+        📜 Parchemin du Maire
+      </div>
+      <button class="vi-panel-close" id="viChatClose" aria-label="Fermer">×</button>
+    </div>
+    <div class="vi-chat-msgs" id="viChatMsgs">
+      <div class="vi-chat-empty" id="viChatEmpty">Aucun message. Envoyez un ordre au Maire.</div>
+    </div>
+    <div class="vi-chat-input-bar">
+      <select id="viChatRoute" style="padding:6px 10px;border-radius:8px;border:1.5px solid var(--vi-border);background:rgba(255,255,255,0.04);color:var(--vi-text-secondary);font-size:0.75rem;font-family:var(--vi-font);cursor:pointer;flex-shrink:0;outline:none;">
+        <option value="ceo">📬 Le Maire</option>
+        <option value="atlas">🗺️ Atlas</option>
+        <option value="forge">🔨 Forge</option>
+        <option value="hunter">🏹 Hunter</option>
+        <option value="echo">📢 Echo</option>
+        <option value="sentinel">🛡️ Sentinel</option>
+      </select>
+      <input class="vi-chat-input" id="viChatInput" type="text" placeholder="Envoyer un ordre…" autocomplete="off" spellcheck="false" />
+      <button class="vi-chat-send" id="viChatSend" aria-label="Envoyer">↑</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ Missions Panel ═══ -->
+<div class="vi-overlay" id="viMissionsOverlay" role="dialog" aria-modal="true" aria-label="Missions">
+  <div class="vi-overlay-bg" id="viMissionsBg"></div>
+  <div class="vi-panel">
+    <div class="vi-panel-header">
+      <div class="vi-panel-title">🎯 Missions Actives</div>
+      <button class="vi-panel-close" id="viMissionsClose" aria-label="Fermer">×</button>
+    </div>
+    <div class="vi-panel-body" id="viMissionsBody">
+      <div class="vi-cron-empty">Chargement des missions…</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ Cron Panel ═══ -->
+<div class="vi-overlay" id="viCronOverlay" role="dialog" aria-modal="true" aria-label="Tâches planifiées">
+  <div class="vi-overlay-bg" id="viCronBg"></div>
+  <div class="vi-panel">
+    <div class="vi-panel-header">
+      <div class="vi-panel-title">📅 Tâches Planifiées</div>
+      <button class="vi-panel-close" id="viCronClose" aria-label="Fermer">×</button>
+    </div>
+    <div class="vi-panel-body" id="viCronBody">
+      <div class="vi-cron-empty">Chargement…</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ Memory Panel ═══ -->
+<div class="vi-overlay" id="viMemoryOverlay" role="dialog" aria-modal="true" aria-label="Mémoire">
+  <div class="vi-overlay-bg" id="viMemoryBg"></div>
+  <div class="vi-panel" style="width:460px;">
+    <div class="vi-panel-header">
+      <div class="vi-panel-title">🧠 Mémoire du Village</div>
+      <button class="vi-panel-close" id="viMemoryClose" aria-label="Fermer">×</button>
+    </div>
+    <div class="vi-panel-body" id="viMemoryBody">
+      <div class="vi-cron-empty">Chargement…</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ Settings Panel ═══ -->
+<div class="vi-overlay" id="viSettingsOverlay" role="dialog" aria-modal="true" aria-label="Réglages">
+  <div class="vi-overlay-bg" id="viSettingsBg"></div>
+  <div class="vi-panel" style="max-width:460px;">
+    <div class="vi-panel-header">
+      <div class="vi-panel-title">⚙️ Réglages</div>
+      <button class="vi-panel-close" id="viSettingsClose" aria-label="Fermer">×</button>
+    </div>
+    <div class="vi-panel-body" id="viSettingsBody">
+      <div class="vi-cron-empty">Chargement…</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ Toast ═══ -->
+<div class="vi-toast" id="viToast"></div>
+
+<!-- ═══ Data Bridge ═══ -->
+<script>
+  window.OC_RELAY_URL = 'http://localhost:18790';
+  window.OC_RELAY_TOKEN = 'sk-oc-proxy-spawnkit-2026';
+</script>
+<script src="../src/data-bridge.js"></script>
+
+<!-- ═══ Village Panel System ═══ -->
+<script>
+(function() {
+  'use strict';
+
+  // ── API Reference ──
+  var API = (typeof window.spawnkitAPI !== 'undefined') ? window.spawnkitAPI : null;
+
+  // ── Agent Data (matches buildings array) ──
+  var AGENTS = {
+    apomac:   { name: 'ApoMac',   role: 'CEO — Le Maire',          color: '#007AFF', status: 'active', task: 'Orchestrer le village' },
+    forge:    { name: 'Forge',     role: "CTO — L'Artisan",         color: '#FF9F0A', status: 'active', task: '' },
+    hunter:   { name: 'Hunter',    role: 'CRO — Le Marchand',       color: '#FF453A', status: 'active', task: '' },
+    echo:     { name: 'Echo',      role: 'CMO — Le Crieur',         color: '#0A84FF', status: 'active', task: '' },
+    sentinel: { name: 'Sentinel',  role: 'Auditeur — Le Guetteur',  color: '#30D158', status: 'active', task: '' },
+    atlas:    { name: 'Atlas',     role: 'COO — Le Coordinateur',   color: '#BF5AF2', status: 'active', task: '' },
+  };
+
+  // Map building name → agent id
+  var NAME_TO_ID = {};
+  Object.keys(AGENTS).forEach(function(k) { NAME_TO_ID[AGENTS[k].name.toLowerCase()] = k; });
+  NAME_TO_ID['apomac'] = 'apomac';
+  // Also map CEO-style keys
+  NAME_TO_ID['ceo'] = 'apomac';
+
+  var LIVE_AGENT_DATA = {};
+  var liveCronData = null;
+  var liveMemoryData = null;
+  var chatHistory = [];
+
+  // ── Emoji map for agents ──
+  var AGENT_EMOJI = {
+    apomac: '🏰', forge: '🔨', hunter: '🏹',
+    echo: '📢', sentinel: '🛡️', atlas: '🗺️'
+  };
+
+  // ── Toast ──
+  function showToast(msg) {
+    var t = document.getElementById('viToast');
+    if (!t) return;
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(t._timer);
+    t._timer = setTimeout(function() { t.classList.remove('show'); }, 2500);
+  }
+
+  // ── Close all panels ──
+  function closeAll() {
+    ['viDetailOverlay', 'viChatOverlay', 'viMissionsOverlay', 'viCronOverlay', 'viMemoryOverlay', 'viSettingsOverlay'].forEach(function(id) {
+      document.getElementById(id).classList.remove('open');
+    });
+    document.body.style.overflow = '';
+  }
+
+  function openPanel(id) {
+    closeAll();
+    document.getElementById(id).classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  // ── Wire close buttons + backdrops ──
+  var panels = [
+    { overlay: 'viDetailOverlay',   bg: 'viDetailBg',   close: 'viDetailClose' },
+    { overlay: 'viMissionsOverlay', bg: 'viMissionsBg',  close: 'viMissionsClose' },
+    { overlay: 'viCronOverlay',     bg: 'viCronBg',      close: 'viCronClose' },
+    { overlay: 'viMemoryOverlay',   bg: 'viMemoryBg',    close: 'viMemoryClose' },
+    { overlay: 'viSettingsOverlay', bg: 'viSettingsBg',   close: 'viSettingsClose' },
+  ];
+  panels.forEach(function(p) {
+    document.getElementById(p.bg).addEventListener('click', closeAll);
+    document.getElementById(p.close).addEventListener('click', closeAll);
+  });
+  // Chat
+  document.getElementById('viChatBg').addEventListener('click', closeAll);
+  document.getElementById('viChatClose').addEventListener('click', closeAll);
+
+  // Escape closes topmost
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeAll();
+  });
+
+  // ── Status bar buttons ──
+  document.getElementById('viMissionsBtn').addEventListener('click', function() { openPanel('viMissionsOverlay'); renderMissions(); });
+  document.getElementById('viCronBtn').addEventListener('click', function() { openPanel('viCronOverlay'); renderCrons(); });
+  document.getElementById('viMemoryBtn').addEventListener('click', function() { openPanel('viMemoryOverlay'); renderMemory(); });
+  document.getElementById('viChatBtn').addEventListener('click', function() { openChatPanel(); });
+  document.getElementById('viSettingsBtn').addEventListener('click', function() { openPanel('viSettingsOverlay'); renderSettings(); });
+
+  // ── Clock ──
+  function updateClock() {
+    var now = new Date();
+    var el = document.getElementById('viClock');
+    if (el) el.textContent = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+  }
+  updateClock();
+  setInterval(updateClock, 30000);
+
+  // ── Uptime counter ──
+  var startTime = Date.now();
+  function updateUptime() {
+    var elapsed = Date.now() - startTime;
+    var h = Math.floor(elapsed / 3600000);
+    var m = Math.floor((elapsed % 3600000) / 60000);
+    var el = document.getElementById('viAgentCount');
+    if (el) el.textContent = '6 Villageois • ' + h + 'h' + m.toString().padStart(2, '0') + 'm';
+  }
+  setInterval(updateUptime, 60000);
+
+  // ═══════════════════════════════════════
+  //  LOAD LIVE AGENT DATA
+  // ═══════════════════════════════════════
+  async function loadLiveAgentData() {
+    var ids = Object.keys(AGENTS);
+    if (!window.spawnkitAPI) {
+      ids.forEach(function(id) {
+        LIVE_AGENT_DATA[id] = { currentTask: 'Connectez-vous à OpenClaw', todos: [], skills: [] };
+      });
+      return;
+    }
+    try {
+      var isAvail = await window.spawnkitAPI.isAvailable();
+      if (!isAvail) return;
+      var todoP = ids.map(function(id) {
+        var apiId = id === 'apomac' ? 'ceo' : id;
+        return window.spawnkitAPI.getAgentTodos(apiId);
+      });
+      var skillP = ids.map(function(id) {
+        var apiId = id === 'apomac' ? 'ceo' : id;
+        return window.spawnkitAPI.getAgentSkills(apiId);
+      });
+      var allTodos = await Promise.all(todoP);
+      var allSkills = await Promise.all(skillP);
+      ids.forEach(function(id, i) {
+        var td = allTodos[i] || { todos: [], currentTask: 'En attente' };
+        var sk = allSkills[i] || [];
+        LIVE_AGENT_DATA[id] = {
+          currentTask: td.currentTask || 'En attente',
+          todos: td.todos || [],
+          skills: sk.map(function(s, idx) { return { name: s.name || s.dirName || 'Compétence', percentage: Math.max(70, 95 - idx * 5) }; })
+        };
+      });
+    } catch(e) {
+      console.warn('Village: Failed to load agent data:', e);
+    }
+  }
+  loadLiveAgentData();
+
+  // Pre-fetch panel data
+  function prefetchData() {
+    if (!API) return;
+    try { liveCronData = API.getCrons(); } catch(e) {}
+    try { liveMemoryData = API.getMemory(); } catch(e) {}
+  }
+  prefetchData();
+  setInterval(prefetchData, 30000);
+
+  // ═══════════════════════════════════════
+  //  AGENT DETAIL PANEL
+  // ═══════════════════════════════════════
+  async function openAgentDetail(agentId) {
+    var agent = AGENTS[agentId];
+    if (!agent) return;
+
+    var emoji = AGENT_EMOJI[agentId] || '🏠';
+    var avatarEl = document.getElementById('viDetailAvatar');
+    avatarEl.textContent = emoji;
+    avatarEl.style.background = agent.color;
+    avatarEl.style.color = '#fff';
+
+    var sc = (agent.status === 'active' || agent.status === 'working') ? 'var(--vi-status-active)' :
+             (agent.status === 'busy') ? 'var(--vi-status-busy)' : 'var(--vi-status-idle)';
+    // Add or update status dot
+    var existingDot = avatarEl.querySelector('.vi-detail-status-dot');
+    if (!existingDot) {
+      existingDot = document.createElement('div');
+      existingDot.className = 'vi-detail-status-dot';
+      avatarEl.appendChild(existingDot);
+    }
+    existingDot.style.background = sc;
+
+    document.getElementById('viDetailName').textContent = agent.name;
+    document.getElementById('viDetailRole').textContent = agent.role;
+    document.getElementById('viDetailTask').textContent = agent.task || (agent.status === 'idle' ? '💤 En repos' : '—');
+
+    var body = '';
+    var todoData = LIVE_AGENT_DATA[agentId];
+
+    // Metrics
+    body += '<div class="vi-section"><div class="vi-section-title">Métriques</div>';
+    body += '<div class="vi-metrics">';
+    body += '<div class="vi-metric"><div class="vi-metric-value">' + (['active','working','busy'].indexOf(agent.status) >= 0 ? '🟢' : '💤') + '</div><div class="vi-metric-label">Statut</div></div>';
+    body += '<div class="vi-metric"><div class="vi-metric-value">—</div><div class="vi-metric-label">Tokens</div></div>';
+    body += '<div class="vi-metric"><div class="vi-metric-value">—</div><div class="vi-metric-label">Appels API</div></div>';
+    body += '<div class="vi-metric"><div class="vi-metric-value">—</div><div class="vi-metric-label">Dernière activité</div></div>';
+    body += '</div></div>';
+
+    // Populate metrics from API if available
+    if (API) {
+      (async function() {
+        try {
+          var apiId = agentId === 'apomac' ? 'ceo' : agentId;
+          var metricsData = await API.getMetrics();
+          if (metricsData && metricsData.agentBreakdown && metricsData.agentBreakdown[apiId]) {
+            var ab = metricsData.agentBreakdown[apiId];
+            var metricsEls = document.querySelectorAll('#viDetailBody .vi-metric-value');
+            if (metricsEls.length >= 4) {
+              if (ab.tokens) metricsEls[1].textContent = ab.tokens.toLocaleString();
+              if (ab.apiCalls) metricsEls[2].textContent = ab.apiCalls.toString();
+              if (ab.lastActive) metricsEls[3].textContent = ab.lastActive;
+            }
+          }
+        } catch(e) {}
+      })();
+    }
+
+    // Current task + TODO
+    if (todoData) {
+      body += '<div class="vi-section"><div class="vi-section-title">Tâche en cours</div>';
+      body += '<div style="font-size:0.88rem;font-weight:500;color:var(--vi-text)">' + (todoData.currentTask || agent.task || 'En repos') + '</div>';
+      body += '</div>';
+
+      if (todoData.todos && todoData.todos.length) {
+        body += '<div class="vi-section"><div class="vi-section-title">Liste des tâches</div>';
+        todoData.todos.forEach(function(todo) {
+          body += '<div class="vi-todo-item' + (todo.status === 'done' ? ' vi-todo-item--done' : '') + '">';
+          body += '<span class="vi-todo-icon">' + (todo.icon || '📋') + '</span>';
+          body += '<span class="vi-todo-text">' + (todo.text || '') + '</span>';
+          body += '</div>';
+        });
+        body += '</div>';
+      }
+    }
+
+    // Skills
+    var skills = (todoData && todoData.skills && todoData.skills.length) ? todoData.skills : [];
+    if (skills.length > 0) {
+      body += '<div class="vi-section"><div class="vi-section-title">Compétences</div>';
+      body += '<div class="vi-skill-chips">';
+      skills.forEach(function(s) {
+        body += '<span class="vi-skill-chip">' + (s.name || s) + '</span>';
+      });
+      body += '</div></div>';
+    }
+
+    // Soul excerpt
+    if (API) {
+      try {
+        var apiId = agentId === 'apomac' ? 'ceo' : agentId;
+        var agentInfo = await API.getAgentInfo(apiId);
+        if (agentInfo && agentInfo.soul) {
+          var excerpt = agentInfo.soul.substring(0, 400);
+          body += '<div class="vi-section"><div class="vi-section-title">Âme (Personnalité)</div>';
+          body += '<div class="vi-soul-excerpt">' + excerpt.replace(/</g,'&lt;').replace(/>/g,'&gt;') + (agentInfo.soul.length > 400 ? '…' : '') + '</div>';
+          body += '</div>';
+        }
+      } catch(e) {}
+    }
+
+    document.getElementById('viDetailBody').innerHTML = body;
+    openPanel('viDetailOverlay');
+  }
+
+  // ═══════════════════════════════════════
+  //  HOOK INTO HOTSPOT / CHARACTER CLICKS
+  // ═══════════════════════════════════════
+  // Override the existing building popup system to open detail panel instead
+  var buildings = window.__villageBuildings;
+  if (buildings) {
+    // Hook into existing hotspots
+    document.querySelectorAll('.hotspot').forEach(function(hotspot, idx) {
+      if (idx < buildings.length) {
+        var b = buildings[idx];
+        var agentId = NAME_TO_ID[b.name.toLowerCase()];
+        if (agentId) {
+          hotspot.addEventListener('click', function(e) {
+            e.stopPropagation();
+            openAgentDetail(agentId);
+          }, true); // capture phase to override existing handler
+        }
+      }
+    });
+  }
+
+  // Also hook into villager sprite clicks via Pixi
+  // The Pixi characters don't have HTML click handlers, so we intercept via the hotspot layer
+  // which is already positioned over each agent
+
+  // ═══════════════════════════════════════
+  //  CHAT PANEL
+  // ═══════════════════════════════════════
+  function openChatPanel() {
+    closeAll();
+    document.getElementById('viChatOverlay').classList.add('open');
+    document.getElementById('viChatInput').focus();
+    document.body.style.overflow = 'hidden';
+    loadChatTranscript();
+  }
+
+  function loadChatTranscript() {
+    if (!API) return;
+    try {
+      var transcript = API.getTranscript('agent:main:main');
+      if (transcript && transcript.length > 0) {
+        chatHistory = transcript.slice(-50).map(function(m) {
+          return {
+            role: m.role === 'user' ? 'user' : 'system',
+            text: m.text || m.content || '',
+            time: m.timestamp ? new Date(m.timestamp).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : ''
+          };
+        });
+        renderChatMessages();
+      }
+    } catch(e) {}
+  }
+
+  function renderChatMessages() {
+    var container = document.getElementById('viChatMsgs');
+    var empty = document.getElementById('viChatEmpty');
+    if (chatHistory.length === 0) { empty.style.display = ''; return; }
+    empty.style.display = 'none';
+    container.innerHTML = '';
+    chatHistory.forEach(function(m) {
+      var div = document.createElement('div');
+      div.className = 'vi-chat-msg vi-chat-msg--' + m.role;
+      var preview = m.text.length > 300 ? m.text.substring(0, 300) + '…' : m.text;
+      div.innerHTML = '<div>' + preview.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</div>' +
+        (m.time ? '<div class="vi-chat-msg-time">' + m.time + '</div>' : '');
+      container.appendChild(div);
+    });
+    container.scrollTop = container.scrollHeight;
+  }
+
+  async function sendChatMessage() {
+    var input = document.getElementById('viChatInput');
+    var text = input.value.trim();
+    if (!text) return;
+    input.value = '';
+
+    var now = new Date();
+    var timeStr = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+    chatHistory.push({ role: 'user', text: text, time: timeStr });
+    renderChatMessages();
+
+    var route = document.getElementById('viChatRoute').value;
+    var targetAgent = route === 'ceo' ? 'ceo' : route;
+
+    if (API && typeof API.sendMission === 'function') {
+      try {
+        var result = await API.sendMission(text, targetAgent);
+        if (result && result.success) {
+          var label = targetAgent === 'ceo' ? 'le Maire' : targetAgent;
+          chatHistory.push({ role: 'system', text: '✅ Ordre envoyé à ' + label, time: timeStr });
+        } else {
+          chatHistory.push({ role: 'system', text: '⚠️ Échec: ' + (result.error || 'Erreur inconnue'), time: timeStr });
+        }
+      } catch(e) {
+        chatHistory.push({ role: 'system', text: '⚠️ ' + e.message, time: timeStr });
+      }
+    } else {
+      chatHistory.push({ role: 'system', text: '📡 API non connectée — message en attente', time: timeStr });
+    }
+    renderChatMessages();
+  }
+
+  document.getElementById('viChatSend').addEventListener('click', sendChatMessage);
+  document.getElementById('viChatInput').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') { e.preventDefault(); sendChatMessage(); }
+  });
+
+  // Auto-refresh chat
+  setInterval(function() {
+    if (document.getElementById('viChatOverlay').classList.contains('open')) loadChatTranscript();
+  }, 10000);
+
+  // ── Command input → open chat ──
+  document.getElementById('viCmdInput').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && e.target.value.trim()) {
+      var cmd = e.target.value.trim();
+      e.target.value = '';
+      openChatPanel();
+      document.getElementById('viChatInput').value = cmd;
+      sendChatMessage();
+    }
+  });
+
+  // ═══════════════════════════════════════
+  //  MISSIONS PANEL
+  // ═══════════════════════════════════════
+  async function renderMissions() {
+    var body = document.getElementById('viMissionsBody');
+    if (!API) {
+      body.innerHTML = '<div class="vi-cron-empty">Connectez-vous à OpenClaw pour voir les missions.</div>';
+      return;
+    }
+    try {
+      var sessions = await API.getSessions();
+      var subagents = sessions.subagents || [];
+      var running = subagents.filter(function(sa) { return sa.status === 'running'; });
+      var completed = subagents.filter(function(sa) { return sa.status === 'completed'; }).slice(0, 5);
+
+      if (running.length === 0 && completed.length === 0) {
+        body.innerHTML = '<div class="vi-cron-empty">Aucune mission active. Les agents se reposent.</div>';
+        return;
+      }
+
+      var html = '';
+      if (running.length > 0) {
+        html += '<div class="vi-section"><div class="vi-section-title">🔴 Actives (' + running.length + ')</div>';
+        running.forEach(function(sa) {
+          var dur = sa.durationMs ? Math.floor(sa.durationMs / 60000) + 'm' : '—';
+          var prog = sa.progress || 0.5;
+          html += '<div class="vi-cron-item">';
+          html += '<span class="vi-cron-icon">🚀</span>';
+          html += '<div class="vi-cron-info">';
+          html += '<div class="vi-cron-name">' + (sa.name || sa.label || sa.id) + '</div>';
+          html += '<div class="vi-cron-schedule">Parent: ' + (sa.parentAgent || 'main') + ' • ' + dur + '</div>';
+          html += '<div style="margin-top:3px;height:3px;background:var(--vi-bg-panel-lighter);border-radius:2px;overflow:hidden;"><div style="width:' + Math.round(prog * 100) + '%;height:100%;background:var(--vi-accent);border-radius:2px;"></div></div>';
+          html += '</div>';
+          html += '<span class="vi-cron-status vi-cron-status--active">' + Math.round(prog * 100) + '%</span>';
+          html += '</div>';
+        });
+        html += '</div>';
+      }
+      if (completed.length > 0) {
+        html += '<div class="vi-section"><div class="vi-section-title">✅ Terminées</div>';
+        completed.forEach(function(sa) {
+          html += '<div class="vi-cron-item" style="opacity:0.7">';
+          html += '<span class="vi-cron-icon">✅</span>';
+          html += '<div class="vi-cron-info"><div class="vi-cron-name">' + (sa.name || sa.label || sa.id) + '</div></div>';
+          html += '<span class="vi-cron-status" style="color:var(--vi-status-active);">Fait</span>';
+          html += '</div>';
+        });
+        html += '</div>';
+      }
+      body.innerHTML = html;
+    } catch(e) {
+      body.innerHTML = '<div class="vi-cron-empty">Erreur: ' + e.message + '</div>';
+    }
+  }
+
+  setInterval(function() {
+    if (document.getElementById('viMissionsOverlay').classList.contains('open')) renderMissions();
+  }, 15000);
+
+  // ═══════════════════════════════════════
+  //  CRON PANEL
+  // ═══════════════════════════════════════
+  function humanCron(s) {
+    if (!s) return '—';
+    var m = { '*/30 * * * *': 'Toutes les 30 min', '0 * * * *': 'Toutes les heures',
+              '0 9 * * *': 'Chaque jour 9h', '0 9 * * 1': 'Lun 9h',
+              '*/5 * * * *': 'Toutes les 5 min', '0 */2 * * *': 'Toutes les 2h',
+              '0 8 * * 1-5': 'Jours ouvrés 8h' };
+    return m[s] || s;
+  }
+
+  function renderCrons() {
+    var body = document.getElementById('viCronBody');
+    var crons = liveCronData;
+    if (API && !crons) { try { crons = API.getCrons(); } catch(e) {} }
+    if (!crons || !Array.isArray(crons) || crons.length === 0) {
+      body.innerHTML = '<div class="vi-cron-empty">Aucune tâche planifiée.' + (API ? '' : '<br><em>Connectez-vous à OpenClaw.</em>') + '</div>';
+      return;
+    }
+    var groups = {};
+    crons.forEach(function(c) { var o = c.owner || 'Système'; if (!groups[o]) groups[o] = []; groups[o].push(c); });
+    var html = '';
+    Object.keys(groups).forEach(function(owner) {
+      html += '<div class="vi-section"><div class="vi-section-title">' + owner + '</div>';
+      groups[owner].forEach(function(c) {
+        var statusCls = c.status === 'active' ? 'active' : c.status === 'error' ? 'error' : 'paused';
+        var icon = c.status === 'active' ? '⏰' : c.status === 'error' ? '❌' : '⏸️';
+        var nextRun = c.nextRun ? new Date(c.nextRun).toLocaleString('fr-FR', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
+        html += '<div class="vi-cron-item">';
+        html += '<span class="vi-cron-icon">' + icon + '</span>';
+        html += '<div class="vi-cron-info">';
+        html += '<div class="vi-cron-name">' + (c.name || c.id || 'Sans nom') + '</div>';
+        html += '<div class="vi-cron-schedule">' + humanCron(c.schedule) + '</div>';
+        html += '<div class="vi-cron-next">Prochain: ' + nextRun + '</div>';
+        html += '</div>';
+        html += '<span class="vi-cron-status vi-cron-status--' + statusCls + '">' + (c.status || 'inconnu') + '</span>';
+        html += '</div>';
+      });
+      html += '</div>';
+    });
+    body.innerHTML = html;
+  }
+
+  // ═══════════════════════════════════════
+  //  MEMORY PANEL
+  // ═══════════════════════════════════════
+  function renderMd(md) {
+    if (!md) return '<em>Aucun contenu</em>';
+    return md.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+      .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+      .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      .replace(/`(.+?)`/g, '<code>$1</code>')
+      .replace(/^- (.+)$/gm, '<li>$1</li>')
+      .replace(/\n{2,}/g, '<br><br>')
+      .replace(/\n/g, '<br>');
+  }
+
+  function renderMemory() {
+    var body = document.getElementById('viMemoryBody');
+    var mem = liveMemoryData;
+    if (API && !mem) { try { mem = API.getMemory(); } catch(e) {} }
+    if (!mem) {
+      body.innerHTML = '<div class="vi-cron-empty">Aucune donnée mémoire.' + (API ? '' : '<br><em>Connectez-vous à OpenClaw.</em>') + '</div>';
+      return;
+    }
+    var html = '';
+
+    // Golden rules
+    if (mem.longTerm && mem.longTerm.content) {
+      var content = mem.longTerm.content;
+      var goldenMatch = content.match(/## 🔴[^\n]*\n[\s\S]*?(?=\n## |$)/g);
+      if (goldenMatch) {
+        html += '<div class="vi-section"><div class="vi-section-title">Règles d\'or</div>';
+        goldenMatch.forEach(function(rule) {
+          html += '<div class="vi-golden-rules"><div class="vi-md">' + renderMd(rule.trim()) + '</div></div>';
+        });
+        html += '</div>';
+      }
+      // Full MEMORY.md
+      html += '<div class="vi-section"><div class="vi-section-title">MEMORY.md <span style="font-weight:400;color:var(--vi-text-tertiary);text-transform:none;letter-spacing:0">(' + (mem.longTerm.size ? (mem.longTerm.size / 1024).toFixed(1) + ' KB' : '—') + ')</span></div>';
+      html += '<div class="vi-md">' + renderMd(content.substring(0, 3000)) + '</div>';
+      if (content.length > 3000) html += '<div style="color:var(--vi-text-tertiary);font-size:0.7rem;margin-top:6px">…tronqué (' + content.length + ' chars)</div>';
+      html += '</div>';
+    }
+
+    // Daily
+    if (mem.daily && mem.daily.length > 0) {
+      html += '<div class="vi-section"><div class="vi-section-title">Notes journalières</div>';
+      mem.daily.slice(0, 14).forEach(function(d) {
+        html += '<div class="vi-daily-item">';
+        html += '<span class="vi-daily-date">' + (d.date || d.name || '—') + '</span>';
+        html += '<span>' + (d.preview || 'Journal') + '</span>';
+        html += '<span class="vi-daily-size">' + (d.size ? (d.size / 1024).toFixed(1) + ' KB' : '') + '</span>';
+        html += '</div>';
+      });
+      html += '</div>';
+    }
+
+    // Read-only label
+    html += '<div class="vi-section"><div class="vi-readonly">🔒 Seul le Maire peut modifier la mémoire</div></div>';
+    body.innerHTML = html;
+  }
+
+  // ═══════════════════════════════════════
+  //  SETTINGS PANEL
+  // ═══════════════════════════════════════
+  async function renderSettings() {
+    var body = document.getElementById('viSettingsBody');
+    var html = '';
+
+    // API Keys
+    html += '<div class="vi-section"><div class="vi-section-title">🔑 Clés API</div>';
+    var providers = ['anthropic', 'openai', 'elevenlabs', 'google'];
+    var labels = { anthropic: 'Anthropic', openai: 'OpenAI', elevenlabs: 'ElevenLabs', google: 'Google' };
+    var currentKeys = {};
+    if (API) { try { currentKeys = await API.getApiKeys(); } catch(e) {} }
+
+    providers.forEach(function(prov) {
+      var info = currentKeys[prov] || {};
+      var masked = info.hasKey ? info.masked : 'Non définie';
+      html += '<div class="vi-settings-row">';
+      html += '<div class="vi-cron-info" style="flex:1;min-width:100px;">';
+      html += '<div class="vi-cron-name">' + labels[prov] + '</div>';
+      html += '<div class="vi-cron-schedule" style="font-family:monospace;font-size:0.68rem;">' + masked + '</div>';
+      html += '</div>';
+      html += '<div style="display:flex;gap:3px;align-items:center;">';
+      html += '<input type="password" id="vi-apikey-' + prov + '" placeholder="..." />';
+      html += '<button class="vi-settings-save vi-apikey-save" data-provider="' + prov + '">✓</button>';
+      if (info.hasKey) html += '<button class="vi-settings-delete vi-apikey-del" data-provider="' + prov + '">🗑️</button>';
+      html += '</div></div>';
+    });
+    html += '</div>';
+
+    // Mapping
+    html += '<div class="vi-section"><div class="vi-section-title">🗺️ OpenClaw ↔ SpawnKit</div>';
+    var mappings = [
+      { oc: 'Sessions', sk: 'Villageois', icon: '🏘️' },
+      { oc: 'Skills', sk: 'Compétences', icon: '⚡' },
+      { oc: 'Cron Jobs', sk: 'Tâches planifiées', icon: '📅' },
+      { oc: 'Memory', sk: 'Mémoire du village', icon: '🧠' },
+      { oc: 'Sub-agents', sk: 'Missions', icon: '🎯' },
+    ];
+    html += '<div class="vi-map-grid">';
+    html += '<div class="vi-map-header">OpenClaw</div><div></div><div class="vi-map-header">Village</div>';
+    mappings.forEach(function(m) {
+      html += '<div class="vi-map-label">' + m.icon + ' ' + m.oc + '</div>';
+      html += '<div class="vi-map-arrow">→</div>';
+      html += '<div class="vi-map-value">' + m.sk + '</div>';
+    });
+    html += '</div></div>';
+
+    body.innerHTML = html;
+
+    // Wire up save/delete
+    body.querySelectorAll('.vi-apikey-save').forEach(function(btn) {
+      btn.addEventListener('click', async function() {
+        var prov = btn.dataset.provider;
+        var input = document.getElementById('vi-apikey-' + prov);
+        var key = input ? input.value.trim() : '';
+        if (!key) { showToast('Entrez une clé API'); return; }
+        if (API) {
+          var result = await API.saveApiKey(prov, key);
+          if (result && result.success) {
+            showToast('✅ Clé ' + labels[prov] + ' sauvegardée');
+            input.value = '';
+            renderSettings();
+          } else {
+            showToast('⚠️ Échec: ' + (result.error || 'inconnu'));
+          }
+        }
+      });
+    });
+    body.querySelectorAll('.vi-apikey-del').forEach(function(btn) {
+      btn.addEventListener('click', async function() {
+        var prov = btn.dataset.provider;
+        if (API) {
+          var result = await API.deleteApiKey(prov);
+          if (result && result.success) { showToast('🗑️ Clé supprimée'); renderSettings(); }
+        }
+      });
+    });
+  }
+
+  // ═══════════════════════════════════════
+  //  postMessage Bridge
+  // ═══════════════════════════════════════
+  window.addEventListener('message', function(e) {
+    if (!e.data || typeof e.data !== 'object') return;
+    var isSameOrigin = (e.origin === window.location.origin || e.origin === 'null');
+    if (!isSameOrigin) return;
+
+    switch (e.data.type) {
+      case 'spawnkit:data':
+        if (e.data.payload) handleDataUpdate(e.data.payload);
+        break;
+      case 'spawnkit:agents':
+        if (e.data.agents) handleAgentsUpdate(e.data.agents);
+        break;
+      case 'spawnkit:ping':
+        if (window.parent !== window) {
+          window.parent.postMessage({ type: 'village:pong', theme: 'village-illustrated', timestamp: Date.now() }, '*');
+        }
+        break;
+    }
+  });
+
+  function handleDataUpdate(payload) {
+    if (payload.agents) handleAgentsUpdate(payload.agents);
+    if (payload.agents) {
+      var count = payload.agents.length;
+      var el = document.getElementById('viAgentCount');
+      if (el) el.textContent = count + ' Villageois';
+    }
+  }
+
+  function handleAgentsUpdate(agents) {
+    if (!agents || !Array.isArray(agents)) return;
+    agents.forEach(function(agent) {
+      if (!agent || !agent.name) return;
+      var id = NAME_TO_ID[agent.name.toLowerCase()];
+      if (!id) return;
+      if (agent.status) AGENTS[id].status = agent.status;
+      if (agent.currentTask) AGENTS[id].task = agent.currentTask;
+
+      // Update building data for popups
+      var b = buildings ? buildings.find(function(b) { return b.name.toLowerCase() === agent.name.toLowerCase(); }) : null;
+      if (b) {
+        if (agent.tasks !== undefined) b.tasks = agent.tasks;
+        if (agent.status !== undefined) b.status = agent.status;
+        if (agent.currentTask) b.focus = agent.currentTask;
+      }
+    });
+  }
+
+  // ── Announce readiness ──
+  if (window.parent !== window) {
+    window.parent.postMessage({ type: 'village:ready', theme: 'village-illustrated', timestamp: Date.now() }, '*');
+  }
+
+  // ── Auto-refresh data ──
+  setInterval(function() {
+    loadLiveAgentData();
+    prefetchData();
+  }, 30000);
+
+  // ── Expose for SpawnKit integration ──
+  window.__EXEC_THEME = 'village-illustrated';
+
+  if (window.SpawnKit) {
+    SpawnKit.on('data:refresh', function(data) {
+      if (data.agents) handleAgentsUpdate(data.agents);
+    });
+    if (SpawnKit.mode === 'live') SpawnKit.refresh();
+  }
+
+})();
+</script>
+</body>
+</html>

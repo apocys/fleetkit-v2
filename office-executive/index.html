@@ -15,17 +15,17 @@
            ═══════════════════════════════════════════════════════════════ */
 
         :root {
-            /* ── Executive Palette ──────────────────────────── */
-            --exec-blue: #007AFF;
-            --exec-blue-hover: #0A84FF;
-            --exec-blue-muted: rgba(0, 122, 255, 0.15);
-            --exec-blue-glow: rgba(0, 122, 255, 0.3);
+            /* ── iOS Brand Palette ──────────────────────────── */
+            --exec-blue: #0071e3;
+            --exec-blue-hover: #0077ed;
+            --exec-blue-muted: rgba(0, 113, 227, 0.1);
+            --exec-blue-glow: rgba(0, 113, 227, 0.2);
             --exec-white: #FFFFFF;
             --exec-gray-50: #F5F5F7;
             --exec-gray-100: #E5E5EA;
-            --exec-gray-200: #C7C7CC;
+            --exec-gray-200: #D2D2D7;
             --exec-gray-300: #AEAEB2;
-            --exec-gray-400: #8E8E93;
+            --exec-gray-400: #86868b;
             --exec-gray-500: #636366;
             --exec-gray-600: #48484A;
             --exec-gray-700: #3A3A3C;
@@ -33,44 +33,86 @@
             --exec-gray-900: #1C1C1E;
             --exec-black: #000000;
 
-            /* ── Semantic Colors (Light Mode Default) ───────── */
-            --bg-primary: #F5F5F7;
-            --bg-secondary: var(--exec-white);
-            --bg-tertiary: var(--exec-gray-50);
-            --bg-room: rgba(255, 255, 255, 0.85);
-            --bg-room-hover: rgba(255, 255, 255, 0.95);
-            --bg-frosted: rgba(255, 255, 255, 0.72);
-            --text-primary: var(--exec-gray-900);
-            --text-secondary: var(--exec-gray-600);
-            --text-tertiary: var(--exec-gray-500);
-            --border-subtle: rgba(0, 0, 0, 0.06);
-            --border-medium: rgba(0, 0, 0, 0.1);
-            --border-strong: rgba(0, 0, 0, 0.16);
+            /* ── Apple Dark Mode (Default) ──────────────────── */
+            --bg-primary: #000000;
+            --bg-secondary: #1c1c1e;
+            --bg-tertiary: #2c2c2e;
+            --bg-room: rgba(28, 28, 30, 0.85);
+            --bg-room-hover: rgba(44, 44, 46, 0.95);
+            --bg-frosted: rgba(29, 29, 31, 0.72);
+            --text-primary: #f5f5f7;
+            --text-secondary: #86868b;
+            --text-tertiary: #636366;
+            --border-subtle: rgba(255, 255, 255, 0.06);
+            --border-medium: rgba(255, 255, 255, 0.1);
+            --border-strong: rgba(255, 255, 255, 0.16);
 
-            /* ── Status Colors ──────────────────────────────── */
-            --status-active: #30D158;
-            --status-busy: #FFD60A;
-            --status-idle: var(--exec-gray-500);
-            --status-error: #FF453A;
+            /* ── Semantic / Status Colors ───────────────────── */
+            --status-active: #30d158;
+            --status-busy: #ffd60a;
+            --status-idle: #636366;
+            --status-error: #ff453a;
+            --color-success: #30d158;
+            --color-error: #ff453a;
+            --color-warning: #ffd60a;
+            --color-info: #64d2ff;
+
+            /* ── Accent Colors ──────────────────────────────── */
+            --color-accent: #0071e3;
+            --color-accent-hover: #0077ed;
+            --color-accent-active: #006edb;
+            --color-accent-light: rgba(0, 113, 227, 0.1);
 
             /* ── Agent Brand Colors ─────────────────────────── */
-            --color-ceo: var(--exec-blue);
+            --color-ceo: #0071e3;
             --color-atlas: #BF5AF2;
             --color-forge: #FF9F0A;
             --color-hunter: #FF453A;
             --color-echo: #0A84FF;
             --color-sentinel: #30D158;
 
-            /* ── Typography ─────────────────────────────────── */
-            --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            /* ── Typography (Apple HIG) ─────────────────────── */
+            --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Segoe UI', Roboto, sans-serif;
+            --text-xs: 0.75rem;
+            --text-sm: 0.875rem;
+            --text-base: 1.0625rem;
+            --text-lg: 1.25rem;
+            --text-xl: 1.375rem;
 
-            /* ── Animation ──────────────────────────────────── */
+            /* ── Spacing (4px base) ─────────────────────────── */
+            --space-1: 4px;
+            --space-2: 8px;
+            --space-3: 12px;
+            --space-4: 16px;
+            --space-5: 20px;
+            --space-6: 24px;
+            --space-8: 32px;
+
+            /* ── Border Radius (Apple) ──────────────────────── */
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --radius-xl: 20px;
+            --radius-pill: 980px;
+            --radius-round: 50%;
+
+            /* ── Shadows (Dark Mode) ────────────────────────── */
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+            --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.3);
+            --shadow-lg: 0 8px 40px rgba(0, 0, 0, 0.4);
+            --shadow-card: 0 2px 20px rgba(0, 0, 0, 0.06);
+
+            /* ── Animation (Apple curves) ───────────────────── */
             --ease-smooth: cubic-bezier(0.2, 0.8, 0.2, 1);
-            --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
-            --ease-out: cubic-bezier(0, 0, 0.2, 1);
+            --ease-spring: cubic-bezier(0.25, 1, 0.5, 1);
+            --ease-out: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            --ease-apple: cubic-bezier(0.4, 0, 0.2, 1);
+            --duration-fast: 150ms;
+            --duration-normal: 300ms;
+            --duration-slow: 500ms;
 
             /* ── Layout ─────────────────────────────────────── */
-            --room-radius: 16px;
+            --room-radius: var(--radius-lg);
             --panel-width: 380px;
         }
 
@@ -88,10 +130,14 @@
             height: 100%;
             overflow: hidden;
             font-family: var(--font-family);
+            font-size: 16px;
+            line-height: 1.47;
+            letter-spacing: -0.005em;
             background: var(--bg-primary);
             color: var(--text-primary);
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
+            text-rendering: optimizeLegibility;
         }
 
         /* ═══════════════════════════════════════════════════
@@ -102,8 +148,8 @@
             inset: 0;
             z-index: 0;
             background:
-                radial-gradient(ellipse 80% 60% at 50% 20%, rgba(0, 122, 255, 0.06) 0%, transparent 70%),
-                radial-gradient(ellipse 60% 40% at 80% 80%, rgba(0, 122, 255, 0.04) 0%, transparent 60%),
+                radial-gradient(ellipse 80% 60% at 50% 20%, rgba(0, 113, 227, 0.04) 0%, transparent 70%),
+                radial-gradient(ellipse 60% 40% at 80% 80%, rgba(0, 113, 227, 0.02) 0%, transparent 60%),
                 var(--bg-primary);
             pointer-events: none;
         }
@@ -121,7 +167,7 @@
             position: absolute;
             width: 3px;
             height: 3px;
-            background: rgba(0, 122, 255, 0.12);
+            background: rgba(0, 113, 227, 0.08);
             border-radius: 50%;
             animation: particleDrift linear infinite;
         }
@@ -137,7 +183,7 @@
             top: 60%;
             width: 2px;
             height: 2px;
-            background: rgba(0, 122, 255, 0.15);
+            background: rgba(0, 113, 227, 0.1);
             animation-duration: 34s;
             animation-delay: -8s;
         }
@@ -146,7 +192,7 @@
             top: 80%;
             width: 2px;
             height: 2px;
-            background: rgba(0, 0, 0, 0.04);
+            background: rgba(255, 255, 255, 0.03);
             animation-duration: 22s;
             animation-delay: -14s;
         }
@@ -186,27 +232,29 @@
         .view-toggle-group {
             display: flex;
             align-items: center;
-            background: rgba(0, 0, 0, 0.04);
-            border: 1px solid var(--border-subtle);
-            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 0.5px solid var(--border-subtle);
+            border-radius: var(--radius-sm);
             padding: 3px;
             gap: 2px;
+            backdrop-filter: saturate(180%) blur(20px);
+            -webkit-backdrop-filter: saturate(180%) blur(20px);
         }
 
         .view-toggle-btn {
             display: flex;
             align-items: center;
             gap: 6px;
-            padding: 6px 14px;
+            padding: 6px 16px;
             border: none;
             background: transparent;
-            border-radius: 8px;
+            border-radius: 6px;
             font-family: var(--font-family);
-            font-size: 12px;
+            font-size: var(--text-sm);
             font-weight: 500;
             color: var(--text-tertiary);
             cursor: pointer;
-            transition: all 0.25s var(--ease-smooth);
+            transition: all var(--duration-fast) var(--ease-apple);
             -webkit-tap-highlight-color: transparent;
             outline: none;
             white-space: nowrap;
@@ -214,13 +262,13 @@
 
         .view-toggle-btn:hover {
             color: var(--text-secondary);
-            background: rgba(0, 0, 0, 0.03);
+            background: rgba(255, 255, 255, 0.05);
         }
 
         .view-toggle-btn.active {
-            background: var(--exec-white);
+            background: rgba(255, 255, 255, 0.12);
             color: var(--text-primary);
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
+            box-shadow: var(--shadow-sm);
         }
 
         .view-toggle-btn:focus-visible {
@@ -241,7 +289,7 @@
             padding: 16px 24px 24px;
             display: grid;
             grid-template-columns: 1fr 1.6fr 1fr;
-            grid-template-rows: 1fr 1fr 0.8fr;
+            grid-template-rows: 1fr 1fr 0.8fr auto;
             gap: 12px;
             max-width: 1200px;
             max-height: calc(100vh - 112px);
@@ -303,29 +351,31 @@
             gap: 14px;
             padding: 14px 22px;
             background: var(--bg-room);
-            border: 1px solid var(--border-subtle);
-            border-radius: 14px;
+            backdrop-filter: saturate(180%) blur(20px);
+            -webkit-backdrop-filter: saturate(180%) blur(20px);
+            border: 0.5px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
             cursor: pointer;
-            transition: all 0.3s var(--ease-smooth);
+            transition: all var(--duration-normal) var(--ease-apple);
             min-width: 180px;
         }
 
         .org-card:hover {
             background: var(--bg-room-hover);
             border-color: var(--border-medium);
-            transform: translateY(-1px);
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
         }
 
         .org-card--ceo {
             padding: 18px 28px;
-            background: linear-gradient(135deg, rgba(255,255,255,0.95), rgba(255,255,255,0.85));
+            background: linear-gradient(135deg, rgba(28,28,30,0.95), rgba(44,44,46,0.85));
             border-color: var(--border-medium);
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+            box-shadow: var(--shadow-md);
         }
 
         .org-card--ceo:hover {
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(0, 122, 255, 0.15);
+            box-shadow: var(--shadow-lg), 0 0 0 1px rgba(0, 113, 227, 0.15);
         }
 
         .org-card-info {
@@ -397,7 +447,9 @@
         .exec-room {
             position: relative;
             background: var(--bg-room);
-            border: 1px solid var(--border-subtle);
+            backdrop-filter: saturate(180%) blur(20px);
+            -webkit-backdrop-filter: saturate(180%) blur(20px);
+            border: 0.5px solid var(--border-subtle);
             border-radius: var(--room-radius);
             padding: 20px;
             display: flex;
@@ -407,10 +459,10 @@
             gap: 8px;
             cursor: pointer;
             transition:
-                background 0.3s var(--ease-smooth),
-                border-color 0.3s var(--ease-smooth),
-                transform 0.3s var(--ease-smooth),
-                box-shadow 0.3s var(--ease-smooth);
+                background var(--duration-normal) var(--ease-apple),
+                border-color var(--duration-normal) var(--ease-apple),
+                transform var(--duration-normal) var(--ease-apple),
+                box-shadow var(--duration-normal) var(--ease-apple);
             overflow: hidden;
             -webkit-tap-highlight-color: transparent;
             outline: none;
@@ -421,15 +473,15 @@
             position: absolute;
             inset: 0;
             border-radius: inherit;
-            background: radial-gradient(ellipse at 50% 0%, rgba(0,122,255,0.03) 0%, transparent 70%);
+            background: radial-gradient(ellipse at 50% 0%, rgba(0,113,227,0.02) 0%, transparent 70%);
             pointer-events: none;
         }
 
         .exec-room:hover {
             background: var(--bg-room-hover);
             border-color: var(--border-medium);
-            transform: translateY(-1px);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
         }
 
         .exec-room:focus-visible {
@@ -465,8 +517,8 @@
             gap: 32px;
             padding: 28px 36px;
             background: linear-gradient(135deg,
-                rgba(255, 255, 255, 0.95) 0%,
-                rgba(255, 255, 255, 0.85) 100%
+                rgba(28, 28, 30, 0.95) 0%,
+                rgba(44, 44, 46, 0.85) 100%
             );
             border-color: var(--border-medium);
         }
@@ -479,10 +531,10 @@
             padding: 1px;
             background: linear-gradient(
                 135deg,
-                rgba(0, 122, 255, 0.15) 0%,
-                rgba(0, 122, 255, 0) 40%,
-                rgba(0, 122, 255, 0) 60%,
-                rgba(0, 122, 255, 0.1) 100%
+                rgba(0, 113, 227, 0.15) 0%,
+                rgba(0, 113, 227, 0) 40%,
+                rgba(0, 113, 227, 0) 60%,
+                rgba(0, 113, 227, 0.1) 100%
             );
             -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
             -webkit-mask-composite: xor;
@@ -499,8 +551,8 @@
 
         .exec-room--ceo:hover {
             box-shadow:
-                0 8px 32px rgba(0, 0, 0, 0.1),
-                0 0 0 1px rgba(0, 122, 255, 0.15);
+                0 8px 32px rgba(0, 0, 0, 0.3),
+                0 0 0 1px rgba(0, 113, 227, 0.15);
         }
 
         .ceo-content {
@@ -532,24 +584,24 @@
             display: flex;
             align-items: center;
             gap: 8px;
-            padding: 8px 14px;
+            padding: 8px 18px;
             background: var(--exec-blue-muted);
-            border: 1px solid rgba(0, 122, 255, 0.2);
-            border-radius: 10px;
+            border: 1px solid rgba(0, 113, 227, 0.2);
+            border-radius: var(--radius-pill);
             cursor: pointer;
-            transition: all 0.25s var(--ease-smooth);
+            transition: all var(--duration-fast) var(--ease-apple);
             font-family: inherit;
             color: var(--exec-blue);
             font-size: 13px;
-            font-weight: 500;
+            font-weight: 600;
             -webkit-tap-highlight-color: transparent;
             outline: none;
         }
 
         .ceo-mailbox:hover {
-            background: rgba(0, 122, 255, 0.25);
-            border-color: rgba(0, 122, 255, 0.4);
-            transform: scale(1.03);
+            background: rgba(0, 113, 227, 0.2);
+            border-color: rgba(0, 113, 227, 0.4);
+            transform: translateY(-1px);
         }
 
         .ceo-mailbox:focus-visible {
@@ -617,8 +669,8 @@
             width: 12px;
             height: 12px;
             border-radius: 50%;
-            border: 2px solid var(--bg-room);
-            transition: background 0.3s var(--ease-smooth);
+            border: 2px solid var(--bg-secondary);
+            transition: background var(--duration-normal) var(--ease-apple);
             z-index: 2;
         }
 
@@ -655,8 +707,8 @@
            Meeting Room — Boardroom
            ═══════════════════════════════════════════════════ */
         .exec-room--meeting {
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(248, 248, 250, 0.9));
-            border: 1px solid var(--border-medium);
+            background: linear-gradient(135deg, rgba(28, 28, 30, 0.9), rgba(44, 44, 46, 0.9));
+            border: 0.5px solid var(--border-medium);
             cursor: pointer;
             flex-direction: column;
             gap: 12px;
@@ -665,10 +717,10 @@
         }
 
         .exec-room--meeting:hover {
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(248, 248, 250, 0.95));
+            background: linear-gradient(135deg, rgba(44, 44, 46, 0.95), rgba(58, 58, 60, 0.95));
             border-color: var(--border-strong);
-            transform: translateY(-1px);
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
         }
 
         .meeting-status {
@@ -708,11 +760,11 @@
 
         @keyframes meetingPulse {
             0%, 100% { 
-                box-shadow: 0 0 0 0 rgba(0, 122, 255, 0.7);
+                box-shadow: 0 0 0 0 rgba(0, 113, 227, 0.7);
                 transform: scale(1);
             }
             50% { 
-                box-shadow: 0 0 0 4px rgba(0, 122, 255, 0);
+                box-shadow: 0 0 0 4px rgba(0, 113, 227, 0);
                 transform: scale(1.05);
             }
         }
@@ -725,11 +777,11 @@
         }
 
         .meeting-active {
-            font-size: 12px;
+            font-size: var(--text-xs);
             color: var(--text-secondary);
             padding: 4px 8px;
-            background: rgba(0, 122, 255, 0.08);
-            border-radius: 6px;
+            background: rgba(0, 113, 227, 0.08);
+            border-radius: var(--radius-sm);
             border-left: 3px solid var(--exec-blue);
         }
 
@@ -818,12 +870,14 @@
             max-width: 90vw;
             height: 100%;
             background: var(--bg-secondary);
-            border-left: 1px solid var(--border-medium);
+            backdrop-filter: saturate(180%) blur(20px);
+            -webkit-backdrop-filter: saturate(180%) blur(20px);
+            border-left: 0.5px solid var(--border-subtle);
             display: flex;
             flex-direction: column;
             transform: translateX(100%);
-            transition: transform 0.4s var(--ease-smooth);
-            box-shadow: -16px 0 48px rgba(0, 0, 0, 0.1);
+            transition: transform 0.4s var(--ease-apple);
+            box-shadow: var(--shadow-lg);
         }
 
         .mailbox-header {
@@ -831,7 +885,7 @@
             align-items: center;
             justify-content: space-between;
             padding: 20px 24px;
-            border-bottom: 1px solid var(--border-subtle);
+            border-bottom: 0.5px solid var(--border-subtle);
             flex-shrink: 0;
         }
 
@@ -851,18 +905,18 @@
             align-items: center;
             justify-content: center;
             border: none;
-            background: var(--bg-tertiary);
+            background: rgba(255, 255, 255, 0.08);
             color: var(--text-secondary);
-            border-radius: 8px;
+            border-radius: var(--radius-round);
             cursor: pointer;
             font-size: 16px;
-            transition: all 0.2s var(--ease-smooth);
+            transition: all var(--duration-fast) var(--ease-apple);
             font-family: inherit;
             -webkit-tap-highlight-color: transparent;
         }
 
         .mailbox-close:hover {
-            background: var(--exec-gray-100);
+            background: rgba(255, 255, 255, 0.14);
             color: var(--text-primary);
         }
 
@@ -899,7 +953,7 @@
         }
 
         .mail-item:hover {
-            background: rgba(0, 0, 0, 0.03);
+            background: rgba(255, 255, 255, 0.04);
         }
 
         .mail-item--read {
@@ -1026,12 +1080,14 @@
             max-width: 90vw;
             height: 100%;
             background: var(--bg-secondary);
-            border-left: 1px solid var(--border-medium);
+            backdrop-filter: saturate(180%) blur(20px);
+            -webkit-backdrop-filter: saturate(180%) blur(20px);
+            border-left: 0.5px solid var(--border-subtle);
             display: flex;
             flex-direction: column;
             transform: translateX(100%);
-            transition: transform 0.4s var(--ease-smooth);
-            box-shadow: -16px 0 48px rgba(0, 0, 0, 0.1);
+            transition: transform 0.4s var(--ease-apple);
+            box-shadow: var(--shadow-lg);
         }
 
         .todo-header {
@@ -1039,7 +1095,7 @@
             align-items: center;
             justify-content: space-between;
             padding: 20px 24px 16px;
-            border-bottom: 1px solid var(--border-subtle);
+            border-bottom: 0.5px solid var(--border-subtle);
             flex-shrink: 0;
         }
 
@@ -1093,18 +1149,18 @@
             align-items: center;
             justify-content: center;
             border: none;
-            background: var(--bg-tertiary);
+            background: rgba(255, 255, 255, 0.08);
             color: var(--text-secondary);
-            border-radius: 8px;
+            border-radius: var(--radius-round);
             cursor: pointer;
             font-size: 16px;
-            transition: all 0.2s var(--ease-smooth);
+            transition: all var(--duration-fast) var(--ease-apple);
             font-family: inherit;
             -webkit-tap-highlight-color: transparent;
         }
 
         .todo-close:hover {
-            background: var(--exec-gray-100);
+            background: rgba(255, 255, 255, 0.14);
             color: var(--text-primary);
         }
 
@@ -1133,7 +1189,7 @@
         /* ── TODO Sections ──────────────────────────────── */
         .todo-section {
             padding: 20px 24px;
-            border-bottom: 1px solid var(--border-subtle);
+            border-bottom: 0.5px solid var(--border-subtle);
         }
 
         .todo-section:last-child {
@@ -1231,7 +1287,7 @@
         .skill-bar {
             width: 100%;
             height: 6px;
-            background: var(--exec-gray-100);
+            background: rgba(255, 255, 255, 0.08);
             border-radius: 3px;
             overflow: hidden;
         }
@@ -1284,12 +1340,14 @@
             max-width: 90vw;
             height: 100%;
             background: var(--bg-secondary);
-            border-left: 1px solid var(--border-medium);
+            backdrop-filter: saturate(180%) blur(20px);
+            -webkit-backdrop-filter: saturate(180%) blur(20px);
+            border-left: 0.5px solid var(--border-subtle);
             display: flex;
             flex-direction: column;
             transform: translateX(100%);
-            transition: transform 0.4s var(--ease-smooth);
-            box-shadow: -16px 0 48px rgba(0, 0, 0, 0.1);
+            transition: transform 0.4s var(--ease-apple);
+            box-shadow: var(--shadow-lg);
         }
 
         .meeting-header {
@@ -1297,7 +1355,7 @@
             align-items: center;
             justify-content: space-between;
             padding: 20px 24px 16px;
-            border-bottom: 1px solid var(--border-subtle);
+            border-bottom: 0.5px solid var(--border-subtle);
             flex-shrink: 0;
         }
 
@@ -1317,18 +1375,18 @@
             align-items: center;
             justify-content: center;
             border: none;
-            background: var(--bg-tertiary);
+            background: rgba(255, 255, 255, 0.08);
             color: var(--text-secondary);
-            border-radius: 8px;
+            border-radius: var(--radius-round);
             cursor: pointer;
             font-size: 16px;
-            transition: all 0.2s var(--ease-smooth);
+            transition: all var(--duration-fast) var(--ease-apple);
             font-family: inherit;
             -webkit-tap-highlight-color: transparent;
         }
 
         .meeting-close:hover {
-            background: var(--exec-gray-100);
+            background: rgba(255, 255, 255, 0.14);
             color: var(--text-primary);
         }
 
@@ -1357,7 +1415,7 @@
         /* ── Meeting Sections ──────────────────────────── */
         .meeting-section {
             padding: 20px 24px;
-            border-bottom: 1px solid var(--border-subtle);
+            border-bottom: 0.5px solid var(--border-subtle);
         }
 
         .meeting-section:last-child {
@@ -1383,20 +1441,20 @@
             display: flex;
             flex-direction: column;
             gap: 6px;
-            padding: 12px 16px;
-            background: rgba(0, 122, 255, 0.05);
-            border-left: 4px solid var(--exec-blue);
-            border-radius: 8px;
+            padding: 14px 16px;
+            background: rgba(0, 113, 227, 0.06);
+            border-left: 3px solid var(--exec-blue);
+            border-radius: var(--radius-md);
         }
 
         .meeting-item--active {
-            border-left-color: #FF453A;
-            background: rgba(255, 69, 58, 0.08);
+            border-left-color: #ff453a;
+            background: rgba(255, 69, 58, 0.06);
         }
 
         .meeting-item--scheduled {
-            border-left-color: #FFD60A;
-            background: rgba(255, 214, 10, 0.08);
+            border-left-color: #ffd60a;
+            background: rgba(255, 214, 10, 0.06);
         }
 
         .meeting-item-header {
@@ -1487,17 +1545,17 @@
             align-items: center;
             gap: 4px;
             padding: 8px 12px;
-            background: rgba(0, 122, 255, 0.08);
-            border: 1px solid rgba(0, 122, 255, 0.2);
-            border-radius: 10px;
+            background: rgba(0, 113, 227, 0.06);
+            border: 0.5px solid rgba(0, 113, 227, 0.15);
+            border-radius: var(--radius-md);
             cursor: pointer;
-            transition: all 0.25s var(--ease-smooth);
+            transition: all var(--duration-fast) var(--ease-apple);
             min-width: 100px;
         }
 
         .org-sub-card:hover {
-            background: rgba(0, 122, 255, 0.15);
-            border-color: rgba(0, 122, 255, 0.35);
+            background: rgba(0, 113, 227, 0.12);
+            border-color: rgba(0, 113, 227, 0.3);
             transform: translateY(-1px);
         }
 
@@ -1526,9 +1584,9 @@
             gap: 16px;
             padding: 12px 24px;
             background: var(--bg-frosted);
-            backdrop-filter: blur(20px) saturate(180%);
-            -webkit-backdrop-filter: blur(20px) saturate(180%);
-            border-top: 1px solid var(--border-subtle);
+            backdrop-filter: saturate(180%) blur(20px);
+            -webkit-backdrop-filter: saturate(180%) blur(20px);
+            border-top: 0.5px solid var(--border-subtle);
             flex-shrink: 0;
         }
 
@@ -1582,18 +1640,18 @@
             width: 100%;
             height: 40px;
             padding: 0 16px 0 38px;
-            background: rgba(0, 0, 0, 0.03);
+            background: rgba(255, 255, 255, 0.06);
             border: 1px solid var(--border-subtle);
-            border-radius: 10px;
+            border-radius: var(--radius-md);
             color: var(--text-primary);
             font-family: var(--font-family);
-            font-size: 13px;
+            font-size: var(--text-sm);
             font-weight: 400;
             outline: none;
             transition:
-                border-color 0.25s var(--ease-smooth),
-                background 0.25s var(--ease-smooth),
-                box-shadow 0.25s var(--ease-smooth);
+                border-color var(--duration-fast) var(--ease-apple),
+                background var(--duration-fast) var(--ease-apple),
+                box-shadow var(--duration-fast) var(--ease-apple);
         }
 
         .exec-command-input input::placeholder {
@@ -1601,7 +1659,7 @@
         }
 
         .exec-command-input input:focus {
-            background: var(--exec-white);
+            background: var(--bg-tertiary);
             border-color: var(--exec-blue);
             box-shadow: 0 0 0 3px var(--exec-blue-muted);
         }
@@ -1675,8 +1733,13 @@
 
             .mailbox-panel,
             .todo-panel,
-            .meeting-panel { 
+            .meeting-panel,
+            .spawn-panel { 
                 width: 100vw; 
+            }
+
+            .spawn-char-grid {
+                grid-template-columns: repeat(3, 1fr);
             }
 
             /* Hierarchy responsive */
@@ -1796,19 +1859,21 @@
             max-width: 90vw;
             height: 100%;
             background: var(--bg-secondary);
-            border-left: 1px solid var(--border-medium);
+            backdrop-filter: saturate(180%) blur(20px);
+            -webkit-backdrop-filter: saturate(180%) blur(20px);
+            border-left: 0.5px solid var(--border-subtle);
             display: flex;
             flex-direction: column;
             transform: translateX(100%);
-            transition: transform 0.4s var(--ease-smooth);
-            box-shadow: -16px 0 48px rgba(0,0,0,0.12);
+            transition: transform 0.4s var(--ease-apple);
+            box-shadow: var(--shadow-lg);
         }
         .detail-hero {
             display: flex;
             align-items: center;
             gap: 18px;
             padding: 24px 24px 20px;
-            border-bottom: 1px solid var(--border-subtle);
+            border-bottom: 0.5px solid var(--border-subtle);
         }
         .detail-hero-avatar {
             width: 64px; height: 64px;
@@ -1835,12 +1900,12 @@
         .detail-close {
             width: 32px; height: 32px;
             display: flex; align-items: center; justify-content: center;
-            border: none; background: var(--bg-tertiary); color: var(--text-secondary);
-            border-radius: 8px; cursor: pointer; font-size: 16px;
-            transition: all 0.2s var(--ease-smooth); font-family: inherit;
+            border: none; background: rgba(255, 255, 255, 0.08); color: var(--text-secondary);
+            border-radius: var(--radius-round); cursor: pointer; font-size: 16px;
+            transition: all var(--duration-fast) var(--ease-apple); font-family: inherit;
             flex-shrink: 0;
         }
-        .detail-close:hover { background: var(--exec-gray-100); color: var(--text-primary); }
+        .detail-close:hover { background: rgba(255, 255, 255, 0.14); color: var(--text-primary); }
         .detail-body {
             flex: 1; overflow-y: auto; padding: 0;
             scrollbar-width: thin; scrollbar-color: var(--exec-gray-300) transparent;
@@ -1849,7 +1914,7 @@
         .detail-body::-webkit-scrollbar-thumb { background: var(--exec-gray-300); border-radius: 2px; }
         .detail-section {
             padding: 18px 24px;
-            border-bottom: 1px solid var(--border-subtle);
+            border-bottom: 0.5px solid var(--border-subtle);
         }
         .detail-section:last-child { border-bottom: none; }
         .detail-section-title {
@@ -1860,8 +1925,8 @@
             display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
         }
         .detail-metric {
-            padding: 10px 12px; background: var(--bg-tertiary);
-            border-radius: 10px;
+            padding: 12px 14px; background: var(--bg-tertiary);
+            border-radius: var(--radius-md);
         }
         .detail-metric-value {
             font-size: 16px; font-weight: 700; color: var(--text-primary);
@@ -1922,18 +1987,21 @@
             width: 480px; max-width: 100vw;
             height: 70vh;
             background: var(--bg-secondary);
-            border-top-left-radius: 16px;
-            border-left: 1px solid var(--border-medium);
-            border-top: 1px solid var(--border-medium);
+            backdrop-filter: saturate(180%) blur(20px);
+            -webkit-backdrop-filter: saturate(180%) blur(20px);
+            border-top-left-radius: var(--radius-xl);
+            border-top-right-radius: var(--radius-xl);
+            border-left: 0.5px solid var(--border-subtle);
+            border-top: 0.5px solid var(--border-subtle);
             display: flex;
             flex-direction: column;
             transform: translateY(100%);
-            transition: transform 0.4s var(--ease-smooth);
-            box-shadow: -8px -8px 32px rgba(0,0,0,0.12);
+            transition: transform 0.4s var(--ease-apple);
+            box-shadow: 0 -8px 40px rgba(0,0,0,0.3);
         }
         .chat-header {
             display: flex; align-items: center; justify-content: space-between;
-            padding: 16px 20px; border-bottom: 1px solid var(--border-subtle);
+            padding: 16px 20px; border-bottom: 0.5px solid var(--border-subtle);
             flex-shrink: 0;
         }
         .chat-title {
@@ -1948,11 +2016,11 @@
         .chat-close {
             width: 28px; height: 28px;
             display: flex; align-items: center; justify-content: center;
-            border: none; background: var(--bg-tertiary); color: var(--text-secondary);
-            border-radius: 7px; cursor: pointer; font-size: 14px;
-            transition: all 0.2s var(--ease-smooth); font-family: inherit;
+            border: none; background: rgba(255, 255, 255, 0.08); color: var(--text-secondary);
+            border-radius: var(--radius-round); cursor: pointer; font-size: 14px;
+            transition: all var(--duration-fast) var(--ease-apple); font-family: inherit;
         }
-        .chat-close:hover { background: var(--exec-gray-100); color: var(--text-primary); }
+        .chat-close:hover { background: rgba(255, 255, 255, 0.14); color: var(--text-primary); }
         .chat-messages {
             flex: 1; overflow-y: auto; padding: 16px 20px;
             display: flex; flex-direction: column; gap: 12px;
@@ -1962,8 +2030,8 @@
         .chat-messages::-webkit-scrollbar-thumb { background: var(--exec-gray-300); border-radius: 2px; }
         .chat-msg {
             max-width: 80%; padding: 10px 14px;
-            border-radius: 14px; font-size: 13px; line-height: 1.45;
-            animation: chatMsgIn 0.25s var(--ease-smooth);
+            border-radius: var(--radius-lg); font-size: var(--text-sm); line-height: 1.45;
+            animation: chatMsgIn 0.25s var(--ease-apple);
         }
         @keyframes chatMsgIn {
             from { opacity: 0; transform: translateY(6px); }
@@ -1987,15 +2055,15 @@
         .chat-msg--user .chat-msg-time { text-align: right; }
         .chat-input-bar {
             display: flex; align-items: center; gap: 10px;
-            padding: 12px 20px; border-top: 1px solid var(--border-subtle);
+            padding: 12px 20px; border-top: 0.5px solid var(--border-subtle);
             flex-shrink: 0;
         }
         .chat-input {
-            flex: 1; height: 40px; padding: 0 14px;
+            flex: 1; height: 40px; padding: 0 16px;
             background: var(--bg-tertiary); border: 1px solid var(--border-subtle);
-            border-radius: 20px; color: var(--text-primary);
-            font-family: var(--font-family); font-size: 13px;
-            outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+            border-radius: var(--radius-pill); color: var(--text-primary);
+            font-family: var(--font-family); font-size: var(--text-sm);
+            outline: none; transition: border-color var(--duration-fast), box-shadow var(--duration-fast);
         }
         .chat-input:focus {
             border-color: var(--exec-blue);
@@ -2006,11 +2074,11 @@
             width: 40px; height: 40px;
             display: flex; align-items: center; justify-content: center;
             background: var(--exec-blue); color: white;
-            border: none; border-radius: 50%; cursor: pointer;
-            font-size: 16px; transition: all 0.2s var(--ease-smooth);
+            border: none; border-radius: var(--radius-round); cursor: pointer;
+            font-size: 16px; transition: all var(--duration-fast) var(--ease-apple);
             flex-shrink: 0;
         }
-        .chat-send:hover { background: var(--exec-blue-hover); transform: scale(1.05); }
+        .chat-send:hover { background: var(--exec-blue-hover); transform: translateY(-1px); }
         .chat-send:active { transform: scale(0.95); }
         .chat-empty {
             flex: 1; display: flex; align-items: center; justify-content: center;
@@ -2038,15 +2106,17 @@
             position: absolute; top: 0; right: 0;
             width: 420px; max-width: 90vw; height: 100%;
             background: var(--bg-secondary);
-            border-left: 1px solid var(--border-medium);
+            backdrop-filter: saturate(180%) blur(20px);
+            -webkit-backdrop-filter: saturate(180%) blur(20px);
+            border-left: 0.5px solid var(--border-subtle);
             display: flex; flex-direction: column;
             transform: translateX(100%);
-            transition: transform 0.4s var(--ease-smooth);
-            box-shadow: -16px 0 48px rgba(0,0,0,0.1);
+            transition: transform 0.4s var(--ease-apple);
+            box-shadow: var(--shadow-lg);
         }
         .cron-header {
             display: flex; align-items: center; justify-content: space-between;
-            padding: 20px 24px; border-bottom: 1px solid var(--border-subtle);
+            padding: 20px 24px; border-bottom: 0.5px solid var(--border-subtle);
             flex-shrink: 0;
         }
         .cron-title {
@@ -2056,11 +2126,11 @@
         .cron-close {
             width: 32px; height: 32px;
             display: flex; align-items: center; justify-content: center;
-            border: none; background: var(--bg-tertiary); color: var(--text-secondary);
-            border-radius: 8px; cursor: pointer; font-size: 16px;
-            transition: all 0.2s var(--ease-smooth); font-family: inherit;
+            border: none; background: rgba(255, 255, 255, 0.08); color: var(--text-secondary);
+            border-radius: var(--radius-round); cursor: pointer; font-size: 16px;
+            transition: all var(--duration-fast) var(--ease-apple); font-family: inherit;
         }
-        .cron-close:hover { background: var(--exec-gray-100); color: var(--text-primary); }
+        .cron-close:hover { background: rgba(255, 255, 255, 0.14); color: var(--text-primary); }
         .cron-body {
             flex: 1; overflow-y: auto; padding: 0;
             scrollbar-width: thin; scrollbar-color: var(--exec-gray-300) transparent;
@@ -2069,7 +2139,7 @@
         .cron-body::-webkit-scrollbar-thumb { background: var(--exec-gray-300); border-radius: 2px; }
         .cron-group {
             padding: 18px 24px;
-            border-bottom: 1px solid var(--border-subtle);
+            border-bottom: 0.5px solid var(--border-subtle);
         }
         .cron-group:last-child { border-bottom: none; }
         .cron-group-title {
@@ -2079,11 +2149,11 @@
         .cron-item {
             display: flex; align-items: center; gap: 12px;
             padding: 12px 14px; background: var(--bg-tertiary);
-            border-radius: 10px; margin-bottom: 8px;
-            transition: background 0.2s;
+            border-radius: var(--radius-md); margin-bottom: 8px;
+            transition: background var(--duration-fast) var(--ease-apple);
         }
         .cron-item:last-child { margin-bottom: 0; }
-        .cron-item:hover { background: var(--exec-gray-100); }
+        .cron-item:hover { background: rgba(255, 255, 255, 0.08); }
         .cron-item-icon { font-size: 20px; flex-shrink: 0; }
         .cron-item-info { flex: 1; min-width: 0; }
         .cron-item-name {
@@ -2146,15 +2216,17 @@
             position: absolute; top: 0; right: 0;
             width: 500px; max-width: 90vw; height: 100%;
             background: var(--bg-secondary);
-            border-left: 1px solid var(--border-medium);
+            backdrop-filter: saturate(180%) blur(20px);
+            -webkit-backdrop-filter: saturate(180%) blur(20px);
+            border-left: 0.5px solid var(--border-subtle);
             display: flex; flex-direction: column;
             transform: translateX(100%);
-            transition: transform 0.4s var(--ease-smooth);
-            box-shadow: -16px 0 48px rgba(0,0,0,0.1);
+            transition: transform 0.4s var(--ease-apple);
+            box-shadow: var(--shadow-lg);
         }
         .memory-header {
             display: flex; align-items: center; justify-content: space-between;
-            padding: 20px 24px; border-bottom: 1px solid var(--border-subtle);
+            padding: 20px 24px; border-bottom: 0.5px solid var(--border-subtle);
             flex-shrink: 0;
         }
         .memory-title {
@@ -2164,11 +2236,11 @@
         .memory-close {
             width: 32px; height: 32px;
             display: flex; align-items: center; justify-content: center;
-            border: none; background: var(--bg-tertiary); color: var(--text-secondary);
-            border-radius: 8px; cursor: pointer; font-size: 16px;
-            transition: all 0.2s var(--ease-smooth); font-family: inherit;
+            border: none; background: rgba(255, 255, 255, 0.08); color: var(--text-secondary);
+            border-radius: var(--radius-round); cursor: pointer; font-size: 16px;
+            transition: all var(--duration-fast) var(--ease-apple); font-family: inherit;
         }
-        .memory-close:hover { background: var(--exec-gray-100); color: var(--text-primary); }
+        .memory-close:hover { background: rgba(255, 255, 255, 0.14); color: var(--text-primary); }
         .memory-body {
             flex: 1; overflow-y: auto; padding: 0;
             scrollbar-width: thin; scrollbar-color: var(--exec-gray-300) transparent;
@@ -2177,7 +2249,7 @@
         .memory-body::-webkit-scrollbar-thumb { background: var(--exec-gray-300); border-radius: 2px; }
         .memory-section {
             padding: 18px 24px;
-            border-bottom: 1px solid var(--border-subtle);
+            border-bottom: 0.5px solid var(--border-subtle);
         }
         .memory-section:last-child { border-bottom: none; }
         .memory-section-title {
@@ -2234,15 +2306,15 @@
            ═══════════════════════════════════════════════════ */
         .statusbar-action {
             display: flex; align-items: center; gap: 5px;
-            padding: 5px 10px; background: transparent;
-            border: 1px solid var(--border-subtle); border-radius: 7px;
+            padding: 6px 12px; background: transparent;
+            border: 0.5px solid var(--border-subtle); border-radius: var(--radius-pill);
             cursor: pointer; font-family: var(--font-family);
-            font-size: 12px; font-weight: 500; color: var(--text-tertiary);
-            transition: all 0.2s var(--ease-smooth);
+            font-size: var(--text-xs); font-weight: 500; color: var(--text-tertiary);
+            transition: all var(--duration-fast) var(--ease-apple);
             white-space: nowrap;
         }
         .statusbar-action:hover {
-            background: rgba(0,0,0,0.04); border-color: var(--border-medium);
+            background: rgba(255,255,255,0.06); border-color: var(--border-medium);
             color: var(--text-secondary);
         }
         .statusbar-action-icon { font-size: 14px; }
@@ -2300,15 +2372,669 @@
         .exec-toast {
             position: fixed; bottom: 80px; left: 50%;
             transform: translateX(-50%) translateY(20px);
-            padding: 10px 20px; background: var(--exec-gray-900);
-            color: white; border-radius: 10px; font-size: 13px;
+            padding: 12px 24px; background: rgba(44, 44, 46, 0.95);
+            backdrop-filter: saturate(180%) blur(20px);
+            -webkit-backdrop-filter: saturate(180%) blur(20px);
+            color: var(--text-primary); border-radius: var(--radius-pill); font-size: var(--text-sm);
             font-weight: 500; z-index: 999;
-            opacity: 0; transition: all 0.3s var(--ease-smooth);
+            opacity: 0; transition: all var(--duration-normal) var(--ease-apple);
             pointer-events: none;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+            box-shadow: var(--shadow-lg);
+            border: 0.5px solid var(--border-subtle);
         }
         .exec-toast.show {
             opacity: 1; transform: translateX(-50%) translateY(0);
+        }
+
+        /* ═══════════════════════════════════════════════════
+           Onboarding — First-Run Walkthrough
+           ═══════════════════════════════════════════════════ */
+        .onboarding-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 9000;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.5s var(--ease-smooth);
+        }
+        .onboarding-overlay.active {
+            pointer-events: auto;
+            opacity: 1;
+        }
+
+        /* Dark scrim behind everything */
+        .onboarding-scrim {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.72);
+            transition: opacity 0.4s var(--ease-smooth);
+        }
+
+        /* Spotlight cutout — positioned dynamically via JS */
+        .onboarding-spotlight {
+            position: absolute;
+            border-radius: 16px;
+            box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.72);
+            transition: all 0.5s var(--ease-smooth);
+            z-index: 1;
+            pointer-events: none;
+        }
+        .onboarding-spotlight::after {
+            content: '';
+            position: absolute;
+            inset: -3px;
+            border-radius: inherit;
+            border: 2px solid rgba(0, 113, 227, 0.4);
+            animation: spotlightPulse 2s ease-in-out infinite;
+        }
+        @keyframes spotlightPulse {
+            0%, 100% { border-color: rgba(0, 113, 227, 0.4); box-shadow: 0 0 12px rgba(0,113,227,0.1); }
+            50% { border-color: rgba(0, 113, 227, 0.7); box-shadow: 0 0 24px rgba(0,113,227,0.2); }
+        }
+
+        /* Card — the text content for each step */
+        .onboarding-card {
+            position: absolute;
+            z-index: 2;
+            width: 380px;
+            max-width: calc(100vw - 48px);
+            padding: 28px 32px 24px;
+            background: rgba(28, 28, 30, 0.92);
+            backdrop-filter: saturate(180%) blur(24px);
+            -webkit-backdrop-filter: saturate(180%) blur(24px);
+            border: 0.5px solid rgba(255, 255, 255, 0.1);
+            border-radius: var(--radius-xl);
+            box-shadow: var(--shadow-lg);
+            opacity: 0;
+            transform: translateY(12px);
+            transition: opacity 0.4s var(--ease-apple), transform 0.4s var(--ease-apple);
+        }
+        .onboarding-card.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Welcome step — centered, larger */
+        .onboarding-card--welcome {
+            width: 440px;
+            text-align: center;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%) scale(0.95);
+            padding: 40px 44px 36px;
+        }
+        .onboarding-card--welcome.visible {
+            transform: translate(-50%, -50%) scale(1);
+        }
+
+        /* Complete step — centered */
+        .onboarding-card--complete {
+            width: 440px;
+            text-align: center;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%) scale(0.95);
+            padding: 40px 44px 36px;
+        }
+        .onboarding-card--complete.visible {
+            transform: translate(-50%, -50%) scale(1);
+        }
+
+        .onboarding-avatar {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            overflow: hidden;
+            margin: 0 auto 20px;
+            box-shadow: 0 4px 16px rgba(0, 122, 255, 0.2);
+        }
+        .onboarding-avatar svg {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .onboarding-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+            line-height: 1.25;
+            letter-spacing: -0.02em;
+        }
+
+        .onboarding-text {
+            font-size: 15px;
+            font-weight: 400;
+            color: var(--text-secondary);
+            line-height: 1.55;
+            margin-bottom: 24px;
+        }
+
+        .onboarding-cta {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 28px;
+            background: var(--exec-blue);
+            color: white;
+            border: none;
+            border-radius: var(--radius-pill);
+            font-family: var(--font-family);
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--duration-fast) var(--ease-apple);
+            -webkit-tap-highlight-color: transparent;
+        }
+        .onboarding-cta:hover {
+            background: var(--exec-blue-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 16px rgba(0, 113, 227, 0.35);
+        }
+        .onboarding-cta:active {
+            transform: translateY(0);
+        }
+        .onboarding-cta:focus-visible {
+            outline: 2px solid var(--exec-blue);
+            outline-offset: 3px;
+        }
+
+        /* Step indicators (dots) */
+        .onboarding-dots {
+            position: fixed;
+            bottom: 32px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 9001;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 18px;
+            background: rgba(44, 44, 46, 0.6);
+            backdrop-filter: saturate(180%) blur(12px);
+            -webkit-backdrop-filter: saturate(180%) blur(12px);
+            border-radius: var(--radius-pill);
+            border: 0.5px solid rgba(255, 255, 255, 0.1);
+            opacity: 0;
+            transition: opacity 0.4s var(--ease-apple);
+        }
+        .onboarding-dots.visible {
+            opacity: 1;
+        }
+        .onboarding-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.35);
+            transition: all 0.3s var(--ease-smooth);
+            cursor: pointer;
+        }
+        .onboarding-dot.active {
+            background: white;
+            width: 24px;
+            border-radius: 4px;
+        }
+
+        /* Skip link */
+        .onboarding-skip {
+            position: fixed;
+            top: 20px;
+            right: 24px;
+            z-index: 9002;
+            padding: 8px 16px;
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            border-radius: 8px;
+            color: rgba(255, 255, 255, 0.7);
+            font-family: var(--font-family);
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s var(--ease-smooth);
+            opacity: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .onboarding-skip.visible {
+            opacity: 1;
+        }
+        .onboarding-skip:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.4);
+            color: white;
+        }
+        .onboarding-skip:focus-visible {
+            outline: 2px solid white;
+            outline-offset: 2px;
+        }
+
+        /* Responsive onboarding */
+        @media (max-width: 768px) {
+            .onboarding-card {
+                width: calc(100vw - 32px);
+                max-width: 380px;
+                padding: 24px;
+            }
+            .onboarding-card--welcome,
+            .onboarding-card--complete {
+                width: calc(100vw - 32px);
+                max-width: 400px;
+                padding: 32px 28px;
+            }
+            .onboarding-title { font-size: 19px; }
+            .onboarding-text { font-size: 14px; }
+            .onboarding-avatar { width: 60px; height: 60px; }
+        }
+
+        @media (max-width: 480px) {
+            .onboarding-card--welcome,
+            .onboarding-card--complete {
+                padding: 28px 20px;
+            }
+            .onboarding-dots { bottom: 20px; }
+            .onboarding-skip { top: 12px; right: 12px; }
+        }
+
+        /* ═══════════════════════════════════════════════════
+           Spawn Agent Card — Dashed Placeholder
+           ═══════════════════════════════════════════════════ */
+        .exec-room--spawn {
+            border: 2px dashed var(--border-medium);
+            background: transparent;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.3s var(--ease-smooth);
+            min-height: 120px;
+        }
+        .exec-room--spawn:hover {
+            border-color: var(--exec-blue);
+            background: rgba(0, 113, 227, 0.04);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 113, 227, 0.1);
+        }
+        .exec-room--spawn::before { display: none; }
+        .spawn-icon {
+            width: 48px; height: 48px;
+            border-radius: var(--radius-round);
+            background: var(--exec-blue-muted);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 24px; color: var(--exec-blue);
+            transition: all var(--duration-normal) var(--ease-spring);
+        }
+        .exec-room--spawn:hover .spawn-icon {
+            transform: scale(1.1) rotate(90deg);
+            background: rgba(0, 113, 227, 0.15);
+        }
+        .spawn-label {
+            font-size: 13px; font-weight: 600;
+            color: var(--text-tertiary);
+            transition: color 0.3s;
+        }
+        .exec-room--spawn:hover .spawn-label {
+            color: var(--exec-blue);
+        }
+
+        /* ═══════════════════════════════════════════════════
+           Spawn Agent Panel — 500px Slide-In
+           ═══════════════════════════════════════════════════ */
+        .spawn-overlay {
+            position: fixed; inset: 0; z-index: 200;
+            pointer-events: none; opacity: 0;
+            transition: opacity 0.3s var(--ease-smooth);
+        }
+        .spawn-overlay.open {
+            pointer-events: auto; opacity: 1;
+        }
+        .spawn-overlay.open .spawn-backdrop { opacity: 1; }
+        .spawn-overlay.open .spawn-panel { transform: translateX(0); }
+        .spawn-backdrop {
+            position: absolute; inset: 0;
+            background: rgba(0,0,0,0.5); opacity: 0;
+            transition: opacity 0.35s var(--ease-smooth);
+        }
+        .spawn-panel {
+            position: absolute; top: 0; right: 0;
+            width: 500px; max-width: 90vw; height: 100%;
+            background: var(--bg-secondary);
+            backdrop-filter: saturate(180%) blur(20px);
+            -webkit-backdrop-filter: saturate(180%) blur(20px);
+            border-left: 0.5px solid var(--border-subtle);
+            display: flex; flex-direction: column;
+            transform: translateX(100%);
+            transition: transform 0.4s var(--ease-apple);
+            box-shadow: var(--shadow-lg);
+        }
+        .spawn-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 20px 24px; border-bottom: 0.5px solid var(--border-subtle);
+            flex-shrink: 0;
+        }
+        .spawn-title {
+            font-size: 17px; font-weight: 700; color: var(--text-primary);
+            display: flex; align-items: center; gap: 8px;
+        }
+        .spawn-close {
+            width: 32px; height: 32px;
+            display: flex; align-items: center; justify-content: center;
+            border: none; background: rgba(255, 255, 255, 0.08); color: var(--text-secondary);
+            border-radius: var(--radius-round); cursor: pointer; font-size: 16px;
+            transition: all var(--duration-fast) var(--ease-apple); font-family: inherit;
+        }
+        .spawn-close:hover { background: rgba(255, 255, 255, 0.14); color: var(--text-primary); }
+        .spawn-close:focus-visible { outline: 2px solid var(--exec-blue); outline-offset: 2px; }
+        .spawn-body {
+            flex: 1; overflow-y: auto; padding: 0;
+            scrollbar-width: thin; scrollbar-color: var(--exec-gray-300) transparent;
+        }
+        .spawn-body::-webkit-scrollbar { width: 4px; }
+        .spawn-body::-webkit-scrollbar-thumb { background: var(--exec-gray-300); border-radius: 2px; }
+
+        /* ── Steps Progress ─────────────────────────── */
+        .spawn-steps {
+            display: flex; align-items: center; justify-content: center;
+            gap: 0; padding: 16px 24px;
+            border-bottom: 0.5px solid var(--border-subtle);
+        }
+        .spawn-step-indicator {
+            display: flex; align-items: center; gap: 8px;
+        }
+        .spawn-step-num {
+            width: 28px; height: 28px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 12px; font-weight: 700;
+            background: var(--bg-tertiary); color: var(--text-tertiary);
+            border: 2px solid var(--border-subtle);
+            transition: all 0.3s var(--ease-smooth);
+        }
+        .spawn-step-indicator.active .spawn-step-num {
+            background: var(--exec-blue); color: white;
+            border-color: var(--exec-blue);
+        }
+        .spawn-step-indicator.done .spawn-step-num {
+            background: var(--status-active); color: white;
+            border-color: var(--status-active);
+        }
+        .spawn-step-label {
+            font-size: 12px; font-weight: 500; color: var(--text-tertiary);
+            transition: color 0.3s;
+        }
+        .spawn-step-indicator.active .spawn-step-label { color: var(--text-primary); }
+        .spawn-step-indicator.done .spawn-step-label { color: var(--status-active); }
+        .spawn-step-divider {
+            width: 32px; height: 2px;
+            background: var(--border-subtle); margin: 0 8px;
+            transition: background 0.3s;
+        }
+        .spawn-step-divider.done { background: var(--status-active); }
+
+        /* ── Step Content ───────────────────────────── */
+        .spawn-step-content {
+            display: none; padding: 24px;
+            animation: spawnStepIn 0.3s var(--ease-smooth);
+        }
+        .spawn-step-content.active { display: block; }
+        @keyframes spawnStepIn {
+            from { opacity: 0; transform: translateX(12px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        /* ── Character Grid ─────────────────────────── */
+        .spawn-section-title {
+            font-size: 13px; font-weight: 600; color: var(--text-secondary);
+            margin-bottom: 16px;
+        }
+        .spawn-char-grid {
+            display: grid; grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+        }
+        .spawn-char-option {
+            display: flex; flex-direction: column;
+            align-items: center; gap: 6px;
+            padding: 12px 8px; border-radius: var(--radius-md);
+            border: 1.5px solid var(--border-subtle);
+            background: var(--bg-tertiary);
+            cursor: pointer;
+            transition: all var(--duration-fast) var(--ease-apple);
+        }
+        .spawn-char-option:hover {
+            border-color: var(--border-medium);
+            background: rgba(255, 255, 255, 0.06);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-sm);
+        }
+        .spawn-char-option.selected {
+            border-color: var(--exec-blue);
+            background: rgba(0, 113, 227, 0.08);
+            box-shadow: 0 0 0 3px var(--exec-blue-muted);
+        }
+        .spawn-char-option:focus-visible {
+            outline: 2px solid var(--exec-blue); outline-offset: 2px;
+        }
+        .spawn-char-avatar {
+            width: 48px; height: 48px; border-radius: 50%;
+            overflow: hidden;
+        }
+        .spawn-char-avatar svg { width: 100%; height: 100%; display: block; }
+        .spawn-char-name {
+            font-size: 10px; font-weight: 500; color: var(--text-tertiary);
+            text-align: center;
+        }
+
+        /* ── Form Fields ────────────────────────────── */
+        .spawn-field {
+            margin-bottom: 16px;
+        }
+        .spawn-field label {
+            display: block; font-size: 12px; font-weight: 600;
+            color: var(--text-secondary); margin-bottom: 6px;
+        }
+        .spawn-field input,
+        .spawn-field textarea {
+            width: 100%; padding: 10px 16px;
+            border-radius: var(--radius-md); border: 1px solid var(--border-medium);
+            background: var(--bg-tertiary); color: var(--text-primary);
+            font-family: var(--font-family); font-size: var(--text-sm);
+            outline: none; transition: border-color var(--duration-fast), box-shadow var(--duration-fast);
+            resize: vertical;
+        }
+        .spawn-field input:focus,
+        .spawn-field textarea:focus {
+            border-color: var(--exec-blue);
+            box-shadow: 0 0 0 3px var(--exec-blue-muted);
+        }
+        .spawn-field input::placeholder,
+        .spawn-field textarea::placeholder { color: var(--text-tertiary); }
+        .spawn-field textarea { min-height: 80px; }
+
+        /* ── Traits Tags ────────────────────────────── */
+        .spawn-traits-container {
+            display: flex; flex-wrap: wrap; gap: 6px;
+            padding: 8px 10px; min-height: 40px;
+            border-radius: 10px; border: 1px solid var(--border-medium);
+            background: var(--bg-tertiary);
+            cursor: text; transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .spawn-traits-container:focus-within {
+            border-color: var(--exec-blue);
+            box-shadow: 0 0 0 3px var(--exec-blue-muted);
+        }
+        .spawn-trait-tag {
+            display: inline-flex; align-items: center; gap: 4px;
+            padding: 3px 10px; background: var(--exec-blue-muted);
+            border-radius: 12px; font-size: 12px; font-weight: 500;
+            color: var(--exec-blue);
+        }
+        .spawn-trait-tag button {
+            background: none; border: none; cursor: pointer;
+            color: var(--exec-blue); font-size: 14px; padding: 0;
+            line-height: 1; opacity: 0.6;
+        }
+        .spawn-trait-tag button:hover { opacity: 1; }
+        .spawn-traits-input {
+            border: none; background: transparent; outline: none;
+            font-family: var(--font-family); font-size: 12px;
+            color: var(--text-primary); flex: 1; min-width: 80px;
+            padding: 2px 0;
+        }
+        .spawn-traits-input::placeholder { color: var(--text-tertiary); }
+
+        /* ── Skills Multi-Select ────────────────────── */
+        .spawn-skills-grid {
+            display: flex; flex-wrap: wrap; gap: 8px;
+        }
+        .spawn-skill-option {
+            display: inline-flex; align-items: center; gap: 4px;
+            padding: 6px 14px; border-radius: var(--radius-pill);
+            border: 1px solid var(--border-medium);
+            background: var(--bg-tertiary);
+            font-size: var(--text-xs); font-weight: 500; color: var(--text-secondary);
+            cursor: pointer; transition: all var(--duration-fast) var(--ease-apple);
+            user-select: none;
+        }
+        .spawn-skill-option:hover {
+            border-color: var(--exec-blue);
+            color: var(--exec-blue);
+        }
+        .spawn-skill-option.selected {
+            border-color: var(--exec-blue);
+            background: var(--exec-blue-muted);
+            color: var(--exec-blue);
+        }
+        .spawn-skill-option:focus-visible {
+            outline: 2px solid var(--exec-blue); outline-offset: 2px;
+        }
+
+        /* ── Navigation Buttons ─────────────────────── */
+        .spawn-nav {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 16px 24px; border-top: 0.5px solid var(--border-subtle);
+            flex-shrink: 0;
+        }
+        .spawn-btn {
+            padding: 12px 24px; border-radius: var(--radius-pill);
+            font-family: var(--font-family); font-size: 0.9375rem; font-weight: 600;
+            cursor: pointer; transition: all var(--duration-fast) var(--ease-apple);
+            border: none;
+        }
+        .spawn-btn--secondary {
+            background: transparent; color: var(--text-secondary);
+            border: 1.5px solid var(--border-medium);
+        }
+        .spawn-btn--secondary:hover {
+            background: rgba(255, 255, 255, 0.06); color: var(--text-primary);
+        }
+        .spawn-btn--primary {
+            background: var(--exec-blue); color: white;
+        }
+        .spawn-btn--primary:hover {
+            background: var(--exec-blue-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 16px rgba(0, 113, 227, 0.35);
+        }
+        .spawn-btn--primary:active { transform: translateY(0); }
+        .spawn-btn--deploy {
+            background: #30d158;
+            color: white; padding: 12px 32px; font-size: 15px;
+        }
+        .spawn-btn--deploy:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 16px rgba(48, 209, 88, 0.3);
+        }
+        .spawn-btn:disabled {
+            opacity: 0.5; cursor: not-allowed;
+            transform: none !important; box-shadow: none !important;
+        }
+        .spawn-btn:focus-visible {
+            outline: 2px solid var(--exec-blue); outline-offset: 2px;
+        }
+
+        /* ── Review Summary ─────────────────────────── */
+        .spawn-review {
+            display: flex; flex-direction: column; gap: 16px;
+        }
+        .spawn-review-card {
+            padding: 16px 20px; background: var(--bg-tertiary);
+            border-radius: var(--radius-lg); border: 0.5px solid var(--border-subtle);
+        }
+        .spawn-review-header {
+            display: flex; align-items: center; gap: 16px;
+            margin-bottom: 14px;
+        }
+        .spawn-review-avatar {
+            width: 56px; height: 56px; border-radius: 50%;
+            overflow: hidden; flex-shrink: 0;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .spawn-review-avatar svg { width: 100%; height: 100%; display: block; }
+        .spawn-review-name {
+            font-size: 18px; font-weight: 700; color: var(--text-primary);
+        }
+        .spawn-review-role {
+            font-size: 13px; color: var(--text-tertiary);
+        }
+        .spawn-review-row {
+            display: flex; justify-content: space-between; align-items: flex-start;
+            padding: 6px 0; font-size: 13px;
+        }
+        .spawn-review-label {
+            font-weight: 600; color: var(--text-secondary); flex-shrink: 0;
+        }
+        .spawn-review-value {
+            color: var(--text-primary); text-align: right;
+            max-width: 65%; word-break: break-word;
+        }
+        .spawn-review-traits {
+            display: flex; flex-wrap: wrap; gap: 4px; justify-content: flex-end;
+        }
+        .spawn-review-trait {
+            padding: 2px 8px; background: var(--exec-blue-muted);
+            border-radius: 10px; font-size: 11px; font-weight: 500;
+            color: var(--exec-blue);
+        }
+
+        /* ── Deploy Animation ───────────────────────── */
+        @keyframes deployPulse {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(48, 209, 88, 0.4); }
+            50% { transform: scale(1.02); box-shadow: 0 0 0 12px rgba(48, 209, 88, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(48, 209, 88, 0); }
+        }
+        @keyframes deploySlideIn {
+            0% { opacity: 0; transform: scale(0.85) translateY(20px); }
+            60% { opacity: 1; transform: scale(1.05) translateY(-4px); }
+            100% { transform: scale(1) translateY(0); }
+        }
+        .deploy-anim {
+            animation: deploySlideIn 0.6s var(--ease-spring);
+        }
+        .deploy-pulse {
+            animation: deployPulse 0.8s ease-out;
+        }
+
+        /* ── Custom Agent Room (spawned agents) ─────── */
+        .exec-room--custom {
+            position: relative;
+        }
+        .exec-room--custom .custom-decommission {
+            position: absolute; top: 8px; right: 8px;
+            width: 24px; height: 24px; border-radius: 6px;
+            border: none; background: rgba(255, 69, 58, 0.1);
+            color: var(--status-error); cursor: pointer;
+            font-size: 12px; display: flex; align-items: center;
+            justify-content: center; opacity: 0;
+            transition: all 0.2s var(--ease-smooth);
+        }
+        .exec-room--custom:hover .custom-decommission { opacity: 1; }
+        .exec-room--custom .custom-decommission:hover {
+            background: rgba(255, 69, 58, 0.2);
+        }
+
+        /* ── Grid auto-rows for dynamic agents ──────── */
+        .exec-floor--expanded {
+            grid-template-rows: 1fr repeat(auto-fill, 1fr) 0.8fr;
         }
 
         /* ═══════════════════════════════════════════════════
@@ -2441,6 +3167,119 @@
                 <circle cx="28" cy="19.8" r="0.7" fill="#FFFFFF"/>
                 <!-- Stoic line mouth -->
                 <line x1="21" y1="26" x2="27" y2="26" stroke="#A07050" stroke-width="1.2" stroke-linecap="round"/>
+            </symbol>
+            <!-- ── Spark: Data Analyst (blue tones, charts vibe) ── -->
+            <symbol id="avatar-spark" viewBox="0 0 48 48">
+                <circle cx="24" cy="24" r="24" fill="#5856D6"/>
+                <circle cx="24" cy="20" r="10" fill="#F0D5B8"/>
+                <path d="M14 42c0-8 4.5-14 10-14s10 6 10 14" fill="#3A2D6B"/>
+                <!-- Short neat hair -->
+                <path d="M14 17c0-6 4.5-11 10-11s10 5 10 11c0 .5-.1 1-.2 1.5C33 14 29 11 24 11s-9 3-9.8 7.5c-.1-.5-.2-1-.2-1.5z" fill="#1C1C1E"/>
+                <!-- Round glasses -->
+                <circle cx="19" cy="19.5" r="3.5" fill="none" stroke="#5856D6" stroke-width="1.2"/>
+                <circle cx="29" cy="19.5" r="3.5" fill="none" stroke="#5856D6" stroke-width="1.2"/>
+                <line x1="22.5" y1="19.5" x2="25.5" y2="19.5" stroke="#5856D6" stroke-width="1"/>
+                <!-- Eyes -->
+                <circle cx="19" cy="19.8" r="1.1" fill="#1C1C1E"/>
+                <circle cx="29" cy="19.8" r="1.1" fill="#1C1C1E"/>
+                <!-- Thinking smile -->
+                <path d="M21 24.5c0 0 1.5 1.5 3 1.5s3-1.5 3-1.5" fill="none" stroke="#C4856A" stroke-width="1" stroke-linecap="round"/>
+            </symbol>
+
+            <!-- ── Nova: Content Writer (warm tones, creative) ── -->
+            <symbol id="avatar-nova" viewBox="0 0 48 48">
+                <circle cx="24" cy="24" r="24" fill="#FF6B9D"/>
+                <circle cx="24" cy="20" r="10" fill="#F5D6B8"/>
+                <path d="M14 42c0-8 4.5-14 10-14s10 6 10 14" fill="#8B3A5E"/>
+                <!-- Long flowing hair -->
+                <path d="M13 19c0-7 5-13 11-13s11 6 11 13c0 2-.5 3.5-1.2 5-1-5-4.5-8.5-9.8-8.5S14.5 17 13.5 22c-.3-1-.5-2-.5-3z" fill="#D4488C"/>
+                <path d="M13 19c0 3 1 6 2 8-1 4-1 8-1 8l3-3c1 2 3.5 3.5 7 3.5s6-1.5 7-3.5l3 3s0-4-1-8c1-2 2-5 2-8" fill="none" stroke="#D4488C" stroke-width="2" stroke-linecap="round" opacity="0.4"/>
+                <!-- Bright eyes with lashes -->
+                <ellipse cx="19.5" cy="19.5" rx="1.4" ry="1.6" fill="#1C1C1E"/>
+                <ellipse cx="28.5" cy="19.5" rx="1.4" ry="1.6" fill="#1C1C1E"/>
+                <circle cx="20.2" cy="18.8" r="0.5" fill="white"/>
+                <circle cx="29.2" cy="18.8" r="0.5" fill="white"/>
+                <!-- Warm smile -->
+                <path d="M20 24c0 0 2 3 4 3s4-3 4-3" fill="none" stroke="#C4856A" stroke-width="1.2" stroke-linecap="round"/>
+            </symbol>
+
+            <!-- ── Bolt: DevOps Engineer (yellow/electric) ── -->
+            <symbol id="avatar-bolt" viewBox="0 0 48 48">
+                <circle cx="24" cy="24" r="24" fill="#FFD60A"/>
+                <circle cx="24" cy="20" r="10" fill="#D4A87A"/>
+                <path d="M14 42c0-8 4.5-14 10-14s10 6 10 14" fill="#5C4A1E"/>
+                <!-- Mohawk-style hair -->
+                <path d="M20 7c2-2 4-2 6-1 2 1 3 3 3 5v4c-2-3-5-5-8-5-2 0-4 1-5 3V10c0-1 2-2 4-3z" fill="#E8B800"/>
+                <rect x="21" y="4" width="6" height="8" rx="2" fill="#E8B800"/>
+                <!-- Determined eyes -->
+                <rect x="17" y="19" width="4" height="2.5" rx="1.2" fill="#1C1C1E"/>
+                <rect x="27" y="19" width="4" height="2.5" rx="1.2" fill="#1C1C1E"/>
+                <!-- Lightning bolt earring -->
+                <path d="M35 18l-2 3h2l-2 3" fill="none" stroke="#FFD60A" stroke-width="1.2" stroke-linecap="round"/>
+                <!-- Smirk -->
+                <path d="M20 25c0 0 2 1.5 4 1.5s4-1.5 4-1.5" fill="none" stroke="#A07050" stroke-width="1" stroke-linecap="round"/>
+            </symbol>
+
+            <!-- ── Pixel: Designer (teal/mint) ── -->
+            <symbol id="avatar-pixel" viewBox="0 0 48 48">
+                <circle cx="24" cy="24" r="24" fill="#64D2FF"/>
+                <circle cx="24" cy="20" r="10" fill="#F0D5B8"/>
+                <path d="M14 42c0-8 4.5-14 10-14s10 6 10 14" fill="#1A5C6B"/>
+                <!-- Messy creative hair with streak -->
+                <path d="M14 16c0-6 4.5-11 10-11s10 5 10 11c0 1-.2 2-.4 2.8-1-4-4.5-7-9.6-7s-8.6 3-9.6 7c-.2-.8-.4-1.8-.4-2.8z" fill="#2D7A8C"/>
+                <path d="M18 7c1-1 3 0 4 1 1 1 0 3-1 3" fill="#64D2FF" opacity="0.8"/>
+                <!-- Big creative eyes -->
+                <ellipse cx="19" cy="19.5" rx="1.6" ry="1.8" fill="#1C1C1E"/>
+                <ellipse cx="29" cy="19.5" rx="1.6" ry="1.8" fill="#1C1C1E"/>
+                <circle cx="19.7" cy="18.8" r="0.6" fill="white"/>
+                <circle cx="29.7" cy="18.8" r="0.6" fill="white"/>
+                <!-- Pencil behind ear -->
+                <line x1="35" y1="12" x2="33" y2="18" stroke="#FFD60A" stroke-width="1.5" stroke-linecap="round"/>
+                <circle cx="35" cy="12" r="1" fill="#FF453A"/>
+                <!-- Enthusiastic grin -->
+                <path d="M19 24c0 0 2.5 3.5 5 3.5s5-3.5 5-3.5" fill="none" stroke="#C4856A" stroke-width="1" stroke-linecap="round"/>
+            </symbol>
+
+            <!-- ── Cipher: Security Expert (dark/green) ── -->
+            <symbol id="avatar-cipher" viewBox="0 0 48 48">
+                <circle cx="24" cy="24" r="24" fill="#1C3A1C"/>
+                <circle cx="24" cy="20" r="10" fill="#D4B896"/>
+                <path d="M14 42c0-8 4.5-14 10-14s10 6 10 14" fill="#0A1A0A"/>
+                <!-- Hood/tactical look -->
+                <path d="M12 20c0-8 5.5-14 12-14s12 6 12 14c0 1-.2 2-.5 3-1.5-6-5.5-10-11.5-10S14 14 12.5 20c-.3-1-.5-2-.5-3z" fill="#1C1C1E"/>
+                <path d="M12 20c0 2 .5 3.5 1.5 5l-1 2h23l-1-2c1-1.5 1.5-3 1.5-5" fill="#1C1C1E" opacity="0.6"/>
+                <!-- Glowing eyes -->
+                <circle cx="19" cy="20" r="1.5" fill="#30D158"/>
+                <circle cx="19" cy="20" r="0.6" fill="#FFFFFF"/>
+                <circle cx="29" cy="20" r="1.5" fill="#30D158"/>
+                <circle cx="29" cy="20" r="0.6" fill="#FFFFFF"/>
+                <!-- Stoic mouth -->
+                <line x1="21" y1="25.5" x2="27" y2="25.5" stroke="#A07050" stroke-width="1" stroke-linecap="round"/>
+            </symbol>
+
+            <!-- ── Flux: Researcher (warm purple) ── -->
+            <symbol id="avatar-flux" viewBox="0 0 48 48">
+                <circle cx="24" cy="24" r="24" fill="#AF52DE"/>
+                <circle cx="24" cy="21" r="10" fill="#E8C9A0"/>
+                <path d="M14 42c0-8 4.5-14 10-14s10 6 10 14" fill="#5A2D7A"/>
+                <!-- Curly professorial hair -->
+                <path d="M13 17c0-7 5-12 11-12s11 5 11 12" fill="#4A2D6B"/>
+                <circle cx="15" cy="14" r="2.5" fill="#4A2D6B"/>
+                <circle cx="19" cy="11" r="3" fill="#4A2D6B"/>
+                <circle cx="24" cy="9" r="3" fill="#4A2D6B"/>
+                <circle cx="29" cy="11" r="3" fill="#4A2D6B"/>
+                <circle cx="33" cy="14" r="2.5" fill="#4A2D6B"/>
+                <!-- Reading glasses -->
+                <rect x="16" y="18.5" width="6" height="4.5" rx="2" fill="none" stroke="#AF52DE" stroke-width="1"/>
+                <rect x="26" y="18.5" width="6" height="4.5" rx="2" fill="none" stroke="#AF52DE" stroke-width="1"/>
+                <line x1="22" y1="20.5" x2="26" y2="20.5" stroke="#AF52DE" stroke-width="0.8"/>
+                <!-- Thoughtful eyes -->
+                <circle cx="19" cy="20.5" r="1" fill="#1C1C1E"/>
+                <circle cx="29" cy="20.5" r="1" fill="#1C1C1E"/>
+                <!-- Beard -->
+                <path d="M18 26c0 3 3 5 6 5s6-2 6-5" fill="#3A2040" opacity="0.5"/>
+                <!-- Wise smile -->
+                <path d="M21 25c0 0 1.5 1.5 3 1.5s3-1.5 3-1.5" fill="none" stroke="#B5896E" stroke-width="1" stroke-linecap="round"/>
             </symbol>
         </defs>
     </svg>
@@ -2643,6 +3482,12 @@
                 </div>
             </div>
 
+            <!-- ── Spawn Agent Card ──────────────────── -->
+            <div class="exec-room exec-room--spawn" role="button" tabindex="0" aria-label="Spawn a new agent" id="spawnAgentCard">
+                <div class="spawn-icon" aria-hidden="true">+</div>
+                <span class="spawn-label">Spawn Agent</span>
+            </div>
+
         </div>
         <!-- /exec-floor -->
 
@@ -2821,6 +3666,10 @@
             <button class="statusbar-action" id="settingsBtn" aria-label="Settings">
                 <span class="statusbar-action-icon" aria-hidden="true">⚙️</span>
                 <span>Settings</span>
+            </button>
+            <button class="statusbar-action" id="soundToggleBtn" aria-label="Toggle sounds" title="Toggle UI sounds">
+                <span class="statusbar-action-icon" aria-hidden="true" id="soundToggleIcon">🔊</span>
+                <span id="soundToggleLabel">Sound</span>
             </button>
             <div class="exec-command-input">
                 <input
@@ -3010,6 +3859,106 @@
         </div>
     </div>
 
+    <!-- ═══ Spawn Agent Panel ═══ -->
+    <div class="spawn-overlay" id="spawnOverlay" role="dialog" aria-modal="true" aria-label="Spawn New Agent">
+        <div class="spawn-backdrop" id="spawnBackdrop"></div>
+        <div class="spawn-panel">
+            <div class="spawn-header">
+                <div class="spawn-title">
+                    <span aria-hidden="true">🚀</span>
+                    Recruit New Executive
+                </div>
+                <button class="spawn-close" id="spawnClose" aria-label="Close">×</button>
+            </div>
+            <!-- Step indicators -->
+            <div class="spawn-steps" id="spawnSteps">
+                <div class="spawn-step-indicator active" data-step="1">
+                    <div class="spawn-step-num">1</div>
+                    <div class="spawn-step-label">Character</div>
+                </div>
+                <div class="spawn-step-divider"></div>
+                <div class="spawn-step-indicator" data-step="2">
+                    <div class="spawn-step-num">2</div>
+                    <div class="spawn-step-label">Configure</div>
+                </div>
+                <div class="spawn-step-divider"></div>
+                <div class="spawn-step-indicator" data-step="3">
+                    <div class="spawn-step-num">3</div>
+                    <div class="spawn-step-label">Deploy</div>
+                </div>
+            </div>
+            <div class="spawn-body" id="spawnBody">
+                <!-- Step 1: Choose Character -->
+                <div class="spawn-step-content active" id="spawnStep1">
+                    <div class="spawn-section-title">Choose a character for your new executive</div>
+                    <div class="spawn-char-grid" id="spawnCharGrid" role="radiogroup" aria-label="Character selection">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+                <!-- Step 2: Configure Agent -->
+                <div class="spawn-step-content" id="spawnStep2">
+                    <div class="spawn-field">
+                        <label for="spawnName">Name</label>
+                        <input type="text" id="spawnName" placeholder="e.g. Nova, Cipher, Phoenix..." autocomplete="off" maxlength="20" />
+                    </div>
+                    <div class="spawn-field">
+                        <label for="spawnRole">Role</label>
+                        <input type="text" id="spawnRole" placeholder="e.g. Data Analyst, Content Writer..." autocomplete="off" maxlength="40" />
+                    </div>
+                    <div class="spawn-field">
+                        <label>Traits</label>
+                        <div class="spawn-traits-container" id="spawnTraitsContainer">
+                            <input type="text" class="spawn-traits-input" id="spawnTraitsInput" placeholder="Type and press Enter..." />
+                        </div>
+                    </div>
+                    <div class="spawn-field">
+                        <label>Skills</label>
+                        <div class="spawn-skills-grid" id="spawnSkillsGrid">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+                    <div class="spawn-field">
+                        <label for="spawnSoul">SOUL (personality & instructions)</label>
+                        <textarea id="spawnSoul" placeholder="Define this agent's personality, behavior, and instructions...&#10;&#10;Example: You are a meticulous data analyst who values accuracy above all. You double-check every number and present findings with clear visualizations." rows="5"></textarea>
+                    </div>
+                </div>
+                <!-- Step 3: Review & Deploy -->
+                <div class="spawn-step-content" id="spawnStep3">
+                    <div class="spawn-review" id="spawnReview">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+            </div>
+            <!-- Navigation -->
+            <div class="spawn-nav" id="spawnNav">
+                <button class="spawn-btn spawn-btn--secondary" id="spawnPrevBtn" style="visibility:hidden;">← Back</button>
+                <button class="spawn-btn spawn-btn--primary" id="spawnNextBtn" disabled>Next →</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ Onboarding Overlay ═══ -->
+    <div class="onboarding-overlay" id="onboardingOverlay" role="dialog" aria-modal="true" aria-label="Welcome walkthrough">
+        <div class="onboarding-scrim" id="onboardingScrim"></div>
+        <div class="onboarding-spotlight" id="onboardingSpotlight" aria-hidden="true"></div>
+        <div class="onboarding-card" id="onboardingCard" role="alertdialog" aria-labelledby="onboardingTitle" aria-describedby="onboardingText">
+            <div class="onboarding-avatar" id="onboardingAvatar" aria-hidden="true">
+                <svg><use href="#avatar-ceo"/></svg>
+            </div>
+            <div class="onboarding-title" id="onboardingTitle"></div>
+            <div class="onboarding-text" id="onboardingText"></div>
+            <button class="onboarding-cta" id="onboardingCta" aria-label="Continue walkthrough"></button>
+        </div>
+    </div>
+    <button class="onboarding-skip" id="onboardingSkip" aria-label="Skip walkthrough">Skip</button>
+    <div class="onboarding-dots" id="onboardingDots" role="tablist" aria-label="Walkthrough progress">
+        <div class="onboarding-dot active" role="tab" aria-label="Step 1 of 5" aria-selected="true" tabindex="0"></div>
+        <div class="onboarding-dot" role="tab" aria-label="Step 2 of 5" aria-selected="false" tabindex="-1"></div>
+        <div class="onboarding-dot" role="tab" aria-label="Step 3 of 5" aria-selected="false" tabindex="-1"></div>
+        <div class="onboarding-dot" role="tab" aria-label="Step 4 of 5" aria-selected="false" tabindex="-1"></div>
+        <div class="onboarding-dot" role="tab" aria-label="Step 5 of 5" aria-selected="false" tabindex="-1"></div>
+    </div>
+
     <!-- ═══ Toast ═══ -->
     <div class="exec-toast" id="execToast"></div>
 
@@ -3018,7 +3967,7 @@
          ═══════════════════════════════════════════════════ -->
     <!-- Real Data Configuration for Sycopa's fleet-relay -->
     <script>
-        window.OC_RELAY_URL = 'https://fleet.spawnkit.ai';
+        window.OC_RELAY_URL = 'http://localhost:18790';
         window.OC_RELAY_TOKEN = 'sk-oc-proxy-spawnkit-2026';
     </script>
     <script src="../src/data-bridge.js"></script>
@@ -3044,6 +3993,335 @@
 
     (function() {
         'use strict';
+
+        /* ═══════════════════════════════════════════════
+           SoundEngine — Web Audio API Synthesized Sounds
+           Premium, subtle, Apple/Linear quality
+           ═══════════════════════════════════════════════ */
+
+        var SoundEngine = (function() {
+            var ctx = null;
+            var enabled = true;
+            var initialized = false;
+            var ambientNode = null;
+            var ambientGain = null;
+
+            // Load preference
+            try {
+                var pref = localStorage.getItem('spawnkit-sound-enabled');
+                if (pref !== null) enabled = pref === 'true';
+            } catch(e) {}
+
+            // Respect prefers-reduced-motion
+            if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                enabled = false;
+            }
+
+            function getCtx() {
+                if (!ctx) {
+                    try {
+                        ctx = new (window.AudioContext || window.webkitAudioContext)();
+                    } catch(e) { return null; }
+                }
+                if (ctx.state === 'suspended') ctx.resume();
+                return ctx;
+            }
+
+            function isEnabled() { return enabled && getCtx() !== null; }
+
+            // ── Utility: create a gain envelope ──
+            function makeGain(ac, volume, attackMs, decayMs, startTime) {
+                var g = ac.createGain();
+                g.gain.setValueAtTime(0, startTime);
+                g.gain.linearRampToValueAtTime(volume, startTime + attackMs / 1000);
+                g.gain.linearRampToValueAtTime(0, startTime + (attackMs + decayMs) / 1000);
+                return g;
+            }
+
+            // ── Utility: filtered noise burst ──
+            function noiseBurst(ac, dest, startTime, durationMs, filterFreq, filterQ, volume) {
+                var len = ac.sampleRate * (durationMs / 1000);
+                var buf = ac.createBuffer(1, len, ac.sampleRate);
+                var data = buf.getChannelData(0);
+                for (var i = 0; i < len; i++) data[i] = (Math.random() * 2 - 1);
+                var src = ac.createBufferSource();
+                src.buffer = buf;
+                var filt = ac.createBiquadFilter();
+                filt.type = 'bandpass';
+                filt.frequency.value = filterFreq;
+                filt.Q.value = filterQ;
+                var g = makeGain(ac, volume, durationMs * 0.1, durationMs * 0.9, startTime);
+                src.connect(filt);
+                filt.connect(g);
+                g.connect(dest);
+                src.start(startTime);
+                src.stop(startTime + durationMs / 1000);
+            }
+
+            return {
+                get enabled() { return enabled; },
+
+                toggle: function() {
+                    enabled = !enabled;
+                    try { localStorage.setItem('spawnkit-sound-enabled', enabled.toString()); } catch(e) {}
+                    // Stop ambient if disabling
+                    if (!enabled && ambientNode) {
+                        try { ambientGain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.3); } catch(e) {}
+                        ambientNode = null;
+                    }
+                    return enabled;
+                },
+
+                setEnabled: function(val) {
+                    enabled = !!val;
+                    try { localStorage.setItem('spawnkit-sound-enabled', enabled.toString()); } catch(e) {}
+                    if (!enabled && ambientNode) {
+                        try { ambientGain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.3); } catch(e) {}
+                        ambientNode = null;
+                    }
+                },
+
+                // ── Panel open: soft whoosh sweep up (200ms) ──
+                whooshOpen: function() {
+                    if (!isEnabled()) return;
+                    var ac = getCtx(); var t = ac.currentTime;
+                    var osc = ac.createOscillator();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(200, t);
+                    osc.frequency.exponentialRampToValueAtTime(800, t + 0.18);
+                    var g = ac.createGain();
+                    g.gain.setValueAtTime(0, t);
+                    g.gain.linearRampToValueAtTime(0.06, t + 0.03);
+                    g.gain.linearRampToValueAtTime(0.04, t + 0.1);
+                    g.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
+                    // Add subtle noise for texture
+                    noiseBurst(ac, ac.destination, t, 120, 2000, 0.5, 0.015);
+                    osc.connect(g);
+                    g.connect(ac.destination);
+                    osc.start(t);
+                    osc.stop(t + 0.22);
+                },
+
+                // ── Panel close: reverse whoosh sweep down (150ms) ──
+                whooshClose: function() {
+                    if (!isEnabled()) return;
+                    var ac = getCtx(); var t = ac.currentTime;
+                    var osc = ac.createOscillator();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(600, t);
+                    osc.frequency.exponentialRampToValueAtTime(150, t + 0.14);
+                    var g = ac.createGain();
+                    g.gain.setValueAtTime(0, t);
+                    g.gain.linearRampToValueAtTime(0.05, t + 0.02);
+                    g.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
+                    noiseBurst(ac, ac.destination, t, 100, 1500, 0.5, 0.012);
+                    osc.connect(g);
+                    g.connect(ac.destination);
+                    osc.start(t);
+                    osc.stop(t + 0.17);
+                },
+
+                // ── Button click: subtle tap pulse (50ms) ──
+                click: function() {
+                    if (!isEnabled()) return;
+                    var ac = getCtx(); var t = ac.currentTime;
+                    var osc = ac.createOscillator();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(1800, t);
+                    osc.frequency.exponentialRampToValueAtTime(1200, t + 0.04);
+                    var g = ac.createGain();
+                    g.gain.setValueAtTime(0.04, t);
+                    g.gain.exponentialRampToValueAtTime(0.001, t + 0.05);
+                    osc.connect(g);
+                    g.connect(ac.destination);
+                    osc.start(t);
+                    osc.stop(t + 0.06);
+                },
+
+                // ── Button hover: very subtle tick (10ms) ──
+                tick: function() {
+                    if (!isEnabled()) return;
+                    var ac = getCtx(); var t = ac.currentTime;
+                    var osc = ac.createOscillator();
+                    osc.type = 'sine';
+                    osc.frequency.value = 2400;
+                    var g = ac.createGain();
+                    g.gain.setValueAtTime(0.015, t);
+                    g.gain.exponentialRampToValueAtTime(0.001, t + 0.012);
+                    osc.connect(g);
+                    g.connect(ac.destination);
+                    osc.start(t);
+                    osc.stop(t + 0.015);
+                },
+
+                // ── Toast notification: gentle two-tone ascending chime (300ms) ──
+                chime: function() {
+                    if (!isEnabled()) return;
+                    var ac = getCtx(); var t = ac.currentTime;
+                    // First tone
+                    var o1 = ac.createOscillator();
+                    o1.type = 'sine';
+                    o1.frequency.value = 880; // A5
+                    var g1 = ac.createGain();
+                    g1.gain.setValueAtTime(0, t);
+                    g1.gain.linearRampToValueAtTime(0.06, t + 0.01);
+                    g1.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
+                    o1.connect(g1); g1.connect(ac.destination);
+                    o1.start(t); o1.stop(t + 0.16);
+                    // Second tone (higher)
+                    var o2 = ac.createOscillator();
+                    o2.type = 'sine';
+                    o2.frequency.value = 1174.66; // D6
+                    var g2 = ac.createGain();
+                    g2.gain.setValueAtTime(0, t + 0.1);
+                    g2.gain.linearRampToValueAtTime(0.05, t + 0.11);
+                    g2.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+                    o2.connect(g2); g2.connect(ac.destination);
+                    o2.start(t + 0.1); o2.stop(t + 0.32);
+                },
+
+                // ── Send message: iOS-like send swoosh ──
+                sendSwoosh: function() {
+                    if (!isEnabled()) return;
+                    var ac = getCtx(); var t = ac.currentTime;
+                    // Quick ascending sweep
+                    var osc = ac.createOscillator();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(400, t);
+                    osc.frequency.exponentialRampToValueAtTime(1400, t + 0.08);
+                    osc.frequency.exponentialRampToValueAtTime(1800, t + 0.12);
+                    var g = ac.createGain();
+                    g.gain.setValueAtTime(0, t);
+                    g.gain.linearRampToValueAtTime(0.06, t + 0.02);
+                    g.gain.linearRampToValueAtTime(0.04, t + 0.07);
+                    g.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
+                    // Subtle noise swoosh layer
+                    noiseBurst(ac, ac.destination, t, 100, 3000, 0.8, 0.02);
+                    osc.connect(g);
+                    g.connect(ac.destination);
+                    osc.start(t);
+                    osc.stop(t + 0.17);
+                },
+
+                // ── Agent status change: soft ping ──
+                ping: function() {
+                    if (!isEnabled()) return;
+                    var ac = getCtx(); var t = ac.currentTime;
+                    var osc = ac.createOscillator();
+                    osc.type = 'sine';
+                    osc.frequency.value = 1046.5; // C6
+                    var g = ac.createGain();
+                    g.gain.setValueAtTime(0, t);
+                    g.gain.linearRampToValueAtTime(0.05, t + 0.005);
+                    g.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
+                    osc.connect(g);
+                    g.connect(ac.destination);
+                    osc.start(t);
+                    osc.stop(t + 0.27);
+                },
+
+                // ── Decommission: dramatic descending tone (600ms) ──
+                decommission: function() {
+                    if (!isEnabled()) return;
+                    var ac = getCtx(); var t = ac.currentTime;
+                    // Main descending tone
+                    var o1 = ac.createOscillator();
+                    o1.type = 'sawtooth';
+                    o1.frequency.setValueAtTime(800, t);
+                    o1.frequency.exponentialRampToValueAtTime(100, t + 0.6);
+                    var filt = ac.createBiquadFilter();
+                    filt.type = 'lowpass';
+                    filt.frequency.setValueAtTime(3000, t);
+                    filt.frequency.exponentialRampToValueAtTime(200, t + 0.6);
+                    var g1 = ac.createGain();
+                    g1.gain.setValueAtTime(0, t);
+                    g1.gain.linearRampToValueAtTime(0.06, t + 0.02);
+                    g1.gain.linearRampToValueAtTime(0.04, t + 0.3);
+                    g1.gain.exponentialRampToValueAtTime(0.001, t + 0.6);
+                    o1.connect(filt); filt.connect(g1); g1.connect(ac.destination);
+                    o1.start(t); o1.stop(t + 0.65);
+                    // Sub bass rumble
+                    var o2 = ac.createOscillator();
+                    o2.type = 'sine';
+                    o2.frequency.setValueAtTime(120, t + 0.1);
+                    o2.frequency.exponentialRampToValueAtTime(40, t + 0.6);
+                    var g2 = ac.createGain();
+                    g2.gain.setValueAtTime(0, t + 0.1);
+                    g2.gain.linearRampToValueAtTime(0.04, t + 0.15);
+                    g2.gain.exponentialRampToValueAtTime(0.001, t + 0.6);
+                    o2.connect(g2); g2.connect(ac.destination);
+                    o2.start(t + 0.1); o2.stop(t + 0.65);
+                },
+
+                // ── New mail: notification ding — three ascending tones ──
+                mailDing: function() {
+                    if (!isEnabled()) return;
+                    var ac = getCtx(); var t = ac.currentTime;
+                    var notes = [783.99, 987.77, 1318.51]; // G5, B5, E6
+                    notes.forEach(function(freq, i) {
+                        var osc = ac.createOscillator();
+                        osc.type = 'sine';
+                        osc.frequency.value = freq;
+                        var g = ac.createGain();
+                        var offset = i * 0.09;
+                        g.gain.setValueAtTime(0, t + offset);
+                        g.gain.linearRampToValueAtTime(0.05, t + offset + 0.008);
+                        g.gain.exponentialRampToValueAtTime(0.001, t + offset + 0.2);
+                        osc.connect(g); g.connect(ac.destination);
+                        osc.start(t + offset);
+                        osc.stop(t + offset + 0.22);
+                    });
+                },
+
+                // ── Office ambiance: barely perceptible low hum ──
+                startAmbient: function() {
+                    if (!isEnabled()) return;
+                    var ac = getCtx();
+                    if (ambientNode) return; // Already running
+                    var t = ac.currentTime;
+                    // Very low drone
+                    var osc = ac.createOscillator();
+                    osc.type = 'sine';
+                    osc.frequency.value = 60;
+                    // Subtle LFO modulation
+                    var lfo = ac.createOscillator();
+                    lfo.type = 'sine';
+                    lfo.frequency.value = 0.08;
+                    var lfoGain = ac.createGain();
+                    lfoGain.gain.value = 2; // ±2Hz wobble
+                    lfo.connect(lfoGain);
+                    lfoGain.connect(osc.frequency);
+                    // Master gain — very quiet
+                    ambientGain = ac.createGain();
+                    ambientGain.gain.setValueAtTime(0, t);
+                    ambientGain.gain.linearRampToValueAtTime(0.008, t + 2); // Fade in over 2s
+                    osc.connect(ambientGain);
+                    ambientGain.connect(ac.destination);
+                    osc.start(t);
+                    lfo.start(t);
+                    ambientNode = osc;
+                    ambientNode._lfo = lfo;
+                },
+
+                stopAmbient: function() {
+                    if (!ambientNode) return;
+                    try {
+                        var ac = getCtx(); var t = ac.currentTime;
+                        ambientGain.gain.linearRampToValueAtTime(0, t + 0.5);
+                        var node = ambientNode;
+                        setTimeout(function() {
+                            try { node.stop(); node._lfo.stop(); } catch(e) {}
+                        }, 600);
+                        ambientNode = null;
+                    } catch(e) {}
+                },
+
+                get ambientRunning() { return !!ambientNode; }
+            };
+        })();
+
+        // Expose for debugging
+        window.__SoundEngine = SoundEngine;
 
         /* ═══════════════════════════════════════════════
            Configuration & Mock Data
@@ -3246,9 +4524,11 @@
             mailboxOverlay.classList.add('open');
             mailboxClose.focus();
             document.body.style.overflow = 'hidden';
+            SoundEngine.whooshOpen();
         }
 
         function closeMailbox() {
+            if (mailboxOverlay.classList.contains('open')) SoundEngine.whooshClose();
             mailboxOverlay.classList.remove('open');
             document.body.style.overflow = '';
             mailboxBtn.focus();
@@ -3491,9 +4771,11 @@
             detailOverlay.classList.add('open');
             detailClose.focus();
             document.body.style.overflow = 'hidden';
+            SoundEngine.whooshOpen();
         }
 
         function closeDetailPanel() {
+            if (detailOverlay.classList.contains('open')) SoundEngine.whooshClose();
             detailOverlay.classList.remove('open');
             document.body.style.overflow = '';
         }
@@ -3603,9 +4885,11 @@
             meetingOverlay.classList.add('open');
             meetingClose.focus();
             document.body.style.overflow = 'hidden';
+            SoundEngine.whooshOpen();
         }
 
         function closeMeetingPanel() {
+            if (meetingOverlay.classList.contains('open')) SoundEngine.whooshClose();
             meetingOverlay.classList.remove('open');
             document.body.style.overflow = '';
         }
@@ -3616,7 +4900,9 @@
         // Close panels on Escape — all overlays
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
-                if (document.getElementById('missionsOverlay').classList.contains('open')) {
+                if (document.getElementById('spawnOverlay') && document.getElementById('spawnOverlay').classList.contains('open')) {
+                    if (window._closeSpawnPanel) window._closeSpawnPanel();
+                } else if (document.getElementById('missionsOverlay').classList.contains('open')) {
                     closeMissionsPanel();
                 } else if (document.getElementById('settingsOverlay').classList.contains('open')) {
                     closeSettingsPanel();
@@ -3886,6 +5172,7 @@
             if (e.key === 'Enter' && commandInput.value.trim()) {
                 var cmd = commandInput.value.trim();
                 commandInput.value = '';
+                SoundEngine.sendSwoosh();
                 // Open chat panel and send as mission
                 openChatPanel();
                 chatInput.value = cmd;
@@ -3946,12 +5233,19 @@
             }
         }
 
+        var _prevAgentStatuses = {};
         function handleAgentsUpdate(agents) {
             if (!agents || !Array.isArray(agents)) return;
 
             agents.forEach(function(agent) {
                 if (!agent || !agent.name) return;
                 var id = agent.name.toLowerCase();
+
+                // Sound on status change
+                if (agent.status && _prevAgentStatuses[id] && _prevAgentStatuses[id] !== agent.status) {
+                    SoundEngine.ping();
+                }
+                if (agent.status) _prevAgentStatuses[id] = agent.status;
 
                 // Update in both grid and hierarchy views
                 document.querySelectorAll('[data-agent="' + id + '"]').forEach(function(el) {
@@ -3999,8 +5293,14 @@
             });
         }
 
+        var _prevMessageCount = -1;
         function handleMessagesUpdate(messages) {
             if (!messages || !Array.isArray(messages)) return;
+            // Play mail ding if new messages arrived
+            if (_prevMessageCount >= 0 && messages.length > _prevMessageCount) {
+                SoundEngine.mailDing();
+            }
+            _prevMessageCount = messages.length;
             renderMessages(messages);
             var badge = document.getElementById('mailboxBadge');
             if (badge) {
@@ -4046,8 +5346,10 @@
             chatInput.focus();
             document.body.style.overflow = 'hidden';
             loadChatTranscript();
+            SoundEngine.whooshOpen();
         }
         function closeChatPanel() {
+            if (chatOverlay.classList.contains('open')) SoundEngine.whooshClose();
             chatOverlay.classList.remove('open');
             document.body.style.overflow = '';
         }
@@ -4095,6 +5397,7 @@
             var text = chatInput.value.trim();
             if (!text) return;
             chatInput.value = '';
+            SoundEngine.sendSwoosh();
 
             var now = new Date();
             var timeStr = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
@@ -4150,8 +5453,10 @@
             cronOverlay.classList.add('open');
             document.body.style.overflow = 'hidden';
             renderCronJobs();
+            SoundEngine.whooshOpen();
         }
         function closeCronPanel() {
+            if (cronOverlay.classList.contains('open')) SoundEngine.whooshClose();
             cronOverlay.classList.remove('open');
             document.body.style.overflow = '';
         }
@@ -4235,8 +5540,10 @@
             memoryOverlay.classList.add('open');
             document.body.style.overflow = 'hidden';
             renderMemory();
+            SoundEngine.whooshOpen();
         }
         function closeMemoryPanel() {
+            if (memoryOverlay.classList.contains('open')) SoundEngine.whooshClose();
             memoryOverlay.classList.remove('open');
             document.body.style.overflow = '';
         }
@@ -4336,6 +5643,7 @@
             if (!t) return;
             t.textContent = msg;
             t.classList.add('show');
+            SoundEngine.chime();
             clearTimeout(t._timer);
             t._timer = setTimeout(function() { t.classList.remove('show'); }, 2500);
         }
@@ -4497,8 +5805,10 @@
             missionsOverlay.classList.add('open');
             document.body.style.overflow = 'hidden';
             renderMissions();
+            SoundEngine.whooshOpen();
         }
         function closeMissionsPanel() {
+            if (missionsOverlay.classList.contains('open')) SoundEngine.whooshClose();
             missionsOverlay.classList.remove('open');
             document.body.style.overflow = '';
         }
@@ -4601,13 +5911,41 @@
             settingsOverlay.classList.add('open');
             document.body.style.overflow = 'hidden';
             renderSettings();
+            SoundEngine.whooshOpen();
         }
         function closeSettingsPanel() {
+            if (settingsOverlay.classList.contains('open')) SoundEngine.whooshClose();
             settingsOverlay.classList.remove('open');
             document.body.style.overflow = '';
         }
 
         document.getElementById('settingsBtn').addEventListener('click', openSettingsPanel);
+
+        /* ── Sound Toggle Button ──────────────────────── */
+        (function() {
+            var soundBtn = document.getElementById('soundToggleBtn');
+            var soundIcon = document.getElementById('soundToggleIcon');
+            var soundLabel = document.getElementById('soundToggleLabel');
+            function updateSoundUI() {
+                if (SoundEngine.enabled) {
+                    soundIcon.textContent = '🔊';
+                    soundLabel.textContent = 'Sound';
+                    soundBtn.title = 'Sounds on — click to mute';
+                } else {
+                    soundIcon.textContent = '🔇';
+                    soundLabel.textContent = 'Muted';
+                    soundBtn.title = 'Sounds muted — click to enable';
+                }
+            }
+            updateSoundUI();
+            soundBtn.addEventListener('click', function() {
+                var nowEnabled = SoundEngine.toggle();
+                updateSoundUI();
+                if (nowEnabled) {
+                    SoundEngine.click(); // Confirm with a tap sound
+                }
+            });
+        })();
         settingsBackdropEl.addEventListener('click', closeSettingsPanel);
         settingsCloseBtn.addEventListener('click', closeSettingsPanel);
 
@@ -4671,7 +6009,32 @@
             html += '</div>';
             html += '</div>';
 
+            // Reset Onboarding section
+            html += '<div class="cron-group"><div class="cron-group-title">🎓 Onboarding</div>';
+            html += '<div class="cron-item">';
+            html += '<span class="cron-item-icon">🔄</span>';
+            html += '<div class="cron-item-info">';
+            html += '<div class="cron-item-name">First-Run Walkthrough</div>';
+            html += '<div class="cron-item-schedule">' + (localStorage.getItem('spawnkit-onboarded') === 'true' ? 'Completed ✓' : 'Not completed') + '</div>';
+            html += '</div>';
+            html += '<button id="resetOnboardingBtn" style="padding:6px 14px;border-radius:8px;border:1px solid var(--border-medium);background:transparent;color:var(--text-secondary);font-size:12px;font-weight:500;cursor:pointer;transition:all 0.2s;">Reset</button>';
+            html += '</div>';
+            html += '</div>';
+
             settingsBody.innerHTML = html;
+
+            // Wire up Reset Onboarding button
+            var resetOB = document.getElementById('resetOnboardingBtn');
+            if (resetOB) {
+                resetOB.addEventListener('click', function() {
+                    if (typeof window.resetOnboarding === 'function') {
+                        window.resetOnboarding();
+                    } else {
+                        localStorage.removeItem('spawnkit-onboarded');
+                        showToast('🔄 Onboarding reset — refresh to replay');
+                    }
+                });
+            }
 
             // Wire up API key save buttons
             document.querySelectorAll('.apikey-save-btn').forEach(function(btn) {
@@ -4733,6 +6096,8 @@
         }
         
         function triggerDecommission(agentName) {
+            // Dramatic decommission sound
+            SoundEngine.decommission();
             // Show toast
             showToast('🔥 ' + agentName + ' decommissioned');
             
@@ -4808,6 +6173,40 @@
             closeSettingsPanel();
         };
 
+        /* ═══════════════════════════════════════════════
+           Sound Hooks — Button Clicks & Hover (Delegated)
+           ═══════════════════════════════════════════════ */
+
+        // Click sound on all statusbar buttons, card clicks, and interactive elements
+        document.addEventListener('click', function(e) {
+            var btn = e.target.closest('button, .statusbar-action, .view-toggle-btn, .exec-room, .org-card, .mail-item, .cron-toggle, .detail-skill-chip');
+            if (btn && !e.target.closest('#soundToggleBtn')) {
+                SoundEngine.click();
+            }
+        }, true); // capture phase so it fires before handlers
+
+        // Hover tick on statusbar actions and agent cards
+        var _lastHoverTick = 0;
+        document.addEventListener('mouseenter', function(e) {
+            var el = e.target.closest('.statusbar-action, .exec-room, .org-card, .view-toggle-btn, .mail-item');
+            if (el) {
+                var now = Date.now();
+                if (now - _lastHoverTick > 80) { // Throttle to avoid machine-gun ticks
+                    SoundEngine.tick();
+                    _lastHoverTick = now;
+                }
+            }
+        }, true);
+
+        // Start ambient hum after first user interaction (AudioContext policy)
+        var _ambientStarted = false;
+        document.addEventListener('click', function() {
+            if (!_ambientStarted && SoundEngine.enabled) {
+                _ambientStarted = true;
+                setTimeout(function() { SoundEngine.startAmbient(); }, 2000);
+            }
+        }, { once: true });
+
         document.addEventListener('DOMContentLoaded', function() {
             if (typeof SpawnKitUX !== 'undefined') {
                 SpawnKitUX.init({ theme: 'executive' });
@@ -4822,6 +6221,1094 @@
                 SpawnKitUX.ready();
             }
         });
+
+        /* ═══════════════════════════════════════════════
+           Spawn Agent System (OBJ4)
+           ═══════════════════════════════════════════════ */
+        (function initSpawnSystem() {
+            var STORAGE_KEY = 'spawnkit-custom-agents';
+
+            // Available character avatars
+            var CHARACTERS = [
+                { id: 'avatar-ceo', label: 'CEO', color: '#007AFF' },
+                { id: 'avatar-atlas', label: 'Atlas', color: '#BF5AF2' },
+                { id: 'avatar-forge', label: 'Forge', color: '#FF9F0A' },
+                { id: 'avatar-hunter', label: 'Hunter', color: '#FF453A' },
+                { id: 'avatar-echo', label: 'Echo', color: '#0A84FF' },
+                { id: 'avatar-sentinel', label: 'Sentinel', color: '#30D158' },
+                { id: 'avatar-spark', label: 'Spark', color: '#5856D6' },
+                { id: 'avatar-nova', label: 'Nova', color: '#FF6B9D' },
+                { id: 'avatar-bolt', label: 'Bolt', color: '#FFD60A' },
+                { id: 'avatar-pixel', label: 'Pixel', color: '#64D2FF' },
+                { id: 'avatar-cipher', label: 'Cipher', color: '#1C3A1C' },
+                { id: 'avatar-flux', label: 'Flux', color: '#AF52DE' }
+            ];
+
+            // Available skills for multi-select
+            var AVAILABLE_SKILLS = [
+                '🛠️ Engineering', '📊 Analytics', '✍️ Writing', '🎨 Design',
+                '🔍 Research', '📈 Growth', '🛡️ Security', '⚙️ Operations',
+                '📱 Content', '💰 Sales', '🔄 Automation', '📋 Documentation',
+                '🧪 Testing', '🎯 Strategy', '🔮 Forecasting', '🤖 AI/ML'
+            ];
+
+            // DOM refs
+            var spawnOverlay = document.getElementById('spawnOverlay');
+            var spawnBackdrop = document.getElementById('spawnBackdrop');
+            var spawnCloseBtn = document.getElementById('spawnClose');
+            var spawnCard = document.getElementById('spawnAgentCard');
+            var spawnBody = document.getElementById('spawnBody');
+            var spawnCharGrid = document.getElementById('spawnCharGrid');
+            var spawnSkillsGrid = document.getElementById('spawnSkillsGrid');
+            var spawnPrevBtn = document.getElementById('spawnPrevBtn');
+            var spawnNextBtn = document.getElementById('spawnNextBtn');
+            var spawnSteps = document.getElementById('spawnSteps');
+
+            // State
+            var currentSpawnStep = 1;
+            var spawnData = {
+                characterId: null,
+                characterColor: null,
+                name: '',
+                role: '',
+                traits: [],
+                skills: [],
+                soul: ''
+            };
+
+            // ── Load custom agents from localStorage ──
+            function loadCustomAgents() {
+                try {
+                    return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+                } catch(e) { return []; }
+            }
+
+            function saveCustomAgents(agents) {
+                try {
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(agents));
+                } catch(e) { console.warn('Failed to save custom agents:', e); }
+            }
+
+            // ── Populate character grid ──
+            function buildCharGrid() {
+                spawnCharGrid.innerHTML = '';
+                CHARACTERS.forEach(function(ch) {
+                    var opt = document.createElement('div');
+                    opt.className = 'spawn-char-option';
+                    opt.setAttribute('role', 'radio');
+                    opt.setAttribute('aria-checked', 'false');
+                    opt.setAttribute('aria-label', ch.label + ' character');
+                    opt.setAttribute('tabindex', '0');
+                    opt.dataset.charId = ch.id;
+                    opt.dataset.charColor = ch.color;
+                    opt.innerHTML =
+                        '<div class="spawn-char-avatar"><svg><use href="#' + ch.id + '"/></svg></div>' +
+                        '<div class="spawn-char-name">' + ch.label + '</div>';
+                    opt.addEventListener('click', function() { selectCharacter(opt, ch); });
+                    opt.addEventListener('keydown', function(e) {
+                        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectCharacter(opt, ch); }
+                    });
+                    spawnCharGrid.appendChild(opt);
+                });
+            }
+
+            function selectCharacter(el, ch) {
+                spawnCharGrid.querySelectorAll('.spawn-char-option').forEach(function(o) {
+                    o.classList.remove('selected');
+                    o.setAttribute('aria-checked', 'false');
+                });
+                el.classList.add('selected');
+                el.setAttribute('aria-checked', 'true');
+                spawnData.characterId = ch.id;
+                spawnData.characterColor = ch.color;
+                SoundEngine.click();
+                updateNavButtons();
+            }
+
+            // ── Populate skills grid ──
+            function buildSkillsGrid() {
+                spawnSkillsGrid.innerHTML = '';
+                AVAILABLE_SKILLS.forEach(function(skill) {
+                    var opt = document.createElement('div');
+                    opt.className = 'spawn-skill-option';
+                    opt.setAttribute('role', 'checkbox');
+                    opt.setAttribute('aria-checked', 'false');
+                    opt.setAttribute('tabindex', '0');
+                    opt.textContent = skill;
+                    opt.addEventListener('click', function() { toggleSkill(opt, skill); });
+                    opt.addEventListener('keydown', function(e) {
+                        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleSkill(opt, skill); }
+                    });
+                    spawnSkillsGrid.appendChild(opt);
+                });
+            }
+
+            function toggleSkill(el, skill) {
+                el.classList.toggle('selected');
+                var isSelected = el.classList.contains('selected');
+                el.setAttribute('aria-checked', isSelected ? 'true' : 'false');
+                if (isSelected) {
+                    if (spawnData.skills.indexOf(skill) === -1) spawnData.skills.push(skill);
+                } else {
+                    spawnData.skills = spawnData.skills.filter(function(s) { return s !== skill; });
+                }
+                SoundEngine.tick();
+            }
+
+            // ── Traits tag input ──
+            var traitsInput = document.getElementById('spawnTraitsInput');
+            var traitsContainer = document.getElementById('spawnTraitsContainer');
+
+            if (traitsInput && traitsContainer) {
+                traitsContainer.addEventListener('click', function() { traitsInput.focus(); });
+                traitsInput.addEventListener('keydown', function(e) {
+                    if ((e.key === 'Enter' || e.key === ',') && traitsInput.value.trim()) {
+                        e.preventDefault();
+                        addTrait(traitsInput.value.trim().replace(/,/g, ''));
+                        traitsInput.value = '';
+                    }
+                    if (e.key === 'Backspace' && !traitsInput.value && spawnData.traits.length > 0) {
+                        removeTrait(spawnData.traits.length - 1);
+                    }
+                });
+            }
+
+            function addTrait(text) {
+                if (spawnData.traits.length >= 8) return;
+                if (spawnData.traits.indexOf(text) !== -1) return;
+                spawnData.traits.push(text);
+                renderTraits();
+                SoundEngine.tick();
+            }
+
+            function removeTrait(idx) {
+                spawnData.traits.splice(idx, 1);
+                renderTraits();
+            }
+
+            function renderTraits() {
+                var tags = traitsContainer.querySelectorAll('.spawn-trait-tag');
+                tags.forEach(function(t) { t.remove(); });
+                spawnData.traits.forEach(function(trait, idx) {
+                    var tag = document.createElement('span');
+                    tag.className = 'spawn-trait-tag';
+                    tag.innerHTML = trait + '<button aria-label="Remove ' + trait + '">×</button>';
+                    tag.querySelector('button').addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        removeTrait(idx);
+                    });
+                    traitsContainer.insertBefore(tag, traitsInput);
+                });
+            }
+
+            // ── Step navigation ──
+            function showSpawnStep(step) {
+                currentSpawnStep = step;
+                // Update step indicators
+                spawnSteps.querySelectorAll('.spawn-step-indicator').forEach(function(ind) {
+                    var s = parseInt(ind.dataset.step);
+                    ind.classList.remove('active', 'done');
+                    if (s === step) ind.classList.add('active');
+                    else if (s < step) ind.classList.add('done');
+                });
+                spawnSteps.querySelectorAll('.spawn-step-divider').forEach(function(div, i) {
+                    div.classList.toggle('done', (i + 1) < step);
+                });
+                // Show content
+                document.querySelectorAll('.spawn-step-content').forEach(function(el) {
+                    el.classList.remove('active');
+                });
+                var stepEl = document.getElementById('spawnStep' + step);
+                if (stepEl) stepEl.classList.add('active');
+
+                // Build review on step 3
+                if (step === 3) buildReview();
+
+                updateNavButtons();
+            }
+
+            function updateNavButtons() {
+                spawnPrevBtn.style.visibility = currentSpawnStep === 1 ? 'hidden' : 'visible';
+                if (currentSpawnStep === 3) {
+                    spawnNextBtn.textContent = '🚀 Deploy Agent';
+                    spawnNextBtn.className = 'spawn-btn spawn-btn--deploy';
+                    spawnNextBtn.disabled = false;
+                } else if (currentSpawnStep === 2) {
+                    spawnNextBtn.textContent = 'Review →';
+                    spawnNextBtn.className = 'spawn-btn spawn-btn--primary';
+                    // Require at least name and role
+                    var nameVal = document.getElementById('spawnName').value.trim();
+                    var roleVal = document.getElementById('spawnRole').value.trim();
+                    spawnNextBtn.disabled = !nameVal || !roleVal;
+                } else {
+                    spawnNextBtn.textContent = 'Next →';
+                    spawnNextBtn.className = 'spawn-btn spawn-btn--primary';
+                    spawnNextBtn.disabled = !spawnData.characterId;
+                }
+            }
+
+            // Wire up input listeners for step 2 validation
+            ['spawnName', 'spawnRole'].forEach(function(id) {
+                var el = document.getElementById(id);
+                if (el) {
+                    el.addEventListener('input', function() {
+                        if (currentSpawnStep === 2) updateNavButtons();
+                    });
+                }
+            });
+
+            spawnNextBtn.addEventListener('click', function() {
+                if (spawnNextBtn.disabled) return;
+                if (currentSpawnStep === 1) {
+                    showSpawnStep(2);
+                } else if (currentSpawnStep === 2) {
+                    // Gather data from form
+                    spawnData.name = document.getElementById('spawnName').value.trim();
+                    spawnData.role = document.getElementById('spawnRole').value.trim();
+                    spawnData.soul = document.getElementById('spawnSoul').value.trim();
+                    showSpawnStep(3);
+                } else if (currentSpawnStep === 3) {
+                    deployAgent();
+                }
+                SoundEngine.click();
+            });
+
+            spawnPrevBtn.addEventListener('click', function() {
+                if (currentSpawnStep > 1) {
+                    showSpawnStep(currentSpawnStep - 1);
+                    SoundEngine.click();
+                }
+            });
+
+            // ── Build Review ──
+            function buildReview() {
+                var review = document.getElementById('spawnReview');
+                var html = '<div class="spawn-review-card">';
+                html += '<div class="spawn-review-header">';
+                if (spawnData.characterId) {
+                    html += '<div class="spawn-review-avatar"><svg><use href="#' + spawnData.characterId + '"/></svg></div>';
+                }
+                html += '<div>';
+                html += '<div class="spawn-review-name">' + (spawnData.name || 'Unnamed') + '</div>';
+                html += '<div class="spawn-review-role">' + (spawnData.role || 'No role') + '</div>';
+                html += '</div>';
+                html += '</div>';
+
+                // Traits
+                if (spawnData.traits.length > 0) {
+                    html += '<div class="spawn-review-row">';
+                    html += '<span class="spawn-review-label">Traits</span>';
+                    html += '<div class="spawn-review-traits">';
+                    spawnData.traits.forEach(function(t) {
+                        html += '<span class="spawn-review-trait">' + t + '</span>';
+                    });
+                    html += '</div></div>';
+                }
+
+                // Skills
+                if (spawnData.skills.length > 0) {
+                    html += '<div class="spawn-review-row">';
+                    html += '<span class="spawn-review-label">Skills</span>';
+                    html += '<span class="spawn-review-value">' + spawnData.skills.join(', ') + '</span>';
+                    html += '</div>';
+                }
+
+                // SOUL
+                if (spawnData.soul) {
+                    html += '<div class="spawn-review-row" style="flex-direction:column;gap:6px;">';
+                    html += '<span class="spawn-review-label">SOUL</span>';
+                    html += '<span class="spawn-review-value" style="max-width:100%;text-align:left;font-size:12px;color:var(--text-secondary);line-height:1.5;white-space:pre-wrap;">' + spawnData.soul.substring(0, 300).replace(/</g,'&lt;') + (spawnData.soul.length > 300 ? '…' : '') + '</span>';
+                    html += '</div>';
+                }
+
+                html += '</div>';
+                review.innerHTML = html;
+            }
+
+            // ── Deploy Agent ──
+            function deployAgent() {
+                var agentId = 'custom-' + Date.now();
+                var newAgent = {
+                    id: agentId,
+                    name: spawnData.name,
+                    role: spawnData.role,
+                    characterId: spawnData.characterId,
+                    characterColor: spawnData.characterColor,
+                    traits: spawnData.traits.slice(),
+                    skills: spawnData.skills.slice(),
+                    soul: spawnData.soul,
+                    status: 'active',
+                    task: 'Initializing...',
+                    createdAt: new Date().toISOString()
+                };
+
+                // Save to localStorage
+                var agents = loadCustomAgents();
+                agents.push(newAgent);
+                saveCustomAgents(agents);
+
+                // Register in AGENTS map
+                AGENTS[agentId] = {
+                    name: newAgent.name,
+                    role: newAgent.role,
+                    color: newAgent.characterColor,
+                    status: 'active',
+                    task: 'Ready for assignments',
+                    isCustom: true
+                };
+
+                // Add to grid
+                addAgentToGrid(newAgent, true);
+                // Add to hierarchy
+                addAgentToHierarchy(newAgent);
+
+                // Update status bar count
+                var totalAgents = 6 + loadCustomAgents().length;
+                var uptimeEl = document.getElementById('statusAgentCount');
+                if (uptimeEl) {
+                    uptimeEl.textContent = totalAgents + ' Agents';
+                }
+
+                // Close panel
+                closeSpawnPanel();
+
+                // Show deploy toast
+                showToast('🚀 ' + newAgent.name + ' has joined the team!');
+                SoundEngine.chime();
+            }
+
+            // ── Add agent to grid view ──
+            function addAgentToGrid(agent, animate) {
+                var room = document.createElement('div');
+                room.className = 'exec-room exec-room--custom' + (animate ? ' deploy-anim' : '');
+                room.setAttribute('role', 'button');
+                room.setAttribute('tabindex', '0');
+                room.setAttribute('aria-label', agent.name + ' — ' + agent.role);
+                room.dataset.agent = agent.id;
+
+                room.innerHTML =
+                    '<span class="exec-room-label">' + agent.name + '</span>' +
+                    '<div class="agent-avatar" aria-hidden="true">' +
+                        '<svg><use href="#' + agent.characterId + '"/></svg>' +
+                        '<span class="agent-status-dot agent-status-dot--active" aria-label="Active"></span>' +
+                    '</div>' +
+                    '<span class="agent-name">' + agent.name + '</span>' +
+                    '<span class="agent-role">' + agent.role + '</span>' +
+                    '<button class="custom-decommission" aria-label="Decommission ' + agent.name + '" data-custom-id="' + agent.id + '" title="Decommission">🔥</button>';
+
+                // Insert before the spawn card
+                var spawnCardEl = document.getElementById('spawnAgentCard');
+                if (spawnCardEl) {
+                    gridView.insertBefore(room, spawnCardEl);
+                } else {
+                    gridView.appendChild(room);
+                }
+
+                // Click to open detail
+                room.addEventListener('click', function(e) {
+                    if (e.target.closest('.custom-decommission')) return;
+                    openDetailPanel(agent.id);
+                });
+                room.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openDetailPanel(agent.id); }
+                });
+
+                // Decommission button
+                room.querySelector('.custom-decommission').addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    decommissionCustomAgent(agent.id, room);
+                });
+
+                // Pulse animation
+                if (animate) {
+                    setTimeout(function() { room.classList.add('deploy-pulse'); }, 600);
+                    setTimeout(function() { room.classList.remove('deploy-anim', 'deploy-pulse'); }, 1400);
+                }
+
+                // Adjust grid layout for extra rows
+                adjustGridLayout();
+            }
+
+            // ── Add agent to hierarchy view ──
+            function addAgentToHierarchy(agent) {
+                var orgChildren = hierarchyView.querySelector('.org-children');
+                if (!orgChildren) return;
+
+                var child = document.createElement('div');
+                child.className = 'org-child';
+                child.dataset.customAgent = agent.id;
+                child.innerHTML =
+                    '<div class="org-connector--branch"></div>' +
+                    '<div class="org-card" data-agent="' + agent.id + '" tabindex="0" role="button" aria-label="' + agent.name + ' — ' + agent.role + '">' +
+                        '<div class="agent-avatar" aria-hidden="true">' +
+                            '<svg><use href="#' + agent.characterId + '"/></svg>' +
+                            '<span class="agent-status-dot agent-status-dot--active"></span>' +
+                        '</div>' +
+                        '<div class="org-card-info">' +
+                            '<span class="agent-name">' + agent.name + '</span>' +
+                            '<span class="agent-role">' + agent.role + '</span>' +
+                        '</div>' +
+                    '</div>';
+
+                orgChildren.appendChild(child);
+
+                // Click handler
+                child.querySelector('.org-card').addEventListener('click', function() {
+                    openDetailPanel(agent.id);
+                });
+            }
+
+            // ── Decommission custom agent ──
+            function decommissionCustomAgent(agentId, roomEl) {
+                // Animate
+                SoundEngine.decommission();
+                if (roomEl) {
+                    roomEl.classList.add('decommission-anim');
+                    // Particles
+                    var rect = roomEl.getBoundingClientRect();
+                    for (var p = 0; p < 8; p++) {
+                        var particle = document.createElement('div');
+                        particle.className = 'decommission-particle';
+                        particle.style.left = (rect.left + Math.random() * rect.width) + 'px';
+                        particle.style.top = (rect.top + Math.random() * rect.height) + 'px';
+                        particle.style.animationDelay = (Math.random() * 200) + 'ms';
+                        document.body.appendChild(particle);
+                        setTimeout(function() { particle.remove(); }, 800);
+                    }
+                }
+
+                // Remove from localStorage
+                var agents = loadCustomAgents();
+                var agent = agents.find(function(a) { return a.id === agentId; });
+                agents = agents.filter(function(a) { return a.id !== agentId; });
+                saveCustomAgents(agents);
+
+                // Remove from AGENTS
+                delete AGENTS[agentId];
+
+                // Remove from grid after animation
+                setTimeout(function() {
+                    if (roomEl) roomEl.remove();
+                    // Remove from hierarchy
+                    var hierEl = hierarchyView.querySelector('[data-custom-agent="' + agentId + '"]');
+                    if (hierEl) hierEl.remove();
+                    adjustGridLayout();
+                    // Update count
+                    var totalAgents = 6 + loadCustomAgents().length;
+                    var uptimeEl = document.getElementById('statusAgentCount');
+                    if (uptimeEl) uptimeEl.textContent = totalAgents + ' Agents';
+                }, 800);
+
+                showToast('🔥 ' + (agent ? agent.name : 'Agent') + ' decommissioned');
+            }
+
+            // ── Adjust grid to accommodate extra agents ──
+            function adjustGridLayout() {
+                var customAgents = loadCustomAgents();
+                var totalRooms = 7 + customAgents.length; // 6 agents + meeting + custom + spawn
+                var floor = document.getElementById('gridView');
+                if (totalRooms > 8) {
+                    floor.style.gridTemplateRows = '1fr ' + 'repeat(' + Math.ceil((totalRooms - 1) / 3) + ', 1fr)';
+                } else {
+                    floor.style.gridTemplateRows = '';
+                }
+            }
+
+            // ── Open / Close Spawn Panel ──
+            function openSpawnPanel() {
+                closeAllPanels();
+                // Reset state
+                currentSpawnStep = 1;
+                spawnData = { characterId: null, characterColor: null, name: '', role: '', traits: [], skills: [], soul: '' };
+                // Reset UI
+                showSpawnStep(1);
+                buildCharGrid();
+                buildSkillsGrid();
+                // Clear form fields
+                var nameEl = document.getElementById('spawnName');
+                var roleEl = document.getElementById('spawnRole');
+                var soulEl = document.getElementById('spawnSoul');
+                if (nameEl) nameEl.value = '';
+                if (roleEl) roleEl.value = '';
+                if (soulEl) soulEl.value = '';
+                // Clear traits
+                spawnData.traits = [];
+                renderTraits();
+
+                spawnOverlay.classList.add('open');
+                document.body.style.overflow = 'hidden';
+                SoundEngine.whooshOpen();
+            }
+
+            function closeSpawnPanel() {
+                if (spawnOverlay.classList.contains('open')) SoundEngine.whooshClose();
+                spawnOverlay.classList.remove('open');
+                document.body.style.overflow = '';
+            }
+
+            // ── Wire up events ──
+            spawnCard.addEventListener('click', openSpawnPanel);
+            spawnCard.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openSpawnPanel(); }
+            });
+            spawnBackdrop.addEventListener('click', closeSpawnPanel);
+            spawnCloseBtn.addEventListener('click', closeSpawnPanel);
+
+            // ── Escape key ──
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && spawnOverlay.classList.contains('open')) {
+                    closeSpawnPanel();
+                    e.stopPropagation();
+                }
+            });
+
+            // ── Register custom agents' data for detail panel ──
+            function registerCustomAgentData(agent) {
+                AGENTS[agent.id] = {
+                    name: agent.name,
+                    role: agent.role,
+                    color: agent.characterColor,
+                    status: 'active',
+                    task: 'Ready for assignments',
+                    isCustom: true
+                };
+
+                // Add to AVATAR_MAP
+                AVATAR_MAP[agent.name] = agent.characterId;
+
+                // Add to LIVE_AGENT_DATA for detail panel
+                LIVE_AGENT_DATA[agent.id] = {
+                    currentTask: 'Ready for assignments',
+                    todos: [],
+                    skills: (agent.skills || []).map(function(s, idx) {
+                        return { name: s, percentage: 80, description: '' };
+                    })
+                };
+            }
+
+            // ── Load existing custom agents on page load ──
+            function loadExistingCustomAgents() {
+                var agents = loadCustomAgents();
+                agents.forEach(function(agent) {
+                    registerCustomAgentData(agent);
+                    addAgentToGrid(agent, false);
+                    addAgentToHierarchy(agent);
+                });
+                if (agents.length > 0) {
+                    var totalAgents = 6 + agents.length;
+                    var uptimeEl = document.getElementById('statusAgentCount');
+                    if (uptimeEl) uptimeEl.textContent = totalAgents + ' Agents';
+                }
+            }
+
+            // Override deployAgent to also register data
+            var origDeploy = deployAgent;
+            deployAgent = function() {
+                var agentId = 'custom-' + Date.now();
+                var newAgent = {
+                    id: agentId,
+                    name: spawnData.name,
+                    role: spawnData.role,
+                    characterId: spawnData.characterId,
+                    characterColor: spawnData.characterColor,
+                    traits: spawnData.traits.slice(),
+                    skills: spawnData.skills.slice(),
+                    soul: spawnData.soul,
+                    status: 'active',
+                    task: 'Initializing...',
+                    createdAt: new Date().toISOString()
+                };
+
+                var agents = loadCustomAgents();
+                agents.push(newAgent);
+                saveCustomAgents(agents);
+
+                registerCustomAgentData(newAgent);
+                addAgentToGrid(newAgent, true);
+                addAgentToHierarchy(newAgent);
+
+                var totalAgents = 6 + loadCustomAgents().length;
+                var uptimeEl = document.getElementById('statusAgentCount');
+                if (uptimeEl) uptimeEl.textContent = totalAgents + ' Agents';
+
+                closeSpawnPanel();
+                showToast('🚀 ' + newAgent.name + ' has joined the team!');
+                SoundEngine.chime();
+            };
+
+            // Expose closeSpawnPanel for closeAllPanels
+            window._closeSpawnPanel = closeSpawnPanel;
+
+            // ── Initialize ──
+            buildCharGrid();
+            buildSkillsGrid();
+            loadExistingCustomAgents();
+
+        })();
+
+        // Update closeAllPanels to include spawn panel
+        var _origCloseAll2 = closeAllPanels;
+        closeAllPanels = function() {
+            _origCloseAll2();
+            if (window._closeSpawnPanel) window._closeSpawnPanel();
+        };
+
+        /* ═══════════════════════════════════════════════
+           Edit Agent Enhancement in Detail Panel
+           ═══════════════════════════════════════════════ */
+        (function enhanceDetailPanelEdit() {
+            // Monkey-patch the openDetailPanel to add edit section for custom agents
+            var origOpenDetail = openDetailPanel;
+            openDetailPanel = async function(agentId) {
+                await origOpenDetail(agentId);
+
+                // Check if this is a custom agent
+                var customAgents = [];
+                try { customAgents = JSON.parse(localStorage.getItem('spawnkit-custom-agents') || '[]'); } catch(e) {}
+                var customAgent = customAgents.find(function(a) { return a.id === agentId; });
+
+                if (!customAgent) return; // Not a custom agent, skip
+
+                var body = document.getElementById('detailBody');
+                if (!body) return;
+
+                // Add Edit Agent section at the top of body
+                var editSection = document.createElement('div');
+                editSection.className = 'detail-section';
+                editSection.style.borderBottom = '1px solid var(--border-subtle)';
+                editSection.innerHTML =
+                    '<div class="detail-section-title">Edit Agent</div>' +
+                    '<div style="display:flex;flex-direction:column;gap:10px;" id="customEditForm">' +
+                        '<div style="display:flex;gap:8px;">' +
+                            '<div style="flex:1;"><label style="font-size:11px;color:var(--text-tertiary);display:block;margin-bottom:4px;">Name</label>' +
+                            '<input type="text" id="editCustomName" value="' + (customAgent.name || '').replace(/"/g,'&quot;') + '" style="width:100%;padding:6px 10px;border-radius:8px;border:1px solid var(--border-medium);font-size:13px;background:var(--bg-tertiary);color:var(--text-primary);font-family:var(--font-family);" /></div>' +
+                            '<div style="flex:1;"><label style="font-size:11px;color:var(--text-tertiary);display:block;margin-bottom:4px;">Role</label>' +
+                            '<input type="text" id="editCustomRole" value="' + (customAgent.role || '').replace(/"/g,'&quot;') + '" style="width:100%;padding:6px 10px;border-radius:8px;border:1px solid var(--border-medium);font-size:13px;background:var(--bg-tertiary);color:var(--text-primary);font-family:var(--font-family);" /></div>' +
+                        '</div>' +
+                        '<div><label style="font-size:11px;color:var(--text-tertiary);display:block;margin-bottom:4px;">Traits (comma-separated)</label>' +
+                        '<input type="text" id="editCustomTraits" value="' + (customAgent.traits || []).join(', ').replace(/"/g,'&quot;') + '" style="width:100%;padding:6px 10px;border-radius:8px;border:1px solid var(--border-medium);font-size:13px;background:var(--bg-tertiary);color:var(--text-primary);font-family:var(--font-family);" /></div>' +
+                        '<div><label style="font-size:11px;color:var(--text-tertiary);display:block;margin-bottom:4px;">SOUL</label>' +
+                        '<textarea id="editCustomSoul" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--border-medium);font-size:12px;background:var(--bg-tertiary);color:var(--text-primary);font-family:var(--font-family);min-height:60px;resize:vertical;">' + (customAgent.soul || '').replace(/</g,'&lt;') + '</textarea></div>' +
+                        '<div style="display:flex;gap:8px;">' +
+                            '<button id="saveCustomEditBtn" style="padding:8px 20px;border-radius:8px;border:none;background:var(--exec-blue);color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font-family);">Save Changes</button>' +
+                            '<button id="decommissionCustomBtn" style="padding:8px 16px;border-radius:8px;border:1px solid var(--status-error);background:transparent;color:var(--status-error);font-size:13px;font-weight:500;cursor:pointer;font-family:var(--font-family);">🔥 Decommission</button>' +
+                        '</div>' +
+                    '</div>';
+
+                body.insertBefore(editSection, body.firstChild);
+
+                // Wire up save
+                document.getElementById('saveCustomEditBtn').addEventListener('click', function() {
+                    var name = document.getElementById('editCustomName').value.trim();
+                    var role = document.getElementById('editCustomRole').value.trim();
+                    var traits = document.getElementById('editCustomTraits').value.split(',').map(function(t) { return t.trim(); }).filter(Boolean);
+                    var soul = document.getElementById('editCustomSoul').value;
+
+                    if (!name || !role) { showToast('Name and role are required'); return; }
+
+                    // Update localStorage
+                    var agents = [];
+                    try { agents = JSON.parse(localStorage.getItem('spawnkit-custom-agents') || '[]'); } catch(e) {}
+                    var idx = agents.findIndex(function(a) { return a.id === agentId; });
+                    if (idx >= 0) {
+                        agents[idx].name = name;
+                        agents[idx].role = role;
+                        agents[idx].traits = traits;
+                        agents[idx].soul = soul;
+                        try { localStorage.setItem('spawnkit-custom-agents', JSON.stringify(agents)); } catch(e) {}
+                    }
+
+                    // Update AGENTS
+                    if (AGENTS[agentId]) {
+                        AGENTS[agentId].name = name;
+                        AGENTS[agentId].role = role;
+                    }
+
+                    // Update grid room
+                    var roomEl = gridView.querySelector('[data-agent="' + agentId + '"]');
+                    if (roomEl) {
+                        var nameEl = roomEl.querySelector('.agent-name');
+                        var roleEl = roomEl.querySelector('.agent-role');
+                        var labelEl = roomEl.querySelector('.exec-room-label');
+                        if (nameEl) nameEl.textContent = name;
+                        if (roleEl) roleEl.textContent = role;
+                        if (labelEl) labelEl.textContent = name;
+                    }
+
+                    // Update hierarchy
+                    var hierCards = hierarchyView.querySelectorAll('[data-agent="' + agentId + '"]');
+                    hierCards.forEach(function(card) {
+                        var n = card.querySelector('.agent-name');
+                        var r = card.querySelector('.agent-role');
+                        if (n) n.textContent = name;
+                        if (r) r.textContent = role;
+                    });
+
+                    // Update detail hero
+                    document.getElementById('detailName').textContent = name;
+                    document.getElementById('detailRole').textContent = role;
+
+                    showToast('✅ ' + name + ' updated');
+                    SoundEngine.chime();
+                });
+
+                // Wire up decommission
+                document.getElementById('decommissionCustomBtn').addEventListener('click', function() {
+                    closeDetailPanel();
+                    var roomEl = gridView.querySelector('[data-agent="' + agentId + '"]');
+                    // Use decommission logic
+                    SoundEngine.decommission();
+                    if (roomEl) {
+                        roomEl.classList.add('decommission-anim');
+                        var rect = roomEl.getBoundingClientRect();
+                        for (var p = 0; p < 8; p++) {
+                            var particle = document.createElement('div');
+                            particle.className = 'decommission-particle';
+                            particle.style.left = (rect.left + Math.random() * rect.width) + 'px';
+                            particle.style.top = (rect.top + Math.random() * rect.height) + 'px';
+                            document.body.appendChild(particle);
+                            setTimeout(function() { particle.remove(); }, 800);
+                        }
+                    }
+                    // Remove from localStorage
+                    var agents = [];
+                    try { agents = JSON.parse(localStorage.getItem('spawnkit-custom-agents') || '[]'); } catch(e) {}
+                    var removed = agents.find(function(a) { return a.id === agentId; });
+                    agents = agents.filter(function(a) { return a.id !== agentId; });
+                    try { localStorage.setItem('spawnkit-custom-agents', JSON.stringify(agents)); } catch(e) {}
+                    delete AGENTS[agentId];
+                    setTimeout(function() {
+                        if (roomEl) roomEl.remove();
+                        var hierEl = hierarchyView.querySelector('[data-custom-agent="' + agentId + '"]');
+                        if (hierEl) hierEl.remove();
+                        var totalAgents = 6 + agents.length;
+                        var uptimeEl = document.getElementById('statusAgentCount');
+                        if (uptimeEl) uptimeEl.textContent = totalAgents + ' Agents';
+                    }, 800);
+                    showToast('🔥 ' + (removed ? removed.name : 'Agent') + ' decommissioned');
+                });
+            };
+        })();
+
+        /* ═══════════════════════════════════════════════
+           Onboarding — First-Run Walkthrough (OBJ5)
+           Apple-quality 5-step experience
+           ═══════════════════════════════════════════════ */
+        (function initOnboarding() {
+            var ONBOARDED_KEY = 'spawnkit-onboarded';
+
+            // Check if user has already been onboarded
+            if (localStorage.getItem(ONBOARDED_KEY) === 'true') return;
+
+            var overlay   = document.getElementById('onboardingOverlay');
+            var scrim     = document.getElementById('onboardingScrim');
+            var spotlight = document.getElementById('onboardingSpotlight');
+            var card      = document.getElementById('onboardingCard');
+            var title     = document.getElementById('onboardingTitle');
+            var text      = document.getElementById('onboardingText');
+            var cta       = document.getElementById('onboardingCta');
+            var avatar    = document.getElementById('onboardingAvatar');
+            var skipBtn   = document.getElementById('onboardingSkip');
+            var dots      = document.getElementById('onboardingDots');
+            var dotEls    = dots.querySelectorAll('.onboarding-dot');
+
+            var currentStep = 0;
+            var totalSteps = 5;
+
+            // Step definitions
+            var steps = [
+                {
+                    type: 'welcome',
+                    title: 'Welcome to your Executive Office',
+                    text: "I'm your CEO. This is where your AI fleet lives and works. Let me give you a quick tour of the space.",
+                    cta: "Let's go →",
+                    showAvatar: true,
+                    target: null
+                },
+                {
+                    type: 'spotlight',
+                    title: 'Your C-Level Executives',
+                    text: 'These are your agents — each one manages a different department. Atlas runs operations, Forge builds, Hunter sells, Echo markets, and Sentinel guards quality. Click any agent to see their details.',
+                    cta: 'Next →',
+                    showAvatar: false,
+                    target: function() {
+                        // Target the agent rooms area (rows 2-3 of grid)
+                        var rooms = document.querySelectorAll('.exec-floor .exec-room:not(.exec-room--ceo):not(.exec-room--meeting)');
+                        if (rooms.length === 0) return null;
+                        return getBoundingRectMultiple(rooms);
+                    },
+                    cardPosition: 'top'
+                },
+                {
+                    type: 'spotlight',
+                    title: 'Your Command Center',
+                    text: 'Missions, schedules, memory, chat — everything is here. Try the command input to chat with me directly. This is your control surface.',
+                    cta: 'Next →',
+                    showAvatar: false,
+                    target: function() {
+                        var bar = document.querySelector('.exec-statusbar');
+                        return bar ? bar.getBoundingClientRect() : null;
+                    },
+                    cardPosition: 'above'
+                },
+                {
+                    type: 'spotlight',
+                    title: 'The Boardroom',
+                    text: "Active work sessions appear here. When your agents collaborate on complex tasks, the boardroom shows what's happening in real time.",
+                    cta: 'Next →',
+                    showAvatar: false,
+                    target: function() {
+                        var room = document.querySelector('.exec-room--meeting');
+                        return room ? room.getBoundingClientRect() : null;
+                    },
+                    cardPosition: 'left'
+                },
+                {
+                    type: 'complete',
+                    title: "You're all set!",
+                    text: 'Your office is live and your agents are ready to work. Click any agent to dive deeper, or use the command bar to send a mission.',
+                    cta: 'Start Working →',
+                    showAvatar: true,
+                    target: null
+                }
+            ];
+
+            // Helper: get bounding rect encompassing multiple elements
+            function getBoundingRectMultiple(elements) {
+                var minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+                elements.forEach(function(el) {
+                    var r = el.getBoundingClientRect();
+                    if (r.left < minX) minX = r.left;
+                    if (r.top < minY) minY = r.top;
+                    if (r.right > maxX) maxX = r.right;
+                    if (r.bottom > maxY) maxY = r.bottom;
+                });
+                return { left: minX, top: minY, right: maxX, bottom: maxY, width: maxX - minX, height: maxY - minY };
+            }
+
+            // Position the card relative to a spotlight
+            function positionCard(step, rect) {
+                card.className = 'onboarding-card';
+
+                if (step.type === 'welcome' || step.type === 'complete') {
+                    card.classList.add('onboarding-card--' + step.type);
+                    card.style.left = '';
+                    card.style.top = '';
+                    card.style.right = '';
+                    card.style.bottom = '';
+                    return;
+                }
+
+                // For spotlight steps, position intelligently
+                var vw = window.innerWidth;
+                var vh = window.innerHeight;
+                var cardW = Math.min(380, vw - 48);
+                var margin = 20;
+
+                card.style.left = '';
+                card.style.top = '';
+                card.style.right = '';
+                card.style.bottom = '';
+
+                if (!rect) return;
+
+                if (step.cardPosition === 'above') {
+                    // Above the target
+                    var centerX = rect.left + rect.width / 2;
+                    var left = Math.max(24, Math.min(centerX - cardW / 2, vw - cardW - 24));
+                    card.style.left = left + 'px';
+                    card.style.bottom = (vh - rect.top + margin) + 'px';
+                } else if (step.cardPosition === 'top') {
+                    // Above the spotlight (agent grid)
+                    var centerX = rect.left + rect.width / 2;
+                    var left = Math.max(24, Math.min(centerX - cardW / 2, vw - cardW - 24));
+                    card.style.left = left + 'px';
+                    card.style.bottom = (vh - rect.top + margin) + 'px';
+                    // If it goes off screen top, put below instead
+                    if (vh - rect.top + margin + 200 > vh) {
+                        card.style.bottom = '';
+                        card.style.top = (rect.bottom + margin) + 'px';
+                    }
+                } else if (step.cardPosition === 'left') {
+                    // Left of the target
+                    var left = rect.left - cardW - margin;
+                    if (left < 24) {
+                        // Not enough space on left, put below
+                        left = Math.max(24, Math.min(rect.left, vw - cardW - 24));
+                        card.style.left = left + 'px';
+                        card.style.top = (rect.bottom + margin) + 'px';
+                    } else {
+                        card.style.left = left + 'px';
+                        card.style.top = Math.max(24, rect.top) + 'px';
+                    }
+                } else {
+                    // Default: below target
+                    var centerX = rect.left + rect.width / 2;
+                    var left = Math.max(24, Math.min(centerX - cardW / 2, vw - cardW - 24));
+                    card.style.left = left + 'px';
+                    card.style.top = (rect.bottom + margin) + 'px';
+                }
+            }
+
+            // Update dots
+            function updateDots(step) {
+                dotEls.forEach(function(dot, i) {
+                    dot.classList.toggle('active', i === step);
+                    dot.setAttribute('aria-selected', i === step ? 'true' : 'false');
+                    dot.setAttribute('tabindex', i === step ? '0' : '-1');
+                });
+            }
+
+            // Show a specific step
+            function showStep(stepIdx) {
+                if (stepIdx < 0 || stepIdx >= totalSteps) return;
+                currentStep = stepIdx;
+                var step = steps[stepIdx];
+
+                // Fade out card first
+                card.classList.remove('visible');
+
+                setTimeout(function() {
+                    // Update content
+                    title.textContent = step.title;
+                    text.textContent = step.text;
+                    cta.textContent = step.cta;
+
+                    // Avatar visibility
+                    avatar.style.display = step.showAvatar ? '' : 'none';
+
+                    // Spotlight
+                    if (step.target) {
+                        var rect = typeof step.target === 'function' ? step.target() : step.target;
+                        if (rect) {
+                            var pad = 10;
+                            spotlight.style.display = '';
+                            spotlight.style.left = (rect.left - pad) + 'px';
+                            spotlight.style.top = (rect.top - pad) + 'px';
+                            spotlight.style.width = (rect.width + pad * 2) + 'px';
+                            spotlight.style.height = (rect.height + pad * 2) + 'px';
+                            scrim.style.opacity = '0';
+                            positionCard(step, rect);
+                        } else {
+                            spotlight.style.display = 'none';
+                            scrim.style.opacity = '1';
+                            positionCard(step, null);
+                        }
+                    } else {
+                        spotlight.style.display = 'none';
+                        scrim.style.opacity = '1';
+                        positionCard(step, null);
+                    }
+
+                    // Update dots
+                    updateDots(stepIdx);
+
+                    // Fade in card
+                    requestAnimationFrame(function() {
+                        card.classList.add('visible');
+                    });
+                }, 200);
+            }
+
+            // Next step
+            function nextStep() {
+                if (currentStep >= totalSteps - 1) {
+                    completeOnboarding();
+                    return;
+                }
+                showStep(currentStep + 1);
+            }
+
+            // Complete
+            function completeOnboarding() {
+                localStorage.setItem(ONBOARDED_KEY, 'true');
+                card.classList.remove('visible');
+                dots.classList.remove('visible');
+                skipBtn.classList.remove('visible');
+
+                setTimeout(function() {
+                    overlay.classList.remove('active');
+                    // Clean up: allow body scroll
+                    document.body.style.overflow = '';
+                }, 300);
+
+                // Show a welcome toast after closing
+                setTimeout(function() {
+                    if (typeof showToast === 'function') {
+                        showToast('🎉 Welcome to your Executive Office!');
+                    }
+                }, 800);
+            }
+
+            // Skip
+            function skipOnboarding() {
+                completeOnboarding();
+            }
+
+            // Event listeners
+            cta.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                nextStep();
+            });
+
+            skipBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                skipOnboarding();
+            });
+
+            // Keyboard navigation
+            overlay.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    skipOnboarding();
+                } else if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    nextStep();
+                } else if (e.key === 'ArrowRight') {
+                    e.preventDefault();
+                    nextStep();
+                } else if (e.key === 'ArrowLeft' && currentStep > 0) {
+                    e.preventDefault();
+                    showStep(currentStep - 1);
+                }
+            });
+
+            // Dot click navigation
+            dotEls.forEach(function(dot, i) {
+                dot.addEventListener('click', function() {
+                    showStep(i);
+                });
+            });
+
+            // Handle window resize — reposition spotlight + card
+            var resizeTimer;
+            window.addEventListener('resize', function() {
+                clearTimeout(resizeTimer);
+                resizeTimer = setTimeout(function() {
+                    if (overlay.classList.contains('active')) {
+                        showStep(currentStep);
+                    }
+                }, 150);
+            });
+
+            // START: Launch onboarding after a brief delay for page to settle
+            setTimeout(function() {
+                overlay.classList.add('active');
+                dots.classList.add('visible');
+                skipBtn.classList.add('visible');
+                document.body.style.overflow = 'hidden';
+                showStep(0);
+                cta.focus();
+            }, 600);
+
+        })();
+
+        /* Expose onboarding reset for Settings panel */
+        window.resetOnboarding = function() {
+            localStorage.removeItem('spawnkit-onboarded');
+            location.reload();
+        };
 
     })();
     </script>

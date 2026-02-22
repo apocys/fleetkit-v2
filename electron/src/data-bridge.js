@@ -839,6 +839,8 @@
     let liveInterval = null;
     let refreshCount = 0;
     let lastRefreshError = null;
+    let failureCount = 0;
+    let baseInterval = 30000; // 30s default
     
     SpawnKit.startLive = function() {
         if (liveInterval) {
@@ -846,45 +848,69 @@
             return;
         }
         
-        const interval = SpawnKit.mode === 'live' ? 10000 : 30000; // 10s live, 30s demo
-        console.log(`⏰ SpawnKit: Starting live updates every ${interval/1000}s`);
+        baseInterval = SpawnKit.mode === 'live' ? 30000 : 60000; // 30s live, 60s demo
+        failureCount = 0;
+        console.log(`⏰ SpawnKit: Starting live updates every ${baseInterval/1000}s`);
         
-        liveInterval = setInterval(async () => {
-            try {
-                await SpawnKit.refresh();
-                refreshCount++;
-                lastRefreshError = null;
-            } catch (e) {
-                lastRefreshError = e;
-                console.error(`❌ SpawnKit: Live refresh #${refreshCount} failed:`, e.message);
-                
-                // If we fail 3 times in live mode, fall back to demo
-                if (SpawnKit.mode === 'live' && refreshCount % 3 === 0) {
-                    console.warn('⚠️  SpawnKit: Multiple live refresh failures, checking connection...');
-                    try {
-                        const available = await window.spawnkitAPI?.isAvailable();
-                        if (!available) {
-                            console.log('🎮 SpawnKit: OpenClaw connection lost, falling back to demo mode');
-                            SpawnKit.mode = 'demo';
-                            SpawnKit.data = makeDemoData();
-                            showDemoBadge();
+        function scheduleNextRefresh(delay = baseInterval) {
+            liveInterval = setTimeout(async () => {
+                try {
+                    await SpawnKit.refresh();
+                    refreshCount++;
+                    lastRefreshError = null;
+                    failureCount = 0; // Reset failure count on success
+                    
+                    // Schedule next refresh at normal interval
+                    scheduleNextRefresh(baseInterval);
+                    
+                } catch (e) {
+                    failureCount++;
+                    lastRefreshError = e;
+                    console.error(`❌ SpawnKit: Live refresh #${refreshCount} failed (attempt ${failureCount}):`, e.message);
+                    
+                    // Calculate backoff delay: exponential backoff with max of 5 minutes
+                    const backoffDelay = Math.min(baseInterval * Math.pow(2, failureCount - 1), 300000);
+                    console.log(`⏳ SpawnKit: Retrying in ${backoffDelay/1000}s (backoff)`);
+                    
+                    // If we fail 5 times in live mode, fall back to demo
+                    if (SpawnKit.mode === 'live' && failureCount >= 5) {
+                        console.warn('⚠️  SpawnKit: Multiple live refresh failures, checking connection...');
+                        try {
+                            const available = await window.spawnkitAPI?.isAvailable();
+                            if (!available) {
+                                console.log('🎮 SpawnKit: OpenClaw connection lost, falling back to demo mode');
+                                SpawnKit.mode = 'demo';
+                                SpawnKit.data = makeDemoData();
+                                showDemoBadge();
+                                failureCount = 0; // Reset for demo mode
+                            }
+                        } catch (e2) {
+                            console.error('❌ SpawnKit: Connection check failed:', e2.message);
                         }
-                    } catch (e2) {
-                        console.error('❌ SpawnKit: Connection check failed:', e2.message);
                     }
+                    
+                    // Schedule next refresh with backoff delay
+                    scheduleNextRefresh(backoffDelay);
                 }
-            }
-        }, interval);
+            }, delay);
+        }
         
-        SpawnKit.emit('live:started', { interval, mode: SpawnKit.mode });
+        // Start the refresh cycle
+        scheduleNextRefresh(1000); // First refresh after 1s
+        
+        SpawnKit.emit('live:started', { interval: baseInterval, mode: SpawnKit.mode });
     };
     
     SpawnKit.stopLive = function() {
         if (liveInterval) {
-            clearInterval(liveInterval);
+            clearTimeout(liveInterval);
             liveInterval = null;
-            console.log(`⏹️  SpawnKit: Stopped live updates (completed ${refreshCount} refreshes)`);
-            SpawnKit.emit('live:stopped', { refreshCount, lastError: lastRefreshError?.message });
+            console.log(`⏹️  SpawnKit: Stopped live updates (completed ${refreshCount} refreshes, ${failureCount} failures)`);
+            SpawnKit.emit('live:stopped', { 
+                refreshCount, 
+                failureCount, 
+                lastError: lastRefreshError?.message 
+            });
         }
     };
 
@@ -1068,8 +1094,10 @@
                 missionCount: SpawnKit.data?.missions?.length || 0,
                 cronCount: SpawnKit.data?.crons?.length || 0,
                 refreshCount: refreshCount,
+                failureCount: failureCount,
                 lastRefreshError: lastRefreshError?.message || null,
                 liveUpdateActive: !!liveInterval,
+                baseInterval: baseInterval,
                 config: SpawnKit.config,
                 listeners: Object.keys(listeners).map(event => ({ event, count: listeners[event]?.length || 0 }))
             };

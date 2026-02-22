@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Office Design 2 - Modern Office Revamped</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #2a2a2a;
+            font-family: 'Courier New', monospace;
+            color: white;
+        }
+        .container {
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+        }
+        canvas {
+            background: transparent;
+            image-rendering: pixelated;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: crisp-edges;
+            border: 2px solid #555;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        }
+        .info-panel {
+            min-width: 250px;
+        }
+        .controls {
+            margin-bottom: 15px;
+        }
+        button {
+            background: #444;
+            color: white;
+            border: 1px solid #666;
+            padding: 8px 12px;
+            margin: 2px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 11px;
+        }
+        button:hover {
+            background: #555;
+        }
+        button.active {
+            background: #0a84ff;
+            border-color: #0a84ff;
+        }
+        .stats {
+            font-size: 11px;
+            line-height: 1.4;
+        }
+        .stat-line {
+            margin: 3px 0;
+        }
+        h1 {
+            margin: 0 0 15px 0;
+            font-size: 24px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Office Design 2</h1>
+    <div class="container">
+        <canvas id="canvas" width="768" height="816"></canvas>
+        <div class="info-panel">
+            <div class="controls">
+                <button id="toggleAnim" onclick="toggleAnimation()">⏸️ Pause</button><br>
+                <button onclick="showFrame(0)">Frame 0</button>
+                <button onclick="showFrame(1)">Frame 1</button>
+                <button onclick="showFrame(2)">Frame 2</button><br>
+                <button onclick="showFrame(3)">Frame 3</button>
+                <button onclick="showFrame(4)">Frame 4</button>
+                <button onclick="showFrame(5)">Frame 5</button>
+            </div>
+            <div class="stats">
+                <div class="stat-line"><strong>Canvas:</strong> 768×816 pixels</div>
+                <div class="stat-line"><strong>Grid:</strong> 16×17 tiles @ 48px</div>
+                <div class="stat-line"><strong>Animation:</strong> 6 frames @ 100ms</div>
+                <div class="stat-line">&nbsp;</div>
+                <div class="stat-line"><strong>Tile Stats:</strong></div>
+                <div class="stat-line">• Single: 268</div>
+                <div class="stat-line">• Layered: 0</div>
+                <div class="stat-line">• Animated: 4</div>
+                <div class="stat-line">• Unknown: 0</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        ctx.imageSmoothingEnabled = false;
+        
+        let roomBuilderImg = null;
+        let modernOfficeImg = null;
+        let currentFrame = 0;
+        let isAnimating = true;
+        let lastFrameTime = 0;
+        const FRAME_DURATION = 100;
+        
+        const gridData = {"0,0": {"type": "single", "sheet": "RB", "col": 7, "row": 1, "score": 0.0}, "1,0": {"type": "single", "sheet": "MO", "col": 7, "row": 5, "score": 135.91000366210938}, "2,0": {"type": "single", "sheet": "MO", "col": 7, "row": 5, "score": 137.88999938964844}, "3,0": {"type": "single", "sheet": "RB", "col": 1, "row": 11, "score": 0.0}, "4,0": {"type": "single", "sheet": "RB", "col": 1, "row": 11, "score": 0.0}, "5,0": {"type": "single", "sheet": "RB", "col": 1, "row": 11, "score": 113.76000213623047}, "6,0": {"type": "single", "sheet": "RB", "col": 1, "row": 11, "score": 117.73999786376953}, "7,0": {"type": "single", "sheet": "RB", "col": 1, "row": 7, "score": 104.43000030517578}, "8,0": {"type": "single", "sheet": "RB", "col": 1, "row": 9, "score": 122.76000213623047}, "9,0": {"type": "single", "sheet": "RB", "col": 1, "row": 11, "score": 111.05999755859375}, "10,0": {"type": "single", "sheet": "RB", "col": 1, "row": 11, "score": 117.41000366210938}, "11,0": {"type": "single", "sheet": "RB", "col": 1, "row": 11, "score": 122.86000061035156}, "12,0": {"type": "single", "sheet": "RB", "col": 1, "row": 11, "score": 1.840000033378601}, "13,0": {"type": "single", "sheet": "RB", "col": 1, "row": 11, "score": 119.08999633789062}, "14,0": {"type": "single", "sheet": "RB", "col": 1, "row": 7, "score": 103.31999969482422}, "15,0": {"type": "single", "sheet": "RB", "col": 9, "row": 1, "score": 0.0}, "0,1": {"type": "single", "sheet": "RB", "col": 3, "row": 0, "score": 0.0}, "1,1": {"type": "single", "sheet": "RB", "col": 1, "row": 12, "score": 0.0}, "2,1": {"type": "single", "sheet": "RB", "col": 15, "row": 6, "score": 132.61000061035156}, "3,1": {"type": "single", "sheet": "RB", "col": 1, "row": 12, "score": 0.0}, "4,1": {"type": "animated", "frames": [{"type": "single", "sheet": "RB", "col": 15, "row": 6}, {"type": "single", "sheet": "RB", "col": 15, "row": 6}], "frame_map": {"0": 0, "1": 0, "2": 1, "3": 1, "4": 0, "5": 0}}, "5,1": {"type": "single", "sheet": "MO", "col": 9, "row": 11, "score": 8.98}, "6,1": {"type": "single", "sheet": "MO", "col": 10, "row": 11, "score": 8.98}, "7,1": {"type": "single", "sheet": "RB", "col": 1, "row": 12, "score": 127.05000305175781}, "8,1": {"type": "single", "sheet": "MO", "col": 7, "row": 13, "score": 3.71}, "9,1": {"type": "single", "sheet": "MO", "col": 8, "row": 13, "score": 3.12}, "10,1": {"type": "single", "sheet": "MO", "col": 9, "row": 13, "score": 8.98}, "11,1": {"type": "single", "sheet": "MO", "col": 10, "row": 13, "score": 8.98}, "12,1": {"type": "single", "sheet": "MO", "col": 12, "row": 1, "score": 132.52000427246094}, "13,1": {"type": "single", "sheet": "RB", "col": 1, "row": 12, "score": 124.23999786376953}, "14,1": {"type": "single", "sheet": "MO", "col": 13, "row": 1, "score": 121.46}, "15,1": {"type": "single", "sheet": "RB", "col": 4, "row": 0, "score": 0.0}, "0,2": {"type": "single", "sheet": "RB", "col": 2, "row": 11, "score": 2.930000066757202}, "1,2": {"type": "single", "sheet": "RB", "col": 11, "row": 5, "score": 11.760000228881836}, "2,2": {"type": "single", "sheet": "MO", "col": 12, "row": 1, "score": 109.4000015258789}, "3,2": {"type": "single", "sheet": "RB", "col": 15, "row": 6, "score": 96.01000213623047}, "4,2": {"type": "animated", "frames": [{"type": "single", "sheet": "MO", "col": 1, "row": 9}, {"type": "single", "sheet": "MO", "col": 4, "row": 18}, {"type": "single", "sheet": "MO", "col": 4, "row": 18}, {"type": "single", "sheet": "MO", "col": 1, "row": 9}, {"type": "single", "sheet": "MO", "col": 1, "row": 9}], "frame_map": {"0": 0, "1": 0, "2": 1, "3": 2, "4": 3, "5": 4}}, "5,2": {"type": "single", "sheet": "RB", "col": 15, "row": 6, "score": 102.01000213623047}, "6,2": {"type": "single", "sheet": "RB", "col": 15, "row": 6, "score": 84.16999816894531}, "7,2": {"type": "single", "sheet": "RB", "col": 15, "row": 6, "score": 84.02999877929688}, "8,2": {"type": "single", "sheet": "RB", "col": 15, "row": 6, "score": 118.0}, "9,2": {"type": "single", "sheet": "RB", "col": 15, "row": 6, "score": 111.01000213623047}, "10,2": {"type": "single", "sheet": "RB", "col": 15, "row": 6, "score": 84.02999877929688}, "11,2": {"type": "single", "sheet": "RB", "col": 15, "row": 6, "score": 92.44000244140625}, "12,2": {"type": "single", "sheet": "RB", "col": 11, "row": 5, "score": 65.37000274658203}, "13,2": {"type": "single", "sheet": "RB", "col": 11, "row": 5, "score": 69.83000183105469}, "14,2": {"type": "single", "sheet": "RB", "col": 11, "row": 5, "score": 76.9000015258789}, "15,2": {"type": "single", "sheet": "RB", "col": 4, "row": 0, "score": 0.0}, "0,3": {"type": "single", "sheet": "RB", "col": 2, "row": 12, "score": 3.380000114440918}, "1,3": {"type": "single", "sheet": "RB", "col": 11, "row": 6, "score": 0.0}, "2,3": {"type": "single", "sheet": "MO", "col": 3, "row": 27, "score": 88.81999969482422}, "3,3": {"type": "single", "sheet": "RB", "col": 15, "row": 6, "score": 128.9499969482422}, "4,3": {"type": "single", "sheet": "MO", "col": 1, "row": 27, "score": 130.07000732421875}, "5,3": {"type": "single", "sheet": "MO", "col": 3, "row": 27, "score": 100.75}, "6,3": {"type": "single", "sheet": "MO", "col": 1, "row": 27, "score": 94.51000213623047}, "7,3": {"type": "single", "sheet": "RB", "col": 15, "row": 6, "score": 125.06999969482422}, "8,3": {"type": "single", "sheet": "MO", "col": 6, "row": 27, "score": 122.94000244140625}, "9,3": {"type": "single", "sheet": "MO", "col": 12, "row": 1, "score": 116.3499984741211}, "10,3": {"type": "single", "sheet": "MO", "col": 14, "row": 28, "score": 9.77}, "11,3": {"type": "single", "sheet": "MO", "col": 6, "row": 27, "score": 112.12999725341797}, "12,3": {"type": "single", "sheet": "RB", "col": 11, "row": 6, "score": 0.0}, "13,3": {"type": "single", "sheet": "RB", "col": 15, "row": 6, "score": 104.16000366210938}, "14,3": {"type": "single", "sheet": "RB", "col": 12, "row": 6, "score": 107.5199966430664}, "15,3": {"type": "single", "sheet": "RB", "col": 4, "row": 0, "score": 0.0}, "0,4": {"type": "single", "sheet": "RB", "col": 11, "row": 5, "score": 11.760000228881836}, "1,4": {"type": "single", "sheet": "RB", "col": 11, "row": 6, "score": 0.0}, "2,4": {"type": "single", "sheet": "RB", "col": 15, "row": 6, "score": 90.38999938964844}, "3,4": {"type": "single", "sheet": "MO", "col": 7, "row": 29, "score": 95.26}, "4,4": {"type": "single", "sheet": "MO", "col": 12, "row": 1, "score": 109.91999816894531}, "5,4": {"type": "single", "sheet": "RB", "col": 6, "row": 9, "score": 116.69000244140625}, "6,4": {"type": "single", "sheet": "MO", "col": 7, "row": 29, "score": 98.77}, "7,4": {"type": "single", "sheet": "MO", "col": 12, "row": 1, "score": 92.2699966430664}, "8,4": {"type": "single", "sheet": "MO", "col": 14, "row": 1, "score": 113.51000213623047}, "9,4": {"type": "single", "sheet": "MO", "col": 7, "row": 29, "score": 108.75}, "10,4": {"type": "single", "sheet": "MO", "col": 12, "row": 1, "score": 99.63999938964844}, "11,4": {"type": "single", "sheet": "RB", "col": 6, "row": 9, "score": 110.2300033569336}, "12,4": {"type": "single", "sheet": "RB", "col": 11, "row": 6, "score": 0.0}, "13,4": {"type": "single", "sheet": "RB", "col": 15, "row": 6, "score": 106.62999725341797}, "14,4": {"type": "single", "sheet": "RB", "col": 12, "row": 6, "score": 104.0}, "15,4": {"type": "single", "sheet": "RB", "col": 4, "row": 0, "score": 0.0}, "0,5": {"type": "single", "sheet": "RB", "col": 11, "row": 6, "score": 0.0}, "1,5": {"type": "single", "sheet": "RB", "col": 11, "row": 6, "score": 0.0}, "2,5": {"type": "single", "sheet": "RB", "col": 11, "row": 6, "score": 0.0}, "3,5": {"type": "single", "sheet": "MO", "col": 12, "row": 1, "score": 102.69000244140625}, "4,5": {"type": "single", "sheet": "MO", "col": 1, "row": 9, "score": 10.16}, "5,5": {"type": "single", "sheet": "RB", "col": 11, "row": 6, "score": 0.0}, "6,5": {"type": "single", "sheet": "RB", "col": 11, "row": 6, "score": 0.0}, "7,5": {"type": "single", "sheet": "MO", "col": 1, "row": 9, "score": 10.16}, "8,5": {"type": "single", "sheet": "RB", "col": 11, "row": 6, "score": 0.0}, "9,5": {"type": "single", "sheet": "MO", "col": 12, "row": 1, "score": 102.69000244140625}, "10,5": {"type": "single", "sheet": "MO", "col": 1, "row": 9, "score": 10.16}, "11,5": {"type": "single", "sheet": "RB", "col": 11, "row": 6, "score": 0.0}, "12,5": {"type": "single", "sheet": "RB", "col": 11, "row": 6, "score": 0.0}, "13,5": {"type": "single", "sheet": "RB", "col": 11, "row": 6, "score": 0.0}, "14,5": {"type": "single", "sheet": "RB", "col": 11, "row": 6, "score": 0.0}, "15,5": {"type": "single", "sheet": "RB", "col": 4, "row": 0, "score": 0.0}, "0,6": {"type": "single", "sheet": "RB", "col": 1, "row": 2, "score": 4.789999961853027}, "1,6": {"type": "single", "sheet": "RB", "col": 11, "row": 6, "score": 86.41999816894531}, "2,6": {"type": "single", "sheet": "RB", "col": 15, "row": 6, "score": 105.08999633789062}, "3,6": {"type": "single", "sheet": "MO", "col": 3, "row": 9, "score": 80.85}, "4,6": {"type": "single", "sheet": "RB", "col": 15, "row": 6, "score": 106.16000366210938}, "5,6": {"type": "single", "sheet": "RB", "col": 11, "row": 6, "score": 95.62999725341797}, "6,6": {"type": "single", "sheet": "RB", "col": 11, "row": 6, "score": 95.76000213623047}, "7,6": {"type": "single", "sheet": "RB", "col": 15, "row": 6, "score": 102.52999877929688}, "8,6": {"type": "single", "sheet": "RB", "col": 15, "row": 6, "score": 102.1500015258789}, "9,6": {"type": "single", "sheet": "MO", "col": 12, "row": 1, "score": 115.04000091552734}, "10,6": {"type": "single", "sheet": "RB", "col": 15, "row": 6, "score": 108.80000305175781}, "11,6": {"type": "single", "sheet": "RB", "col": 11, "row": 6, "score": 95.62999725341797}, "12,6": {"type": "single", "sheet": "RB", "col": 11, "row": 6, "score": 95.76000213623047}, "13,6": {"type": "single", "sheet": "RB", "col": 15, "row": 6, "score": 102.52999877929688}, "14,6": {"type": "single", "sheet": "RB", "col": 11, "row": 6, "score": 0.0}, "15,6": {"type": "single", "sheet": "RB", "col": 4, "row": 0, "score": 0.0}, "0,7": {"type": "single", "sheet": "RB", "col": 3, "row": 0, "score": 0.0}, "1,7": {"type": "single", "sheet": "MO", "col": 3, "row": 27, "score": 87.44000244140625}, "2,7": {"type": "single", "sheet": "MO", "col": 1, "row": 27, "score": 100.30999755859375}, "3,7": {"type": "single", "sheet": "RB", "col": 15, "row": 6, "score": 125.16000366210938}, "4,7": {"type": "single", "sheet": "MO", "col": 12, "row": 1, "score": 122.83999633789062}, "5,7": {"type": "single", "sheet": "MO", "col": 12, "row": 1, "score": 108.30000305175781}, "6,7": {"type": "single", "sheet": "MO", "col": 14, "row": 12, "score": 10.35}, "7,7": {"type": "single", "sheet": "MO", "col": 6, "row": 27, "score": 93.69999694824219}, "8,7": {"type": "single", "sheet": "RB", "col": 15, "row": 6, "score": 128.25999450683594}, "9,7": {"type": "single", "sheet": "RB", "col": 5, "row": 9, "score": 128.9600067138672}, "10,7": {"type": "single", "sheet": "MO", "col": 6, "row": 27, "score": 101.79000091552734}, "11,7": {"type": "single", "sheet": "MO", "col": 1, "row": 27, "score": 100.30999755859375}, "12,7": {"type": "single", "sheet": "RB", "col": 15, "row": 6, "score": 125.16000366210938}, "13,7": {"type": "single", "sheet": "MO", "col": 12, "row": 1, "score": 123.08999633789062}, "14,7": {"type": "single", "sheet": "RB", "col": 11, "row": 6, "score": 0.0}, "15,7": {"type": "single", "sheet": "RB", "col": 4, "row": 0, "score": 0.0}, "0,8": {"type": "single", "sheet": "RB", "col": 3, "row": 0, "score": 0.0}, "1,8": {"type": "single", "sheet": "RB", "col": 15, "row": 6, "score": 90.38999938964844}, "2,8": {"type": "single", "sheet": "MO", "col": 10, "row": 29, "score": 75.84}, "3,8": {"type": "single", "sheet": "MO", "col": 12, "row": 1, "score": 96.4800033569336}, "4,8": {"type": "single", "sheet": "MO", "col": 14, "row": 1, "score": 107.16999816894531}, "5,8": {"type": "single", "sheet": "MO", "col": 10, "row": 29, "score": 84.91}, "6,8": {"type": "single", "sheet": "MO", "col": 12, "row": 1, "score": 60.63999938964844}, "7,8": {"type": "single", "sheet": "MO", "col": 14, "row": 1, "score": 97.05999755859375}, "8,8": {"type": "single", "sheet": "MO", "col": 10, "row": 29, "score": 58.53}, "9,8": {"type": "animated", "frames": [{"type": "single", "sheet": "RB", "col": 11, "row": 9}, {"type": "single", "sheet": "RB", "col": 11, "row": 9}, {"type": "single", "sheet": "RB", "col": 11, "row": 9}], "frame_map": {"0": 0, "1": 0, "2": 1, "3": 2, "4": 0, "5": 0}}, "10,8": {"type": "single", "sheet": "MO", "col": 11, "row": 29, "score": 105.47000122070312}, "11,8": {"type": "single", "sheet": "MO", "col": 10, "row": 29, "score": 75.84}, "12,8": {"type": "single", "sheet": "MO", "col": 12, "row": 1, "score": 96.4800033569336}, "13,8": {"type": "single", "sheet": "MO", "col": 14, "row": 1, "score": 107.3499984741211}, "14,8": {"type": "single", "sheet": "RB", "col": 11, "row": 6, "score": 91.0199966430664}, "15,8": {"type": "single", "sheet": "RB", "col": 4, "row": 0, "score": 0.0}, "0,9": {"type": "single", "sheet": "RB", "col": 3, "row": 0, "score": 0.0}, "1,9": {"type": "single", "sheet": "RB", "col": 11, "row": 6, "score": 0.0}, "2,9": {"type": "single", "sheet": "RB", "col": 11, "row": 6, "score": 0.0}, "3,9": {"type": "single", "sheet": "MO", "col": 1, "row": 9, "score": 10.16}, "4,9": {"type": "single", "sheet": "RB", "col": 11, "row": 6, "score": 0.0}, "5,9": {"type": "single", "sheet": "RB", "col": 11, "row": 6, "score": 0.0}, "6,9": {"type": "single", "sheet": "MO", "col": 1, "row": 9, "score": 10.16}, "7,9": {"type": "single", "sheet": "RB", "col": 11, "row": 6, "score": 0.0}, "8,9": {"type": "single", "sheet": "RB", "col": 11, "row": 6, "score": 0.0}, "9,9": {"type": "animated", "frames": [{"type": "single", "sheet": "MO", "col": 1, "row": 9}, {"type": "single", "sheet": "MO", "col": 1, "row": 9}], "frame_map": {"0": 0, "1": 0, "2": 0, "3": 1, "4": 0, "5": 0}}, "10,9": {"type": "single", "sheet": "RB", "col": 11, "row": 6, "score": 0.0}, "11,9": {"type": "single", "sheet": "RB", "col": 11, "row": 6, "score": 0.0}, "12,9": {"type": "single", "sheet": "MO", "col": 1, "row": 9, "score": 10.16}, "13,9": {"type": "single", "sheet": "RB", "col": 11, "row": 6, "score": 0.0}, "14,9": {"type": "single", "sheet": "MO", "col": 12, "row": 1, "score": 106.01000213623047}, "15,9": {"type": "single", "sheet": "RB", "col": 4, "row": 0, "score": 0.0}, "0,10": {"type": "single", "sheet": "RB", "col": 7, "row": 3, "score": 0.0}, "1,10": {"type": "single", "sheet": "RB", "col": 8, "row": 1, "score": 6.639999866485596}, "2,10": {"type": "single", "sheet": "RB", "col": 8, "row": 1, "score": 6.639999866485596}, "3,10": {"type": "single", "sheet": "RB", "col": 1, "row": 3, "score": 4.940000057220459}, "4,10": {"type": "single", "sheet": "MO", "col": 5, "row": 18, "score": 129.92999267578125}, "5,10": {"type": "single", "sheet": "MO", "col": 5, "row": 18, "score": 131.55999755859375}, "6,10": {"type": "single", "sheet": "RB", "col": 1, "row": 9, "score": 12.8100004196167}, "7,10": {"type": "single", "sheet": "RB", "col": 1, "row": 9, "score": 12.8100004196167}, "8,10": {"type": "single", "sheet": "RB", "col": 1, "row": 9, "score": 12.8100004196167}, "9,10": {"type": "single", "sheet": "RB", "col": 2, "row": 9, "score": 94.13999938964844}, "10,10": {"type": "single", "sheet": "RB", "col": 14, "row": 6, "score": 0.0}, "11,10": {"type": "single", "sheet": "RB", "col": 0, "row": 9, "score": 0.0}, "12,10": {"type": "single", "sheet": "RB", "col": 1, "row": 9, "score": 75.69000244140625}, "13,10": {"type": "single", "sheet": "RB", "col": 1, "row": 9, "score": 75.4800033569336}, "14,10": {"type": "single", "sheet": "RB", "col": 1, "row": 9, "score": 74.12000274658203}, "15,10": {"type": "single", "sheet": "RB", "col": 4, "row": 0, "score": 0.0}, "0,11": {"type": "single", "sheet": "MO", "col": 8, "row": 18, "score": 0.0}, "1,11": {"type": "single", "sheet": "MO", "col": 8, "row": 18, "score": 0.0}, "2,11": {"type": "single", "sheet": "MO", "col": 8, "row": 18, "score": 0.0}, "3,11": {"type": "single", "sheet": "RB", "col": 3, "row": 0, "score": 0.0}, "4,11": {"type": "single", "sheet": "MO", "col": 0, "row": 19, "score": 52.54}, "5,11": {"type": "single", "sheet": "MO", "col": 12, "row": 5, "score": 65.01000213623047}, "6,11": {"type": "single", "sheet": "RB", "col": 5, "row": 9, "score": 64.05000305175781}, "7,11": {"type": "single", "sheet": "RB", "col": 1, "row": 10, "score": 66.44000244140625}, "8,11": {"type": "single", "sheet": "MO", "col": 14, "row": 2, "score": 102.31999969482422}, "9,11": {"type": "single", "sheet": "MO", "col": 12, "row": 16, "score": 9.38}, "10,11": {"type": "single", "sheet": "RB", "col": 13, "row": 6, "score": 0.0}, "11,11": {"type": "single", "sheet": "RB", "col": 0, "row": 10, "score": 93.7300033569336}, "12,11": {"type": "single", "sheet": "RB", "col": 1, "row": 10, "score": 81.11000061035156}, "13,11": {"type": "single", "sheet": "RB", "col": 1, "row": 10, "score": 92.2699966430664}, "14,11": {"type": "single", "sheet": "MO", "col": 12, "row": 1, "score": 111.06999969482422}, "15,11": {"type": "single", "sheet": "RB", "col": 4, "row": 0, "score": 0.0}, "0,12": {"type": "single", "sheet": "MO", "col": 8, "row": 18, "score": 0.0}, "1,12": {"type": "single", "sheet": "MO", "col": 8, "row": 18, "score": 0.0}, "2,12": {"type": "single", "sheet": "MO", "col": 8, "row": 18, "score": 0.0}, "3,12": {"type": "single", "sheet": "RB", "col": 3, "row": 0, "score": 0.0}, "4,12": {"type": "single", "sheet": "MO", "col": 0, "row": 20, "score": 63.63}, "5,12": {"type": "single", "sheet": "MO", "col": 1, "row": 20, "score": 35.12}, "6,12": {"type": "single", "sheet": "MO", "col": 13, "row": 48, "score": 9.18}, "7,12": {"type": "single", "sheet": "MO", "col": 12, "row": 1, "score": 107.63999938964844}, "8,12": {"type": "single", "sheet": "MO", "col": 7, "row": 35, "score": 113.87999725341797}, "9,12": {"type": "single", "sheet": "RB", "col": 14, "row": 5, "score": 80.2300033569336}, "10,12": {"type": "single", "sheet": "RB", "col": 15, "row": 5, "score": 0.0}, "11,12": {"type": "single", "sheet": "RB", "col": 14, "row": 5, "score": 73.86000061035156}, "12,12": {"type": "single", "sheet": "RB", "col": 14, "row": 5, "score": 73.08999633789062}, "13,12": {"type": "single", "sheet": "RB", "col": 15, "row": 6, "score": 83.19999694824219}, "14,12": {"type": "single", "sheet": "RB", "col": 14, "row": 5, "score": 108.30000305175781}, "15,12": {"type": "single", "sheet": "RB", "col": 4, "row": 0, "score": 0.0}, "0,13": {"type": "single", "sheet": "MO", "col": 8, "row": 18, "score": 0.0}, "1,13": {"type": "single", "sheet": "MO", "col": 8, "row": 18, "score": 0.0}, "2,13": {"type": "single", "sheet": "MO", "col": 8, "row": 18, "score": 0.0}, "3,13": {"type": "single", "sheet": "RB", "col": 3, "row": 0, "score": 0.0}, "4,13": {"type": "single", "sheet": "RB", "col": 15, "row": 6, "score": 94.05000305175781}, "5,13": {"type": "single", "sheet": "RB", "col": 15, "row": 6, "score": 125.37999725341797}, "6,13": {"type": "single", "sheet": "RB", "col": 14, "row": 6, "score": 0.0}, "7,13": {"type": "single", "sheet": "RB", "col": 14, "row": 6, "score": 83.6500015258789}, "8,13": {"type": "single", "sheet": "MO", "col": 2, "row": 41, "score": 105.98999786376953}, "9,13": {"type": "single", "sheet": "RB", "col": 14, "row": 6, "score": 0.0}, "10,13": {"type": "single", "sheet": "RB", "col": 14, "row": 6, "score": 0.0}, "11,13": {"type": "single", "sheet": "RB", "col": 14, "row": 6, "score": 0.0}, "12,13": {"type": "single", "sheet": "MO", "col": 2, "row": 49, "score": 124.37999725341797}, "13,13": {"type": "single", "sheet": "MO", "col": 1, "row": 40, "score": 70.61000061035156}, "14,13": {"type": "single", "sheet": "RB", "col": 14, "row": 6, "score": 0.0}, "15,13": {"type": "single", "sheet": "RB", "col": 4, "row": 0, "score": 0.0}, "0,14": {"type": "single", "sheet": "MO", "col": 8, "row": 18, "score": 0.0}, "1,14": {"type": "single", "sheet": "MO", "col": 8, "row": 18, "score": 0.0}, "2,14": {"type": "single", "sheet": "MO", "col": 8, "row": 18, "score": 0.0}, "3,14": {"type": "single", "sheet": "RB", "col": 3, "row": 0, "score": 0.0}, "4,14": {"type": "single", "sheet": "RB", "col": 15, "row": 6, "score": 91.02999877929688}, "5,14": {"type": "single", "sheet": "MO", "col": 15, "row": 23, "score": 12.5}, "6,14": {"type": "single", "sheet": "RB", "col": 14, "row": 6, "score": 0.0}, "7,14": {"type": "single", "sheet": "MO", "col": 5, "row": 36, "score": 95.23999786376953}, "8,14": {"type": "single", "sheet": "MO", "col": 14, "row": 1, "score": 113.38999938964844}, "9,14": {"type": "single", "sheet": "RB", "col": 14, "row": 6, "score": 0.0}, "10,14": {"type": "single", "sheet": "RB", "col": 14, "row": 6, "score": 0.0}, "11,14": {"type": "single", "sheet": "RB", "col": 14, "row": 6, "score": 0.0}, "12,14": {"type": "single", "sheet": "MO", "col": 3, "row": 35, "score": 137.33999633789062}, "13,14": {"type": "single", "sheet": "MO", "col": 12, "row": 1, "score": 103.80999755859375}, "14,14": {"type": "single", "sheet": "RB", "col": 14, "row": 6, "score": 76.9800033569336}, "15,14": {"type": "single", "sheet": "RB", "col": 4, "row": 0, "score": 0.0}, "0,15": {"type": "single", "sheet": "MO", "col": 8, "row": 18, "score": 0.0}, "1,15": {"type": "single", "sheet": "MO", "col": 8, "row": 18, "score": 0.0}, "2,15": {"type": "single", "sheet": "MO", "col": 8, "row": 18, "score": 0.0}, "3,15": {"type": "single", "sheet": "RB", "col": 3, "row": 0, "score": 0.0}, "4,15": {"type": "single", "sheet": "MO", "col": 12, "row": 1, "score": 108.56999969482422}, "5,15": {"type": "single", "sheet": "RB", "col": 15, "row": 6, "score": 111.04000091552734}, "6,15": {"type": "single", "sheet": "RB", "col": 12, "row": 6, "score": 106.30000305175781}, "7,15": {"type": "single", "sheet": "RB", "col": 14, "row": 6, "score": 0.0}, "8,15": {"type": "single", "sheet": "RB", "col": 12, "row": 6, "score": 102.36000061035156}, "9,15": {"type": "single", "sheet": "RB", "col": 14, "row": 6, "score": 0.0}, "10,15": {"type": "single", "sheet": "RB", "col": 14, "row": 6, "score": 0.0}, "11,15": {"type": "single", "sheet": "RB", "col": 14, "row": 6, "score": 0.0}, "12,15": {"type": "single", "sheet": "MO", "col": 1, "row": 51, "score": 64.68000030517578}, "13,15": {"type": "single", "sheet": "MO", "col": 2, "row": 51, "score": 76.12999725341797}, "14,15": {"type": "single", "sheet": "MO", "col": 12, "row": 1, "score": 113.80999755859375}, "15,15": {"type": "single", "sheet": "RB", "col": 4, "row": 0, "score": 0.0}, "0,16": {"type": "single", "sheet": "MO", "col": 8, "row": 18, "score": 0.0}, "1,16": {"type": "single", "sheet": "MO", "col": 8, "row": 18, "score": 0.0}, "2,16": {"type": "single", "sheet": "MO", "col": 8, "row": 18, "score": 0.0}, "3,16": {"type": "single", "sheet": "RB", "col": 7, "row": 3, "score": 0.0}, "4,16": {"type": "single", "sheet": "RB", "col": 8, "row": 1, "score": 0.0}, "5,16": {"type": "single", "sheet": "RB", "col": 8, "row": 1, "score": 0.0}, "6,16": {"type": "single", "sheet": "RB", "col": 8, "row": 1, "score": 0.0}, "7,16": {"type": "single", "sheet": "RB", "col": 8, "row": 1, "score": 0.0}, "8,16": {"type": "single", "sheet": "RB", "col": 8, "row": 1, "score": 0.0}, "9,16": {"type": "single", "sheet": "RB", "col": 8, "row": 1, "score": 0.0}, "10,16": {"type": "single", "sheet": "RB", "col": 8, "row": 1, "score": 0.0}, "11,16": {"type": "single", "sheet": "RB", "col": 8, "row": 1, "score": 0.0}, "12,16": {"type": "single", "sheet": "RB", "col": 8, "row": 1, "score": 0.0}, "13,16": {"type": "single", "sheet": "RB", "col": 8, "row": 1, "score": 0.0}, "14,16": {"type": "single", "sheet": "RB", "col": 8, "row": 1, "score": 0.0}, "15,16": {"type": "single", "sheet": "RB", "col": 9, "row": 3, "score": 0.0}};
+        
+        const loadImages = async () => {
+            const loadImg = (src) => new Promise((resolve, reject) => {
+                const img = new Image();
+                img.onload = () => resolve(img);
+                img.onerror = reject;
+                img.src = src;
+            });
+            
+            try {
+                roomBuilderImg = await loadImg('../lib/sprites/modern-office-revamped/1_Room_Builder_Office/Room_Builder_Office_48x48.png');
+                modernOfficeImg = await loadImg('../lib/sprites/modern-office-revamped/Modern_Office_48x48.png');
+                console.log('✅ Tilesets loaded');
+                render();
+                animate();
+            } catch (error) {
+                console.error('❌ Failed to load images:', error);
+                render(); // Render with placeholders
+            }
+        };
+        
+        const drawTile = (sheet, col, row, x, y) => {
+            const img = sheet === 'RB' ? roomBuilderImg : modernOfficeImg;
+            if (img) {
+                ctx.drawImage(img, col * 48, row * 48, 48, 48, x, y, 48, 48);
+            } else {
+                // Fallback
+                ctx.fillStyle = sheet === 'RB' ? '#8B4513' : '#4682B4';
+                ctx.fillRect(x, y, 48, 48);
+            }
+        };
+        
+        const render = () => {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            for (const [posKey, tileData] of Object.entries(gridData)) {
+                const [gx, gy] = posKey.split(',').map(Number);
+                const x = gx * 48;
+                const y = gy * 48;
+                
+                if (tileData.type === 'single') {
+                    drawTile(tileData.sheet, tileData.col, tileData.row, x, y);
+                }
+                else if (tileData.type === 'layered') {
+                    // Draw floor first, then furniture
+                    drawTile(tileData.floor.sheet, tileData.floor.col, tileData.floor.row, x, y);
+                    drawTile(tileData.furniture.sheet, tileData.furniture.col, tileData.furniture.row, x, y);
+                }
+                else if (tileData.type === 'animated') {
+                    const uniqueIndex = tileData.frame_map[currentFrame.toString()];
+                    const frameData = tileData.frames[uniqueIndex];
+                    
+                    if (frameData.type === 'single') {
+                        drawTile(frameData.sheet, frameData.col, frameData.row, x, y);
+                    } else if (frameData.type === 'layered') {
+                        drawTile(frameData.floor.sheet, frameData.floor.col, frameData.floor.row, x, y);
+                        drawTile(frameData.furniture.sheet, frameData.furniture.col, frameData.furniture.row, x, y);
+                    } else {
+                        // Unknown animated tile
+                        ctx.fillStyle = '#FF1493';
+                        ctx.fillRect(x, y, 48, 48);
+                    }
+                }
+                else {
+                    // Unknown static tile
+                    ctx.fillStyle = '#FF6347';
+                    ctx.fillRect(x, y, 48, 48);
+                }
+            }
+        };
+        
+        const animate = (time = 0) => {
+            if (isAnimating && time - lastFrameTime >= FRAME_DURATION) {
+                currentFrame = (currentFrame + 1) % 6;
+                lastFrameTime = time;
+                render();
+            }
+            requestAnimationFrame(animate);
+        };
+        
+        const toggleAnimation = () => {
+            isAnimating = !isAnimating;
+            document.getElementById('toggleAnim').textContent = isAnimating ? '⏸️ Pause' : '▶️ Play';
+        };
+        
+        const showFrame = (frame) => {
+            currentFrame = frame;
+            isAnimating = false;
+            document.getElementById('toggleAnim').textContent = '▶️ Play';
+            render();
+        };
+        
+        window.toggleAnimation = toggleAnimation;
+        window.showFrame = showFrame;
+        
+        loadImages();
+    </script>
+</body>
+</html>

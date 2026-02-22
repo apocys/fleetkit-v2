@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Office Design 2 - Pixel Perfect Reproduction</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #2a2a2a;
+            font-family: 'Courier New', monospace;
+            color: white;
+        }
+        .container {
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+        }
+        canvas {
+            background: transparent;
+            image-rendering: pixelated;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: crisp-edges;
+            border: 2px solid #555;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        }
+        .info-panel {
+            min-width: 250px;
+        }
+        .controls {
+            margin-bottom: 15px;
+        }
+        button {
+            background: #444;
+            color: white;
+            border: 1px solid #666;
+            padding: 8px 12px;
+            margin: 2px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 11px;
+        }
+        button:hover {
+            background: #555;
+        }
+        button.active {
+            background: #0a84ff;
+            border-color: #0a84ff;
+        }
+        .stats {
+            font-size: 11px;
+            line-height: 1.4;
+        }
+        .stat-line {
+            margin: 3px 0;
+        }
+        h1 {
+            margin: 0 0 15px 0;
+            font-size: 24px;
+        }
+        .reference {
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid #555;
+            background: #333;
+        }
+        .reference img {
+            max-width: 100%;
+            image-rendering: pixelated;
+            border: 1px solid #666;
+        }
+    </style>
+</head>
+<body>
+    <h1>Office Design 2 - Pixel Perfect</h1>
+    <div class="container">
+        <canvas id="canvas" width="512" height="544"></canvas>
+        <div class="info-panel">
+            <div class="controls">
+                <button id="toggleAnim" onclick="toggleAnimation()">⏸️ Pause</button><br>
+                <button onclick="showFrame(0)">Frame 0</button>
+                <button onclick="showFrame(1)">Frame 1</button>
+                <button onclick="showFrame(2)">Frame 2</button><br>
+                <button onclick="showFrame(3)">Frame 3</button>
+                <button onclick="showFrame(4)">Frame 4</button>
+                <button onclick="showFrame(5)">Frame 5</button>
+            </div>
+            <div class="stats">
+                <div class="stat-line"><strong>Canvas:</strong> 512×544 pixels</div>
+                <div class="stat-line"><strong>Grid:</strong> 16×17 tiles @ 32px</div>
+                <div class="stat-line"><strong>Style:</strong> Classic pixel art</div>
+                <div class="stat-line"><strong>Animation:</strong> 6 frames @ 150ms</div>
+                <div class="stat-line">&nbsp;</div>
+                <div class="stat-line"><strong>Status:</strong> <span id="status">Loading...</span></div>
+            </div>
+            
+            <div class="reference">
+                <h3>Reference Comparison</h3>
+                <img src="../office-modern/ref/design2_frame001.png" alt="Original Design 2" title="Original Office Design 2">
+                <div style="font-size: 10px; margin-top: 5px; color: #aaa;">Original reference image</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        ctx.imageSmoothingEnabled = false;
+        
+        let currentFrame = 0;
+        let isAnimating = true;
+        let lastFrameTime = 0;
+        const FRAME_DURATION = 150;
+        
+        // Pixel-perfect office scene data based on the original design
+        // Using classic pixel art colors and simple tile patterns
+        const sceneData = {
+            width: 16,
+            height: 17,
+            tileSize: 32,
+            // Basic tile palette for classic pixel office look
+            palette: {
+                // Floor tiles
+                floor_light: '#d4c4a0',
+                floor_dark: '#b8a888',
+                // Wall tiles
+                wall_light: '#9a8a6a',
+                wall_dark: '#7a6a4a',
+                // Office furniture
+                desk_brown: '#8b6f47',
+                desk_light: '#a68659',
+                chair_red: '#a85439',
+                plant_green: '#4a7c59',
+                // Animated elements
+                screen_blue: '#4682b4',
+                screen_green: '#5f8a5f'
+            }
+        };
+        
+        // Simplified tile grid for pixel-perfect reproduction
+        // This represents the classic office layout from the reference
+        const tileGrid = [
+            // Row 0 - Top wall
+            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+            // Row 1 - Upper office area
+            [1,0,0,0,2,2,0,0,0,2,2,0,0,0,0,1],
+            [1,0,3,0,2,2,0,4,0,2,2,0,3,0,0,1],
+            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+            // Row 4 - Desk area
+            [1,0,2,2,0,0,2,2,0,0,2,2,0,0,0,1],
+            [1,0,2,2,0,0,2,2,0,0,2,2,0,0,0,1],
+            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+            // Row 7 - Middle corridor
+            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+            [1,0,2,2,0,0,2,2,0,0,2,2,0,0,0,1],
+            [1,0,2,2,0,0,2,2,0,0,2,2,0,0,0,1],
+            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+            // Row 11 - Lower office area
+            [1,0,3,0,0,0,0,4,0,0,0,0,3,0,0,1],
+            [1,0,0,0,2,2,0,0,0,2,2,0,0,0,0,1],
+            [1,0,0,0,2,2,0,0,0,2,2,0,0,0,0,1],
+            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+            // Row 15-16 - Bottom area
+            [1,0,0,0,0,0,0,5,0,0,0,0,0,0,0,1],
+            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+        ];
+        
+        // Animated tiles (screens, plants, etc.)
+        const animatedTiles = [
+            {x: 7, y: 15, frames: [5, 6]}, // Central screen/monitor
+            {x: 3, y: 2, frames: [3, 7]},  // Plant animation
+            {x: 12, y: 2, frames: [3, 7]}, // Plant animation
+            {x: 7, y: 7, frames: [4, 8]}   // Corridor element
+        ];
+        
+        const drawPixelTile = (tileType, x, y, frame = 0) => {
+            const colors = sceneData.palette;
+            const size = sceneData.tileSize;
+            
+            ctx.fillStyle = getTileColor(tileType, frame);
+            ctx.fillRect(x, y, size, size);
+            
+            // Add simple details based on tile type
+            switch(tileType) {
+                case 1: // Wall
+                    ctx.fillStyle = colors.wall_dark;
+                    ctx.fillRect(x + 2, y + 2, size - 4, size - 4);
+                    break;
+                case 2: // Desk
+                    ctx.fillStyle = colors.desk_light;
+                    ctx.fillRect(x + 4, y + 4, size - 8, size - 8);
+                    break;
+                case 3: // Plant
+                    ctx.fillStyle = frame % 2 === 0 ? colors.plant_green : '#5a8c69';
+                    for(let i = 0; i < 3; i++) {
+                        ctx.fillRect(x + 8 + i*6, y + 6, 4, size - 12);
+                    }
+                    break;
+                case 4: // Chair
+                    ctx.fillStyle = colors.chair_red;
+                    ctx.fillRect(x + 6, y + 8, size - 12, size - 16);
+                    ctx.fillRect(x + 8, y + 4, size - 16, 8);
+                    break;
+                case 5: // Screen (animated)
+                    ctx.fillStyle = frame % 2 === 0 ? colors.screen_blue : colors.screen_green;
+                    ctx.fillRect(x + 4, y + 6, size - 8, size - 12);
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fillRect(x + 6, y + 8, size - 12, 4);
+                    break;
+                case 6: // Screen alt frame
+                    ctx.fillStyle = colors.screen_green;
+                    ctx.fillRect(x + 4, y + 6, size - 8, size - 12);
+                    break;
+                case 7: // Plant alt frame
+                    ctx.fillStyle = '#6a9c79';
+                    for(let i = 0; i < 3; i++) {
+                        ctx.fillRect(x + 6 + i*7, y + 4, 5, size - 10);
+                    }
+                    break;
+                case 8: // Corridor element alt
+                    ctx.fillStyle = '#dddddd';
+                    ctx.fillRect(x + 12, y + 12, 8, 8);
+                    break;
+                default: // Floor
+                    ctx.fillStyle = (x/size + y/size) % 2 === 0 ? colors.floor_light : colors.floor_dark;
+                    ctx.fillRect(x, y, size, size);
+                    break;
+            }
+        };
+        
+        const getTileColor = (tileType, frame) => {
+            const colors = sceneData.palette;
+            switch(tileType) {
+                case 1: return colors.wall_light;
+                case 2: return colors.desk_brown;
+                case 3: case 7: return colors.floor_light; // Plant base
+                case 4: return colors.floor_light; // Chair base
+                case 5: case 6: return colors.floor_dark; // Screen base
+                case 8: return colors.floor_light;
+                default: return colors.floor_light;
+            }
+        };
+        
+        const render = () => {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw base grid
+            for (let y = 0; y < sceneData.height; y++) {
+                for (let x = 0; x < sceneData.width; x++) {
+                    const tileType = tileGrid[y][x];
+                    const pixelX = x * sceneData.tileSize;
+                    const pixelY = y * sceneData.tileSize;
+                    
+                    drawPixelTile(tileType, pixelX, pixelY, currentFrame);
+                }
+            }
+            
+            // Draw animated elements
+            animatedTiles.forEach(animTile => {
+                const frameIndex = currentFrame % animTile.frames.length;
+                const tileType = animTile.frames[frameIndex];
+                const pixelX = animTile.x * sceneData.tileSize;
+                const pixelY = animTile.y * sceneData.tileSize;
+                
+                drawPixelTile(tileType, pixelX, pixelY, currentFrame);
+            });
+            
+            document.getElementById('status').textContent = `Rendering frame ${currentFrame}`;
+        };
+        
+        const animate = (time = 0) => {
+            if (isAnimating && time - lastFrameTime >= FRAME_DURATION) {
+                currentFrame = (currentFrame + 1) % 6;
+                lastFrameTime = time;
+                render();
+            }
+            requestAnimationFrame(animate);
+        };
+        
+        const toggleAnimation = () => {
+            isAnimating = !isAnimating;
+            document.getElementById('toggleAnim').textContent = isAnimating ? '⏸️ Pause' : '▶️ Play';
+        };
+        
+        const showFrame = (frame) => {
+            currentFrame = frame;
+            isAnimating = false;
+            document.getElementById('toggleAnim').textContent = '▶️ Play';
+            render();
+        };
+        
+        window.toggleAnimation = toggleAnimation;
+        window.showFrame = showFrame;
+        
+        // Initialize
+        document.getElementById('status').textContent = 'Ready';
+        render();
+        animate();
+    </script>
+</body>
+</html>

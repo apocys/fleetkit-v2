@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🏘️ Village SpawnKit</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#1a1a2e;overflow:hidden;font-family:'Courier New',monospace}
+canvas{display:block;image-rendering:pixelated;image-rendering:-moz-crisp-edges;image-rendering:crisp-edges;cursor:default}
+#loading{position:fixed;top:0;left:0;width:100%;height:100%;background:#1a1a2e;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;color:#c8b06b;font-size:14px;transition:opacity .6s}
+#loading h2{font-size:20px;margin-bottom:12px}
+#loading .bar{width:200px;height:6px;background:#333;border-radius:3px;overflow:hidden;margin-top:8px}
+#loading .bar-fill{height:100%;background:#c8b06b;width:0%;transition:width .3s}
+.hidden{opacity:0;pointer-events:none}
+#tooltip{position:fixed;background:rgba(20,15,10,.95);border:2px solid #8B7D6B;border-radius:6px;padding:10px 14px;color:#fff;font-size:11px;line-height:1.4;max-width:220px;z-index:200;display:none;pointer-events:none}
+#tooltip h3{color:#FFD700;margin-bottom:4px;font-size:13px}
+#tooltip .role{color:#87CEEB;margin-bottom:3px}
+#tooltip .task{color:#90EE90;margin-bottom:3px}
+#tooltip .status{color:#FFB6C1}
+#hud{position:fixed;top:0;left:0;width:100%;pointer-events:none;z-index:100}
+.hud-title{position:absolute;top:8px;left:12px;color:#FFD700;font-size:14px;font-weight:bold;text-shadow:1px 1px 2px #000}
+.hud-agents{position:absolute;top:8px;right:12px;color:#fff;font-size:11px;background:rgba(34,100,34,.85);padding:3px 10px;border-radius:10px}
+.hud-status{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);color:#ddd;font-size:10px;display:flex;gap:12px;text-shadow:1px 1px 1px #000}
+</style>
+</head>
+<body>
+
+<div id="loading">
+  <h2>🏘️ Village SpawnKit</h2>
+  <p id="load-text">Chargement des sprites...</p>
+  <div class="bar"><div class="bar-fill" id="bar-fill"></div></div>
+</div>
+
+<canvas id="c"></canvas>
+
+<div id="hud">
+  <div class="hud-title">🏘️ Village SpawnKit</div>
+  <div class="hud-agents">👥 6 agents actifs</div>
+  <div class="hud-status">
+    <span id="hud-time">--:--</span>
+    <span>•</span>
+    <span id="hud-tasks">12 tâches actives</span>
+  </div>
+</div>
+<div id="tooltip"></div>
+
+<script>
+// ========== CONFIG ==========
+const W = 640, H = 400; // native resolution (upscaled to viewport)
+const TILE = 16; // base tile size in world
+const COLS = Math.ceil(W/TILE)+2, ROWS = Math.ceil(H/TILE)+2;
+
+// Sprite base paths
+const PC = '../lib/sprites/pixel-crawler/Pixel Crawler - Free Pack/';
+const VP = '../lib/sprites/village-props/Texture/';
+
+// ========== SPRITE MANIFEST ==========
+const SPRITES = {};
+const SPRITE_LIST = [
+  // Ground & tiles
+  ['floorTiles',    PC+'Environment/Tilesets/Floors_Tiles.png'],
+  ['waterTiles',    PC+'Environment/Tilesets/Water_tiles.png'],
+  ['vpGround',      VP+'TX Tileset Ground.png'],
+  ['vpProps',        VP+'TX Village Props.png'],
+  ['vpFlame',        VP+'TX FX Flame.png'],
+  ['vpTorchFlame',   VP+'TX FX Torch Flame.png'],
+  // Vegetation & props
+  ['vegetation',    PC+'Environment/Props/Static/Vegetation.png'],
+  ['rocks',         PC+'Environment/Props/Static/Rocks.png'],
+  ['farm',          PC+'Environment/Props/Static/Farm.png'],
+  ['tree2s2',       PC+'Environment/Props/Static/Trees/Model_02/Size_02.png'],
+  ['tree3s2',       PC+'Environment/Props/Static/Trees/Model_03/Size_02.png'],
+  // Stations
+  ['bonfire',       PC+'Environment/Structures/Stations/Bonfire/Bonfire_01-Sheet.png'],
+  ['anvil',         PC+'Environment/Structures/Stations/Anvil/Anvil.png'],
+  ['workbench',     PC+'Environment/Structures/Stations/Workbench/Workbench.png'],
+  ['sawmillBase',   PC+'Environment/Structures/Stations/Sawmill/Base.png'],
+  ['cookStation',   PC+'Environment/Structures/Stations/Cooking Station/Cooking Station.png'],
+  ['furnace',       PC+'Environment/Structures/Stations/Furnace/Furnace.png'],
+  // Characters - directions: Down, Side, Up
+  ['idleDown',      PC+'Entities/Characters/Body_A/Animations/Idle_Base/Idle_Down-Sheet.png'],
+  ['idleSide',      PC+'Entities/Characters/Body_A/Animations/Idle_Base/Idle_Side-Sheet.png'],
+  ['walkDown',      PC+'Entities/Characters/Body_A/Animations/Walk_Base/Walk_Down-Sheet.png'],
+  ['walkSide',      PC+'Entities/Characters/Body_A/Animations/Walk_Base/Walk_Side-Sheet.png'],
+  ['runDown',       PC+'Entities/Characters/Body_A/Animations/Run_Base/Run_Down-Sheet.png'],
+  ['runSide',       PC+'Entities/Characters/Body_A/Animations/Run_Base/Run_Side-Sheet.png'],
+  ['crushDown',     PC+'Entities/Characters/Body_A/Animations/Crush_Base/Crush_Down-Sheet.png'],
+  ['crushSide',     PC+'Entities/Characters/Body_A/Animations/Crush_Base/Crush_Side-Sheet.png'],
+  ['fishDown',      PC+'Entities/Characters/Body_A/Animations/Fishing_Base/Fishing_Down-Sheet.png'],
+  ['fishSide',      PC+'Entities/Characters/Body_A/Animations/Fishing_Base/Fishing_Side-Sheet.png'],
+  ['waterDown',     PC+'Entities/Characters/Body_A/Animations/Watering_Base/Watering_Down-Sheet.png'],
+  ['waterSide',     PC+'Entities/Characters/Body_A/Animations/Watering_Base/Watering_Side-Sheet.png'],
+  ['collectDown',   PC+'Entities/Characters/Body_A/Animations/Collect_Base/Collect_Down-Sheet.png'],
+  ['collectSide',   PC+'Entities/Characters/Body_A/Animations/Collect_Base/Collect_Side-Sheet.png'],
+  ['carryDown',     PC+'Entities/Characters/Body_A/Animations/Carry_Idle/Carry_Idle_Down-Sheet.png'],
+  ['carrySide',     PC+'Entities/Characters/Body_A/Animations/Carry_Idle/Carry_Idle_Side-Sheet.png'],
+];
+
+// ========== AGENT DEFINITIONS ==========
+// Sycopa's spec: ApoMac=gold/carry_idle, Forge=purple/crush, Hunter=red/run, 
+// Atlas=teal/collect, Echo=pink/watering, Sentinel=silver/fishing
+const AGENT_DEFS = [
+  { id:'apomac',   name:'ApoMac',   role:'CEO',     color:'#FFD700', hue:45,  
+    anim:'carry', dir:'down', task:'Coordination stratégique', status:'Dirige l\'équipe',
+    homeX:18, homeY:12, roamRadius:3, stationIdx:0 },
+  { id:'forge',    name:'Forge',    role:'CTO',     color:'#8A2BE2', hue:270,
+    anim:'crush', dir:'side', task:'Infra & backend', status:'Optimise les systèmes',
+    homeX:7,  homeY:16, roamRadius:2, stationIdx:1 },
+  { id:'hunter',   name:'Hunter',   role:'CRO',     color:'#DC143C', hue:0,
+    anim:'run', dir:'side', task:'Acquisition clients', status:'Prospecte le marché',
+    homeX:30, homeY:8,  roamRadius:6, stationIdx:2 },
+  { id:'atlas',    name:'Atlas',    role:'COO',     color:'#20B2AA', hue:175,
+    anim:'collect', dir:'down', task:'Optimisation ops', status:'Gère les ressources',
+    homeX:32, homeY:18, roamRadius:3, stationIdx:3 },
+  { id:'echo',     name:'Echo',     role:'CMO',     color:'#FF69B4', hue:330,
+    anim:'water', dir:'down', task:'Croissance communauté', status:'Cultive la marque',
+    homeX:12, homeY:7,  roamRadius:2, stationIdx:4 },
+  { id:'sentinel', name:'Sentinel', role:'Auditeur', color:'#C0C0C0', hue:0,
+    anim:'fish', dir:'side', task:'Audit qualité', status:'Surveille l\'intégrité',
+    homeX:28, homeY:20, roamRadius:2, stationIdx:5 },
+];
+
+// ========== WORLD MAP (tile-based) ==========
+// Ground types: 0=grass, 1=dirt_path, 2=water, 3=stone, 4=dark_grass, 5=flowers
+// We'll use a procedural map with hand-placed features
+
+// Village props placement (from TX Village Props - 32x32 tiles on 1024x1024 sheet)
+// The sheet has houses, fences, wells, market stalls etc.
+// Key items (sx,sy on 32px grid): 
+//   House1: row0 col0-3 (128x96)
+//   Well: row3 col10 (32x32)  
+//   Fence posts: row8 various
+//   Market stall: row4 col8-10 (96x64)
+//   Barrel: row6 col4
+//   Crate: row6 col5
+//   Sign: row5 col8
+//   Lamp post: row5 col12
+//   Flowers: row7 col0-6
+
+// ========== CANVAS SETUP ==========
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+let scale = 1;
+let mouseX = 0, mouseY = 0; // world coords
+
+function resize() {
+  const sw = window.innerWidth, sh = window.innerHeight;
+  scale = Math.min(sw/W, sh/H);
+  canvas.width = W;
+  canvas.height = H;
+  canvas.style.width = (W*scale)+'px';
+  canvas.style.height = (H*scale)+'px';
+  canvas.style.position = 'absolute';
+  canvas.style.left = ((sw - W*scale)/2)+'px';
+  canvas.style.top = ((sh - H*scale)/2)+'px';
+}
+resize();
+window.addEventListener('resize', resize);
+
+// ========== LOADING ==========
+let loaded = 0;
+const total = SPRITE_LIST.length;
+const barFill = document.getElementById('bar-fill');
+const loadText = document.getElementById('load-text');
+
+function loadSprites() {
+  return new Promise(resolve => {
+    SPRITE_LIST.forEach(([key, path]) => {
+      const img = new Image();
+      img.onload = () => {
+        SPRITES[key] = img;
+        loaded++;
+        barFill.style.width = (loaded/total*100)+'%';
+        loadText.textContent = `${loaded}/${total} sprites...`;
+        if (loaded === total) resolve();
+      };
+      img.onerror = () => {
+        console.warn('Failed to load:', key, path);
+        // Create placeholder
+        const c = document.createElement('canvas');
+        c.width = 64; c.height = 64;
+        const cx = c.getContext('2d');
+        cx.fillStyle = '#FF00FF';
+        cx.fillRect(0,0,64,64);
+        cx.fillStyle = '#000';
+        cx.font = '8px monospace';
+        cx.fillText(key.substring(0,8), 4, 32);
+        SPRITES[key] = c;
+        loaded++;
+        barFill.style.width = (loaded/total*100)+'%';
+        if (loaded === total) resolve();
+      };
+      img.src = path;
+    });
+  });
+}
+
+// ========== COLOR TINTING ==========
+// Create per-agent tinted character sprites using globalCompositeOperation
+const tintedSprites = {};
+
+function createTintedSprite(sourceImg, hue, saturation=100) {
+  const c = document.createElement('canvas');
+  c.width = sourceImg.width;
+  c.height = sourceImg.height;
+  const cx = c.getContext('2d');
+  // Draw original
+  cx.drawImage(sourceImg, 0, 0);
+  // Apply color tint using source-atop
+  cx.globalCompositeOperation = 'source-atop';
+  cx.fillStyle = `hsla(${hue}, ${saturation}%, 50%, 0.4)`;
+  cx.fillRect(0, 0, c.width, c.height);
+  cx.globalCompositeOperation = 'source-over';
+  return c;
+}
+
+function buildTintedSprites() {
+  const animKeys = ['idle','walk','run','crush','fish','water','collect','carry'];
+  const dirKeys = ['Down','Side'];
+  
+  AGENT_DEFS.forEach(agent => {
+    tintedSprites[agent.id] = {};
+    animKeys.forEach(anim => {
+      tintedSprites[agent.id][anim] = {};
+      dirKeys.forEach(dir => {
+        const spriteKey = getSpriteKey(anim, dir);
+        if (SPRITES[spriteKey]) {
+          tintedSprites[agent.id][anim][dir.toLowerCase()] = 
+            createTintedSprite(SPRITES[spriteKey], agent.hue);
+        }
+      });
+    });
+  });
+}
+
+function getSpriteKey(anim, dir) {
+  const map = {
+    'idle': 'idle', 'walk': 'walk', 'run': 'run', 'crush': 'crush',
+    'fish': 'fish', 'water': 'water', 'collect': 'collect', 'carry': 'carry'
+  };
+  return (map[anim] || 'idle') + dir;
+}
+
+// ========== WORLD GENERATION ==========
+const groundMap = []; // ROWS x COLS of ground tile indices
+const decorations = []; // {type, x, y, ...}
+const stations = []; // workstations
+const worldBuildings = []; // houses, structures from Village Props
+
+function generateWorld() {
+  // Fill ground map with grass varieties
+  for (let r = 0; r < ROWS+5; r++) {
+    groundMap[r] = [];
+    for (let c = 0; c < COLS+5; c++) {
+      // Default: random grass tile from Floors_Tiles
+      // Floors_Tiles.png is 400x416, with 16x16 tiles = 25 cols x 26 rows
+      // Top rows: various floor types. Row 0: stone, Row 1-2: grass, Row 3-4: dirt
+      const rng = Math.random();
+      if (rng < 0.6) groundMap[r][c] = { type:'grass', variant: Math.floor(Math.random()*4) };
+      else if (rng < 0.8) groundMap[r][c] = { type:'grass', variant: 4+Math.floor(Math.random()*3) };
+      else groundMap[r][c] = { type:'grass', variant: Math.floor(Math.random()*7) };
+    }
+  }
+  
+  // Paths (dirt) - cross pattern through village center
+  const centerX = 20, centerY = 13;
+  // Horizontal main road
+  for (let c = 0; c < COLS+5; c++) {
+    for (let dr = -1; dr <= 0; dr++) {
+      const r = centerY + dr;
+      if (r >= 0 && r < ROWS+5) groundMap[r][c] = { type:'path', variant: Math.floor(Math.random()*3) };
+    }
+  }
+  // Vertical main road
+  for (let r = 0; r < ROWS+5; r++) {
+    for (let dc = -1; dc <= 0; dc++) {
+      const c = centerX + dc;
+      if (c >= 0 && c < COLS+5) groundMap[r][c] = { type:'path', variant: Math.floor(Math.random()*3) };
+    }
+  }
+  // Branch paths to stations
+  // Path to forge (left side)
+  for (let c = 5; c < centerX-1; c++) {
+    groundMap[16][c] = { type:'path', variant: Math.floor(Math.random()*3) };
+  }
+  // Path to garden (top-left)
+  for (let r = 6; r < centerY-1; r++) {
+    groundMap[r][12] = { type:'path', variant: Math.floor(Math.random()*3) };
+  }
+  // Path to fishing (bottom-right)
+  for (let r = centerY+1; r < 22; r++) {
+    groundMap[r][28] = { type:'path', variant: Math.floor(Math.random()*3) };
+  }
+  
+  // Water area (bottom-right pond/river)
+  for (let r = 19; r < 24; r++) {
+    for (let c = 25; c < 35; c++) {
+      const dx = c - 30, dy = r - 21;
+      if (dx*dx + dy*dy*2 < 25) {
+        groundMap[r][c] = { type:'water', variant: Math.floor(Math.random()*2) };
+      }
+    }
+  }
+  // Small stream connecting to pond
+  for (let c = 30; c < 38; c++) {
+    groundMap[20][c] = { type:'water', variant: 0 };
+    groundMap[21][c] = { type:'water', variant: 1 };
+  }
+  
+  // === STATIONS ===
+  // Bonfire (village center/square)
+  stations.push({ type:'bonfire', x:centerX*TILE-8, y:centerY*TILE-24, 
+    label:'Place du village', desc:'Feu de camp central' });
+  // Anvil (Forge's station)
+  stations.push({ type:'anvil', x:7*TILE, y:16*TILE-16,
+    label:'Forge Tech', desc:'Station de Forge — CTO' });
+  // Market stall (Hunter's station)
+  stations.push({ type:'market', x:30*TILE, y:8*TILE,
+    label:'Marché', desc:'Étal de Hunter — CRO' });
+  // Sawmill (Atlas's station)
+  stations.push({ type:'sawmill', x:32*TILE, y:17*TILE,
+    label:'Scierie', desc:'Station d\'Atlas — COO' });
+  // Workbench / garden station (Echo)
+  stations.push({ type:'garden', x:12*TILE, y:6*TILE,
+    label:'Jardin communautaire', desc:'Station d\'Echo — CMO' });
+  // Furnace (Sentinel's station, by the water)
+  stations.push({ type:'furnace', x:27*TILE, y:18*TILE,
+    label:'Tour de garde', desc:'Station de Sentinel — Auditeur' });
+  
+  // === BUILDINGS (from Village Props sheet) ===
+  // Houses around the village
+  worldBuildings.push({ type:'house1', x:14*TILE, y:3*TILE, w:4, h:3 });
+  worldBuildings.push({ type:'house2', x:22*TILE, y:3*TILE, w:4, h:3 });
+  worldBuildings.push({ type:'house1', x:4*TILE,  y:10*TILE, w:4, h:3 });
+  worldBuildings.push({ type:'house2', x:33*TILE, y:10*TILE, w:4, h:3 });
+  worldBuildings.push({ type:'house1', x:8*TILE,  y:20*TILE, w:4, h:3 });
+  worldBuildings.push({ type:'house2', x:16*TILE, y:19*TILE, w:4, h:3 });
+  
+  // === DECORATIONS ===
+  // Trees scattered around edges and between buildings
+  const treePositions = [
+    [1,2],[3,4],[1,8],[2,15],[1,22],[0,18],
+    [37,2],[36,6],[38,14],[37,20],[36,24],
+    [6,1],[10,1],[16,0],[24,1],[30,1],
+    [8,24],[14,24],[22,24],[34,23],
+    // Interior trees for atmosphere
+    [10,10],[26,5],[34,15],[5,18],[15,15],
+    [28,14],[8,5],[24,18]
+  ];
+  treePositions.forEach(([tx,ty]) => {
+    decorations.push({ 
+      type: Math.random()>0.5 ? 'tree2' : 'tree3', 
+      x: tx*TILE, y: ty*TILE, 
+      sway: Math.random()*Math.PI*2 
+    });
+  });
+  
+  // Flowers & bushes
+  for (let i = 0; i < 45; i++) {
+    const fx = Math.floor(Math.random()*38)*TILE + Math.random()*8;
+    const fy = Math.floor(Math.random()*24)*TILE + Math.random()*8;
+    // Don't place on paths or water
+    const gc = Math.floor(fx/TILE), gr = Math.floor(fy/TILE);
+    if (groundMap[gr] && groundMap[gr][gc] && groundMap[gr][gc].type === 'grass') {
+      decorations.push({ type:'flower', x:fx, y:fy, variant: Math.floor(Math.random()*6) });
+    }
+  }
+  
+  // Rocks
+  const rockPositions = [[5,13],[33,6],[24,22],[2,20],[36,18],[18,8]];
+  rockPositions.forEach(([rx,ry]) => {
+    decorations.push({ type:'rock', x:rx*TILE, y:ry*TILE, variant: Math.floor(Math.random()*4) });
+  });
+  
+  // Fences along paths near buildings
+  for (let c = 4; c < 8; c++) {
+    decorations.push({ type:'fence', x:c*TILE, y:9*TILE, variant:0 });
+  }
+  for (let c = 33; c < 37; c++) {
+    decorations.push({ type:'fence', x:c*TILE, y:9*TILE, variant:0 });
+  }
+  // Garden fences
+  for (let c = 10; c < 15; c++) {
+    decorations.push({ type:'fence', x:c*TILE, y:5*TILE, variant:0 });
+    decorations.push({ type:'fence', x:c*TILE, y:9*TILE, variant:0 });
+  }
+}
+
+// ========== AGENTS STATE ==========
+const agents = [];
+
+function initAgents() {
+  AGENT_DEFS.forEach(def => {
+    const a = {
+      ...def,
+      x: def.homeX * TILE,
+      y: def.homeY * TILE,
+      frame: 0,
+      animTimer: 0,
+      // Walking state
+      walking: def.anim === 'run',
+      walkTarget: null,
+      walkTimer: 0,
+      facingLeft: false,
+    };
+    // Roaming agents get walk targets
+    if (a.walking) {
+      a.walkTarget = getRandomTarget(a);
+    }
+    agents.push(a);
+  });
+}
+
+function getRandomTarget(agent) {
+  const def = AGENT_DEFS.find(d => d.id === agent.id);
+  const angle = Math.random() * Math.PI * 2;
+  const dist = Math.random() * def.roamRadius * TILE;
+  return {
+    x: def.homeX * TILE + Math.cos(angle) * dist,
+    y: def.homeY * TILE + Math.sin(angle) * dist
+  };
+}
+
+// ========== ANIMATION ==========
+// Character sheets: 64x64 frames
+// Idle: 256x64 = 4 frames, Walk: 384x64 = 6 frames, 
+// Run: 384x64 = 6 frames, Crush/Fish/Water/Collect: 512x64 = 8 frames, 
+// Carry: 256x64 = 4 frames
+const ANIM_FRAMES = { idle:4, walk:6, run:6, crush:8, fish:8, water:8, collect:8, carry:4 };
+const CHAR_SIZE = 64; // each frame is 64x64
+const ANIM_FPS = 6; // character animation speed
+
+// ========== PARTICLES ==========
+const particles = [];
+
+function spawnParticle(x, y, type) {
+  particles.push({
+    x, y,
+    vx: (Math.random()-0.5) * (type==='spark' ? 1 : 0.3),
+    vy: type==='spark' ? -1.5-Math.random() : -0.3-Math.random()*0.5,
+    life: 1.0,
+    type,
+    size: type==='spark' ? 1+Math.random()*2 : 2+Math.random()*3,
+    color: type==='spark' ? `hsl(${20+Math.random()*40},100%,${50+Math.random()*20}%)` : 
+           type==='leaf' ? `hsl(${80+Math.random()*40},60%,40%)` : '#fff'
+  });
+}
+
+// ========== RENDERING ==========
+let gameTime = 0;
+
+function drawGround() {
+  // Draw ground tiles using Floors_Tiles spritesheet
+  // Sheet is 400x416 = 25 cols × 26 rows of 16×16 tiles
+  // Row 0-1: stone/dungeon tiles
+  // Row 2-5: various grass tiles (green)
+  // Row 6-8: dirt tiles
+  // We use vpGround (Village Props ground 512×512 = 16 cols × 16 rows of 32×32 tiles)
+  // Row 0: grass variants, Row 1: more grass, Row 4-5: dirt paths, Row 8-9: stone
+  
+  const gt = SPRITES.vpGround;
+  const ft = SPRITES.floorTiles;
+  
+  for (let r = 0; r < ROWS+2; r++) {
+    for (let c = 0; c < COLS+2; c++) {
+      const tile = (groundMap[r] && groundMap[r][c]) || { type:'grass', variant:0 };
+      const dx = c * TILE, dy = r * TILE;
+      
+      if (tile.type === 'grass') {
+        // Use vpGround grass tiles (32x32 on 512x512 sheet)
+        // Top-left area has grass variants
+        const gv = tile.variant % 4;
+        const sx = gv * 32, sy = 0;
+        ctx.drawImage(gt, sx, sy, 32, 32, dx-8, dy-8, 32, 32);
+      } else if (tile.type === 'path') {
+        // Dirt path from vpGround
+        const pv = tile.variant % 3;
+        const sx = pv * 32, sy = 4 * 32; // row 4 has dirt
+        ctx.drawImage(gt, sx, sy, 32, 32, dx-8, dy-8, 32, 32);
+      } else if (tile.type === 'water') {
+        // Water tiles - animated shimmer
+        const wt = SPRITES.waterTiles;
+        // Water_tiles.png is 400x400 = 25 cols × 25 rows of 16×16
+        // Use the animated water look
+        const wframe = Math.floor(gameTime * 2) % 4;
+        const sx = (tile.variant * 4 + wframe) * 16;
+        ctx.drawImage(wt, sx % 400, Math.floor(sx/400)*16, 16, 16, dx, dy, TILE, TILE);
+      }
+    }
+  }
+}
+
+function drawWaterOverlay() {
+  // Add water shimmer effect on top
+  const t = gameTime;
+  for (let r = 0; r < ROWS+2; r++) {
+    for (let c = 0; c < COLS+2; c++) {
+      const tile = (groundMap[r] && groundMap[r][c]);
+      if (tile && tile.type === 'water') {
+        const dx = c * TILE, dy = r * TILE;
+        // Animated water using Water_tiles.png
+        const wt = SPRITES.waterTiles;
+        // First row has basic water tiles
+        const frame = Math.floor(t*3 + c*0.5 + r*0.3) % 4;
+        // Tiles at row 0, various cols
+        ctx.drawImage(wt, frame*16, 0, 16, 16, dx, dy, TILE, TILE);
+        // Shimmer overlay
+        const alpha = 0.15 + 0.1*Math.sin(t*3 + c + r*0.7);
+        ctx.fillStyle = `rgba(100,180,255,${alpha})`;
+        ctx.fillRect(dx, dy, TILE, TILE);
+      }
+    }
+  }
+}
+
+function drawBuildings() {
+  // Draw buildings from Village Props sheet (1024x1024, 32×32 grid)
+  const vp = SPRITES.vpProps;
+  
+  worldBuildings.forEach(b => {
+    // Houses from the village props sheet
+    // The sheet top-left area has house components
+    // We'll draw multi-tile buildings
+    if (b.type === 'house1') {
+      // House type 1: cozy cottage
+      // Use tiles from Village Props — top area has roof and wall tiles
+      // Approximate: roof at row 0-1, walls at row 2, door/windows at row 3
+      // Draw a 4x3 tile house (128x96 pixels)
+      
+      // Shadow
+      ctx.fillStyle = 'rgba(0,0,0,0.2)';
+      ctx.fillRect(b.x+4, b.y + b.h*32 - 8, b.w*32, 12);
+      
+      // Use the village props spritesheet directly
+      // Row 0, cols 0-3: roof tiles
+      ctx.drawImage(vp, 0, 0, 128, 96, b.x, b.y, 128, 96);
+    } else if (b.type === 'house2') {
+      ctx.fillStyle = 'rgba(0,0,0,0.2)';
+      ctx.fillRect(b.x+4, b.y + b.h*32 - 8, b.w*32, 12);
+      // Different section of the sheet
+      ctx.drawImage(vp, 128, 0, 128, 96, b.x, b.y, 128, 96);
+    }
+  });
+}
+
+function drawStations() {
+  stations.forEach((s, i) => {
+    switch(s.type) {
+      case 'bonfire': {
+        // Bonfire_01-Sheet: 128x32 = 4 frames of 32×32
+        const bf = SPRITES.bonfire;
+        const frame = Math.floor(gameTime * 6) % 4;
+        ctx.drawImage(bf, frame*32, 0, 32, 32, s.x, s.y, 32, 32);
+        // Sparks
+        if (Math.random() < 0.4) {
+          spawnParticle(s.x+16+Math.random()*8-4, s.y+4, 'spark');
+        }
+        // Light glow
+        const glow = ctx.createRadialGradient(s.x+16, s.y+16, 4, s.x+16, s.y+16, 48);
+        glow.addColorStop(0, `rgba(255,120,20,${0.15+0.05*Math.sin(gameTime*8)})`);
+        glow.addColorStop(1, 'rgba(255,120,20,0)');
+        ctx.fillStyle = glow;
+        ctx.fillRect(s.x-32, s.y-32, 96, 96);
+        break;
+      }
+      case 'anvil': {
+        // Anvil.png is 272x160 — multi-level sprite atlas
+        // Draw just the base anvil portion (top-left 32x32 area)
+        const av = SPRITES.anvil;
+        // The anvil image has levels; just draw top-left as icon
+        ctx.drawImage(av, 0, 0, 64, 48, s.x-8, s.y-8, 48, 36);
+        break;
+      }
+      case 'market': {
+        // Use farm.png props for market stall
+        const fm = SPRITES.farm;
+        // Farm sheet has stalls, hay bales etc at various positions
+        // Draw a section as market stall
+        ctx.drawImage(fm, 0, 0, 80, 64, s.x, s.y, 80, 64);
+        break;
+      }
+      case 'sawmill': {
+        // Sawmill Base.png: 256x144
+        const sm = SPRITES.sawmillBase;
+        ctx.drawImage(sm, 0, 0, 128, 72, s.x-16, s.y-8, 64, 36);
+        break;
+      }
+      case 'garden': {
+        // Use vegetation for garden plot
+        const veg = SPRITES.vegetation;
+        // Draw a patch of vegetation (flowers, small plants)
+        ctx.drawImage(veg, 0, 0, 96, 48, s.x-16, s.y, 96, 48);
+        // Garden bed outline
+        ctx.strokeStyle = '#654321';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(s.x-18, s.y-2, 100, 52);
+        break;
+      }
+      case 'furnace': {
+        // Furnace.png: 192x384 — multi-level
+        const fn = SPRITES.furnace;
+        ctx.drawImage(fn, 0, 0, 64, 64, s.x-8, s.y-16, 48, 48);
+        break;
+      }
+    }
+  });
+}
+
+function drawDecorations() {
+  decorations.forEach(d => {
+    switch(d.type) {
+      case 'tree2': {
+        // Tree Model_02 Size_02: 128x96 — fits nicely
+        const t = SPRITES.tree2s2;
+        const sway = Math.sin(d.sway + gameTime*0.5) * 1;
+        ctx.save();
+        ctx.translate(d.x + 32, d.y + 96);
+        ctx.translate(sway, 0);
+        ctx.drawImage(t, 0, 0, 128, 96, -32, -96, 64, 48);
+        ctx.restore();
+        break;
+      }
+      case 'tree3': {
+        const t = SPRITES.tree3s2;
+        const sway = Math.sin(d.sway + gameTime*0.6) * 1;
+        ctx.save();
+        ctx.translate(d.x + 32, d.y + 96);
+        ctx.translate(sway, 0);
+        ctx.drawImage(t, 0, 0, 128, 160, -32, -80, 48, 64);
+        ctx.restore();
+        break;
+      }
+      case 'flower': {
+        // Vegetation.png: 400x432, 16px items
+        // Various flowers in rows
+        const veg = SPRITES.vegetation;
+        const sv = d.variant;
+        ctx.drawImage(veg, sv*16, 0, 16, 16, d.x, d.y, 12, 12);
+        break;
+      }
+      case 'rock': {
+        // Rocks.png: 208x304
+        const rk = SPRITES.rocks;
+        const rv = d.variant;
+        // Rocks at various positions
+        ctx.drawImage(rk, (rv%4)*48, Math.floor(rv/4)*48, 48, 48, d.x, d.y, 24, 24);
+        break;
+      }
+      case 'fence': {
+        // Draw fence from Village Props
+        const vp = SPRITES.vpProps;
+        // Fence posts are in the sheet — use a specific region
+        ctx.drawImage(vp, 256, 256, 32, 32, d.x, d.y, 16, 16);
+        break;
+      }
+    }
+  });
+  
+  // Falling leaves (autumn atmosphere)
+  if (Math.random() < 0.08) {
+    spawnParticle(Math.random()*W, -5, 'leaf');
+  }
+}
+
+function drawCharacter(agent) {
+  const animName = agent.anim;
+  const dirStr = agent.dir === 'side' ? 'side' : 'down';
+  
+  // Get tinted sprite
+  const tinted = tintedSprites[agent.id] && 
+                 tintedSprites[agent.id][animName] && 
+                 tintedSprites[agent.id][animName][dirStr];
+  
+  if (!tinted) return;
+  
+  const frameCount = ANIM_FRAMES[animName] || 4;
+  const frame = agent.frame % frameCount;
+  
+  // Draw character (64x64 source → scaled down to 32x32 in world)
+  const drawSize = 28; // slightly smaller than 2 tiles for better proportions
+  const dx = agent.x - drawSize/2;
+  const dy = agent.y - drawSize + 4; // feet at agent.y
+  
+  ctx.save();
+  
+  // Flip horizontally if facing left
+  if (agent.facingLeft) {
+    ctx.translate(dx + drawSize, dy);
+    ctx.scale(-1, 1);
+    ctx.drawImage(tinted, frame * CHAR_SIZE, 0, CHAR_SIZE, CHAR_SIZE, 0, 0, drawSize, drawSize);
+  } else {
+    ctx.drawImage(tinted, frame * CHAR_SIZE, 0, CHAR_SIZE, CHAR_SIZE, dx, dy, drawSize, drawSize);
+  }
+  
+  ctx.restore();
+  
+  // Shadow under character
+  ctx.fillStyle = 'rgba(0,0,0,0.25)';
+  ctx.beginPath();
+  ctx.ellipse(agent.x, agent.y+2, drawSize/3, 4, 0, 0, Math.PI*2);
+  ctx.fill();
+  
+  // Name label above
+  const labelY = dy - 6;
+  ctx.save();
+  ctx.font = 'bold 7px monospace';
+  ctx.textAlign = 'center';
+  // Background
+  const tw = ctx.measureText(agent.name).width + 6;
+  ctx.fillStyle = 'rgba(0,0,0,0.7)';
+  ctx.fillRect(agent.x - tw/2, labelY-7, tw, 10);
+  // Name
+  ctx.fillStyle = agent.color;
+  ctx.fillText(agent.name, agent.x, labelY);
+  // Role underneath
+  ctx.font = '5px monospace';
+  ctx.fillStyle = '#aaa';
+  ctx.fillText(agent.role, agent.x, labelY+7);
+  ctx.restore();
+}
+
+function drawParticles() {
+  for (let i = particles.length-1; i >= 0; i--) {
+    const p = particles[i];
+    p.x += p.vx;
+    p.y += p.vy;
+    if (p.type === 'leaf') {
+      p.vx += Math.sin(gameTime*2 + p.x*0.1) * 0.02;
+      p.vy += 0.01; // gravity
+    }
+    p.life -= p.type === 'spark' ? 0.03 : 0.005;
+    
+    if (p.life <= 0) { particles.splice(i,1); continue; }
+    
+    ctx.globalAlpha = p.life;
+    ctx.fillStyle = p.color;
+    if (p.type === 'spark') {
+      ctx.fillRect(p.x, p.y, p.size, p.size);
+    } else if (p.type === 'leaf') {
+      // Leaf shape
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(gameTime + p.x);
+      ctx.fillRect(-2, -1, 4, 2);
+      ctx.restore();
+    }
+    ctx.globalAlpha = 1;
+  }
+}
+
+function drawAmbientLight() {
+  // Warm autumn evening gradient overlay
+  const t = gameTime;
+  
+  // Subtle vignette
+  const vg = ctx.createRadialGradient(W/2, H/2, W*0.3, W/2, H/2, W*0.7);
+  vg.addColorStop(0, 'rgba(0,0,0,0)');
+  vg.addColorStop(1, 'rgba(20,10,5,0.3)');
+  ctx.fillStyle = vg;
+  ctx.fillRect(0, 0, W, H);
+  
+  // Warm sunlight tint (golden hour)
+  ctx.fillStyle = 'rgba(200,150,50,0.06)';
+  ctx.fillRect(0, 0, W, H);
+  
+  // Torch/fire light pools around bonfire
+  const bfStation = stations[0]; // bonfire
+  if (bfStation) {
+    const lg = ctx.createRadialGradient(bfStation.x+16, bfStation.y+16, 8, bfStation.x+16, bfStation.y+16, 80);
+    lg.addColorStop(0, `rgba(255,140,40,${0.08+0.03*Math.sin(t*5)})`);
+    lg.addColorStop(1, 'rgba(255,100,20,0)');
+    ctx.fillStyle = lg;
+    ctx.fillRect(bfStation.x-64, bfStation.y-64, 160, 160);
+  }
+}
+
+// ========== UPDATE ==========
+function update(dt) {
+  gameTime += dt;
+  
+  agents.forEach(agent => {
+    // Animation frame advance
+    agent.animTimer += dt;
+    if (agent.animTimer >= 1/ANIM_FPS) {
+      agent.frame++;
+      agent.animTimer = 0;
+    }
+    
+    // Walking agents (Hunter runs around)
+    if (agent.walking && agent.walkTarget) {
+      const dx = agent.walkTarget.x - agent.x;
+      const dy = agent.walkTarget.y - agent.y;
+      const dist = Math.sqrt(dx*dx + dy*dy);
+      
+      if (dist < 3) {
+        // Reached target — pause then pick new one
+        agent.walkTimer += dt;
+        agent.anim = 'idle';
+        agent.dir = 'down';
+        if (agent.walkTimer > 2 + Math.random()*3) {
+          agent.walkTarget = getRandomTarget(agent);
+          agent.walkTimer = 0;
+          agent.anim = AGENT_DEFS.find(d=>d.id===agent.id).anim;
+        }
+      } else {
+        // Move toward target
+        const speed = agent.anim === 'run' ? 30 : 20; // pixels per second
+        agent.x += (dx/dist) * speed * dt;
+        agent.y += (dy/dist) * speed * dt;
+        agent.facingLeft = dx < 0;
+        agent.dir = Math.abs(dx) > Math.abs(dy) ? 'side' : 'down';
+      }
+    } else {
+      // Stationary agents: subtle idle bobbing via animation frames
+      // Occasional direction changes
+      if (Math.random() < 0.002) {
+        agent.facingLeft = !agent.facingLeft;
+      }
+    }
+  });
+}
+
+// ========== INTERACTION ==========
+canvas.addEventListener('mousemove', e => {
+  const rect = canvas.getBoundingClientRect();
+  mouseX = (e.clientX - rect.left) / scale;
+  mouseY = (e.clientY - rect.top) / scale;
+  
+  // Check hover on agents
+  let hovered = null;
+  agents.forEach(a => {
+    const dist = Math.sqrt((mouseX - a.x)**2 + (mouseY - a.y)**2);
+    if (dist < 20) hovered = a;
+  });
+  
+  // Check hover on stations
+  let hoveredStation = null;
+  if (!hovered) {
+    stations.forEach(s => {
+      const sx = s.x, sy = s.y;
+      if (mouseX > sx-10 && mouseX < sx+42 && mouseY > sy-10 && mouseY < sy+42) {
+        hoveredStation = s;
+      }
+    });
+  }
+  
+  const tooltip = document.getElementById('tooltip');
+  if (hovered) {
+    tooltip.innerHTML = `<h3>${hovered.name}</h3>
+      <div class="role">${hovered.role}</div>
+      <div class="task">📋 ${hovered.task}</div>
+      <div class="status">⚡ ${hovered.status}</div>`;
+    tooltip.style.display = 'block';
+    tooltip.style.left = (e.clientX+12)+'px';
+    tooltip.style.top = (e.clientY-8)+'px';
+    canvas.style.cursor = 'pointer';
+  } else if (hoveredStation) {
+    tooltip.innerHTML = `<h3>${hoveredStation.label}</h3>
+      <div class="status">${hoveredStation.desc}</div>`;
+    tooltip.style.display = 'block';
+    tooltip.style.left = (e.clientX+12)+'px';
+    tooltip.style.top = (e.clientY-8)+'px';
+    canvas.style.cursor = 'pointer';
+  } else {
+    tooltip.style.display = 'none';
+    canvas.style.cursor = 'default';
+  }
+});
+
+canvas.addEventListener('mouseleave', () => {
+  document.getElementById('tooltip').style.display = 'none';
+});
+
+// ========== HUD ==========
+function updateHUD() {
+  const now = new Date();
+  document.getElementById('hud-time').textContent = 
+    now.toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' });
+  const taskCount = 8 + Math.floor(Math.sin(now.getTime()/30000)*3);
+  document.getElementById('hud-tasks').textContent = `${taskCount} tâches actives`;
+}
+setInterval(updateHUD, 1000);
+updateHUD();
+
+// ========== DATA BRIDGE ==========
+window.addEventListener('message', e => {
+  if (e.data.type === 'data:update' && e.data.agents) {
+    e.data.agents.forEach(update => {
+      const agent = agents.find(a => a.name === update.name);
+      if (agent) {
+        if (update.task) agent.task = update.task;
+        if (update.status) agent.status = update.status;
+      }
+    });
+  }
+});
+
+// ========== MAIN LOOP ==========
+let lastTime = 0;
+
+function gameLoop(timestamp) {
+  const dt = Math.min((timestamp - lastTime)/1000, 0.05); // cap at 50ms
+  lastTime = timestamp;
+  
+  update(dt);
+  
+  // Clear
+  ctx.clearRect(0, 0, W, H);
+  
+  // Render layers (back to front)
+  drawGround();
+  drawWaterOverlay();
+  drawDecorations(); // trees, flowers, rocks, fences (behind buildings)
+  drawBuildings();
+  drawStations();
+  
+  // Sort agents + tall decorations by Y for proper overlap
+  const sortedAgents = [...agents].sort((a,b) => a.y - b.y);
+  sortedAgents.forEach(a => drawCharacter(a));
+  
+  drawParticles();
+  drawAmbientLight();
+  
+  requestAnimationFrame(gameLoop);
+}
+
+// ========== INIT ==========
+async function init() {
+  await loadSprites();
+  console.log('All sprites loaded:', Object.keys(SPRITES).length);
+  
+  buildTintedSprites();
+  console.log('Tinted character sprites built');
+  
+  generateWorld();
+  console.log('World generated');
+  
+  initAgents();
+  console.log('Agents initialized');
+  
+  // Hide loading screen
+  document.getElementById('loading').classList.add('hidden');
+  
+  // Start game loop
+  requestAnimationFrame(gameLoop);
+}
+
+init();
+</script>
+</body>
+</html>

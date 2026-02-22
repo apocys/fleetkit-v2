@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FleetKit — Premium AI Fleet Dashboard Themes</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            line-height: 1.6;
+            color: #1D1D1F;
+            background: #FAFAFA;
+            scroll-behavior: smooth;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .section {
+            padding: 120px 0;
+            opacity: 0;
+            transform: translateY(40px);
+            transition: opacity 0.8s ease, transform 0.8s ease;
+        }
+
+        .section.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* ── Nav ── */
+        nav {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+            background: rgba(250,250,250,0.72);
+            backdrop-filter: saturate(180%) blur(20px);
+            -webkit-backdrop-filter: saturate(180%) blur(20px);
+            border-bottom: 1px solid rgba(0,0,0,0.06);
+        }
+        nav .container {
+            display: flex; align-items: center; justify-content: space-between;
+            height: 52px;
+        }
+        .nav-brand {
+            font-size: 20px; font-weight: 700; color: #1D1D1F;
+            text-decoration: none; letter-spacing: -0.02em;
+        }
+        .nav-brand span { color: #0071E3; }
+        .nav-links { display: flex; gap: 32px; }
+        .nav-links a {
+            font-size: 14px; font-weight: 500; color: #6E6E73;
+            text-decoration: none; transition: color 0.2s;
+        }
+        .nav-links a:hover { color: #0071E3; }
+
+        /* ── Hero ── */
+        .hero {
+            text-align: center;
+            padding: 140px 0 120px;
+            background: linear-gradient(135deg, #FAFAFA 0%, #F5F5F7 100%);
+        }
+        .hero-label {
+            font-size: 16px; font-weight: 500; color: #0071E3;
+            margin-bottom: 24px; letter-spacing: 0.5px;
+        }
+        .hero-title {
+            font-size: clamp(48px, 8vw, 80px);
+            font-weight: 700; line-height: 1.08;
+            margin-bottom: 24px; letter-spacing: -0.03em;
+        }
+        .hero-subtitle {
+            font-size: clamp(18px, 2.5vw, 24px);
+            font-weight: 400; color: #6E6E73;
+            margin-bottom: 48px; max-width: 640px;
+            margin-left: auto; margin-right: auto;
+        }
+        .hero-buttons {
+            display: flex; gap: 20px; justify-content: center; flex-wrap: wrap;
+        }
+
+        /* ── Buttons ── */
+        .btn {
+            padding: 16px 32px; border-radius: 980px;
+            font-size: 17px; font-weight: 500;
+            text-decoration: none; transition: all 0.3s ease;
+            display: inline-block; border: 2px solid transparent;
+            cursor: pointer; font-family: inherit;
+        }
+        .btn-primary { background: #0071E3; color: white; }
+        .btn-primary:hover { background: #0056B3; transform: translateY(-2px); }
+        .btn-secondary { background: transparent; color: #0071E3; border-color: #0071E3; }
+        .btn-secondary:hover { background: #0071E3; color: white; transform: translateY(-2px); }
+
+        /* ── Section Titles ── */
+        .section-title {
+            font-size: clamp(36px, 5vw, 56px);
+            font-weight: 700; text-align: center;
+            margin-bottom: 20px; letter-spacing: -0.02em;
+        }
+        .section-subtitle {
+            font-size: 18px; color: #6E6E73; text-align: center;
+            max-width: 600px; margin: 0 auto 64px;
+        }
+
+        /* ── Theme Cards ── */
+        .themes-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 32px;
+        }
+        .theme-card {
+            background: white;
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: 0 2px 16px rgba(0,0,0,0.06);
+            transition: all 0.4s ease;
+            display: flex; flex-direction: column;
+        }
+        .theme-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 12px 48px rgba(0,0,0,0.12);
+        }
+        .theme-preview {
+            width: 100%; height: 280px;
+            border: none; border-bottom: 1px solid rgba(0,0,0,0.06);
+            pointer-events: none;
+        }
+        .theme-info {
+            padding: 28px 28px 24px;
+            display: flex; flex-direction: column; flex-grow: 1;
+        }
+        .theme-badge {
+            display: inline-block;
+            background: #F5F5F7; color: #6E6E73;
+            font-size: 12px; font-weight: 600;
+            padding: 4px 12px; border-radius: 100px;
+            margin-bottom: 12px; width: fit-content;
+            text-transform: uppercase; letter-spacing: 0.05em;
+        }
+        .theme-badge.popular {
+            background: #0071E3; color: white;
+        }
+        .theme-name {
+            font-size: 22px; font-weight: 700;
+            margin-bottom: 8px; letter-spacing: -0.01em;
+        }
+        .theme-desc {
+            font-size: 15px; color: #6E6E73;
+            line-height: 1.5; margin-bottom: 20px; flex-grow: 1;
+        }
+        .theme-footer {
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .theme-price {
+            font-size: 28px; font-weight: 700; color: #1D1D1F;
+        }
+        .theme-price span {
+            font-size: 14px; font-weight: 400; color: #6E6E73;
+        }
+        .theme-buy {
+            padding: 10px 24px; border-radius: 980px;
+            background: #0071E3; color: white;
+            font-size: 15px; font-weight: 500;
+            text-decoration: none; transition: all 0.25s;
+        }
+        .theme-buy:hover { background: #0056B3; transform: translateY(-1px); }
+
+        /* ── Bundle Banner ── */
+        .bundle {
+            background: linear-gradient(135deg, #1D1D1F 0%, #2C2C2E 100%);
+            border-radius: 28px;
+            padding: 56px 48px;
+            display: flex; align-items: center; justify-content: space-between;
+            margin-top: 48px; color: white;
+        }
+        .bundle-info h3 {
+            font-size: 32px; font-weight: 700;
+            margin-bottom: 8px; letter-spacing: -0.02em;
+        }
+        .bundle-info p {
+            font-size: 16px; color: rgba(255,255,255,0.6);
+        }
+        .bundle-price-area {
+            text-align: right; flex-shrink: 0;
+        }
+        .bundle-original {
+            font-size: 16px; color: rgba(255,255,255,0.4);
+            text-decoration: line-through; margin-bottom: 4px;
+        }
+        .bundle-price {
+            font-size: 40px; font-weight: 700; margin-bottom: 16px;
+        }
+        .bundle-save {
+            display: inline-block;
+            background: #30D158; color: #1D1D1F;
+            font-size: 13px; font-weight: 600;
+            padding: 4px 12px; border-radius: 100px;
+            margin-bottom: 16px;
+        }
+        .btn-bundle {
+            padding: 14px 32px; border-radius: 980px;
+            background: white; color: #1D1D1F;
+            font-size: 16px; font-weight: 600;
+            text-decoration: none; transition: all 0.25s;
+            display: inline-block;
+        }
+        .btn-bundle:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(255,255,255,0.3); }
+
+        /* ── Features ── */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+        }
+        .feature-card {
+            background: white; border-radius: 20px;
+            padding: 32px; box-shadow: 0 1px 8px rgba(0,0,0,0.06);
+            transition: all 0.3s;
+        }
+        .feature-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 6px 24px rgba(0,0,0,0.1);
+        }
+        .feature-icon { font-size: 36px; margin-bottom: 16px; }
+        .feature-card h3 {
+            font-size: 18px; font-weight: 600; margin-bottom: 8px;
+        }
+        .feature-card p {
+            font-size: 14px; color: #6E6E73; line-height: 1.5;
+        }
+
+        /* ── CTA ── */
+        .cta {
+            text-align: center;
+            background: linear-gradient(135deg, #F5F5F7 0%, #FAFAFA 100%);
+        }
+        .cta .section-title { margin-bottom: 16px; }
+
+        /* ── Footer ── */
+        footer {
+            text-align: center; padding: 48px 0;
+            color: #6E6E73; font-size: 14px;
+            border-top: 1px solid rgba(0,0,0,0.06);
+        }
+
+        /* ── Responsive ── */
+        @media (max-width: 768px) {
+            .themes-grid { grid-template-columns: 1fr; }
+            .features-grid { grid-template-columns: 1fr; }
+            .bundle { flex-direction: column; text-align: center; gap: 32px; padding: 40px 28px; }
+            .bundle-price-area { text-align: center; }
+            .nav-links { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+<nav>
+    <div class="container">
+        <a href="#" class="nav-brand">Fleet<span>Kit</span></a>
+        <div class="nav-links">
+            <a href="#themes">Themes</a>
+            <a href="#features">Features</a>
+            <a href="#bundle">Bundle</a>
+        </div>
+    </div>
+</nav>
+
+<section class="hero section visible">
+    <div class="container">
+        <div class="hero-label">Premium AI Fleet Dashboards</div>
+        <h1 class="hero-title">Your agents<br>deserve a home.</h1>
+        <p class="hero-subtitle">Four stunning dashboard themes for OpenClaw. Monitor, manage, and visualize your AI fleet like never before.</p>
+        <div class="hero-buttons">
+            <a href="#themes" class="btn btn-primary">Explore Themes</a>
+            <a href="#bundle" class="btn btn-secondary">Get the Bundle</a>
+        </div>
+    </div>
+</section>
+
+<section id="themes" class="section">
+    <div class="container">
+        <h2 class="section-title">Choose your style.</h2>
+        <p class="section-subtitle">Each theme is a standalone HTML/CSS/JS bundle with real-time data integration via the OpenClaw relay API.</p>
+
+        <div class="themes-grid">
+            <!-- Executive -->
+            <div class="theme-card">
+                <iframe class="theme-preview" src="/fleetkit-v2/office-executive/index.html" loading="lazy"></iframe>
+                <div class="theme-info">
+                    <div class="theme-badge">Minimal</div>
+                    <h3 class="theme-name">Executive</h3>
+                    <p class="theme-desc">Apple-inspired elegance. Clean typography, subtle animations, and a frosted glass aesthetic. For the CEO who manages an AI empire.</p>
+                    <div class="theme-footer">
+                        <div class="theme-price">€29 <span>one-time</span></div>
+                        <a href="https://apocysphere.gumroad.com/l/xmmuit" class="theme-buy">Get Theme</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modern Office -->
+            <div class="theme-card">
+                <iframe class="theme-preview" src="/fleetkit-v2/office-modern/index.html" loading="lazy"></iframe>
+                <div class="theme-info">
+                    <div class="theme-badge popular">Popular</div>
+                    <h3 class="theme-name">Modern Office</h3>
+                    <p class="theme-desc">Sleek workspace with agent desks, meeting rooms, and a collaborative layout. Real-time status indicators and smooth transitions.</p>
+                    <div class="theme-footer">
+                        <div class="theme-price">€39 <span>one-time</span></div>
+                        <a href="https://apocysphere.gumroad.com/l/jwrxmx" class="theme-buy">Get Theme</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SimCity -->
+            <div class="theme-card">
+                <iframe class="theme-preview" src="/fleetkit-v2/office-simcity/index.html" loading="lazy"></iframe>
+                <div class="theme-info">
+                    <div class="theme-badge popular">Fan Favorite</div>
+                    <h3 class="theme-name">SimCity</h3>
+                    <p class="theme-desc">Isometric village with animated agents, buildings, weather effects, and a living ecosystem. Your fleet as a thriving digital city.</p>
+                    <div class="theme-footer">
+                        <div class="theme-price">€39 <span>one-time</span></div>
+                        <a href="https://apocysphere.gumroad.com/l/rkbfhm" class="theme-buy">Get Theme</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Village -->
+            <div class="theme-card">
+                <iframe class="theme-preview" src="/fleetkit-v2/office-village/index.html" loading="lazy"></iframe>
+                <div class="theme-info">
+                    <div class="theme-badge">Illustrated</div>
+                    <h3 class="theme-name">Village</h3>
+                    <p class="theme-desc">Hand-drawn charm with illustrated buildings, gardens, and nature elements. A friendly, approachable way to monitor your agents.</p>
+                    <div class="theme-footer">
+                        <div class="theme-price">€19 <span>one-time</span></div>
+                        <a href="https://apocysphere.gumroad.com/l/moztyd" class="theme-buy">Get Theme</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bundle -->
+        <div id="bundle" class="bundle">
+            <div class="bundle-info">
+                <h3>FleetKit Complete Bundle</h3>
+                <p>All 4 themes + future updates. One purchase, every style.</p>
+            </div>
+            <div class="bundle-price-area">
+                <div class="bundle-original">€126</div>
+                <div class="bundle-save">Save 21%</div>
+                <div class="bundle-price">€99</div>
+                <a href="#" class="btn-bundle">Get the Bundle</a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="features" class="section">
+    <div class="container">
+        <h2 class="section-title">Built for builders.</h2>
+        <p class="section-subtitle">Every theme ships production-ready with enterprise features baked in.</p>
+
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">⚡</div>
+                <h3>Real-Time Data</h3>
+                <p>Live agent status, metrics, and logs via the OpenClaw relay API. No polling — instant updates.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📦</div>
+                <h3>Zero Dependencies</h3>
+                <p>Pure HTML/CSS/JS. No React, no build step, no npm install. Drop it in and it works.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🎨</div>
+                <h3>Fully Customizable</h3>
+                <p>CSS variables, modular JS, clean code. Tweak colors, layouts, and behaviors in minutes.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📱</div>
+                <h3>Responsive</h3>
+                <p>From phone to ultrawide. Every theme adapts beautifully to any screen size.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🔒</div>
+                <h3>Security Audited</h3>
+                <p>Sentinel-reviewed. No hardcoded tokens, no console.log leaks, no exposed secrets.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🔄</div>
+                <h3>Free Updates</h3>
+                <p>Buy once, get every future improvement. New features, new animations, better data integration.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="cta section">
+    <div class="container">
+        <h2 class="section-title">Ready to see your fleet?</h2>
+        <p class="section-subtitle">Pick a theme, drop it in your OpenClaw workspace, and watch your agents come alive.</p>
+        <div class="hero-buttons">
+            <a href="#themes" class="btn btn-primary">Choose a Theme</a>
+            <a href="#bundle" class="btn btn-secondary">Get All Four — €99</a>
+        </div>
+    </div>
+</section>
+
+<footer>
+    <div class="container">
+        <p>FleetKit by <strong>apocysphere</strong> — Premium themes for OpenClaw fleets. © 2026</p>
+    </div>
+</footer>
+
+<script>
+    // Scroll animation (same as SpawnKit landing)
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('visible');
+            }
+        });
+    }, { threshold: 0.1 });
+
+    document.querySelectorAll('.section').forEach(s => observer.observe(s));
+
+    // Smooth scroll
+    document.querySelectorAll('a[href^="#"]').forEach(a => {
+        a.addEventListener('click', e => {
+            e.preventDefault();
+            const t = document.querySelector(a.getAttribute('href'));
+            if (t) t.scrollIntoView({ behavior: 'smooth' });
+        });
+    });
+</script>
+
+</body>
+</html>

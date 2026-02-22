@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>Sprite Inspector</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#1e1e2e;color:#cdd6f4;font:13px monospace;padding:20px}
+h2{color:#89b4fa;margin:15px 0 5px}
+.sheet{margin:10px 0;border:1px solid #45475a;display:inline-block;position:relative}
+.sheet img{display:block;image-rendering:pixelated}
+.grid{position:absolute;inset:0;pointer-events:none}
+canvas{image-rendering:pixelated;display:block;margin:10px 0;border:1px solid #585b70}
+#info{position:fixed;top:10px;right:10px;background:#313244;padding:12px;border-radius:8px;border:1px solid #45475a;min-width:200px;z-index:100}
+#preview{image-rendering:pixelated;border:1px solid #89b4fa;margin:8px 0}
+.section{margin:20px 0;padding:15px;background:#181825;border-radius:8px}
+table{border-collapse:collapse;margin:8px 0}
+td{padding:2px 6px;border:1px solid #45475a}
+td canvas{vertical-align:middle}
+</style></head><body>
+<h1>🔍 Sprite Inspector — Office Modern</h1>
+<div id="info">
+  <div>Hover: <span id="pos">-</span></div>
+  <div>RGB: <span id="rgb">-</span></div>
+  <canvas id="preview" width="64" height="64"></canvas>
+</div>
+
+<div id="output"></div>
+
+<script>
+const SHEETS = [
+  {id:'rb', label:'Room Builder Free 16×16', path:'../lib/sprites/modern-tiles-free/Modern tiles_Free/Interiors_free/16x16/Room_Builder_free_16x16.png'},
+  {id:'orb', label:'Office Room Builder 16×16', path:'../lib/sprites/modern-office-revamped/1_Room_Builder_Office/Room_Builder_Office_16x16.png'},
+  {id:'int', label:'Interiors Free 16×16', path:'../lib/sprites/modern-tiles-free/Modern tiles_Free/Interiors_free/16x16/Interiors_free_16x16.png'},
+  {id:'off', label:'Modern Office Shadowless 16×16', path:'../lib/sprites/modern-office-revamped/3_Modern_Office_Shadowless/Modern_Office_Shadowless_16x16.png'},
+  {id:'offM', label:'Modern Office (with shadow) 16×16', path:'../lib/sprites/modern-office-revamped/Modern_Office_16x16.png'},
+];
+
+const T = 16;
+const ZOOM = 3; // Display zoom for sheets
+const out = document.getElementById('output');
+const posEl = document.getElementById('pos');
+const rgbEl = document.getElementById('rgb');
+const prevCanvas = document.getElementById('preview');
+const prevCtx = prevCanvas.getContext('2d');
+
+// Also dump a grid of individual tiles with their coords
+function dumpSheet(sheet) {
+  const sec = document.createElement('div');
+  sec.className = 'section';
+  
+  const h = document.createElement('h2');
+  h.textContent = `${sheet.label} (${sheet.id})`;
+  sec.appendChild(h);
+  
+  const img = new Image();
+  img.onload = () => {
+    const cols = Math.floor(img.width / T);
+    const rows = Math.floor(img.height / T);
+    
+    const info = document.createElement('div');
+    info.textContent = `${img.width}×${img.height}px = ${cols}c × ${rows}r (${cols*rows} tiles)`;
+    info.style.color = '#a6adc8';
+    info.style.marginBottom = '8px';
+    sec.appendChild(info);
+    
+    // Draw zoomed sheet with grid overlay
+    const c = document.createElement('canvas');
+    c.width = img.width * ZOOM;
+    c.height = img.height * ZOOM;
+    c.style.maxWidth = '100%';
+    const cx = c.getContext('2d');
+    cx.imageSmoothingEnabled = false;
+    cx.drawImage(img, 0, 0, c.width, c.height);
+    
+    // Grid
+    cx.strokeStyle = 'rgba(137,180,250,0.3)';
+    cx.lineWidth = 1;
+    for(let x = 0; x <= cols; x++) {
+      cx.beginPath(); cx.moveTo(x*T*ZOOM, 0); cx.lineTo(x*T*ZOOM, c.height); cx.stroke();
+    }
+    for(let y = 0; y <= rows; y++) {
+      cx.beginPath(); cx.moveTo(0, y*T*ZOOM); cx.lineTo(c.width, y*T*ZOOM); cx.stroke();
+    }
+    
+    // Row/col labels
+    cx.font = '10px monospace';
+    cx.fillStyle = '#f38ba8';
+    for(let x = 0; x < cols; x++) {
+      cx.fillText('c'+x, x*T*ZOOM+2, 10);
+    }
+    for(let y = 0; y < rows; y++) {
+      cx.fillText('r'+y, 2, y*T*ZOOM+12);
+    }
+    
+    // Hover handler
+    c.addEventListener('mousemove', e => {
+      const rect = c.getBoundingClientRect();
+      const scaleX = c.width / rect.width;
+      const px = (e.clientX - rect.left) * scaleX;
+      const py = (e.clientY - rect.top) * (c.height / rect.height);
+      const col = Math.floor(px / (T*ZOOM));
+      const row = Math.floor(py / (T*ZOOM));
+      
+      posEl.textContent = `${sheet.id} c${col} r${row}`;
+      
+      // Get pixel color from original image
+      const tmpC = document.createElement('canvas');
+      tmpC.width = img.width; tmpC.height = img.height;
+      const tmpCx = tmpC.getContext('2d');
+      tmpCx.drawImage(img, 0, 0);
+      const px2 = col*T + T/2;
+      const py2 = row*T + T/2;
+      const d = tmpCx.getImageData(px2, py2, 1, 1).data;
+      rgbEl.textContent = d[3]===0 ? 'transparent' : `rgb(${d[0]},${d[1]},${d[2]}) a=${d[3]}`;
+      
+      // Preview 4x zoom
+      prevCtx.clearRect(0, 0, 64, 64);
+      prevCtx.imageSmoothingEnabled = false;
+      prevCtx.drawImage(img, col*T, row*T, T, T, 0, 0, 64, 64);
+    });
+    
+    sec.appendChild(c);
+    
+    // Now create a reference table of key rows
+    const table = document.createElement('table');
+    // Show first 5 rows as sample with tile previews
+    const maxShow = Math.min(rows, 60);
+    for(let r = 0; r < maxShow; r++) {
+      const tr = document.createElement('tr');
+      const tdR = document.createElement('td');
+      tdR.textContent = `r${r}`;
+      tdR.style.color = '#f38ba8';
+      tr.appendChild(tdR);
+      
+      for(let cc = 0; cc < Math.min(cols, 16); cc++) {
+        const td = document.createElement('td');
+        const tc = document.createElement('canvas');
+        tc.width = 32; tc.height = 32;
+        tc.style.width = '32px'; tc.style.height = '32px';
+        const tcx = tc.getContext('2d');
+        tcx.imageSmoothingEnabled = false;
+        tcx.drawImage(img, cc*T, r*T, T, T, 0, 0, 32, 32);
+        
+        // Check if tile is empty
+        const check = tcx.getImageData(0,0,32,32).data;
+        let hasPixels = false;
+        for(let i=3;i<check.length;i+=4){if(check[i]>10){hasPixels=true;break}}
+        
+        if(!hasPixels) {
+          td.style.background = '#11111b';
+          td.title = `c${cc} r${r}: EMPTY`;
+        } else {
+          td.title = `c${cc} r${r}`;
+        }
+        td.appendChild(tc);
+        tr.appendChild(td);
+      }
+      table.appendChild(tr);
+    }
+    sec.appendChild(table);
+  };
+  img.src = sheet.path;
+  out.appendChild(sec);
+}
+
+SHEETS.forEach(dumpSheet);
+</script>
+</body></html>

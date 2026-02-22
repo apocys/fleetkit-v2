@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>All Kenney Assets — Inventory</title>
+<style>
+body { background: #1a1a2e; color: #eee; font-family: sans-serif; margin: 20px; }
+h1 { color: #0af; }
+h2 { color: #ff9; margin-top: 40px; border-bottom: 1px solid #333; padding-bottom: 8px; }
+.grid { display: flex; flex-wrap: wrap; gap: 8px; }
+.tile { text-align: center; background: #2a2a4e; border-radius: 8px; padding: 8px; }
+.tile img { image-rendering: pixelated; display: block; margin: 0 auto 4px; }
+.tile .name { font-size: 10px; color: #aaa; max-width: 80px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tile:hover { background: #3a3a6e; }
+.tile:hover img { transform: scale(2); position: relative; z-index: 10; }
+.large img { width: 64px; height: 64px; }
+.small img { width: 48px; height: 48px; }
+.nature img { width: 80px; height: 80px; }
+.count { color: #0af; font-size: 14px; margin-left: 10px; }
+</style>
+</head>
+<body>
+<h1>🎮 Kenney Assets — Full Inventory</h1>
+
+<h2>👤 Blocky Characters (18 personnages) <span class="count">— Potential village inhabitants!</span></h2>
+<div class="grid large" id="blocky"></div>
+
+<h2>🧟 Graveyard Kit — Characters (5)</h2>
+<div class="grid large" id="graveyard-chars"></div>
+
+<h2>⚰️ Graveyard Kit — Décors (86 objets)</h2>
+<div class="grid large" id="graveyard"></div>
+
+<h2>🏰 Castle Kit (76 pièces)</h2>
+<div class="grid large" id="castle"></div>
+
+<h2>🌿 Nature Kit — Ground & Paths (28)</h2>
+<div class="grid nature" id="nature-ground"></div>
+
+<h2>🌳 Nature Kit — Trees (61)</h2>
+<div class="grid nature" id="nature-trees"></div>
+
+<h2>🏠 Nature Kit — Structures & Objects</h2>
+<div class="grid nature" id="nature-objects"></div>
+
+<script>
+function addTiles(containerId, basePath, names) {
+  const c = document.getElementById(containerId);
+  names.forEach(n => {
+    const d = document.createElement('div');
+    d.className = 'tile';
+    d.innerHTML = '<img src="' + basePath + n + '.png"><div class="name">' + n + '</div>';
+    d.querySelector('img').onerror = function() { d.style.display='none'; };
+    c.appendChild(d);
+  });
+}
+
+// Blocky Characters
+const blockyChars = 'abcdefghijklmnopqr'.split('').map(c => 'character-' + c);
+addTiles('blocky', '../lib/sprites/kenney-blocky-characters/Previews/', blockyChars);
+
+// Graveyard characters
+addTiles('graveyard-chars', '../lib/sprites/kenney-graveyard-kit/Previews/', 
+  ['character-ghost','character-keeper','character-skeleton','character-vampire','character-zombie']);
+
+// Graveyard decor
+const graveyardDecor = ['altar-stone','altar-wood','bench-damaged','bench','border-pillar',
+  'brick-wall-curve-small','brick-wall-curve','brick-wall-end','brick-wall',
+  'candle-multiple','candle','coffin-old','coffin','column-large',
+  'cross-column','cross-wood','cross','crypt-a','crypt-b','crypt-door',
+  'crypt-large-door','crypt-large-roof','crypt-large','crypt-small-roof','crypt-small','crypt',
+  'debris-wood','debris','detail-bowl','detail-chalice','detail-plate',
+  'fence-damaged','fence-gate','fence','fire-basket','grave-border','grave',
+  'gravestone-bevel','gravestone-broken','gravestone-cross-large','gravestone-cross',
+  'gravestone-debris','gravestone-decorative','gravestone-roof','gravestone-round','gravestone-wide',
+  'hay-bale-bundled','hay-bale','iron-fence-bar','iron-fence-border-column',
+  'iron-fence-border-curve','iron-fence-border-gate','iron-fence-border',
+  'iron-fence-curve','iron-fence-damaged','iron-fence',
+  'lantern-candle','lantern-glass','lightpost-all','lightpost-double','lightpost-single',
+  'pillar-large','pillar-obelisk','pillar-small','pillar-square',
+  'pine-crooked','pine-fall-crooked','pine-fall','pine',
+  'pumpkin-carved','pumpkin-tall-carved','pumpkin-tall','pumpkin',
+  'road','rocks-tall','rocks','shovel-dirt','shovel',
+  'stone-wall-column','stone-wall-curve','stone-wall-damaged','stone-wall',
+  'trunk-long','trunk','urn-round','urn-square'];
+addTiles('graveyard', '../lib/sprites/kenney-graveyard-kit/Previews/', graveyardDecor);
+
+// Castle Kit
+const castleItems = ['bridge-draw','bridge-straight-pillar','bridge-straight','door',
+  'flag-banner-long','flag-banner-short','flag-pennant','flag-wide','flag',
+  'gate','ground-hills','ground','metal-gate','rocks-large','rocks-small',
+  'siege-ballista-demolished','siege-ballista','siege-catapult-demolished','siege-catapult',
+  'siege-ram-demolished','siege-ram','siege-tower-demolished','siege-tower',
+  'siege-trebuchet-demolished','siege-trebuchet',
+  'stairs-stone-square','stairs-stone',
+  'tower-base','tower-hexagon-base','tower-hexagon-mid','tower-hexagon-roof-secondary','tower-hexagon-roof',
+  'tower-hexagon-top-wood','tower-hexagon-top',
+  'tower-slant-roof','tower-square-arch','tower-square-base-border','tower-square-base-color','tower-square-base',
+  'tower-square-mid-color','tower-square-mid-door','tower-square-mid-open-simple','tower-square-mid-open',
+  'tower-square-mid-windows','tower-square-mid','tower-square-roof',
+  'tower-square-top-color','tower-square-top-roof-high-windows','tower-square-top-roof-high',
+  'tower-square-top-roof-rounded','tower-square-top-roof','tower-square-top','tower-square',
+  'tower-top','tree-large','tree-log','tree-small','tree-trunk',
+  'wall-corner-half-tower','wall-corner-half','wall-corner-slant','wall-corner',
+  'wall-doorway','wall-half-modular','wall-half',
+  'wall-narrow-corner','wall-narrow-gate','wall-narrow-stairs-rail','wall-narrow-stairs',
+  'wall-narrow-wood-fence','wall-narrow-wood','wall-narrow',
+  'wall-pillar','wall-stud','wall-to-narrow','wall'];
+addTiles('castle', '../lib/sprites/kenney-castle-kit/Previews/', castleItems);
+
+// Nature Kit - Ground & Paths  
+const natureGround = ['grass','grass_large','grass_leafs','grass_leafsLarge',
+  'ground_grass','ground_pathBend','ground_pathBendBank','ground_pathCorner','ground_pathCornerSmall',
+  'ground_pathCross','ground_pathEnd','ground_pathEndClosed','ground_pathOpen','ground_pathRocks',
+  'ground_pathSide','ground_pathSideOpen','ground_pathSplit','ground_pathStraight','ground_pathTile',
+  'ground_riverBend','ground_riverBendBank','ground_riverCorner','ground_riverCornerSmall',
+  'ground_riverCross','ground_riverEnd','ground_riverEndClosed','ground_riverOpen','ground_riverRocks',
+  'ground_riverSide','ground_riverSideOpen','ground_riverSplit','ground_riverStraight','ground_riverTile'];
+addTiles('nature-ground', '../lib/sprites/kenney-nature-kit/Isometric/', natureGround.map(n => n + '_NE'));
+
+// Nature Kit - Trees
+const natureTrees = ['tree_blocks','tree_blocks_dark','tree_blocks_fall',
+  'tree_cone','tree_cone_dark','tree_cone_fall',
+  'tree_default','tree_default_dark','tree_default_fall',
+  'tree_detailed','tree_detailed_dark','tree_detailed_fall',
+  'tree_fat','tree_fat_darkh','tree_fat_fall',
+  'tree_oak','tree_oak_dark','tree_oak_fall',
+  'tree_palm','tree_palmBend','tree_palmDetailedShort','tree_palmDetailedTall','tree_palmShort','tree_palmTall',
+  'tree_pineDefaultA','tree_pineDefaultB','tree_pineGroundA','tree_pineGroundB',
+  'tree_pineRoundA','tree_pineRoundB','tree_pineRoundC','tree_pineRoundD','tree_pineRoundE','tree_pineRoundF',
+  'tree_pineSmallA','tree_pineSmallB','tree_pineSmallC','tree_pineSmallD',
+  'tree_pineTallA','tree_pineTallA_detailed','tree_pineTallB','tree_pineTallB_detailed',
+  'tree_pineTallC','tree_pineTallC_detailed','tree_pineTallD','tree_pineTallD_detailed',
+  'tree_plateau','tree_plateau_dark','tree_plateau_fall',
+  'tree_simple','tree_simple_dark','tree_simple_fall',
+  'tree_small','tree_small_dark','tree_small_fall',
+  'tree_tall','tree_tall_dark','tree_tall_fall',
+  'tree_thin','tree_thin_dark','tree_thin_fall'];
+addTiles('nature-trees', '../lib/sprites/kenney-nature-kit/Isometric/', natureTrees.map(n => n + '_NE'));
+
+// Nature Kit - Objects
+const natureObj = ['cabin','campfire_bricks','campfire_logs','campfire_planks','campfire_stones',
+  'canoe','canoe_paddle','fence_bend','fence_bendCenter','fence_corner','fence_gate',
+  'fence_planks','fence_planksDouble','fence_simple','fence_simpleCenter',
+  'flower_purpleA','flower_purpleB','flower_purpleC','flower_redA','flower_redB','flower_redC',
+  'flower_yellowA','flower_yellowB','flower_yellowC',
+  'mushroom_red','mushroom_redGroup','mushroom_redTall','mushroom_tan','mushroom_tanGroup','mushroom_tanTall',
+  'tent_detailedClosed','tent_detailedOpen','tent_smallClosed','tent_smallOpen',
+  'sign','statue_block','statue_column','statue_columnDamaged','statue_head','statue_obelisk','statue_ring',
+  'crop_carrot','crop_melon','crop_pumpkin','crop_turnip',
+  'bridge_stone','bridge_stoneNarrow','bridge_wood','bridge_woodNarrow',
+  'path_stone','path_stoneCircle','path_stoneCorner','path_stoneEnd','path_wood','path_woodCorner','path_woodEnd',
+  'plant_bush','plant_bushDetailed','plant_bushLarge','plant_bushSmall'];
+addTiles('nature-objects', '../lib/sprites/kenney-nature-kit/Isometric/', natureObj.map(n => n + '_NE'));
+</script>
+</body>
+</html>

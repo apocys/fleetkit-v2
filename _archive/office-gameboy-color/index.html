@@ -1,0 +1,988 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SpawnKit RPG - GameBoy Advance World</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: #0f0f23;
+            color: #ffffff;
+            font-family: 'Press Start 2P', monospace;
+            overflow: hidden;
+            user-select: none;
+        }
+        
+        #gameContainer {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        #mainCanvas {
+            flex: 1;
+            background: #87ceeb;
+            image-rendering: pixelated;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: crisp-edges;
+        }
+        
+        #hud {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            border-bottom: 3px solid #4a90e2;
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.5);
+            z-index: 100;
+        }
+        
+        #guildLevel {
+            color: #ffd700;
+            font-size: 12px;
+            text-shadow: 1px 1px 0 #000;
+        }
+        
+        #xpBar {
+            flex: 1;
+            height: 8px;
+            background: #1a1a2e;
+            border: 2px solid #4a90e2;
+            margin: 0 20px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        #xpFill {
+            height: 100%;
+            background: linear-gradient(90deg, #32cd32, #00ff00);
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+        
+        #guildName {
+            color: #ffffff;
+            font-size: 10px;
+            text-shadow: 1px 1px 0 #000;
+        }
+        
+        #questPanel {
+            position: absolute;
+            top: 70px;
+            right: 10px;
+            width: 300px;
+            max-height: 400px;
+            background: linear-gradient(135deg, #2d1b69, #11998e);
+            border: 3px solid #4a90e2;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.7);
+            z-index: 90;
+        }
+        
+        #questPanel h3 {
+            color: #ffd700;
+            font-size: 10px;
+            margin-bottom: 10px;
+            text-align: center;
+            text-shadow: 1px 1px 0 #000;
+        }
+        
+        .quest {
+            background: rgba(26, 26, 46, 0.8);
+            border: 2px solid #4a90e2;
+            border-radius: 4px;
+            padding: 8px;
+            margin-bottom: 8px;
+            font-size: 7px;
+            color: #ffffff;
+        }
+        
+        .quest-title {
+            color: #ffd700;
+            font-size: 8px;
+            margin-bottom: 4px;
+        }
+        
+        .quest-reward {
+            color: #32cd32;
+            font-size: 6px;
+        }
+        
+        #partyPanel {
+            position: absolute;
+            top: 70px;
+            left: 10px;
+            width: 250px;
+            max-height: 500px;
+            background: linear-gradient(135deg, #667db6, #0082c8);
+            border: 3px solid #4a90e2;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.7);
+            z-index: 90;
+        }
+        
+        #partyPanel h3 {
+            color: #ffd700;
+            font-size: 10px;
+            margin-bottom: 10px;
+            text-align: center;
+            text-shadow: 1px 1px 0 #000;
+        }
+        
+        .party-member {
+            background: rgba(26, 26, 46, 0.8);
+            border: 2px solid #4a90e2;
+            border-radius: 4px;
+            padding: 6px;
+            margin-bottom: 6px;
+            font-size: 6px;
+            color: #ffffff;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .party-member-info {
+            flex: 1;
+        }
+        
+        .party-member-name {
+            color: #ffd700;
+            font-size: 7px;
+            margin-bottom: 2px;
+        }
+        
+        .party-member-class {
+            color: #87ceeb;
+            font-size: 6px;
+        }
+        
+        .party-member-stats {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        
+        .stat-bar {
+            width: 60px;
+            height: 4px;
+            background: #1a1a2e;
+            border: 1px solid #4a90e2;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .hp-bar {
+            background: linear-gradient(90deg, #ff6b6b, #ff0000);
+            height: 100%;
+            transition: width 0.5s ease;
+        }
+        
+        .mp-bar {
+            background: linear-gradient(90deg, #4ecdc4, #0066cc);
+            height: 100%;
+            transition: width 0.5s ease;
+        }
+        
+        #dialogBox {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 100px;
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            border-top: 3px solid #4a90e2;
+            padding: 15px;
+            color: #ffffff;
+            font-size: 9px;
+            line-height: 1.4;
+            z-index: 100;
+            display: none;
+            box-shadow: 0 -3px 10px rgba(0,0,0,0.5);
+        }
+        
+        #dialogBox.show {
+            display: block;
+            animation: slideUp 0.3s ease;
+        }
+        
+        @keyframes slideUp {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
+        }
+        
+        #battleTransition {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            z-index: 200;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            color: #fff;
+            font-size: 16px;
+        }
+        
+        #battleTransition.show {
+            display: flex;
+            animation: battleSwirl 2s ease-in-out;
+        }
+        
+        @keyframes battleSwirl {
+            0% { 
+                opacity: 0; 
+                transform: rotate(0deg) scale(0.5); 
+            }
+            50% { 
+                opacity: 1; 
+                transform: rotate(180deg) scale(1.2); 
+                background: radial-gradient(circle, #ff0000, #000000);
+            }
+            100% { 
+                opacity: 0; 
+                transform: rotate(360deg) scale(0.5); 
+            }
+        }
+        
+        .treasure-chest {
+            position: absolute;
+            width: 32px;
+            height: 32px;
+            z-index: 50;
+            pointer-events: none;
+        }
+        
+        .treasure-chest.animate {
+            animation: treasureSparkle 1s ease-in-out;
+        }
+        
+        @keyframes treasureSparkle {
+            0% { transform: scale(1) rotate(0deg); opacity: 1; }
+            50% { transform: scale(1.3) rotate(180deg); opacity: 0.8; }
+            100% { transform: scale(1) rotate(360deg); opacity: 1; }
+        }
+        
+        .weather-particle {
+            position: absolute;
+            pointer-events: none;
+            z-index: 80;
+        }
+        
+        .rain-particle {
+            width: 2px;
+            height: 15px;
+            background: linear-gradient(180deg, rgba(173, 216, 230, 0.8), rgba(135, 206, 235, 0.3));
+            animation: rainFall 1s linear infinite;
+        }
+        
+        @keyframes rainFall {
+            0% { transform: translateY(-20px); opacity: 1; }
+            100% { transform: translateY(100vh); opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <!-- Top HUD -->
+        <div id="hud">
+            <div id="guildLevel">GUILD LV.1</div>
+            <div id="xpBar">
+                <div id="xpFill"></div>
+            </div>
+            <div id="guildName">SPAWNKIT HEROES</div>
+        </div>
+        
+        <!-- Main Game Canvas -->
+        <canvas id="mainCanvas"></canvas>
+        
+        <!-- Quest Panel -->
+        <div id="questPanel">
+            <h3>📜 ACTIVE QUESTS</h3>
+            <div id="questList">
+                <!-- Dynamic quest content -->
+            </div>
+        </div>
+        
+        <!-- Party Panel -->
+        <div id="partyPanel">
+            <h3>⚔️ PARTY STATUS</h3>
+            <div id="partyList">
+                <!-- Dynamic party member content -->
+            </div>
+        </div>
+        
+        <!-- Dialog Box -->
+        <div id="dialogBox">
+            <span id="dialogText"></span>
+        </div>
+        
+        <!-- Battle Transition -->
+        <div id="battleTransition">
+            <span id="battleText">A WILD TASK APPEARS!</span>
+        </div>
+    </div>
+    
+    <script>
+        // ===== GAME ENGINE =====
+        class RPGEngine {
+            constructor() {
+                this.canvas = document.getElementById('mainCanvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.canvas.width = window.innerWidth;
+                this.canvas.height = window.innerHeight - 60; // Account for HUD
+                
+                this.time = 0;
+                this.dayNightCycle = 0;
+                this.weather = 'clear';
+                this.weatherParticles = [];
+                
+                this.agents = [
+                    {name:'ApoMac', role:'CEO', color:'#4A90E2', class:'Hero', x: 400, y: 300, hp: 100, mp: 80, level: 5, sprite: null},
+                    {name:'Forge', role:'CTO', color:'#FF9F0A', class:'Blacksmith', x: 200, y: 200, hp: 90, mp: 60, level: 4, sprite: null},
+                    {name:'Hunter', role:'CRO', color:'#FF453A', class:'Ranger', x: 600, y: 250, hp: 85, mp: 70, level: 3, sprite: null},
+                    {name:'Echo', role:'CMO', color:'#0A84FF', class:'Bard', x: 300, y: 400, hp: 75, mp: 95, level: 4, sprite: null},
+                    {name:'Sentinel', role:'Auditor', color:'#30D158', class:'Paladin', x: 500, y: 350, hp: 95, mp: 50, level: 5, sprite: null},
+                    {name:'Atlas', role:'COO', color:'#BF5AF2', class:'Wizard', x: 350, y: 180, hp: 70, mp: 100, level: 6, sprite: null}
+                ];
+                
+                this.quests = [];
+                this.treasureChests = [];
+                this.buildings = [];
+                this.guildLevel = 1;
+                this.guildXP = 0;
+                this.guildMaxXP = 100;
+                
+                this.audioContext = null;
+                this.setupAudio();
+                this.setupBuildings();
+                this.setupEventListeners();
+                this.setupSpawnKitBridge();
+                
+                this.lastTime = 0;
+                this.gameLoop();
+            }
+            
+            setupAudio() {
+                try {
+                    this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                } catch(e) {
+                    console.log('Audio not available');
+                }
+            }
+            
+            playSound(frequency, duration, volume = 0.1) {
+                if (!this.audioContext) return;
+                
+                const oscillator = this.audioContext.createOscillator();
+                const gain = this.audioContext.createGain();
+                
+                oscillator.connect(gain);
+                gain.connect(this.audioContext.destination);
+                
+                oscillator.frequency.setValueAtTime(frequency, this.audioContext.currentTime);
+                gain.gain.setValueAtTime(volume, this.audioContext.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + duration);
+                
+                oscillator.start(this.audioContext.currentTime);
+                oscillator.stop(this.audioContext.currentTime + duration);
+            }
+            
+            setupBuildings() {
+                this.buildings = [
+                    {name: 'Hero Hall', x: 350, y: 250, width: 100, height: 80, color: '#4A90E2', agent: 'ApoMac'},
+                    {name: 'Forge Workshop', x: 150, y: 150, width: 100, height: 80, color: '#FF9F0A', agent: 'Forge'},
+                    {name: 'Ranger Lodge', x: 550, y: 200, width: 100, height: 80, color: '#FF453A', agent: 'Hunter'},
+                    {name: 'Bard Tavern', x: 250, y: 350, width: 100, height: 80, color: '#0A84FF', agent: 'Echo'},
+                    {name: 'Paladin Temple', x: 450, y: 300, width: 100, height: 80, color: '#30D158', agent: 'Sentinel'},
+                    {name: 'Wizard Tower', x: 300, y: 130, width: 100, height: 120, color: '#BF5AF2', agent: 'Atlas'}
+                ];
+            }
+            
+            setupEventListeners() {
+                window.addEventListener('resize', () => {
+                    this.canvas.width = window.innerWidth;
+                    this.canvas.height = window.innerHeight - 60;
+                });
+                
+                this.canvas.addEventListener('click', (e) => {
+                    const rect = this.canvas.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const y = e.clientY - rect.top;
+                    this.handleClick(x, y);
+                });
+            }
+            
+            setupSpawnKitBridge() {
+                // Listen for SpawnKit data updates
+                window.addEventListener('message', (event) => {
+                    if (event.data.type === 'spawnkit-data') {
+                        this.updateFromSpawnKit(event.data.payload);
+                    }
+                });
+                
+                // Update every 5 seconds
+                setInterval(() => {
+                    this.updatePartyPanel();
+                    this.updateQuestPanel();
+                }, 5000);
+            }
+            
+            updateFromSpawnKit(data) {
+                if (data.missions) {
+                    this.quests = data.missions.map(mission => ({
+                        id: mission.id,
+                        title: mission.title || 'Unknown Quest',
+                        status: mission.status,
+                        agent: mission.assignedTo,
+                        xpReward: Math.floor(Math.random() * 50) + 25,
+                        progress: mission.progress || 0
+                    }));
+                }
+                
+                if (data.agents) {
+                    data.agents.forEach((spawnkitAgent, index) => {
+                        if (this.agents[index]) {
+                            this.agents[index].hp = Math.max(20, 100 - (spawnkitAgent.load || 0));
+                            this.agents[index].mp = Math.max(10, spawnkitAgent.tokens || 50);
+                        }
+                    });
+                }
+            }
+            
+            handleClick(x, y) {
+                // Check if clicked on building
+                this.buildings.forEach(building => {
+                    if (x >= building.x && x <= building.x + building.width &&
+                        y >= building.y && y <= building.y + building.height) {
+                        this.showDialog(`Welcome to ${building.name}! ${building.agent} manages this guild hall.`);
+                        this.playSound(800, 0.1);
+                    }
+                });
+                
+                // Check if clicked on agent
+                this.agents.forEach(agent => {
+                    if (Math.abs(x - agent.x) < 20 && Math.abs(y - agent.y) < 20) {
+                        this.showDialog(`${agent.name} the ${agent.class} (Level ${agent.level}) stands ready for duty!`);
+                        this.playSound(600, 0.1);
+                    }
+                });
+            }
+            
+            showDialog(text) {
+                const dialogBox = document.getElementById('dialogBox');
+                const dialogText = document.getElementById('dialogText');
+                dialogText.textContent = text;
+                dialogBox.classList.add('show');
+                
+                setTimeout(() => {
+                    dialogBox.classList.remove('show');
+                }, 3000);
+            }
+            
+            startBattleTransition(questTitle) {
+                const battleTransition = document.getElementById('battleTransition');
+                const battleText = document.getElementById('battleText');
+                battleText.textContent = `${questTitle.toUpperCase()} BATTLE BEGINS!`;
+                battleTransition.classList.add('show');
+                
+                // Play battle sound
+                this.playSound(440, 0.2);
+                setTimeout(() => this.playSound(554, 0.2), 200);
+                setTimeout(() => this.playSound(659, 0.3), 400);
+                
+                setTimeout(() => {
+                    battleTransition.classList.remove('show');
+                }, 2000);
+            }
+            
+            completeQuest(quest) {
+                // Add XP
+                this.guildXP += quest.xpReward;
+                if (this.guildXP >= this.guildMaxXP) {
+                    this.guildLevel++;
+                    this.guildXP = 0;
+                    this.guildMaxXP = Math.floor(this.guildMaxXP * 1.2);
+                    
+                    // Level up fanfare
+                    this.playSound(523, 0.2); // C
+                    setTimeout(() => this.playSound(659, 0.2), 100); // E
+                    setTimeout(() => this.playSound(784, 0.2), 200); // G
+                    setTimeout(() => this.playSound(1047, 0.4), 300); // C octave
+                    
+                    this.showDialog(`GUILD LEVEL UP! Now level ${this.guildLevel}!`);
+                }
+                
+                // Spawn treasure chest
+                this.spawnTreasureChest(quest.agent);
+                
+                // Update HUD
+                this.updateXPBar();
+            }
+            
+            spawnTreasureChest(agentName) {
+                const agent = this.agents.find(a => a.name === agentName);
+                if (agent) {
+                    const chest = document.createElement('div');
+                    chest.className = 'treasure-chest animate';
+                    chest.style.left = agent.x + 'px';
+                    chest.style.top = agent.y + 'px';
+                    chest.innerHTML = '💎';
+                    document.getElementById('gameContainer').appendChild(chest);
+                    
+                    // Play treasure sound
+                    this.playSound(800, 0.1);
+                    setTimeout(() => this.playSound(1000, 0.1), 100);
+                    setTimeout(() => this.playSound(1200, 0.2), 200);
+                    
+                    setTimeout(() => {
+                        chest.remove();
+                    }, 1000);
+                }
+            }
+            
+            updateXPBar() {
+                const xpFill = document.getElementById('xpFill');
+                const guildLevel = document.getElementById('guildLevel');
+                
+                const percentage = (this.guildXP / this.guildMaxXP) * 100;
+                xpFill.style.width = percentage + '%';
+                guildLevel.textContent = `GUILD LV.${this.guildLevel}`;
+            }
+            
+            updatePartyPanel() {
+                const partyList = document.getElementById('partyList');
+                partyList.innerHTML = '';
+                
+                this.agents.forEach(agent => {
+                    const memberDiv = document.createElement('div');
+                    memberDiv.className = 'party-member';
+                    memberDiv.innerHTML = `
+                        <div class="party-member-info">
+                            <div class="party-member-name">${agent.name}</div>
+                            <div class="party-member-class">${agent.class} LV.${agent.level}</div>
+                        </div>
+                        <div class="party-member-stats">
+                            <div class="stat-bar">
+                                <div class="hp-bar" style="width: ${agent.hp}%"></div>
+                            </div>
+                            <div class="stat-bar">
+                                <div class="mp-bar" style="width: ${agent.mp}%"></div>
+                            </div>
+                        </div>
+                    `;
+                    partyList.appendChild(memberDiv);
+                });
+            }
+            
+            updateQuestPanel() {
+                const questList = document.getElementById('questList');
+                questList.innerHTML = '';
+                
+                this.quests.slice(0, 6).forEach(quest => {
+                    const questDiv = document.createElement('div');
+                    questDiv.className = 'quest';
+                    questDiv.innerHTML = `
+                        <div class="quest-title">${quest.title}</div>
+                        <div>Agent: ${quest.agent || 'Unassigned'}</div>
+                        <div>Status: ${quest.status}</div>
+                        <div class="quest-reward">Reward: ${quest.xpReward} XP</div>
+                    `;
+                    questList.appendChild(questDiv);
+                    
+                    // Check if quest was just completed
+                    if (quest.status === 'completed' && !quest.processed) {
+                        quest.processed = true;
+                        this.completeQuest(quest);
+                    }
+                    
+                    // Check if quest was just started
+                    if (quest.status === 'active' && !quest.battleStarted) {
+                        quest.battleStarted = true;
+                        this.startBattleTransition(quest.title);
+                    }
+                });
+                
+                // Add placeholder quests if none exist
+                if (this.quests.length === 0) {
+                    questList.innerHTML = `
+                        <div class="quest">
+                            <div class="quest-title">Awaiting Orders</div>
+                            <div>No active quests</div>
+                            <div class="quest-reward">Stay ready!</div>
+                        </div>
+                    `;
+                }
+            }
+            
+            updateWeather() {
+                // Simple weather system
+                if (Math.random() < 0.001) { // 0.1% chance per frame
+                    this.weather = this.weather === 'clear' ? 'rain' : 'clear';
+                }
+                
+                if (this.weather === 'rain') {
+                    // Spawn rain particles
+                    if (Math.random() < 0.3) {
+                        const particle = document.createElement('div');
+                        particle.className = 'weather-particle rain-particle';
+                        particle.style.left = Math.random() * window.innerWidth + 'px';
+                        particle.style.top = '-20px';
+                        particle.style.animationDelay = Math.random() * 1 + 's';
+                        document.getElementById('gameContainer').appendChild(particle);
+                        
+                        setTimeout(() => {
+                            particle.remove();
+                        }, 2000);
+                    }
+                }
+            }
+            
+            drawTerrain() {
+                const ctx = this.ctx;
+                const width = this.canvas.width;
+                const height = this.canvas.height;
+                
+                // Day/Night cycle
+                this.dayNightCycle = (this.time * 0.0001) % (Math.PI * 2);
+                const dayIntensity = (Math.sin(this.dayNightCycle) + 1) / 2;
+                
+                // Sky gradient
+                const skyTop = dayIntensity > 0.5 ? '#87ceeb' : '#191970';
+                const skyBottom = dayIntensity > 0.5 ? '#98fb98' : '#2f4f4f';
+                
+                const gradient = ctx.createLinearGradient(0, 0, 0, height);
+                gradient.addColorStop(0, skyTop);
+                gradient.addColorStop(1, skyBottom);
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, 0, width, height);
+                
+                // Ground
+                const groundColor = dayIntensity > 0.5 ? '#228b22' : '#006400';
+                ctx.fillStyle = groundColor;
+                ctx.fillRect(0, height * 0.6, width, height * 0.4);
+                
+                // Path system
+                ctx.fillStyle = dayIntensity > 0.5 ? '#daa520' : '#8b7355';
+                
+                // Main horizontal path
+                ctx.fillRect(0, height * 0.5, width, 20);
+                
+                // Vertical paths to buildings
+                this.buildings.forEach(building => {
+                    ctx.fillRect(building.x + building.width/2 - 10, height * 0.5, 20, building.y - height * 0.5 + building.height);
+                });
+                
+                // Trees and decorations
+                this.drawTrees(ctx, dayIntensity);
+            }
+            
+            drawTrees(ctx, dayIntensity) {
+                const treeColor = dayIntensity > 0.5 ? '#228b22' : '#0f4f0f';
+                const trunkColor = dayIntensity > 0.5 ? '#8b4513' : '#5d2f0a';
+                
+                const treePositions = [
+                    {x: 50, y: 300}, {x: 120, y: 320}, {x: 680, y: 280},
+                    {x: 720, y: 350}, {x: 80, y: 450}, {x: 650, y: 420}
+                ];
+                
+                treePositions.forEach(tree => {
+                    // Trunk
+                    ctx.fillStyle = trunkColor;
+                    ctx.fillRect(tree.x - 4, tree.y, 8, 25);
+                    
+                    // Crown
+                    ctx.fillStyle = treeColor;
+                    ctx.beginPath();
+                    ctx.arc(tree.x, tree.y, 20, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+            }
+            
+            drawBuildings() {
+                const ctx = this.ctx;
+                
+                this.buildings.forEach(building => {
+                    // Building shadow
+                    ctx.fillStyle = 'rgba(0,0,0,0.3)';
+                    ctx.fillRect(building.x + 3, building.y + 3, building.width, building.height);
+                    
+                    // Building base
+                    ctx.fillStyle = building.color;
+                    ctx.fillRect(building.x, building.y, building.width, building.height);
+                    
+                    // Building outline
+                    ctx.strokeStyle = '#000';
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(building.x, building.y, building.width, building.height);
+                    
+                    // Roof
+                    ctx.fillStyle = '#8b4513';
+                    ctx.beginPath();
+                    ctx.moveTo(building.x - 10, building.y);
+                    ctx.lineTo(building.x + building.width/2, building.y - 20);
+                    ctx.lineTo(building.x + building.width + 10, building.y);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.stroke();
+                    
+                    // Door
+                    ctx.fillStyle = '#654321';
+                    ctx.fillRect(building.x + building.width/2 - 8, building.y + building.height - 20, 16, 20);
+                    
+                    // Windows
+                    ctx.fillStyle = '#ffff99';
+                    ctx.fillRect(building.x + 15, building.y + 20, 12, 12);
+                    ctx.fillRect(building.x + building.width - 27, building.y + 20, 12, 12);
+                    
+                    // Building name
+                    ctx.fillStyle = '#fff';
+                    ctx.font = '8px "Press Start 2P"';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(building.name.toUpperCase(), building.x + building.width/2, building.y - 25);
+                });
+            }
+            
+            drawAgents() {
+                const ctx = this.ctx;
+                
+                this.agents.forEach((agent, index) => {
+                    // Agent walking animation
+                    const walkPhase = Math.sin(this.time * 0.005 + index) * 2;
+                    
+                    // Shadow
+                    ctx.fillStyle = 'rgba(0,0,0,0.3)';
+                    ctx.beginPath();
+                    ctx.ellipse(agent.x, agent.y + 18, 12, 4, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // Agent sprite (simple pixel art)
+                    this.drawAgentSprite(ctx, agent, walkPhase);
+                    
+                    // Health bar above agent
+                    ctx.fillStyle = '#000';
+                    ctx.fillRect(agent.x - 16, agent.y - 25, 32, 6);
+                    
+                    const hpColor = agent.hp > 75 ? '#32cd32' : agent.hp > 50 ? '#ffd700' : agent.hp > 25 ? '#ff8c00' : '#ff0000';
+                    ctx.fillStyle = hpColor;
+                    ctx.fillRect(agent.x - 15, agent.y - 24, (agent.hp / 100) * 30, 4);
+                    
+                    // Name
+                    ctx.fillStyle = '#fff';
+                    ctx.font = '6px "Press Start 2P"';
+                    ctx.textAlign = 'center';
+                    ctx.strokeStyle = '#000';
+                    ctx.lineWidth = 2;
+                    ctx.strokeText(agent.name.toUpperCase(), agent.x, agent.y - 30);
+                    ctx.fillText(agent.name.toUpperCase(), agent.x, agent.y - 30);
+                });
+            }
+            
+            drawAgentSprite(ctx, agent, walkPhase) {
+                const x = agent.x;
+                const y = agent.y;
+                
+                // Head
+                ctx.fillStyle = '#fdbcb4'; // Skin tone
+                ctx.fillRect(x - 6, y - 15, 12, 10);
+                
+                // Hair (different for each agent)
+                const hairColors = {
+                    'ApoMac': '#8b4513',
+                    'Forge': '#ff4500',
+                    'Hunter': '#006400',
+                    'Echo': '#4169e1',
+                    'Sentinel': '#ffd700',
+                    'Atlas': '#800080'
+                };
+                ctx.fillStyle = hairColors[agent.name] || '#8b4513';
+                ctx.fillRect(x - 6, y - 18, 12, 6);
+                
+                // Body
+                ctx.fillStyle = agent.color;
+                ctx.fillRect(x - 5, y - 5, 10, 15);
+                
+                // Arms
+                ctx.fillStyle = agent.color;
+                ctx.fillRect(x - 8 + Math.sin(walkPhase) * 2, y - 3, 3, 8);
+                ctx.fillRect(x + 5 - Math.sin(walkPhase) * 2, y - 3, 3, 8);
+                
+                // Legs
+                ctx.fillStyle = '#000080'; // Blue pants
+                ctx.fillRect(x - 3 + Math.sin(walkPhase), y + 10, 2, 8);
+                ctx.fillRect(x + 1 - Math.sin(walkPhase), y + 10, 2, 8);
+                
+                // Eyes
+                ctx.fillStyle = '#000';
+                ctx.fillRect(x - 4, y - 12, 2, 2);
+                ctx.fillRect(x + 2, y - 12, 2, 2);
+                
+                // Class-specific accessories
+                this.drawClassAccessories(ctx, agent, x, y);
+            }
+            
+            drawClassAccessories(ctx, agent, x, y) {
+                switch(agent.class) {
+                    case 'Hero':
+                        // Crown
+                        ctx.fillStyle = '#ffd700';
+                        ctx.fillRect(x - 4, y - 20, 8, 3);
+                        break;
+                    case 'Blacksmith':
+                        // Hammer
+                        ctx.fillStyle = '#8b4513';
+                        ctx.fillRect(x + 6, y - 8, 2, 6);
+                        ctx.fillStyle = '#696969';
+                        ctx.fillRect(x + 5, y - 10, 4, 3);
+                        break;
+                    case 'Ranger':
+                        // Bow
+                        ctx.strokeStyle = '#8b4513';
+                        ctx.lineWidth = 2;
+                        ctx.beginPath();
+                        ctx.arc(x - 8, y - 5, 4, -Math.PI/3, Math.PI/3);
+                        ctx.stroke();
+                        break;
+                    case 'Bard':
+                        // Lute
+                        ctx.fillStyle = '#daa520';
+                        ctx.beginPath();
+                        ctx.ellipse(x + 7, y, 3, 5, 0, 0, Math.PI * 2);
+                        ctx.fill();
+                        break;
+                    case 'Paladin':
+                        // Shield
+                        ctx.fillStyle = '#c0c0c0';
+                        ctx.fillRect(x - 9, y - 5, 3, 8);
+                        ctx.fillStyle = '#ff0000';
+                        ctx.fillRect(x - 8, y - 2, 1, 2);
+                        break;
+                    case 'Wizard':
+                        // Hat
+                        ctx.fillStyle = '#4b0082';
+                        ctx.beginPath();
+                        ctx.moveTo(x, y - 18);
+                        ctx.lineTo(x - 6, y - 14);
+                        ctx.lineTo(x + 6, y - 14);
+                        ctx.closePath();
+                        ctx.fill();
+                        // Stars
+                        ctx.fillStyle = '#ffd700';
+                        ctx.fillRect(x - 1, y - 16, 2, 2);
+                        break;
+                }
+            }
+            
+            drawWeatherEffects() {
+                if (this.weather === 'rain') {
+                    const ctx = this.ctx;
+                    ctx.strokeStyle = 'rgba(173, 216, 230, 0.6)';
+                    ctx.lineWidth = 1;
+                    
+                    for (let i = 0; i < 20; i++) {
+                        const x = (this.time * 2 + i * 50) % (this.canvas.width + 100);
+                        const y = (this.time * 5 + i * 30) % (this.canvas.height + 50);
+                        
+                        ctx.beginPath();
+                        ctx.moveTo(x, y);
+                        ctx.lineTo(x - 5, y + 15);
+                        ctx.stroke();
+                    }
+                }
+            }
+            
+            gameLoop(currentTime = 0) {
+                const deltaTime = currentTime - this.lastTime;
+                this.lastTime = currentTime;
+                this.time = currentTime;
+                
+                // Clear canvas
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                
+                // Update systems
+                this.updateWeather();
+                
+                // Draw everything
+                this.drawTerrain();
+                this.drawBuildings();
+                this.drawAgents();
+                this.drawWeatherEffects();
+                
+                // Continue loop
+                requestAnimationFrame((time) => this.gameLoop(time));
+            }
+        }
+        
+        // Initialize the game when the page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            const game = new RPGEngine();
+            
+            // Initialize panels
+            game.updatePartyPanel();
+            game.updateQuestPanel();
+            game.updateXPBar();
+            
+            // Add some sample quests for demonstration
+            setTimeout(() => {
+                game.quests = [
+                    {
+                        id: 'demo1',
+                        title: 'Deploy New Feature',
+                        status: 'active',
+                        agent: 'Forge',
+                        xpReward: 75,
+                        progress: 60
+                    },
+                    {
+                        id: 'demo2',
+                        title: 'Market Analysis',
+                        status: 'pending',
+                        agent: 'Hunter',
+                        xpReward: 50,
+                        progress: 0
+                    },
+                    {
+                        id: 'demo3',
+                        title: 'Security Audit',
+                        status: 'active',
+                        agent: 'Sentinel',
+                        xpReward: 100,
+                        progress: 30
+                    }
+                ];
+                game.updateQuestPanel();
+            }, 2000);
+            
+            // SpawnKit integration bridge
+            window.RPGGame = game;
+            console.log('🎮 SpawnKit RPG Engine Loaded! Welcome to the Adventure!');
+        });
+        
+        // Listen for SpawnKit theme bridge messages
+        window.addEventListener('message', function(event) {
+            if (event.data && event.data.type === 'spawnkit-update' && window.RPGGame) {
+                window.RPGGame.updateFromSpawnKit(event.data.data);
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,3868 @@
+{
+  "tileSize": 32,
+  "gridW": 16,
+  "gridH": 17,
+  "canvasW": 512,
+  "canvasH": 544,
+  "cells": [
+    {
+      "gx": 0,
+      "gy": 0,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 7,
+          "row": 1
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 1,
+      "gy": 0,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 1,
+          "row": 11
+        },
+        {
+          "sheet": "MO",
+          "col": 11,
+          "row": 11
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 2,
+      "gy": 0,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 1,
+          "row": 11
+        },
+        {
+          "sheet": "MO",
+          "col": 12,
+          "row": 11
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 3,
+      "gy": 0,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 1,
+          "row": 11
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 4,
+      "gy": 0,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 1,
+          "row": 11
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 5,
+      "gy": 0,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 1,
+          "row": 11
+        },
+        {
+          "sheet": "MO",
+          "col": 9,
+          "row": 10
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 6,
+      "gy": 0,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 1,
+          "row": 11
+        },
+        {
+          "sheet": "MO",
+          "col": 10,
+          "row": 10
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 7,
+      "gy": 0,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 1,
+          "row": 11
+        },
+        {
+          "sheet": "MO",
+          "col": 7,
+          "row": 10
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 8,
+      "gy": 0,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 1,
+          "row": 7
+        },
+        {
+          "sheet": "MO",
+          "col": 7,
+          "row": 12
+        }
+      ],
+      "dist": 6.99
+    },
+    {
+      "gx": 9,
+      "gy": 0,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 1,
+          "row": 11
+        },
+        {
+          "sheet": "MO",
+          "col": 8,
+          "row": 12
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 10,
+      "gy": 0,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 1,
+          "row": 11
+        },
+        {
+          "sheet": "MO",
+          "col": 9,
+          "row": 12
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 11,
+      "gy": 0,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 1,
+          "row": 11
+        },
+        {
+          "sheet": "MO",
+          "col": 10,
+          "row": 12
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 12,
+      "gy": 0,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 1,
+          "row": 11
+        }
+      ],
+      "dist": 0.08
+    },
+    {
+      "gx": 13,
+      "gy": 0,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 1,
+          "row": 11
+        },
+        {
+          "sheet": "MO",
+          "col": 1,
+          "row": 30
+        }
+      ],
+      "dist": 18.47
+    },
+    {
+      "gx": 14,
+      "gy": 0,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 1,
+          "row": 11
+        }
+      ],
+      "dist": 17.11
+    },
+    {
+      "gx": 15,
+      "gy": 0,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 9,
+          "row": 1
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 0,
+      "gy": 1,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 3,
+          "row": 0
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 1,
+      "gy": 1,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 1,
+          "row": 12
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 2,
+      "gy": 1,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 1,
+          "row": 12
+        },
+        {
+          "sheet": "MO",
+          "col": 8,
+          "row": 49
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 3,
+      "gy": 1,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 1,
+          "row": 12
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 4,
+      "gy": 1,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 8,
+          "row": 9
+        },
+        {
+          "sheet": "BS",
+          "col": 7,
+          "row": 6
+        }
+      ],
+      "dist": 41.59
+    },
+    {
+      "gx": 5,
+      "gy": 1,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 1,
+          "row": 12
+        },
+        {
+          "sheet": "MO",
+          "col": 9,
+          "row": 11
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 6,
+      "gy": 1,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 1,
+          "row": 12
+        },
+        {
+          "sheet": "MO",
+          "col": 10,
+          "row": 11
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 7,
+      "gy": 1,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 1,
+          "row": 12
+        },
+        {
+          "sheet": "MO",
+          "col": 7,
+          "row": 11
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 8,
+      "gy": 1,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 11,
+          "row": 10
+        },
+        {
+          "sheet": "MO",
+          "col": 7,
+          "row": 13
+        }
+      ],
+      "dist": 7.89
+    },
+    {
+      "gx": 9,
+      "gy": 1,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 12,
+          "row": 8
+        },
+        {
+          "sheet": "MO",
+          "col": 8,
+          "row": 13
+        }
+      ],
+      "dist": 7.79
+    },
+    {
+      "gx": 10,
+      "gy": 1,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 1,
+          "row": 12
+        },
+        {
+          "sheet": "MO",
+          "col": 9,
+          "row": 13
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 11,
+      "gy": 1,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 1,
+          "row": 6
+        },
+        {
+          "sheet": "MO",
+          "col": 10,
+          "row": 13
+        }
+      ],
+      "dist": 4.87
+    },
+    {
+      "gx": 12,
+      "gy": 1,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 8,
+          "row": 9
+        },
+        {
+          "sheet": "MO",
+          "col": 6,
+          "row": 10
+        }
+      ],
+      "dist": 19.56
+    },
+    {
+      "gx": 13,
+      "gy": 1,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 1,
+          "row": 12
+        },
+        {
+          "sheet": "MO",
+          "col": 11,
+          "row": 13
+        }
+      ],
+      "dist": 12.84
+    },
+    {
+      "gx": 14,
+      "gy": 1,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 11,
+          "row": 10
+        },
+        {
+          "sheet": "MO",
+          "col": 12,
+          "row": 16
+        }
+      ],
+      "dist": 45.56
+    },
+    {
+      "gx": 15,
+      "gy": 1,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 4,
+          "row": 0
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 0,
+      "gy": 2,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 2,
+          "row": 11
+        }
+      ],
+      "dist": 0.96
+    },
+    {
+      "gx": 1,
+      "gy": 2,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 11,
+          "row": 5
+        },
+        {
+          "sheet": "MO",
+          "col": 14,
+          "row": 6
+        }
+      ],
+      "dist": 2.49
+    },
+    {
+      "gx": 2,
+      "gy": 2,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 11,
+          "row": 5
+        },
+        {
+          "sheet": "MO",
+          "col": 8,
+          "row": 50
+        }
+      ],
+      "dist": 11.65
+    },
+    {
+      "gx": 3,
+      "gy": 2,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 11,
+          "row": 5
+        },
+        {
+          "sheet": "MO",
+          "col": 13,
+          "row": 30
+        }
+      ],
+      "dist": 9.99
+    },
+    {
+      "gx": 4,
+      "gy": 2,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 11,
+          "row": 7
+        },
+        {
+          "sheet": "MO",
+          "col": 14,
+          "row": 30
+        }
+      ],
+      "dist": 20.53
+    },
+    {
+      "gx": 5,
+      "gy": 2,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 15,
+          "row": 6
+        },
+        {
+          "sheet": "MO",
+          "col": 15,
+          "row": 30
+        }
+      ],
+      "dist": 14.93
+    },
+    {
+      "gx": 6,
+      "gy": 2,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 11,
+          "row": 5
+        },
+        {
+          "sheet": "MO",
+          "col": 4,
+          "row": 30
+        }
+      ],
+      "dist": 4.56
+    },
+    {
+      "gx": 7,
+      "gy": 2,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 11,
+          "row": 5
+        },
+        {
+          "sheet": "MO",
+          "col": 2,
+          "row": 0
+        }
+      ],
+      "dist": 4.56
+    },
+    {
+      "gx": 8,
+      "gy": 2,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 6,
+          "row": 9
+        },
+        {
+          "sheet": "MO",
+          "col": 7,
+          "row": 14
+        }
+      ],
+      "dist": 28.83
+    },
+    {
+      "gx": 9,
+      "gy": 2,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 11,
+          "row": 5
+        },
+        {
+          "sheet": "MO",
+          "col": 8,
+          "row": 14
+        }
+      ],
+      "dist": 16.18
+    },
+    {
+      "gx": 10,
+      "gy": 2,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 11,
+          "row": 5
+        },
+        {
+          "sheet": "MO",
+          "col": 2,
+          "row": 0
+        }
+      ],
+      "dist": 4.56
+    },
+    {
+      "gx": 11,
+      "gy": 2,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 11,
+          "row": 5
+        },
+        {
+          "sheet": "MO",
+          "col": 6,
+          "row": 30
+        }
+      ],
+      "dist": 16.34
+    },
+    {
+      "gx": 12,
+      "gy": 2,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 11,
+          "row": 5
+        },
+        {
+          "sheet": "MO",
+          "col": 6,
+          "row": 11
+        }
+      ],
+      "dist": 2.01
+    },
+    {
+      "gx": 13,
+      "gy": 2,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 11,
+          "row": 5
+        },
+        {
+          "sheet": "MO",
+          "col": 11,
+          "row": 14
+        }
+      ],
+      "dist": 1.38
+    },
+    {
+      "gx": 14,
+      "gy": 2,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 11,
+          "row": 5
+        },
+        {
+          "sheet": "BS",
+          "col": 12,
+          "row": 17
+        }
+      ],
+      "dist": 9.18
+    },
+    {
+      "gx": 15,
+      "gy": 2,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 4,
+          "row": 0
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 0,
+      "gy": 3,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 2,
+          "row": 12
+        }
+      ],
+      "dist": 1.33
+    },
+    {
+      "gx": 1,
+      "gy": 3,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 11,
+          "row": 6
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 2,
+      "gy": 3,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 11,
+          "row": 6
+        },
+        {
+          "sheet": "MO",
+          "col": 0,
+          "row": 27
+        }
+      ],
+      "dist": 1.81
+    },
+    {
+      "gx": 3,
+      "gy": 3,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 11,
+          "row": 6
+        },
+        {
+          "sheet": "MO",
+          "col": 10,
+          "row": 30
+        }
+      ],
+      "dist": 16.26
+    },
+    {
+      "gx": 4,
+      "gy": 3,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 10,
+          "row": 6
+        },
+        {
+          "sheet": "MO",
+          "col": 11,
+          "row": 32
+        }
+      ],
+      "dist": 21.33
+    },
+    {
+      "gx": 5,
+      "gy": 3,
+      "layers": [
+        {
+          "sheet": "MO",
+          "col": 3,
+          "row": 27
+        }
+      ],
+      "dist": 29.1
+    },
+    {
+      "gx": 6,
+      "gy": 3,
+      "layers": [
+        {
+          "sheet": "MO",
+          "col": 1,
+          "row": 27
+        }
+      ],
+      "dist": 23.96
+    },
+    {
+      "gx": 7,
+      "gy": 3,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 15,
+          "row": 6
+        },
+        {
+          "sheet": "MO",
+          "col": 14,
+          "row": 26
+        }
+      ],
+      "dist": 24.28
+    },
+    {
+      "gx": 8,
+      "gy": 3,
+      "layers": [
+        {
+          "sheet": "MO",
+          "col": 6,
+          "row": 27
+        }
+      ],
+      "dist": 35.47
+    },
+    {
+      "gx": 9,
+      "gy": 3,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 10,
+          "row": 7
+        },
+        {
+          "sheet": "MO",
+          "col": 13,
+          "row": 28
+        }
+      ],
+      "dist": 21.48
+    },
+    {
+      "gx": 10,
+      "gy": 3,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 15,
+          "row": 6
+        },
+        {
+          "sheet": "MO",
+          "col": 14,
+          "row": 28
+        }
+      ],
+      "dist": 10.74
+    },
+    {
+      "gx": 11,
+      "gy": 3,
+      "layers": [
+        {
+          "sheet": "MO",
+          "col": 6,
+          "row": 27
+        }
+      ],
+      "dist": 26.21
+    },
+    {
+      "gx": 12,
+      "gy": 3,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 11,
+          "row": 6
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 13,
+      "gy": 3,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 11,
+          "row": 6
+        },
+        {
+          "sheet": "MO",
+          "col": 8,
+          "row": 45
+        }
+      ],
+      "dist": 27.86
+    },
+    {
+      "gx": 14,
+      "gy": 3,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 10,
+          "row": 6
+        },
+        {
+          "sheet": "MO",
+          "col": 12,
+          "row": 47
+        }
+      ],
+      "dist": 35.1
+    },
+    {
+      "gx": 15,
+      "gy": 3,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 4,
+          "row": 0
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 0,
+      "gy": 4,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 11,
+          "row": 5
+        },
+        {
+          "sheet": "MO",
+          "col": 14,
+          "row": 6
+        }
+      ],
+      "dist": 2.49
+    },
+    {
+      "gx": 1,
+      "gy": 4,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 11,
+          "row": 6
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 2,
+      "gy": 4,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 11,
+          "row": 6
+        },
+        {
+          "sheet": "MO",
+          "col": 0,
+          "row": 28
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 3,
+      "gy": 4,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 15,
+          "row": 6
+        },
+        {
+          "sheet": "MO",
+          "col": 7,
+          "row": 31
+        }
+      ],
+      "dist": 16.96
+    },
+    {
+      "gx": 4,
+      "gy": 4,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 11,
+          "row": 8
+        },
+        {
+          "sheet": "MO",
+          "col": 11,
+          "row": 33
+        }
+      ],
+      "dist": 22.45
+    },
+    {
+      "gx": 5,
+      "gy": 4,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 6,
+          "row": 9
+        },
+        {
+          "sheet": "MO",
+          "col": 12,
+          "row": 31
+        }
+      ],
+      "dist": 30.12
+    },
+    {
+      "gx": 6,
+      "gy": 4,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 15,
+          "row": 6
+        },
+        {
+          "sheet": "MO",
+          "col": 7,
+          "row": 31
+        }
+      ],
+      "dist": 18.98
+    },
+    {
+      "gx": 7,
+      "gy": 4,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 11,
+          "row": 8
+        },
+        {
+          "sheet": "MO",
+          "col": 14,
+          "row": 27
+        }
+      ],
+      "dist": 25.09
+    },
+    {
+      "gx": 8,
+      "gy": 4,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 6,
+          "row": 9
+        },
+        {
+          "sheet": "MO",
+          "col": 15,
+          "row": 27
+        }
+      ],
+      "dist": 28.67
+    },
+    {
+      "gx": 9,
+      "gy": 4,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 5,
+          "row": 9
+        },
+        {
+          "sheet": "MO",
+          "col": 7,
+          "row": 31
+        }
+      ],
+      "dist": 30.8
+    },
+    {
+      "gx": 10,
+      "gy": 4,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 11,
+          "row": 8
+        },
+        {
+          "sheet": "MO",
+          "col": 4,
+          "row": 28
+        }
+      ],
+      "dist": 35.7
+    },
+    {
+      "gx": 11,
+      "gy": 4,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 6,
+          "row": 9
+        },
+        {
+          "sheet": "MO",
+          "col": 15,
+          "row": 29
+        }
+      ],
+      "dist": 29.01
+    },
+    {
+      "gx": 12,
+      "gy": 4,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 11,
+          "row": 6
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 13,
+      "gy": 4,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 11,
+          "row": 6
+        },
+        {
+          "sheet": "MO",
+          "col": 2,
+          "row": 18
+        }
+      ],
+      "dist": 25.63
+    },
+    {
+      "gx": 14,
+      "gy": 4,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 10,
+          "row": 6
+        },
+        {
+          "sheet": "MO",
+          "col": 4,
+          "row": 21
+        }
+      ],
+      "dist": 28.66
+    },
+    {
+      "gx": 15,
+      "gy": 4,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 4,
+          "row": 0
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 0,
+      "gy": 5,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 11,
+          "row": 6
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 1,
+      "gy": 5,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 11,
+          "row": 6
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 2,
+      "gy": 5,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 11,
+          "row": 6
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 3,
+      "gy": 5,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 11,
+          "row": 6
+        },
+        {
+          "sheet": "MO",
+          "col": 3,
+          "row": 8
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 4,
+      "gy": 5,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 11,
+          "row": 9
+        },
+        {
+          "sheet": "MO",
+          "col": 1,
+          "row": 9
+        }
+      ],
+      "dist": 16.34
+    },
+    {
+      "gx": 5,
+      "gy": 5,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 11,
+          "row": 6
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 6,
+      "gy": 5,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 11,
+          "row": 6
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 7,
+      "gy": 5,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 11,
+          "row": 9
+        },
+        {
+          "sheet": "MO",
+          "col": 1,
+          "row": 9
+        }
+      ],
+      "dist": 16.34
+    },
+    {
+      "gx": 8,
+      "gy": 5,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 11,
+          "row": 6
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 9,
+      "gy": 5,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 11,
+          "row": 6
+        },
+        {
+          "sheet": "MO",
+          "col": 3,
+          "row": 8
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 10,
+      "gy": 5,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 11,
+          "row": 9
+        },
+        {
+          "sheet": "MO",
+          "col": 1,
+          "row": 9
+        }
+      ],
+      "dist": 16.34
+    },
+    {
+      "gx": 11,
+      "gy": 5,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 11,
+          "row": 6
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 12,
+      "gy": 5,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 11,
+          "row": 6
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 13,
+      "gy": 5,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 11,
+          "row": 6
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 14,
+      "gy": 5,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 11,
+          "row": 6
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 15,
+      "gy": 5,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 4,
+          "row": 0
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 0,
+      "gy": 6,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 1,
+          "row": 2
+        }
+      ],
+      "dist": 1.81
+    },
+    {
+      "gx": 1,
+      "gy": 6,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 11,
+          "row": 6
+        },
+        {
+          "sheet": "MO",
+          "col": 0,
+          "row": 26
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 2,
+      "gy": 6,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 11,
+          "row": 6
+        },
+        {
+          "sheet": "MO",
+          "col": 13,
+          "row": 32
+        }
+      ],
+      "dist": 7.32
+    },
+    {
+      "gx": 3,
+      "gy": 6,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 11,
+          "row": 7
+        },
+        {
+          "sheet": "MO",
+          "col": 14,
+          "row": 32
+        }
+      ],
+      "dist": 22.02
+    },
+    {
+      "gx": 4,
+      "gy": 6,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 11,
+          "row": 6
+        },
+        {
+          "sheet": "MO",
+          "col": 15,
+          "row": 32
+        }
+      ],
+      "dist": 17.91
+    },
+    {
+      "gx": 5,
+      "gy": 6,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 11,
+          "row": 6
+        },
+        {
+          "sheet": "MO",
+          "col": 1,
+          "row": 30
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 6,
+      "gy": 6,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 11,
+          "row": 6
+        },
+        {
+          "sheet": "MO",
+          "col": 2,
+          "row": 30
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 7,
+      "gy": 6,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 11,
+          "row": 6
+        },
+        {
+          "sheet": "MO",
+          "col": 3,
+          "row": 30
+        }
+      ],
+      "dist": 12.31
+    },
+    {
+      "gx": 8,
+      "gy": 6,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 11,
+          "row": 6
+        },
+        {
+          "sheet": "MO",
+          "col": 13,
+          "row": 31
+        }
+      ],
+      "dist": 7.32
+    },
+    {
+      "gx": 9,
+      "gy": 6,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 11,
+          "row": 9
+        },
+        {
+          "sheet": "MO",
+          "col": 11,
+          "row": 7
+        }
+      ],
+      "dist": 23.29
+    },
+    {
+      "gx": 10,
+      "gy": 6,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 11,
+          "row": 6
+        },
+        {
+          "sheet": "MO",
+          "col": 15,
+          "row": 31
+        }
+      ],
+      "dist": 15.79
+    },
+    {
+      "gx": 11,
+      "gy": 6,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 11,
+          "row": 6
+        },
+        {
+          "sheet": "MO",
+          "col": 1,
+          "row": 30
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 12,
+      "gy": 6,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 11,
+          "row": 6
+        },
+        {
+          "sheet": "MO",
+          "col": 2,
+          "row": 30
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 13,
+      "gy": 6,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 11,
+          "row": 6
+        },
+        {
+          "sheet": "MO",
+          "col": 3,
+          "row": 30
+        }
+      ],
+      "dist": 12.31
+    },
+    {
+      "gx": 14,
+      "gy": 6,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 11,
+          "row": 6
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 15,
+      "gy": 6,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 4,
+          "row": 0
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 0,
+      "gy": 7,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 3,
+          "row": 0
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 1,
+      "gy": 7,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 11,
+          "row": 6
+        },
+        {
+          "sheet": "MO",
+          "col": 0,
+          "row": 27
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 2,
+      "gy": 7,
+      "layers": [
+        {
+          "sheet": "MO",
+          "col": 1,
+          "row": 27
+        }
+      ],
+      "dist": 29.12
+    },
+    {
+      "gx": 3,
+      "gy": 7,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 15,
+          "row": 6
+        },
+        {
+          "sheet": "MO",
+          "col": 14,
+          "row": 26
+        }
+      ],
+      "dist": 31.26
+    },
+    {
+      "gx": 4,
+      "gy": 7,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 6,
+          "row": 9
+        },
+        {
+          "sheet": "MO",
+          "col": 15,
+          "row": 26
+        }
+      ],
+      "dist": 33.57
+    },
+    {
+      "gx": 5,
+      "gy": 7,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 10,
+          "row": 7
+        },
+        {
+          "sheet": "MO",
+          "col": 13,
+          "row": 28
+        }
+      ],
+      "dist": 15.09
+    },
+    {
+      "gx": 6,
+      "gy": 7,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 12,
+          "row": 8
+        },
+        {
+          "sheet": "MO",
+          "col": 14,
+          "row": 12
+        }
+      ],
+      "dist": 10.63
+    },
+    {
+      "gx": 7,
+      "gy": 7,
+      "layers": [
+        {
+          "sheet": "MO",
+          "col": 6,
+          "row": 27
+        }
+      ],
+      "dist": 24.03
+    },
+    {
+      "gx": 8,
+      "gy": 7,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 15,
+          "row": 6
+        },
+        {
+          "sheet": "MO",
+          "col": 10,
+          "row": 30
+        }
+      ],
+      "dist": 16.81
+    },
+    {
+      "gx": 9,
+      "gy": 7,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 0,
+          "row": 10
+        },
+        {
+          "sheet": "MO",
+          "col": 11,
+          "row": 30
+        }
+      ],
+      "dist": 25.32
+    },
+    {
+      "gx": 10,
+      "gy": 7,
+      "layers": [
+        {
+          "sheet": "MO",
+          "col": 6,
+          "row": 27
+        }
+      ],
+      "dist": 29.98
+    },
+    {
+      "gx": 11,
+      "gy": 7,
+      "layers": [
+        {
+          "sheet": "MO",
+          "col": 1,
+          "row": 27
+        }
+      ],
+      "dist": 29.12
+    },
+    {
+      "gx": 12,
+      "gy": 7,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 15,
+          "row": 6
+        },
+        {
+          "sheet": "MO",
+          "col": 14,
+          "row": 26
+        }
+      ],
+      "dist": 31.26
+    },
+    {
+      "gx": 13,
+      "gy": 7,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 6,
+          "row": 9
+        },
+        {
+          "sheet": "MO",
+          "col": 15,
+          "row": 26
+        }
+      ],
+      "dist": 33.35
+    },
+    {
+      "gx": 14,
+      "gy": 7,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 11,
+          "row": 6
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 15,
+      "gy": 7,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 4,
+          "row": 0
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 0,
+      "gy": 8,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 3,
+          "row": 0
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 1,
+      "gy": 8,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 11,
+          "row": 6
+        },
+        {
+          "sheet": "MO",
+          "col": 0,
+          "row": 28
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 2,
+      "gy": 8,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 11,
+          "row": 10
+        },
+        {
+          "sheet": "MO",
+          "col": 10,
+          "row": 29
+        }
+      ],
+      "dist": 17.48
+    },
+    {
+      "gx": 3,
+      "gy": 8,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 11,
+          "row": 8
+        },
+        {
+          "sheet": "MO",
+          "col": 14,
+          "row": 16
+        }
+      ],
+      "dist": 14.4
+    },
+    {
+      "gx": 4,
+      "gy": 8,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 6,
+          "row": 9
+        },
+        {
+          "sheet": "MO",
+          "col": 15,
+          "row": 27
+        }
+      ],
+      "dist": 28.32
+    },
+    {
+      "gx": 5,
+      "gy": 8,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 11,
+          "row": 10
+        },
+        {
+          "sheet": "MO",
+          "col": 10,
+          "row": 29
+        }
+      ],
+      "dist": 24.07
+    },
+    {
+      "gx": 6,
+      "gy": 8,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 11,
+          "row": 8
+        },
+        {
+          "sheet": "MO",
+          "col": 1,
+          "row": 8
+        }
+      ],
+      "dist": 14.04
+    },
+    {
+      "gx": 7,
+      "gy": 8,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 6,
+          "row": 9
+        },
+        {
+          "sheet": "MO",
+          "col": 12,
+          "row": 29
+        }
+      ],
+      "dist": 25.08
+    },
+    {
+      "gx": 8,
+      "gy": 8,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 11,
+          "row": 10
+        },
+        {
+          "sheet": "MO",
+          "col": 10,
+          "row": 29
+        }
+      ],
+      "dist": 14.59
+    },
+    {
+      "gx": 9,
+      "gy": 8,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 14,
+          "row": 12
+        },
+        {
+          "sheet": "MO",
+          "col": 1,
+          "row": 8
+        }
+      ],
+      "dist": 13.85
+    },
+    {
+      "gx": 10,
+      "gy": 8,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 6,
+          "row": 9
+        },
+        {
+          "sheet": "MO",
+          "col": 12,
+          "row": 29
+        }
+      ],
+      "dist": 26.17
+    },
+    {
+      "gx": 11,
+      "gy": 8,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 11,
+          "row": 10
+        },
+        {
+          "sheet": "MO",
+          "col": 10,
+          "row": 29
+        }
+      ],
+      "dist": 17.64
+    },
+    {
+      "gx": 12,
+      "gy": 8,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 11,
+          "row": 8
+        },
+        {
+          "sheet": "MO",
+          "col": 14,
+          "row": 16
+        }
+      ],
+      "dist": 14.4
+    },
+    {
+      "gx": 13,
+      "gy": 8,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 6,
+          "row": 9
+        },
+        {
+          "sheet": "MO",
+          "col": 15,
+          "row": 27
+        }
+      ],
+      "dist": 28.45
+    },
+    {
+      "gx": 14,
+      "gy": 8,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 11,
+          "row": 6
+        },
+        {
+          "sheet": "MO",
+          "col": 14,
+          "row": 8
+        }
+      ],
+      "dist": 10.08
+    },
+    {
+      "gx": 15,
+      "gy": 8,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 4,
+          "row": 0
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 0,
+      "gy": 9,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 3,
+          "row": 0
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 1,
+      "gy": 9,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 11,
+          "row": 6
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 2,
+      "gy": 9,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 11,
+          "row": 6
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 3,
+      "gy": 9,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 11,
+          "row": 9
+        },
+        {
+          "sheet": "MO",
+          "col": 1,
+          "row": 9
+        }
+      ],
+      "dist": 16.34
+    },
+    {
+      "gx": 4,
+      "gy": 9,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 11,
+          "row": 6
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 5,
+      "gy": 9,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 11,
+          "row": 6
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 6,
+      "gy": 9,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 11,
+          "row": 9
+        },
+        {
+          "sheet": "MO",
+          "col": 1,
+          "row": 9
+        }
+      ],
+      "dist": 16.34
+    },
+    {
+      "gx": 7,
+      "gy": 9,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 11,
+          "row": 6
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 8,
+      "gy": 9,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 11,
+          "row": 6
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 9,
+      "gy": 9,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 11,
+          "row": 9
+        },
+        {
+          "sheet": "MO",
+          "col": 1,
+          "row": 9
+        }
+      ],
+      "dist": 15.35
+    },
+    {
+      "gx": 10,
+      "gy": 9,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 11,
+          "row": 6
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 11,
+      "gy": 9,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 11,
+          "row": 6
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 12,
+      "gy": 9,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 11,
+          "row": 9
+        },
+        {
+          "sheet": "MO",
+          "col": 1,
+          "row": 9
+        }
+      ],
+      "dist": 16.34
+    },
+    {
+      "gx": 13,
+      "gy": 9,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 11,
+          "row": 6
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 14,
+      "gy": 9,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 12,
+          "row": 10
+        },
+        {
+          "sheet": "MO",
+          "col": 6,
+          "row": 13
+        }
+      ],
+      "dist": 32.65
+    },
+    {
+      "gx": 15,
+      "gy": 9,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 4,
+          "row": 0
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 0,
+      "gy": 10,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 7,
+          "row": 3
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 1,
+      "gy": 10,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 8,
+          "row": 1
+        }
+      ],
+      "dist": 3.33
+    },
+    {
+      "gx": 2,
+      "gy": 10,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 8,
+          "row": 1
+        }
+      ],
+      "dist": 3.33
+    },
+    {
+      "gx": 3,
+      "gy": 10,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 1,
+          "row": 3
+        }
+      ],
+      "dist": 1.93
+    },
+    {
+      "gx": 4,
+      "gy": 10,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 1,
+          "row": 7
+        },
+        {
+          "sheet": "MO",
+          "col": 11,
+          "row": 11
+        }
+      ],
+      "dist": 7.84
+    },
+    {
+      "gx": 5,
+      "gy": 10,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 1,
+          "row": 7
+        },
+        {
+          "sheet": "MO",
+          "col": 12,
+          "row": 11
+        }
+      ],
+      "dist": 7.66
+    },
+    {
+      "gx": 6,
+      "gy": 10,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 1,
+          "row": 9
+        }
+      ],
+      "dist": 0.46
+    },
+    {
+      "gx": 7,
+      "gy": 10,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 1,
+          "row": 9
+        }
+      ],
+      "dist": 0.46
+    },
+    {
+      "gx": 8,
+      "gy": 10,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 1,
+          "row": 9
+        }
+      ],
+      "dist": 0.46
+    },
+    {
+      "gx": 9,
+      "gy": 10,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 2,
+          "row": 9
+        },
+        {
+          "sheet": "MO",
+          "col": 12,
+          "row": 15
+        }
+      ],
+      "dist": 0.46
+    },
+    {
+      "gx": 10,
+      "gy": 10,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 14,
+          "row": 6
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 11,
+      "gy": 10,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 0,
+          "row": 9
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 12,
+      "gy": 10,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 1,
+          "row": 9
+        },
+        {
+          "sheet": "MO",
+          "col": 15,
+          "row": 2
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 13,
+      "gy": 10,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 1,
+          "row": 9
+        },
+        {
+          "sheet": "MO",
+          "col": 8,
+          "row": 8
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 14,
+      "gy": 10,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 1,
+          "row": 9
+        },
+        {
+          "sheet": "MO",
+          "col": 9,
+          "row": 8
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 15,
+      "gy": 10,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 4,
+          "row": 0
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 0,
+      "gy": 11,
+      "layers": []
+    },
+    {
+      "gx": 1,
+      "gy": 11,
+      "layers": []
+    },
+    {
+      "gx": 2,
+      "gy": 11,
+      "layers": []
+    },
+    {
+      "gx": 3,
+      "gy": 11,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 3,
+          "row": 0
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 4,
+      "gy": 11,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 11,
+          "row": 10
+        },
+        {
+          "sheet": "MO",
+          "col": 0,
+          "row": 19
+        }
+      ],
+      "dist": 8.8
+    },
+    {
+      "gx": 5,
+      "gy": 11,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 1,
+          "row": 10
+        },
+        {
+          "sheet": "MO",
+          "col": 1,
+          "row": 19
+        }
+      ],
+      "dist": 0.2
+    },
+    {
+      "gx": 6,
+      "gy": 11,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 1,
+          "row": 10
+        },
+        {
+          "sheet": "MO",
+          "col": 13,
+          "row": 47
+        }
+      ],
+      "dist": 0.63
+    },
+    {
+      "gx": 7,
+      "gy": 11,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 1,
+          "row": 10
+        },
+        {
+          "sheet": "MO",
+          "col": 5,
+          "row": 10
+        }
+      ],
+      "dist": 0.63
+    },
+    {
+      "gx": 8,
+      "gy": 11,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 11,
+          "row": 8
+        },
+        {
+          "sheet": "MO",
+          "col": 12,
+          "row": 35
+        }
+      ],
+      "dist": 13.5
+    },
+    {
+      "gx": 9,
+      "gy": 11,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 11,
+          "row": 10
+        },
+        {
+          "sheet": "MO",
+          "col": 12,
+          "row": 16
+        }
+      ],
+      "dist": 5.7
+    },
+    {
+      "gx": 10,
+      "gy": 11,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 13,
+          "row": 6
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 11,
+      "gy": 11,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 0,
+          "row": 10
+        },
+        {
+          "sheet": "MO",
+          "col": 11,
+          "row": 13
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 12,
+      "gy": 11,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 1,
+          "row": 10
+        },
+        {
+          "sheet": "MO",
+          "col": 15,
+          "row": 3
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 13,
+      "gy": 11,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 1,
+          "row": 10
+        },
+        {
+          "sheet": "MO",
+          "col": 8,
+          "row": 9
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 14,
+      "gy": 11,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 1,
+          "row": 10
+        },
+        {
+          "sheet": "MO",
+          "col": 9,
+          "row": 9
+        }
+      ],
+      "dist": 16.58
+    },
+    {
+      "gx": 15,
+      "gy": 11,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 4,
+          "row": 0
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 0,
+      "gy": 12,
+      "layers": []
+    },
+    {
+      "gx": 1,
+      "gy": 12,
+      "layers": []
+    },
+    {
+      "gx": 2,
+      "gy": 12,
+      "layers": []
+    },
+    {
+      "gx": 3,
+      "gy": 12,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 3,
+          "row": 0
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 4,
+      "gy": 12,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 12,
+          "row": 9
+        },
+        {
+          "sheet": "MO",
+          "col": 0,
+          "row": 20
+        }
+      ],
+      "dist": 20.9
+    },
+    {
+      "gx": 5,
+      "gy": 12,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 11,
+          "row": 10
+        },
+        {
+          "sheet": "MO",
+          "col": 1,
+          "row": 20
+        }
+      ],
+      "dist": 22.42
+    },
+    {
+      "gx": 6,
+      "gy": 12,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 10,
+          "row": 9
+        },
+        {
+          "sheet": "MO",
+          "col": 13,
+          "row": 48
+        }
+      ],
+      "dist": 13.98
+    },
+    {
+      "gx": 7,
+      "gy": 12,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 14,
+          "row": 5
+        },
+        {
+          "sheet": "MO",
+          "col": 5,
+          "row": 11
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 8,
+      "gy": 12,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 3,
+          "row": 10
+        },
+        {
+          "sheet": "MO",
+          "col": 13,
+          "row": 34
+        }
+      ],
+      "dist": 23.87
+    },
+    {
+      "gx": 9,
+      "gy": 12,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 14,
+          "row": 5
+        },
+        {
+          "sheet": "MO",
+          "col": 12,
+          "row": 17
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 10,
+      "gy": 12,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 15,
+          "row": 5
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 11,
+      "gy": 12,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 14,
+          "row": 5
+        },
+        {
+          "sheet": "MO",
+          "col": 11,
+          "row": 14
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 12,
+      "gy": 12,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 14,
+          "row": 5
+        }
+      ],
+      "dist": 3.93
+    },
+    {
+      "gx": 13,
+      "gy": 12,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 13,
+          "row": 5
+        },
+        {
+          "sheet": "MO",
+          "col": 6,
+          "row": 12
+        }
+      ],
+      "dist": 15.72
+    },
+    {
+      "gx": 14,
+      "gy": 12,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 14,
+          "row": 5
+        },
+        {
+          "sheet": "MO",
+          "col": 9,
+          "row": 50
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 15,
+      "gy": 12,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 4,
+          "row": 0
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 0,
+      "gy": 13,
+      "layers": []
+    },
+    {
+      "gx": 1,
+      "gy": 13,
+      "layers": []
+    },
+    {
+      "gx": 2,
+      "gy": 13,
+      "layers": []
+    },
+    {
+      "gx": 3,
+      "gy": 13,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 3,
+          "row": 0
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 4,
+      "gy": 13,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 13,
+          "row": 6
+        },
+        {
+          "sheet": "MO",
+          "col": 12,
+          "row": 22
+        }
+      ],
+      "dist": 13.39
+    },
+    {
+      "gx": 5,
+      "gy": 13,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 6,
+          "row": 9
+        },
+        {
+          "sheet": "MO",
+          "col": 3,
+          "row": 44
+        }
+      ],
+      "dist": 47.33
+    },
+    {
+      "gx": 6,
+      "gy": 13,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 14,
+          "row": 6
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 7,
+      "gy": 13,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 14,
+          "row": 6
+        }
+      ],
+      "dist": 12.26
+    },
+    {
+      "gx": 8,
+      "gy": 13,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 12,
+          "row": 8
+        },
+        {
+          "sheet": "MO",
+          "col": 6,
+          "row": 10
+        }
+      ],
+      "dist": 22.91
+    },
+    {
+      "gx": 9,
+      "gy": 13,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 14,
+          "row": 6
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 10,
+      "gy": 13,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 14,
+          "row": 6
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 11,
+      "gy": 13,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 14,
+          "row": 6
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 12,
+      "gy": 13,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 11,
+          "row": 8
+        },
+        {
+          "sheet": "MO",
+          "col": 10,
+          "row": 44
+        }
+      ],
+      "dist": 7.61
+    },
+    {
+      "gx": 13,
+      "gy": 13,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 11,
+          "row": 8
+        },
+        {
+          "sheet": "MO",
+          "col": 13,
+          "row": 43
+        }
+      ],
+      "dist": 19.3
+    },
+    {
+      "gx": 14,
+      "gy": 13,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 14,
+          "row": 6
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 15,
+      "gy": 13,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 4,
+          "row": 0
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 0,
+      "gy": 14,
+      "layers": []
+    },
+    {
+      "gx": 1,
+      "gy": 14,
+      "layers": []
+    },
+    {
+      "gx": 2,
+      "gy": 14,
+      "layers": []
+    },
+    {
+      "gx": 3,
+      "gy": 14,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 3,
+          "row": 0
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 4,
+      "gy": 14,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 13,
+          "row": 6
+        },
+        {
+          "sheet": "MO",
+          "col": 14,
+          "row": 23
+        }
+      ],
+      "dist": 6.83
+    },
+    {
+      "gx": 5,
+      "gy": 14,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 12,
+          "row": 6
+        },
+        {
+          "sheet": "MO",
+          "col": 15,
+          "row": 23
+        }
+      ],
+      "dist": 5.52
+    },
+    {
+      "gx": 6,
+      "gy": 14,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 14,
+          "row": 6
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 7,
+      "gy": 14,
+      "layers": [
+        {
+          "sheet": "MO",
+          "col": 5,
+          "row": 36
+        }
+      ],
+      "dist": 21.52
+    },
+    {
+      "gx": 8,
+      "gy": 14,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 2,
+          "row": 10
+        },
+        {
+          "sheet": "MO",
+          "col": 10,
+          "row": 49
+        }
+      ],
+      "dist": 21.94
+    },
+    {
+      "gx": 9,
+      "gy": 14,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 14,
+          "row": 6
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 10,
+      "gy": 14,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 14,
+          "row": 6
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 11,
+      "gy": 14,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 14,
+          "row": 6
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 12,
+      "gy": 14,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 3,
+          "row": 10
+        },
+        {
+          "sheet": "MO",
+          "col": 10,
+          "row": 45
+        }
+      ],
+      "dist": 6.85
+    },
+    {
+      "gx": 13,
+      "gy": 14,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 5,
+          "row": 9
+        },
+        {
+          "sheet": "MO",
+          "col": 13,
+          "row": 44
+        }
+      ],
+      "dist": 22.3
+    },
+    {
+      "gx": 14,
+      "gy": 14,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 14,
+          "row": 6
+        },
+        {
+          "sheet": "MO",
+          "col": 6,
+          "row": 12
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 15,
+      "gy": 14,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 4,
+          "row": 0
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 0,
+      "gy": 15,
+      "layers": []
+    },
+    {
+      "gx": 1,
+      "gy": 15,
+      "layers": []
+    },
+    {
+      "gx": 2,
+      "gy": 15,
+      "layers": []
+    },
+    {
+      "gx": 3,
+      "gy": 15,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 3,
+          "row": 0
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 4,
+      "gy": 15,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 11,
+          "row": 9
+        },
+        {
+          "sheet": "MO",
+          "col": 6,
+          "row": 13
+        }
+      ],
+      "dist": 24.72
+    },
+    {
+      "gx": 5,
+      "gy": 15,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 14,
+          "row": 6
+        },
+        {
+          "sheet": "MO",
+          "col": 12,
+          "row": 49
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 6,
+      "gy": 15,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 14,
+          "row": 6
+        },
+        {
+          "sheet": "MO",
+          "col": 13,
+          "row": 49
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 7,
+      "gy": 15,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 14,
+          "row": 6
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 8,
+      "gy": 15,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 14,
+          "row": 5
+        },
+        {
+          "sheet": "MO",
+          "col": 10,
+          "row": 50
+        }
+      ],
+      "dist": 2.37
+    },
+    {
+      "gx": 9,
+      "gy": 15,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 14,
+          "row": 6
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 10,
+      "gy": 15,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 14,
+          "row": 6
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 11,
+      "gy": 15,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 14,
+          "row": 6
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 12,
+      "gy": 15,
+      "layers": [
+        {
+          "sheet": "MO",
+          "col": 1,
+          "row": 51
+        }
+      ],
+      "dist": 9.58
+    },
+    {
+      "gx": 13,
+      "gy": 15,
+      "layers": [
+        {
+          "sheet": "MO",
+          "col": 2,
+          "row": 51
+        }
+      ],
+      "dist": 16.01
+    },
+    {
+      "gx": 14,
+      "gy": 15,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 11,
+          "row": 9
+        },
+        {
+          "sheet": "MO",
+          "col": 6,
+          "row": 13
+        }
+      ],
+      "dist": 29.04
+    },
+    {
+      "gx": 15,
+      "gy": 15,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 4,
+          "row": 0
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 0,
+      "gy": 16,
+      "layers": []
+    },
+    {
+      "gx": 1,
+      "gy": 16,
+      "layers": []
+    },
+    {
+      "gx": 2,
+      "gy": 16,
+      "layers": []
+    },
+    {
+      "gx": 3,
+      "gy": 16,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 7,
+          "row": 3
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 4,
+      "gy": 16,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 8,
+          "row": 1
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 5,
+      "gy": 16,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 8,
+          "row": 1
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 6,
+      "gy": 16,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 8,
+          "row": 1
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 7,
+      "gy": 16,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 8,
+          "row": 1
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 8,
+      "gy": 16,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 8,
+          "row": 1
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 9,
+      "gy": 16,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 8,
+          "row": 1
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 10,
+      "gy": 16,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 8,
+          "row": 1
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 11,
+      "gy": 16,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 8,
+          "row": 1
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 12,
+      "gy": 16,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 8,
+          "row": 1
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 13,
+      "gy": 16,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 8,
+          "row": 1
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 14,
+      "gy": 16,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 8,
+          "row": 1
+        }
+      ],
+      "dist": 0.0
+    },
+    {
+      "gx": 15,
+      "gy": 16,
+      "layers": [
+        {
+          "sheet": "RB",
+          "col": 9,
+          "row": 3
+        }
+      ],
+      "dist": 0.0
+    }
+  ],
+  "note": "32x32 tiles from RB/MO/BS tilesets"
+}

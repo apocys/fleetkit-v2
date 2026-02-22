@@ -1,0 +1,1526 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Le Village d'Agents</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { width: 100%; height: 100%; overflow: hidden; background: #000; }
+canvas {
+  display: block;
+  width: 100vw;
+  height: 100vh;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  cursor: default;
+}
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+<script>
+// ═══════════════════════════════════════════════════════════
+// LE VILLAGE D'AGENTS — 16-bit Pixel Art RPG Village Dashboard
+// ═══════════════════════════════════════════════════════════
+
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+
+// Internal resolution — authentic SNES feel
+const W = 480;
+const H = 270;
+canvas.width = W;
+canvas.height = H;
+
+// ── PALETTE (strict 16-color SNES palette) ──
+const PAL = {
+  dirt:       '#8B7355',
+  grass:      '#6B8E23',
+  darkGrass:  '#556B2F',
+  trunk:      '#CD853F',
+  orangeLeaf: '#FF8C00',
+  redLeaf:    '#B22222',
+  greenLeaf:  '#228B22',
+  darkTrunk:  '#8B4513',
+  water:      '#4682B4',
+  waterLight: '#5F9EA0',
+  walls:      '#DEB887',
+  wood:       '#8B4513',
+  thatch:     '#CD853F',
+  darkWood:   '#A0522D',
+  parchment:  '#F5DEB3',
+  darkText:   '#2F1B0E',
+  sky:        '#87CEEB',
+  golden:     '#FFD700',
+  fire:       '#FF6347',
+  white:      '#FFFFFF',
+  black:      '#000000',
+  grey:       '#9E9E9E',
+  lightGrey:  '#C0C0C0',
+  stone:      '#808080',
+  blue:       '#4169E1',
+  cyan:       '#00CED1',
+  purple:     '#9370DB',
+  green:      '#32CD32',
+  orange:     '#FF8C00',
+  red:        '#B22222',
+};
+
+// ── TILE GRID ──
+const TILE = 16;
+const COLS = 30;
+const ROWS = 17; // fits 270px
+
+// ── CAMERA / PAN / ZOOM ──
+let camX = 0, camY = 0;
+let zoom = 1;
+let dragging = false, dragStartX = 0, dragStartY = 0, camStartX = 0, camStartY = 0;
+
+// ── TIMING ──
+let frameCount = 0;
+let lastTime = 0;
+let animTick = 0; // increments every ~500ms
+
+// ── POPUP STATE ──
+let activePopup = null; // {building, x, y}
+
+// ── TILE MAP ──
+// 0=grass, 1=darkGrass, 2=dirt, 3=water, 4=waterLight, 5=bridge
+const tileMap = [];
+function initTileMap() {
+  for (let r = 0; r < ROWS; r++) {
+    tileMap[r] = [];
+    for (let c = 0; c < COLS; c++) {
+      // Default grass with variation
+      tileMap[r][c] = Math.random() < 0.3 ? 1 : 0;
+    }
+  }
+  // River (rows 8-10)
+  for (let c = 0; c < COLS; c++) {
+    tileMap[8][c] = 3;
+    tileMap[9][c] = 3;
+    tileMap[10][c] = 3;
+    // Light water edges
+    if (Math.random() < 0.4) tileMap[8][c] = 4;
+    if (Math.random() < 0.4) tileMap[10][c] = 4;
+  }
+  // Bridge at columns 14-15
+  tileMap[8][14] = 5; tileMap[8][15] = 5;
+  tileMap[9][14] = 5; tileMap[9][15] = 5;
+  tileMap[10][14] = 5; tileMap[10][15] = 5;
+
+  // Dirt paths
+  const pathTiles = [];
+  // Vertical path from top to bridge (col 14-15)
+  for (let r = 0; r < 8; r++) { pathTiles.push([r, 14]); pathTiles.push([r, 15]); }
+  // Vertical path from bridge to bottom
+  for (let r = 11; r < ROWS; r++) { pathTiles.push([r, 14]); pathTiles.push([r, 15]); }
+  // Horizontal path top (row 3-4)
+  for (let c = 3; c < 27; c++) { pathTiles.push([3, c]); pathTiles.push([4, c]); }
+  // Horizontal path bottom (row 13-14)
+  for (let c = 3; c < 27; c++) { pathTiles.push([13, c]); pathTiles.push([14, c]); }
+  // Left vertical connector
+  for (let r = 3; r < 14; r++) { pathTiles.push([r, 3]); pathTiles.push([r, 4]); }
+  // Right vertical connector
+  for (let r = 3; r < 14; r++) { pathTiles.push([r, 25]); pathTiles.push([r, 26]); }
+
+  for (const [r, c] of pathTiles) {
+    if (r >= 0 && r < ROWS && c >= 0 && c < COLS && tileMap[r][c] < 3) {
+      tileMap[r][c] = 2;
+    }
+  }
+}
+initTileMap();
+
+// ── BUILDINGS ──
+const buildings = [
+  {
+    id: 'apomac', name: 'ApoMac Manor', role: 'Seigneur du Village',
+    status: 'Actif — Gouverne le village', color: PAL.blue,
+    col: 11, row: 0, w: 5, h: 4, roofColor: '#4169E1',
+    portrait: 'blue'
+  },
+  {
+    id: 'forge', name: 'Forge Workshop', role: 'Forgeron',
+    status: 'Actif — Forge des outils', color: PAL.orange,
+    col: 22, row: 0, w: 4, h: 4, roofColor: '#A0522D',
+    portrait: 'orange'
+  },
+  {
+    id: 'hunter', name: 'Hunter Trading Post', role: 'Marchand',
+    status: 'Actif — Commerce au marché', color: PAL.red,
+    col: 3, row: 5, w: 4, h: 3, roofColor: '#B22222',
+    portrait: 'red'
+  },
+  {
+    id: 'echo', name: 'Echo Studio', role: 'Artiste',
+    status: 'Actif — Crée des merveilles', color: PAL.cyan,
+    col: 20, row: 5, w: 4, h: 3, roofColor: '#00CED1',
+    portrait: 'cyan'
+  },
+  {
+    id: 'sentinel', name: 'Sentinel Tower', role: 'Gardien',
+    status: 'Actif — Patrouille le village', color: PAL.green,
+    col: 3, row: 11, w: 3, h: 4, roofColor: '#32CD32',
+    portrait: 'green'
+  },
+  {
+    id: 'atlas', name: 'Atlas Barn', role: 'Fermier',
+    status: 'Actif — Gère les récoltes', color: PAL.purple,
+    col: 22, row: 11, w: 5, h: 4, roofColor: '#9370DB',
+    portrait: 'purple'
+  }
+];
+
+// ── PIXEL FONT (5x7 bitmap) ──
+const FONT_CHARS = {};
+function defineFont() {
+  const f = (ch, rows) => { FONT_CHARS[ch] = rows; };
+  f('A', [0b01110,0b10001,0b10001,0b11111,0b10001,0b10001,0b10001]);
+  f('B', [0b11110,0b10001,0b10001,0b11110,0b10001,0b10001,0b11110]);
+  f('C', [0b01110,0b10001,0b10000,0b10000,0b10000,0b10001,0b01110]);
+  f('D', [0b11110,0b10001,0b10001,0b10001,0b10001,0b10001,0b11110]);
+  f('E', [0b11111,0b10000,0b10000,0b11110,0b10000,0b10000,0b11111]);
+  f('F', [0b11111,0b10000,0b10000,0b11110,0b10000,0b10000,0b10000]);
+  f('G', [0b01110,0b10001,0b10000,0b10111,0b10001,0b10001,0b01110]);
+  f('H', [0b10001,0b10001,0b10001,0b11111,0b10001,0b10001,0b10001]);
+  f('I', [0b01110,0b00100,0b00100,0b00100,0b00100,0b00100,0b01110]);
+  f('J', [0b00111,0b00010,0b00010,0b00010,0b00010,0b10010,0b01100]);
+  f('K', [0b10001,0b10010,0b10100,0b11000,0b10100,0b10010,0b10001]);
+  f('L', [0b10000,0b10000,0b10000,0b10000,0b10000,0b10000,0b11111]);
+  f('M', [0b10001,0b11011,0b10101,0b10101,0b10001,0b10001,0b10001]);
+  f('N', [0b10001,0b10001,0b11001,0b10101,0b10011,0b10001,0b10001]);
+  f('O', [0b01110,0b10001,0b10001,0b10001,0b10001,0b10001,0b01110]);
+  f('P', [0b11110,0b10001,0b10001,0b11110,0b10000,0b10000,0b10000]);
+  f('Q', [0b01110,0b10001,0b10001,0b10001,0b10101,0b10010,0b01101]);
+  f('R', [0b11110,0b10001,0b10001,0b11110,0b10100,0b10010,0b10001]);
+  f('S', [0b01110,0b10001,0b10000,0b01110,0b00001,0b10001,0b01110]);
+  f('T', [0b11111,0b00100,0b00100,0b00100,0b00100,0b00100,0b00100]);
+  f('U', [0b10001,0b10001,0b10001,0b10001,0b10001,0b10001,0b01110]);
+  f('V', [0b10001,0b10001,0b10001,0b10001,0b10001,0b01010,0b00100]);
+  f('W', [0b10001,0b10001,0b10001,0b10101,0b10101,0b11011,0b10001]);
+  f('X', [0b10001,0b10001,0b01010,0b00100,0b01010,0b10001,0b10001]);
+  f('Y', [0b10001,0b10001,0b01010,0b00100,0b00100,0b00100,0b00100]);
+  f('Z', [0b11111,0b00001,0b00010,0b00100,0b01000,0b10000,0b11111]);
+  f("'", [0b00100,0b00100,0b01000,0b00000,0b00000,0b00000,0b00000]);
+  f(' ', [0b00000,0b00000,0b00000,0b00000,0b00000,0b00000,0b00000]);
+  f('0', [0b01110,0b10001,0b10011,0b10101,0b11001,0b10001,0b01110]);
+  f('1', [0b00100,0b01100,0b00100,0b00100,0b00100,0b00100,0b01110]);
+  f('2', [0b01110,0b10001,0b00001,0b00110,0b01000,0b10000,0b11111]);
+  f('3', [0b01110,0b10001,0b00001,0b00110,0b00001,0b10001,0b01110]);
+  f('4', [0b00010,0b00110,0b01010,0b10010,0b11111,0b00010,0b00010]);
+  f('5', [0b11111,0b10000,0b11110,0b00001,0b00001,0b10001,0b01110]);
+  f('6', [0b01110,0b10000,0b10000,0b11110,0b10001,0b10001,0b01110]);
+  f('7', [0b11111,0b00001,0b00010,0b00100,0b01000,0b01000,0b01000]);
+  f('8', [0b01110,0b10001,0b10001,0b01110,0b10001,0b10001,0b01110]);
+  f('9', [0b01110,0b10001,0b10001,0b01111,0b00001,0b00001,0b01110]);
+  f(':', [0b00000,0b00100,0b00000,0b00000,0b00000,0b00100,0b00000]);
+  f(',', [0b00000,0b00000,0b00000,0b00000,0b00000,0b00100,0b01000]);
+  f('.', [0b00000,0b00000,0b00000,0b00000,0b00000,0b00000,0b00100]);
+  f('-', [0b00000,0b00000,0b00000,0b11111,0b00000,0b00000,0b00000]);
+  f('/', [0b00001,0b00010,0b00010,0b00100,0b01000,0b01000,0b10000]);
+  // Accented characters mapped to base
+  f('\u00C9', [0b00010,0b01110,0b10000,0b11110,0b10000,0b10000,0b11111]); // É
+  f('\u00C0', [0b01000,0b01110,0b10001,0b11111,0b10001,0b10001,0b10001]); // À
+}
+defineFont();
+
+function drawText(text, x, y, color, scale) {
+  scale = scale || 1;
+  const s = text.toUpperCase();
+  let cx = x;
+  for (let i = 0; i < s.length; i++) {
+    const ch = s[i];
+    const glyph = FONT_CHARS[ch];
+    if (glyph) {
+      ctx.fillStyle = color;
+      for (let row = 0; row < 7; row++) {
+        for (let col = 0; col < 5; col++) {
+          if (glyph[row] & (1 << (4 - col))) {
+            ctx.fillRect(cx + col * scale, y + row * scale, scale, scale);
+          }
+        }
+      }
+    }
+    cx += 6 * scale;
+  }
+}
+
+function textWidth(text, scale) {
+  scale = scale || 1;
+  return text.length * 6 * scale;
+}
+
+// ── DRAW HELPERS ──
+function px(x, y, color) {
+  ctx.fillStyle = color;
+  ctx.fillRect(Math.floor(x), Math.floor(y), 1, 1);
+}
+
+function rect(x, y, w, h, color) {
+  ctx.fillStyle = color;
+  ctx.fillRect(Math.floor(x), Math.floor(y), w, h);
+}
+
+// ── TERRAIN RENDERING ──
+function drawTerrain() {
+  const waterFrame = Math.floor(animTick / 2) % 4;
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      const x = c * TILE + camX;
+      const y = r * TILE + camY;
+      if (x + TILE < 0 || x > W || y + TILE < 0 || y > H) continue;
+
+      const t = tileMap[r][c];
+      if (t === 0) {
+        rect(x, y, TILE, TILE, PAL.grass);
+        // Subtle grass detail
+        if ((c + r) % 5 === 0) px(x + 3, y + 5, PAL.darkGrass);
+        if ((c * 7 + r * 3) % 11 === 0) px(x + 10, y + 2, PAL.darkGrass);
+        if ((c * 3 + r * 7) % 9 === 0) px(x + 7, y + 11, '#7A9A2E');
+      } else if (t === 1) {
+        rect(x, y, TILE, TILE, PAL.darkGrass);
+        if ((c + r) % 3 === 0) px(x + 5, y + 8, PAL.grass);
+        if ((c * 5 + r) % 7 === 0) px(x + 12, y + 3, PAL.grass);
+      } else if (t === 2) {
+        rect(x, y, TILE, TILE, PAL.dirt);
+        // Path texture
+        if ((c + r) % 4 === 0) px(x + 4, y + 6, '#7A6345');
+        if ((c * 3 + r) % 5 === 0) px(x + 11, y + 3, '#9B8365');
+      } else if (t === 3 || t === 4) {
+        // Animated water
+        const base = t === 4 ? PAL.waterLight : PAL.water;
+        rect(x, y, TILE, TILE, base);
+        // Wave pattern
+        const waveOffset = (waterFrame + c) % 4;
+        for (let px2 = 0; px2 < TILE; px2 += 4) {
+          const wy = (waveOffset + px2) % TILE;
+          ctx.fillStyle = t === 4 ? PAL.water : PAL.waterLight;
+          ctx.fillRect(x + px2, y + wy, 3, 1);
+        }
+        // Sparkle
+        if ((c + waterFrame) % 6 === 0) {
+          px(x + 7, y + 4, '#8AB8D0');
+          px(x + 3, y + 11, '#8AB8D0');
+        }
+      } else if (t === 5) {
+        // Bridge
+        rect(x, y, TILE, TILE, PAL.wood);
+        // Planks
+        for (let py = 0; py < TILE; py += 4) {
+          ctx.fillStyle = PAL.darkWood;
+          ctx.fillRect(x, y + py, TILE, 1);
+        }
+        // Railings
+        ctx.fillStyle = PAL.darkTrunk;
+        ctx.fillRect(x, y, 1, TILE);
+        ctx.fillRect(x + TILE - 1, y, 1, TILE);
+      }
+    }
+  }
+}
+
+// ── TREE DRAWING ──
+const treePositions = [
+  // Top-left forest
+  [0, 0], [0, 2], [1, 1], [0, 4], [1, 5], [2, 0], [2, 2],
+  // Top-right forest
+  [0, 27], [0, 29], [1, 28], [2, 29], [1, 26],
+  // Bottom-left forest
+  [15, 0], [15, 2], [16, 1], [14, 1],
+  // Bottom-right forest
+  [15, 28], [16, 29], [15, 27],
+  // Scattered
+  [5, 0], [6, 1], [11, 0], [12, 1],
+  [5, 29], [6, 28], [11, 29],
+  [0, 8], [0, 9], [0, 19], [0, 20],
+  [16, 8], [16, 9], [16, 19], [16, 20],
+];
+
+function drawTree(col, row, type) {
+  const x = col * TILE + camX;
+  const y = row * TILE + camY;
+  const sway = (Math.floor(animTick / 4) % 2 === 0) ? 0 : 1;
+
+  if (type === 'pine') {
+    // Pine tree (pointed)
+    rect(x + 7, y + 10, 2, 6, PAL.darkTrunk);
+    // Layers
+    for (let i = 0; i < 4; i++) {
+      const w = 10 - i * 2;
+      const tx = x + 8 - w / 2 + sway;
+      const ty = y + i * 3;
+      rect(tx, ty, w, 4, PAL.greenLeaf);
+      // Dark edge
+      px(tx, ty + 3, PAL.darkGrass);
+      px(tx + w - 1, ty + 3, PAL.darkGrass);
+    }
+  } else if (type === 'autumn_orange') {
+    // Round autumn tree (orange)
+    rect(x + 7, y + 10, 2, 6, PAL.trunk);
+    // Crown
+    const cx = x + 8 + sway;
+    const cy = y + 4;
+    for (let dy = -3; dy <= 3; dy++) {
+      for (let dx = -4; dx <= 4; dx++) {
+        if (dx * dx + dy * dy <= 16) {
+          const c = (dx + dy) % 3 === 0 ? '#E07B00' : PAL.orangeLeaf;
+          px(cx + dx, cy + dy, c);
+        }
+      }
+    }
+    // Highlight
+    px(cx - 1, cy - 2, PAL.golden);
+    px(cx, cy - 2, PAL.golden);
+  } else {
+    // Round autumn tree (red)
+    rect(x + 7, y + 10, 2, 6, PAL.trunk);
+    const cx = x + 8 + sway;
+    const cy = y + 4;
+    for (let dy = -3; dy <= 3; dy++) {
+      for (let dx = -4; dx <= 4; dx++) {
+        if (dx * dx + dy * dy <= 16) {
+          const c = (dx + dy) % 3 === 0 ? '#9B1B1B' : PAL.redLeaf;
+          px(cx + dx, cy + dy, c);
+        }
+      }
+    }
+    px(cx - 1, cy - 2, '#D44');
+  }
+}
+
+function drawTrees() {
+  treePositions.forEach(([r, c], i) => {
+    const types = ['pine', 'autumn_orange', 'autumn_red'];
+    drawTree(c, r, types[i % 3]);
+  });
+}
+
+// ── BUILDING DRAWING ──
+function drawBuilding(b, hovered) {
+  const x = b.col * TILE + camX;
+  const y = b.row * TILE + camY;
+  const bw = b.w * TILE;
+  const bh = b.h * TILE;
+  const wallTop = Math.floor(bh * 0.35);
+
+  // Shadow (offset for depth)
+  ctx.fillStyle = 'rgba(0,0,0,0.18)';
+  ctx.fillRect(x + 4, y + 4, bw, bh);
+
+  // Wall base
+  rect(x + 1, y + wallTop, bw - 2, bh - wallTop, PAL.walls);
+  // Wall shading (right edge darker)
+  ctx.fillStyle = 'rgba(0,0,0,0.08)';
+  ctx.fillRect(x + bw - 5, y + wallTop, 4, bh - wallTop);
+  // Wall highlight (left edge lighter)
+  ctx.fillStyle = 'rgba(255,255,255,0.08)';
+  ctx.fillRect(x + 1, y + wallTop, 3, bh - wallTop);
+
+  // Wall border
+  ctx.fillStyle = PAL.darkWood;
+  ctx.fillRect(x, y + wallTop, bw, 1);
+  ctx.fillRect(x, y + bh - 1, bw, 1);
+  ctx.fillRect(x, y + wallTop, 1, bh - wallTop);
+  ctx.fillRect(x + bw - 1, y + wallTop, 1, bh - wallTop);
+
+  // Horizontal beam detail
+  ctx.fillStyle = PAL.darkWood;
+  ctx.fillRect(x + 1, y + wallTop + Math.floor((bh - wallTop) * 0.5), bw - 2, 1);
+
+  // Roof — pointed shape with overhang
+  const roofH = wallTop + 4;
+  const overhang = 3;
+  // Roof body
+  ctx.fillStyle = b.roofColor;
+  // Main roof rectangle with overhang
+  ctx.fillRect(x - overhang, y + 2, bw + overhang * 2, roofH - 2);
+  // Ridge (darker top line)
+  ctx.fillStyle = PAL.darkWood;
+  ctx.fillRect(x - overhang, y + 1, bw + overhang * 2, 2);
+  // Eave (bottom edge, darker)
+  ctx.fillRect(x - overhang, y + roofH - 1, bw + overhang * 2, 2);
+  // Roof tile texture — horizontal lines
+  for (let ry = 4; ry < roofH - 2; ry += 3) {
+    ctx.fillStyle = 'rgba(0,0,0,0.1)';
+    ctx.fillRect(x - overhang + 1, y + ry, bw + overhang * 2 - 2, 1);
+  }
+  // Roof highlight
+  ctx.fillStyle = 'rgba(255,255,255,0.12)';
+  ctx.fillRect(x - overhang + 1, y + 3, bw + overhang * 2 - 2, 2);
+
+  // Windows (with frames and shutters)
+  const winY = y + wallTop + Math.floor((bh - wallTop) * 0.25);
+  // Left window
+  rect(x + 3, winY, 6, 6, PAL.darkText); // frame
+  rect(x + 4, winY + 1, 4, 4, PAL.golden); // glass (warm light)
+  px(x + 6, winY + 1, PAL.darkText); // crossbar
+  px(x + 6, winY + 2, PAL.darkText);
+  px(x + 6, winY + 3, PAL.darkText);
+  px(x + 6, winY + 4, PAL.darkText);
+  px(x + 4, winY + 3, PAL.darkText);
+  px(x + 5, winY + 3, PAL.darkText);
+  px(x + 7, winY + 3, PAL.darkText);
+  // Right window (if building wide enough)
+  if (bw > 40) {
+    rect(x + bw - 9, winY, 6, 6, PAL.darkText);
+    rect(x + bw - 8, winY + 1, 4, 4, PAL.golden);
+    px(x + bw - 6, winY + 1, PAL.darkText);
+    px(x + bw - 6, winY + 2, PAL.darkText);
+    px(x + bw - 6, winY + 3, PAL.darkText);
+    px(x + bw - 6, winY + 4, PAL.darkText);
+  }
+
+  // Door (arched top)
+  const doorX = x + Math.floor(bw / 2) - 3;
+  const doorH = 10;
+  rect(doorX, y + bh - doorH, 6, doorH, PAL.darkWood); // frame
+  rect(doorX + 1, y + bh - doorH + 1, 4, doorH - 1, PAL.wood); // door
+  // Arch top pixels
+  px(doorX, y + bh - doorH, PAL.walls);
+  px(doorX + 5, y + bh - doorH, PAL.walls);
+  // Handle
+  px(doorX + 4, y + bh - 5, PAL.golden);
+  // Step
+  rect(doorX - 1, y + bh - 1, 8, 1, PAL.stone);
+
+  // ── Building-specific decorations ──
+  if (b.id === 'apomac') {
+    // Larger flag with flutter animation
+    const flagFrame = Math.floor(animTick / 2) % 2;
+    const flagX = x + Math.floor(bw / 2);
+    rect(flagX, y - 10, 1, 12, PAL.darkWood); // tall pole
+    // Flag body (blue with gold trim)
+    rect(flagX + 1, y - 10, 6 + flagFrame, 4, PAL.blue);
+    px(flagX + 1, y - 10, PAL.golden); // gold corner
+    px(flagX + 6 + flagFrame, y - 10, PAL.golden);
+    px(flagX + 1, y - 7, PAL.golden);
+    px(flagX + 6 + flagFrame, y - 7, PAL.golden);
+    // Flower garden (more flowers around manor)
+    const gardenFlowers = [
+      [x - 5, y + bh - 3], [x - 7, y + bh - 7], [x - 4, y + bh - 10],
+      [x + bw + 2, y + bh - 3], [x + bw + 4, y + bh - 7], [x + bw + 3, y + bh - 10],
+      [x + 3, y + bh + 2], [x + 10, y + bh + 2], [x + bw - 10, y + bh + 2],
+    ];
+    const flowerColors = [PAL.fire, PAL.golden, '#FF69B4', PAL.cyan, PAL.orangeLeaf];
+    gardenFlowers.forEach(([fx, fy], i) => {
+      const fc = flowerColors[i % flowerColors.length];
+      px(fx, fy, fc);
+      px(fx + 1, fy, fc);
+      px(fx, fy + 1, fc);
+      px(fx + 1, fy - 1, fc);
+      px(fx, fy + 2, PAL.greenLeaf);
+      px(fx + 1, fy + 2, PAL.greenLeaf);
+    });
+    // Crown emblem on door
+    px(doorX + 2, y + bh - doorH + 2, PAL.golden);
+    px(doorX + 3, y + bh - doorH + 2, PAL.golden);
+    px(doorX + 2, y + bh - doorH + 3, PAL.golden);
+  } else if (b.id === 'forge') {
+    // Tall chimney with brick detail
+    const chimX = x + bw - 8;
+    const chimY = y - 8;
+    rect(chimX, chimY, 6, 14, PAL.stone);
+    rect(chimX + 1, chimY, 4, 1, PAL.darkWood); // cap
+    // Brick texture
+    for (let by = 2; by < 14; by += 3) {
+      px(chimX + 3, chimY + by, '#707070');
+    }
+    // Orange glow from all windows
+    rect(x + 4, winY + 1, 4, 4, '#FF5500');
+    if (bw > 40) rect(x + bw - 8, winY + 1, 4, 4, '#FF5500');
+    // Door glow
+    rect(doorX + 1, y + bh - doorH + 1, 4, doorH - 1, '#CC4400');
+    // Anvil outside (bigger, more detailed)
+    rect(x - 8, y + bh - 7, 6, 2, PAL.grey);
+    rect(x - 7, y + bh - 9, 4, 2, '#707070');
+    rect(x - 6, y + bh - 5, 2, 3, PAL.grey);
+    // Log pile (stacked)
+    for (let i = 0; i < 4; i++) {
+      rect(x + bw + 3, y + bh - 3 - i * 3, 5, 3, i % 2 === 0 ? PAL.trunk : PAL.darkTrunk);
+      px(x + bw + 3, y + bh - 1 - i * 3, PAL.darkWood);
+    }
+    // Spark particles near chimney
+    if (frameCount % 20 < 3) {
+      px(chimX + 2 + Math.random() * 2, chimY - 2, PAL.fire);
+      px(chimX + 3 + Math.random() * 2, chimY - 3, PAL.golden);
+    }
+  } else if (b.id === 'hunter') {
+    // Market stall awning with stripes
+    const awningY = y - 2;
+    rect(x - 4, awningY, bw + 8, 6, PAL.fire);
+    for (let sx = 0; sx < bw + 8; sx += 6) {
+      rect(x - 4 + sx, awningY, 3, 6, PAL.golden);
+    }
+    // Awning posts
+    rect(x - 3, awningY + 5, 2, bh * 0.35, PAL.darkWood);
+    rect(x + bw + 1, awningY + 5, 2, bh * 0.35, PAL.darkWood);
+    // Crates stack
+    rect(x + bw + 4, y + bh - 10, 7, 7, PAL.wood);
+    rect(x + bw + 5, y + bh - 9, 5, 5, PAL.thatch);
+    // Cross on crate
+    ctx.fillStyle = PAL.darkWood;
+    ctx.fillRect(x + bw + 7, y + bh - 9, 1, 5);
+    ctx.fillRect(x + bw + 5, y + bh - 7, 5, 1);
+    // Second crate
+    rect(x + bw + 3, y + bh - 16, 6, 5, PAL.darkWood);
+    rect(x + bw + 4, y + bh - 15, 4, 3, PAL.wood);
+    // Hanging goods from awning
+    px(x + 3, awningY + 6, PAL.golden);
+    px(x + 3, awningY + 7, PAL.golden);
+    px(x + 3, awningY + 8, PAL.fire);
+    px(x + bw - 4, awningY + 6, PAL.greenLeaf);
+    px(x + bw - 4, awningY + 7, PAL.greenLeaf);
+    px(x + bw - 4, awningY + 8, PAL.darkGrass);
+    // Barrel
+    rect(x - 6, y + bh - 8, 4, 6, PAL.darkWood);
+    rect(x - 5, y + bh - 7, 2, 4, PAL.wood);
+  } else if (b.id === 'echo') {
+    // Colorful triangular banners/pennants on string
+    const bannerColors = [PAL.cyan, PAL.golden, PAL.fire, PAL.greenLeaf, '#FF69B4', PAL.purple];
+    // String
+    ctx.fillStyle = PAL.darkWood;
+    ctx.fillRect(x - 4, y - 4, bw + 8, 1);
+    // Pennants
+    bannerColors.forEach((bc, i) => {
+      const bx = x - 2 + i * Math.floor((bw + 4) / 6);
+      px(bx, y - 3, bc);
+      px(bx - 1, y - 3, bc);
+      px(bx + 1, y - 3, bc);
+      px(bx, y - 2, bc);
+      px(bx - 1, y - 2, bc);
+      px(bx + 1, y - 2, bc);
+      px(bx, y - 1, bc);
+      px(bx, y, bc);
+    });
+    // Flower pots (more detailed)
+    const pots = [[x - 4, y + bh - 6], [x + bw + 1, y + bh - 6]];
+    pots.forEach(([ppx, ppy]) => {
+      rect(ppx, ppy, 4, 4, '#A05030'); // terracotta
+      rect(ppx + 1, ppy - 1, 2, 1, '#A05030'); // rim
+      // Flowers
+      px(ppx + 1, ppy - 3, PAL.fire);
+      px(ppx + 2, ppy - 3, PAL.golden);
+      px(ppx + 1, ppy - 4, PAL.golden);
+      px(ppx + 2, ppy - 4, PAL.fire);
+      px(ppx + 1, ppy - 2, PAL.greenLeaf);
+      px(ppx + 2, ppy - 2, PAL.greenLeaf);
+    });
+    // Musical note decoration on wall
+    px(x + Math.floor(bw / 2) - 6, winY - 3, PAL.darkText);
+    px(x + Math.floor(bw / 2) - 6, winY - 4, PAL.darkText);
+    px(x + Math.floor(bw / 2) - 5, winY - 5, PAL.darkText);
+    px(x + Math.floor(bw / 2) - 4, winY - 4, PAL.darkText);
+  } else if (b.id === 'sentinel') {
+    // Stone tower extension above roof
+    const towerW = bw - 8;
+    const towerX = x + 4;
+    rect(towerX, y - 12, towerW, 14, PAL.stone);
+    // Stone texture
+    for (let sy = 0; sy < 14; sy += 3) {
+      for (let sx = 0; sx < towerW; sx += 5) {
+        px(towerX + sx + (sy % 6 === 0 ? 0 : 2), y - 12 + sy, '#707070');
+      }
+    }
+    // Crenellations (merlons)
+    for (let cx2 = 0; cx2 < towerW; cx2 += 5) {
+      rect(towerX + cx2, y - 15, 3, 3, PAL.stone);
+    }
+    // Tower window (arrow slit)
+    rect(towerX + Math.floor(towerW / 2) - 1, y - 9, 2, 5, PAL.darkText);
+    // Green trim on wall
+    ctx.fillStyle = PAL.green;
+    ctx.fillRect(x, y + wallTop + 1, bw, 2);
+    // Torches on sides
+    const torchFlicker = frameCount % 8 < 4;
+    [x - 3, x + bw + 1].forEach(tx => {
+      rect(tx, y + wallTop + 6, 2, 5, PAL.darkWood);
+      px(tx, y + wallTop + 5, torchFlicker ? PAL.fire : PAL.golden);
+      px(tx + 1, y + wallTop + 5, torchFlicker ? PAL.golden : PAL.fire);
+      px(tx, y + wallTop + 4, torchFlicker ? PAL.golden : PAL.fire);
+    });
+  } else if (b.id === 'atlas') {
+    // Big barn door (double door)
+    const bdx = x + Math.floor(bw / 2) - 5;
+    rect(bdx, y + bh - 14, 10, 14, PAL.darkWood);
+    rect(bdx + 1, y + bh - 13, 4, 12, PAL.wood);
+    rect(bdx + 5, y + bh - 13, 4, 12, '#9E7B5A');
+    // X braces on each door half
+    for (let i = 0; i < 4; i++) {
+      px(bdx + 1 + i, y + bh - 13 + i * 3, PAL.darkWood);
+      px(bdx + 4 - i, y + bh - 13 + i * 3, PAL.darkWood);
+      px(bdx + 5 + i, y + bh - 13 + i * 3, PAL.darkWood);
+      px(bdx + 8 - i, y + bh - 13 + i * 3, PAL.darkWood);
+    }
+    // Hay loft window above door
+    rect(bdx + 2, y + wallTop + 3, 6, 4, PAL.darkText);
+    rect(bdx + 3, y + wallTop + 4, 4, 2, PAL.golden);
+    // Silo
+    rect(x + bw + 2, y + 4, 6, bh - 4, PAL.stone);
+    rect(x + bw + 2, y + 2, 6, 3, '#707070');
+    // Roof is slightly different color for barn
+    ctx.fillStyle = PAL.redLeaf;
+    ctx.fillRect(x - overhang, y + 2, bw + overhang * 2, roofH - 2);
+    ctx.fillStyle = '#8B1A1A';
+    ctx.fillRect(x - overhang, y + 1, bw + overhang * 2, 2);
+    ctx.fillRect(x - overhang, y + roofH - 1, bw + overhang * 2, 2);
+  }
+
+  // Hover highlight
+  if (hovered) {
+    ctx.fillStyle = 'rgba(255,255,255,0.15)';
+    ctx.fillRect(x - overhang, y, bw + overhang * 2, bh);
+  }
+}
+
+// ── CROP FIELD (next to Atlas barn) ──
+function drawCropField() {
+  const startCol = 22;
+  const startRow = 15;
+  const x = startCol * TILE + camX;
+  const y = startRow * TILE + camY;
+  const waveOffset = Math.floor(animTick / 2) % 4;
+
+  // Wheat rows
+  for (let r = 0; r < 2; r++) {
+    for (let c = 0; c < 5; c++) {
+      const wx = x + c * TILE;
+      const wy = y + r * TILE;
+      rect(wx, wy, TILE, TILE, PAL.dirt);
+      // Wheat stalks
+      for (let s = 2; s < TILE; s += 3) {
+        const waveH = ((c + r + waveOffset) % 4 === 0) ? 6 : 8;
+        ctx.fillStyle = PAL.golden;
+        ctx.fillRect(wx + s, wy + TILE - waveH, 1, waveH);
+        px(wx + s - 1, wy + TILE - waveH, '#DAA520');
+        px(wx + s + 1, wy + TILE - waveH, '#DAA520');
+      }
+    }
+  }
+  // Pumpkins
+  const pumpkins = [[x + 2, y - 4], [x + 18, y - 6], [x + 34, y - 3]];
+  pumpkins.forEach(([ppx, ppy]) => {
+    rect(ppx, ppy, 4, 3, PAL.orange);
+    px(ppx + 1, ppy - 1, PAL.greenLeaf);
+    px(ppx + 2, ppy - 1, PAL.greenLeaf);
+  });
+}
+
+// ── WELL & CAMPFIRE ──
+function drawWellAndCampfire() {
+  // Well at village center area (col 13, row 6)
+  const wx = 13 * TILE + camX;
+  const wy = 6 * TILE + camY;
+  // Stone base
+  rect(wx + 2, wy + 4, 12, 10, PAL.stone);
+  rect(wx + 3, wy + 5, 10, 8, PAL.water);
+  // Posts
+  rect(wx + 3, wy, 2, 6, PAL.darkWood);
+  rect(wx + 11, wy, 2, 6, PAL.darkWood);
+  // Beam
+  rect(wx + 3, wy, 10, 1, PAL.darkWood);
+  // Bucket
+  px(wx + 8, wy + 2, PAL.grey);
+  px(wx + 8, wy + 3, PAL.grey);
+
+  // Campfire (col 15, row 7)
+  const fx = 15 * TILE + camX + 4;
+  const fy = 7 * TILE + camY + 4;
+  // Stones around fire
+  const stones = [[-2, 1], [2, 1], [-1, -1], [1, -1], [-2, -1], [2, -1], [0, 2]];
+  stones.forEach(([sx, sy]) => px(fx + sx, fy + sy, PAL.stone));
+  // Fire animation
+  const ff = frameCount % 8;
+  px(fx, fy, PAL.fire);
+  px(fx - 1, fy, ff < 4 ? PAL.golden : PAL.fire);
+  px(fx + 1, fy, ff >= 4 ? PAL.golden : PAL.fire);
+  px(fx, fy - 1, ff < 3 ? PAL.fire : PAL.golden);
+  px(fx, fy - 2, ff < 2 ? PAL.golden : PAL.fire);
+  // Subtle glow
+  ctx.fillStyle = 'rgba(255, 200, 0, 0.08)';
+  ctx.fillRect(fx - 6, fy - 6, 12, 12);
+}
+
+// ── FENCE ──
+function drawFences() {
+  // Fence around ApoMac Manor
+  const fences = [
+    // Top side of manor garden
+    { startCol: 10, endCol: 17, row: -0.5, type: 'h' },
+  ];
+  // Fence posts around barn
+  const barnFenceH = [
+    [21, 27, 10.5],
+    [21, 27, 15.5],
+  ];
+  const barnFenceV = [
+    [21, 10.5, 15.5],
+    [27, 10.5, 15.5],
+  ];
+
+  barnFenceH.forEach(([startC, endC, r]) => {
+    for (let c = startC; c <= endC; c++) {
+      const fx = c * TILE + camX;
+      const fy = r * TILE + camY;
+      rect(fx, fy, TILE, 1, PAL.darkWood);
+      if (c % 2 === 0) rect(fx + 7, fy - 3, 2, 4, PAL.wood);
+    }
+  });
+  barnFenceV.forEach(([c, startR, endR]) => {
+    for (let r = Math.floor(startR); r <= Math.floor(endR); r++) {
+      const fx = c * TILE + camX;
+      const fy = r * TILE + camY;
+      rect(fx, fy, 1, TILE, PAL.darkWood);
+      if (r % 2 === 0) rect(fx - 1, fy + 7, 3, 2, PAL.wood);
+    }
+  });
+}
+
+// ── DECORATIONS ──
+const flowerPositions = [
+  [2, 6], [3, 7], [1, 8], [4, 9], [2, 10],
+  [12, 2], [13, 3], [11, 5], [14, 6],
+  [15, 18], [16, 19], [14, 20], [15, 21],
+  [5, 17], [6, 18], [4, 19],
+  [12, 8], [13, 9], [11, 10],
+];
+
+function drawFlowers() {
+  const bob = Math.floor(animTick / 2) % 2;
+  flowerPositions.forEach(([r, c], i) => {
+    const x = c * TILE + 5 + camX;
+    const y = r * TILE + 5 + bob + camY;
+    const colors = [PAL.fire, PAL.golden, '#FF69B4', PAL.cyan];
+    const col = colors[i % colors.length];
+    px(x, y, col);
+    px(x + 1, y, col);
+    px(x, y + 1, col);
+    px(x + 1, y + 1, col);
+    px(x, y + 2, PAL.greenLeaf);
+    px(x + 1, y + 2, PAL.greenLeaf);
+  });
+}
+
+// Mushrooms
+function drawMushrooms() {
+  const mushrooms = [[1, 3], [15, 1], [16, 28], [2, 28]];
+  mushrooms.forEach(([r, c]) => {
+    const mx = c * TILE + 6 + camX;
+    const my = r * TILE + 8 + camY;
+    px(mx, my + 2, PAL.parchment); // stem
+    px(mx, my + 1, PAL.parchment);
+    px(mx - 1, my, PAL.red);
+    px(mx, my, PAL.red);
+    px(mx + 1, my, PAL.red);
+    px(mx, my - 1, PAL.red);
+    px(mx + 1, my, PAL.white); // spots
+  });
+}
+
+// Haystacks near barn
+function drawHaystacks() {
+  const hx = 20 * TILE + camX;
+  const hy = 14 * TILE + camY;
+  // Stack 1
+  rect(hx, hy, 8, 6, PAL.golden);
+  rect(hx + 1, hy - 2, 6, 3, PAL.golden);
+  rect(hx + 2, hy - 3, 4, 2, '#DAA520');
+  // Stack 2
+  rect(hx + 12, hy + 2, 7, 5, PAL.golden);
+  rect(hx + 13, hy, 5, 3, '#DAA520');
+}
+
+// ── PATH FINDING HELPERS ──
+function isPathTile(col, row) {
+  if (row < 0 || row >= ROWS || col < 0 || col >= COLS) return false;
+  return tileMap[row][col] === 2 || tileMap[row][col] === 5; // dirt path or bridge
+}
+
+// Path validation function (for future use)
+function validatePath(path) {
+  return path.every(([x, y]) => {
+    const col = Math.floor((x - 8) / TILE);
+    const row = Math.floor((y - 8) / TILE);
+    return isPathTile(col, row);
+  });
+}
+
+function createVillagerPath(homeBuilding) {
+  // Create simple path patterns based on building location and existing paths
+  const homeCol = homeBuilding.col + Math.floor(homeBuilding.w / 2);
+  const homeRow = homeBuilding.row + homeBuilding.h;
+  
+  // Define path routes based on the dirt path network we know exists
+  switch (homeBuilding.id) {
+    case 'apomac': // ApoMac Manor - uses top horizontal path
+      return [
+        [14*TILE + 8, 4*TILE + 8], // Main path intersection
+        [20*TILE + 8, 4*TILE + 8], // Right on path
+        [25*TILE + 8, 4*TILE + 8], // End of path
+        [20*TILE + 8, 4*TILE + 8], // Back
+        [14*TILE + 8, 4*TILE + 8], // Center
+        [8*TILE + 8, 4*TILE + 8],  // Left on path
+        [4*TILE + 8, 4*TILE + 8],  // Left intersection
+        [4*TILE + 8, 8*TILE + 8],  // Down left vertical
+        [4*TILE + 8, 4*TILE + 8],  // Back up
+        [14*TILE + 8, 4*TILE + 8]  // Return to center
+      ];
+      
+    case 'forge': // Forge - top right area
+      return [
+        [25*TILE + 8, 4*TILE + 8], // Near forge on path
+        [20*TILE + 8, 4*TILE + 8], // Move along top path
+        [15*TILE + 8, 4*TILE + 8], // Bridge approach
+        [15*TILE + 8, 9*TILE + 8], // Cross bridge
+        [20*TILE + 8, 13*TILE + 8], // Bottom path
+        [25*TILE + 8, 13*TILE + 8], // Right side bottom
+        [25*TILE + 8, 8*TILE + 8],  // Right vertical path
+        [25*TILE + 8, 4*TILE + 8]   // Back to start
+      ];
+      
+    case 'hunter': // Hunter - left side
+      return [
+        [4*TILE + 8, 7*TILE + 8],  // Near hunter building
+        [4*TILE + 8, 4*TILE + 8],  // Up to top path
+        [10*TILE + 8, 4*TILE + 8], // Along top path
+        [14*TILE + 8, 4*TILE + 8], // Center intersection
+        [14*TILE + 8, 9*TILE + 8], // Down to bridge
+        [10*TILE + 8, 13*TILE + 8], // Left on bottom path
+        [4*TILE + 8, 13*TILE + 8], // Left intersection
+        [4*TILE + 8, 10*TILE + 8], // Up left vertical
+        [4*TILE + 8, 7*TILE + 8]   // Back near building
+      ];
+      
+    case 'echo': // Echo - right side
+      return [
+        [25*TILE + 8, 7*TILE + 8], // Near echo building
+        [25*TILE + 8, 13*TILE + 8], // Down to bottom path
+        [20*TILE + 8, 13*TILE + 8], // Left on bottom path
+        [15*TILE + 8, 13*TILE + 8], // Bridge area
+        [15*TILE + 8, 9*TILE + 8],  // Up to bridge
+        [15*TILE + 8, 4*TILE + 8],  // Up to top path
+        [20*TILE + 8, 4*TILE + 8],  // Right on top path
+        [25*TILE + 8, 4*TILE + 8],  // Right end
+        [25*TILE + 8, 7*TILE + 8]   // Back to start
+      ];
+      
+    case 'sentinel': // Sentinel - left side bottom
+      return [
+        [4*TILE + 8, 13*TILE + 8], // Near sentinel
+        [8*TILE + 8, 13*TILE + 8], // Right on bottom path
+        [14*TILE + 8, 13*TILE + 8], // Center intersection
+        [14*TILE + 8, 9*TILE + 8],  // Up to bridge
+        [14*TILE + 8, 4*TILE + 8],  // Up to top path
+        [8*TILE + 8, 4*TILE + 8],   // Left on top path
+        [4*TILE + 8, 4*TILE + 8],   // Left intersection
+        [4*TILE + 8, 10*TILE + 8],  // Down left vertical
+        [4*TILE + 8, 13*TILE + 8]   // Back to start
+      ];
+      
+    case 'atlas': // Atlas - right side bottom
+      return [
+        [25*TILE + 8, 13*TILE + 8], // Near atlas barn
+        [20*TILE + 8, 13*TILE + 8], // Left on bottom path
+        [15*TILE + 8, 13*TILE + 8], // Center intersection
+        [15*TILE + 8, 9*TILE + 8],  // Up to bridge
+        [20*TILE + 8, 4*TILE + 8],  // Top path
+        [25*TILE + 8, 4*TILE + 8],  // Right top
+        [25*TILE + 8, 8*TILE + 8],  // Down right vertical
+        [25*TILE + 8, 13*TILE + 8]  // Back to start
+      ];
+      
+    default:
+      return [[14*TILE + 8, 7*TILE + 8]]; // Fallback to center
+  }
+}
+
+// ── VILLAGER SPRITES ──
+const villagers = [];
+
+function initVillagers() {
+  buildings.forEach(b => {
+    const path = createVillagerPath(b);
+    villagers.push({
+      id: b.id,
+      color: b.color,
+      skinColor: '#FFDAB9',
+      hairColor: b.id === 'echo' ? PAL.golden : PAL.darkText,
+      path: path,
+      pathIdx: 0,
+      progress: 0,
+      speed: 0.08 + Math.random() * 0.04, // Much slower: 0.08-0.12 (was 0.25-0.5)
+      frame: 0,
+      pauseTime: 0, // Time to pause at destination
+      maxPause: 180 + Math.random() * 120 // 3-5 seconds at 60fps
+    });
+  });
+}
+
+// Initialize villagers after buildings are defined
+initVillagers();
+
+function updateVillagers() {
+  villagers.forEach(v => {
+    // If pausing, just wait
+    if (v.pauseTime > 0) {
+      v.pauseTime--;
+      v.frame = 0; // Standing still
+      return;
+    }
+    
+    const nextIdx = (v.pathIdx + 1) % v.path.length;
+    const [sx, sy] = v.path[v.pathIdx];
+    const [ex, ey] = v.path[nextIdx];
+    
+    // Move towards next point
+    v.progress += v.speed;
+    const dist = Math.sqrt((ex - sx) ** 2 + (ey - sy) ** 2);
+    
+    if (v.progress >= dist) {
+      // Reached destination - start pause
+      v.progress = 0;
+      v.pathIdx = nextIdx;
+      v.pauseTime = v.maxPause;
+      v.frame = 0;
+    } else {
+      // Walking - animate frame slower
+      if (frameCount % 30 === 0) v.frame = 1 - v.frame; // Slower walk animation
+    }
+  });
+}
+
+function drawVillager(v) {
+  const nextIdx = (v.pathIdx + 1) % v.path.length;
+  const [sx, sy] = v.path[v.pathIdx];
+  const [ex, ey] = v.path[nextIdx];
+  const dist = Math.sqrt((ex - sx) ** 2 + (ey - sy) ** 2) || 1;
+  const t = v.progress / dist;
+  const x = Math.floor(sx + (ex - sx) * t) + camX;
+  const y = Math.floor(sy + (ey - sy) * t) + camY;
+
+  // Shadow under character
+  ctx.fillStyle = 'rgba(0,0,0,0.15)';
+  ctx.fillRect(x - 2, y + 3, 5, 2);
+
+  // 8x8 pixel sprite
+  // Hair (top of head)
+  px(x - 1, y - 4, v.hairColor);
+  px(x, y - 4, v.hairColor);
+  px(x + 1, y - 4, v.hairColor);
+  px(x - 1, y - 3, v.hairColor);
+  px(x + 1, y - 3, v.hairColor);
+  // Face
+  px(x - 1, y - 3, v.skinColor);
+  px(x, y - 3, v.skinColor);
+  px(x + 1, y - 3, v.skinColor);
+  px(x - 1, y - 2, v.skinColor);
+  px(x, y - 2, v.skinColor);
+  px(x + 1, y - 2, v.skinColor);
+  // Eyes (tiny dots)
+  px(x - 1, y - 3, PAL.darkText);
+  px(x + 1, y - 3, PAL.darkText);
+  // Body (shirt)
+  px(x - 1, y - 1, v.color);
+  px(x, y - 1, v.color);
+  px(x + 1, y - 1, v.color);
+  px(x - 1, y, v.color);
+  px(x, y, v.color);
+  px(x + 1, y, v.color);
+  // Belt/detail
+  px(x - 1, y, PAL.darkText);
+  px(x + 1, y, PAL.darkText);
+  // Arms
+  px(x - 2, y - 1, v.skinColor);
+  px(x + 2, y - 1, v.skinColor);
+  px(x - 2, y, v.skinColor);
+  px(x + 2, y, v.skinColor);
+
+  // Legs (walk animation)
+  if (v.frame === 0) {
+    // Standing / legs together
+    px(x - 1, y + 1, PAL.darkText);
+    px(x + 1, y + 1, PAL.darkText);
+    px(x - 1, y + 2, PAL.darkTrunk);
+    px(x + 1, y + 2, PAL.darkTrunk);
+  } else {
+    // Walking / legs apart
+    px(x - 2, y + 1, PAL.darkText);
+    px(x + 2, y + 1, PAL.darkText);
+    px(x - 2, y + 2, PAL.darkTrunk);
+    px(x + 2, y + 2, PAL.darkTrunk);
+  }
+
+  // Character-specific accessories
+  if (v.id === 'forge') {
+    // Hammer in hand
+    px(x + 3, y - 1, PAL.grey);
+    px(x + 3, y, PAL.darkWood);
+    px(x + 3, y + 1, PAL.darkWood);
+  } else if (v.id === 'sentinel') {
+    // Shield/spear
+    px(x - 3, y - 1, PAL.grey);
+    px(x - 3, y, PAL.grey);
+    px(x - 3, y + 1, PAL.grey);
+  } else if (v.id === 'apomac') {
+    // Crown
+    px(x - 1, y - 5, PAL.golden);
+    px(x, y - 5, PAL.golden);
+    px(x + 1, y - 5, PAL.golden);
+    px(x, y - 6, PAL.golden);
+  }
+}
+
+function drawVillagers() {
+  villagers.forEach(drawVillager);
+}
+
+// ── PARTICLES ──
+// Smoke
+let smokeParticles = [];
+function updateSmoke() {
+  // Emit from forge chimney
+  if (frameCount % 12 === 0) {
+    const forgeB = buildings.find(b => b.id === 'forge');
+    const sx = (forgeB.col + forgeB.w - 0.3) * TILE;
+    const sy = forgeB.row * TILE - 6;
+    smokeParticles.push({ x: sx + Math.random() * 2, y: sy, life: 40, maxLife: 40 });
+    smokeParticles.push({ x: sx + Math.random() * 2 - 1, y: sy - 2, life: 35, maxLife: 35 });
+  }
+  // Emit from ApoMac (lighter)
+  if (frameCount % 20 === 0) {
+    const b = buildings.find(b2 => b2.id === 'apomac');
+    const sx = (b.col + b.w * 0.3) * TILE;
+    const sy = b.row * TILE - 2;
+    smokeParticles.push({ x: sx, y: sy, life: 30, maxLife: 30 });
+  }
+  smokeParticles.forEach(p => {
+    p.y -= 0.2;
+    p.x += (Math.random() - 0.5) * 0.3;
+    p.life--;
+  });
+  smokeParticles = smokeParticles.filter(p => p.life > 0);
+}
+
+function drawSmoke() {
+  smokeParticles.forEach(p => {
+    const alpha = p.life / p.maxLife;
+    const grey = Math.floor(180 + (1 - alpha) * 60);
+    ctx.fillStyle = `rgba(${grey},${grey},${grey},${alpha * 0.6})`;
+    ctx.fillRect(Math.floor(p.x + camX), Math.floor(p.y + camY), 2, 2);
+  });
+}
+
+// Falling leaves
+let leafParticles = [];
+function updateLeaves() {
+  if (frameCount % 60 === 0 && leafParticles.length < 15) {
+    leafParticles.push({
+      x: Math.random() * COLS * TILE,
+      y: -4,
+      vx: 0.2 + Math.random() * 0.3,
+      vy: 0.3 + Math.random() * 0.2,
+      color: [PAL.orangeLeaf, PAL.redLeaf, PAL.golden][Math.floor(Math.random() * 3)],
+      wobble: Math.random() * Math.PI * 2,
+      life: 300
+    });
+  }
+  leafParticles.forEach(l => {
+    l.x += l.vx + Math.sin(l.wobble) * 0.3;
+    l.y += l.vy;
+    l.wobble += 0.05;
+    l.life--;
+  });
+  leafParticles = leafParticles.filter(l => l.life > 0 && l.y < ROWS * TILE + 10);
+}
+
+function drawLeaves() {
+  leafParticles.forEach(l => {
+    ctx.fillStyle = l.color;
+    ctx.fillRect(Math.floor(l.x + camX), Math.floor(l.y + camY), 2, 2);
+  });
+}
+
+// Fireflies
+let fireflyParticles = [];
+function updateFireflies() {
+  if (frameCount % 90 === 0 && fireflyParticles.length < 8) {
+    // Spawn in forest areas
+    const forestSpots = [[1, 1], [1, 28], [15, 1], [15, 28], [6, 0], [12, 0], [6, 29], [12, 29]];
+    const spot = forestSpots[Math.floor(Math.random() * forestSpots.length)];
+    fireflyParticles.push({
+      x: spot[1] * TILE + Math.random() * TILE,
+      y: spot[0] * TILE + Math.random() * TILE,
+      phase: Math.random() * Math.PI * 2,
+      life: 120 + Math.random() * 120
+    });
+  }
+  fireflyParticles.forEach(f => {
+    f.x += Math.sin(f.phase) * 0.2;
+    f.y += Math.cos(f.phase * 0.7) * 0.15;
+    f.phase += 0.03;
+    f.life--;
+  });
+  fireflyParticles = fireflyParticles.filter(f => f.life > 0);
+}
+
+function drawFireflies() {
+  fireflyParticles.forEach(f => {
+    const brightness = Math.sin(f.phase * 3) * 0.5 + 0.5;
+    if (brightness > 0.3) {
+      ctx.fillStyle = `rgba(255, 255, 100, ${brightness * 0.8})`;
+      ctx.fillRect(Math.floor(f.x + camX), Math.floor(f.y + camY), 1, 1);
+    }
+  });
+}
+
+// ── UI OVERLAY ──
+function drawUI() {
+  // Top banner: "LE VILLAGE D'AGENTS"
+  const title = "LE VILLAGE D'AGENTS";
+  const titleW = textWidth(title, 2);
+  const titleX = Math.floor((W - titleW) / 2);
+  // Banner background
+  rect(titleX - 6, 2, titleW + 12, 20, 'rgba(47,27,14,0.7)');
+  rect(titleX - 5, 3, titleW + 10, 18, 'rgba(47,27,14,0.5)');
+  // Gold border
+  ctx.fillStyle = PAL.golden;
+  ctx.fillRect(titleX - 6, 2, titleW + 12, 1);
+  ctx.fillRect(titleX - 6, 21, titleW + 12, 1);
+  ctx.fillRect(titleX - 6, 2, 1, 20);
+  ctx.fillRect(titleX - 6 + titleW + 11, 2, 1, 20);
+  // Title text with shadow
+  drawText(title, titleX + 1, 6 + 1, '#1A0D00', 2);
+  drawText(title, titleX, 6, PAL.golden, 2);
+
+  // Bottom-left stats panel
+  const panelX = 4;
+  const panelY = H - 48;
+  const panelW = 110;
+  const panelH = 44;
+  rect(panelX, panelY, panelW, panelH, 'rgba(245,222,179,0.9)');
+  // Border
+  ctx.fillStyle = PAL.darkText;
+  ctx.fillRect(panelX, panelY, panelW, 1);
+  ctx.fillRect(panelX, panelY + panelH - 1, panelW, 1);
+  ctx.fillRect(panelX, panelY, 1, panelH);
+  ctx.fillRect(panelX + panelW - 1, panelY, 1, panelH);
+
+  drawText('VILLAGEOIS: 6', panelX + 4, panelY + 4, PAL.darkText, 1);
+  drawText('NIVEAU: 3', panelX + 4, panelY + 14, PAL.darkText, 1);
+  drawText('RECOLTE: 47', panelX + 4, panelY + 24, PAL.darkText, 1);
+  drawText('TRESOR: 2,847', panelX + 4, panelY + 34, PAL.darkText, 1);
+
+  // Gold icon next to treasure
+  px(panelX + 2, panelY + 35, PAL.golden);
+  px(panelX + 2, panelY + 36, PAL.golden);
+  px(panelX + 3, panelY + 35, PAL.golden);
+
+  // Season badge top-right
+  const badgeText = 'AUTOMNE';
+  const badgeW = textWidth(badgeText, 1) + 16;
+  const badgeX = W - badgeW - 4;
+  const badgeY = 4;
+  rect(badgeX, badgeY, badgeW, 12, 'rgba(139,69,19,0.8)');
+  // Leaf icon
+  px(badgeX + 3, badgeY + 3, PAL.orangeLeaf);
+  px(badgeX + 4, badgeY + 2, PAL.orangeLeaf);
+  px(badgeX + 5, badgeY + 3, PAL.orangeLeaf);
+  px(badgeX + 4, badgeY + 4, PAL.redLeaf);
+  px(badgeX + 4, badgeY + 5, PAL.darkTrunk);
+  px(badgeX + 4, badgeY + 6, PAL.darkTrunk);
+  px(badgeX + 5, badgeY + 7, PAL.darkTrunk);
+  // Text
+  drawText(badgeText, badgeX + 10, badgeY + 3, PAL.golden, 1);
+}
+
+// ── POPUP ──
+function drawPopup() {
+  if (!activePopup) return;
+  const b = activePopup.building;
+  const px2 = activePopup.x;
+  const py2 = activePopup.y;
+
+  const popW = 140;
+  const popH = 70;
+  let popX = px2 - popW / 2;
+  let popY = py2 - popH - 10;
+  // Keep in bounds
+  if (popX < 2) popX = 2;
+  if (popX + popW > W - 2) popX = W - popW - 2;
+  if (popY < 2) popY = py2 + 10;
+
+  // Background
+  rect(popX, popY, popW, popH, PAL.parchment);
+  // Border
+  ctx.fillStyle = PAL.darkText;
+  ctx.fillRect(popX, popY, popW, 1);
+  ctx.fillRect(popX, popY + popH - 1, popW, 1);
+  ctx.fillRect(popX, popY, 1, popH);
+  ctx.fillRect(popX + popW - 1, popY, 1, popH);
+  // Inner border
+  ctx.fillStyle = PAL.thatch;
+  ctx.fillRect(popX + 1, popY + 1, popW - 2, 1);
+  ctx.fillRect(popX + 1, popY + popH - 2, popW - 2, 1);
+
+  // Pixel portrait (12x12)
+  const portraitX = popX + 6;
+  const portraitY = popY + 6;
+  rect(portraitX, portraitY, 14, 14, PAL.darkText);
+  rect(portraitX + 1, portraitY + 1, 12, 12, b.roofColor);
+  // Face in portrait
+  rect(portraitX + 4, portraitY + 3, 6, 6, '#FFDAB9');
+  px(portraitX + 5, portraitY + 5, PAL.darkText);
+  px(portraitX + 8, portraitY + 5, PAL.darkText);
+  rect(portraitX + 5, portraitY + 7, 4, 1, PAL.darkText);
+  // Body
+  rect(portraitX + 3, portraitY + 9, 8, 4, b.roofColor);
+
+  // Text
+  const textX = popX + 24;
+  drawText(b.name, textX, popY + 6, PAL.darkText, 1);
+  drawText(b.role, textX, popY + 16, PAL.darkWood, 1);
+
+  // Status with wrapping
+  const statusWords = b.status.split(' ');
+  let line = '';
+  let lineY = popY + 30;
+  statusWords.forEach(word => {
+    const test = line + (line ? ' ' : '') + word;
+    if (textWidth(test, 1) > popW - 28) {
+      drawText(line, textX, lineY, PAL.darkGrass, 1);
+      lineY += 10;
+      line = word;
+    } else {
+      line = test;
+    }
+  });
+  if (line) drawText(line, textX, lineY, PAL.darkGrass, 1);
+
+  // Close hint
+  drawText('CLICK TO CLOSE', popX + 30, popY + popH - 10, PAL.stone, 1);
+}
+
+// ── SKY GRADIENT (background) ──
+function drawSky() {
+  // Full background fill — golden hour gradient
+  const gradientSteps = [
+    [0.0, 135, 206, 235],   // sky blue
+    [0.3, 160, 200, 220],   // fading blue
+    [0.6, 200, 180, 140],   // warm transition
+    [0.8, 235, 190, 100],   // golden
+    [1.0, 255, 215, 0],     // deep gold at horizon
+  ];
+
+  for (let y = 0; y < H; y++) {
+    const t = y / H;
+    // Find gradient segment
+    let r, g, b2;
+    for (let i = 0; i < gradientSteps.length - 1; i++) {
+      if (t >= gradientSteps[i][0] && t <= gradientSteps[i + 1][0]) {
+        const segT = (t - gradientSteps[i][0]) / (gradientSteps[i + 1][0] - gradientSteps[i][0]);
+        r = Math.floor(gradientSteps[i][1] + (gradientSteps[i + 1][1] - gradientSteps[i][1]) * segT);
+        g = Math.floor(gradientSteps[i][2] + (gradientSteps[i + 1][2] - gradientSteps[i][2]) * segT);
+        b2 = Math.floor(gradientSteps[i][3] + (gradientSteps[i + 1][3] - gradientSteps[i][3]) * segT);
+        break;
+      }
+    }
+    if (r === undefined) { r = 255; g = 215; b2 = 0; }
+    ctx.fillStyle = `rgb(${r},${g},${b2})`;
+    ctx.fillRect(0, y, W, 1);
+  }
+}
+
+// ── HIT TESTING ──
+let hoveredBuilding = null;
+
+function getBuildingAt(px3, py3) {
+  // Convert screen coords to world coords
+  const wx = (px3 / (canvas.clientWidth / W)) - camX;
+  const wy = (py3 / (canvas.clientHeight / H)) - camY;
+
+  for (const b of buildings) {
+    const bx = b.col * TILE;
+    const by = b.row * TILE;
+    const bw = b.w * TILE;
+    const bh = b.h * TILE;
+    if (wx >= bx && wx < bx + bw && wy >= by && wy < by + bh) {
+      return { building: b, cx: bx + bw / 2 + camX, cy: by + camY };
+    }
+  }
+  return null;
+}
+
+// ── INPUT HANDLING ──
+// Note: Only BUILDINGS are clickable targets, NOT villagers
+// Villagers are purely ambient animation - users click buildings to see agent info
+canvas.addEventListener('mousedown', (e) => {
+  if (activePopup) {
+    activePopup = null;
+    return;
+  }
+  const hit = getBuildingAt(e.clientX, e.clientY);
+  if (hit) {
+    activePopup = { building: hit.building, x: hit.cx, y: hit.cy };
+  } else {
+    dragging = true;
+    dragStartX = e.clientX;
+    dragStartY = e.clientY;
+    camStartX = camX;
+    camStartY = camY;
+  }
+});
+
+canvas.addEventListener('mousemove', (e) => {
+  if (dragging) {
+    const dx = (e.clientX - dragStartX) * (W / canvas.clientWidth);
+    const dy = (e.clientY - dragStartY) * (H / canvas.clientHeight);
+    camX = camStartX + dx;
+    camY = camStartY + dy;
+    // Bounds
+    camX = Math.min(40, Math.max(-(COLS * TILE - W + 40), camX));
+    camY = Math.min(20, Math.max(-(ROWS * TILE - H + 20), camY));
+  } else {
+    const hit = getBuildingAt(e.clientX, e.clientY);
+    hoveredBuilding = hit ? hit.building : null;
+    canvas.style.cursor = hit ? 'pointer' : 'default';
+  }
+});
+
+canvas.addEventListener('mouseup', () => { dragging = false; });
+canvas.addEventListener('mouseleave', () => { dragging = false; hoveredBuilding = null; });
+
+canvas.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  // Simple zoom by adjusting camera
+  const zoomDelta = e.deltaY > 0 ? -0.1 : 0.1;
+  zoom = Math.max(0.8, Math.min(1.5, zoom + zoomDelta));
+  canvas.style.width = `${100 * zoom}vw`;
+  canvas.style.height = `${100 * zoom}vh`;
+}, { passive: false });
+
+// Touch support
+let touchStartX = 0, touchStartY = 0;
+canvas.addEventListener('touchstart', (e) => {
+  e.preventDefault();
+  const t = e.touches[0];
+  const hit = getBuildingAt(t.clientX, t.clientY);
+  if (activePopup) {
+    activePopup = null;
+  } else if (hit) {
+    activePopup = { building: hit.building, x: hit.cx, y: hit.cy };
+  } else {
+    dragging = true;
+    dragStartX = t.clientX;
+    dragStartY = t.clientY;
+    camStartX = camX;
+    camStartY = camY;
+  }
+}, { passive: false });
+
+canvas.addEventListener('touchmove', (e) => {
+  e.preventDefault();
+  if (dragging) {
+    const t = e.touches[0];
+    const dx = (t.clientX - dragStartX) * (W / canvas.clientWidth);
+    const dy = (t.clientY - dragStartY) * (H / canvas.clientHeight);
+    camX = camStartX + dx;
+    camY = camStartY + dy;
+    camX = Math.min(40, Math.max(-(COLS * TILE - W + 40), camX));
+    camY = Math.min(20, Math.max(-(ROWS * TILE - H + 20), camY));
+  }
+}, { passive: false });
+
+canvas.addEventListener('touchend', () => { dragging = false; });
+
+// ── THEME BRIDGE ──
+try { parent.postMessage({ type: 'theme:ready' }, '*'); } catch(e) {}
+window.addEventListener('message', (e) => {
+  if (e.data && e.data.type === 'agent:update') {
+    const d = e.data;
+    if (d.agentId && d.status) {
+      const b = buildings.find(b2 => b2.id === d.agentId);
+      if (b) b.status = d.status;
+    }
+  }
+  if (e.data && e.data.type === 'task:complete') {
+    // Celebration: burst of golden particles
+    for (let i = 0; i < 20; i++) {
+      leafParticles.push({
+        x: W / 2 + (Math.random() - 0.5) * 200,
+        y: H / 2,
+        vx: (Math.random() - 0.5) * 2,
+        vy: -1 - Math.random(),
+        color: PAL.golden,
+        wobble: Math.random() * Math.PI * 2,
+        life: 120
+      });
+    }
+  }
+});
+
+// ── MAIN LOOP ──
+function gameLoop(timestamp) {
+  // Timing
+  if (!lastTime) lastTime = timestamp;
+  const dt = timestamp - lastTime;
+  lastTime = timestamp;
+  frameCount++;
+
+  // Update animation tick (~500ms intervals)
+  if (frameCount % 30 === 0) animTick++;
+
+  // Update systems
+  updateVillagers();
+  updateSmoke();
+  updateLeaves();
+  updateFireflies();
+
+  // ── RENDER ──
+  ctx.clearRect(0, 0, W, H);
+
+  // Sky background
+  drawSky();
+
+  // Terrain
+  drawTerrain();
+
+  // Fences
+  drawFences();
+
+  // Decorations (below buildings)
+  drawFlowers();
+  drawMushrooms();
+  drawHaystacks();
+  drawCropField();
+
+  // Well & campfire
+  drawWellAndCampfire();
+
+  // Buildings
+  buildings.forEach(b => drawBuilding(b, b === hoveredBuilding));
+
+  // Trees (some overlap buildings for depth)
+  drawTrees();
+
+  // Villagers
+  drawVillagers();
+
+  // Particles
+  drawSmoke();
+  drawLeaves();
+  drawFireflies();
+
+  // UI overlay (always on top)
+  drawUI();
+
+  // Popup
+  drawPopup();
+
+  requestAnimationFrame(gameLoop);
+}
+
+requestAnimationFrame(gameLoop);
+</script>
+</body>
+</html>

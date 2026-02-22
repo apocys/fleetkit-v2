@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SpawnKit Village — Cozy Pixel Village</title>
+<title>SpawnKit Village — Kenney Mini Characters</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
   * { margin:0; padding:0; box-sizing:border-box; }
@@ -94,61 +94,133 @@ const SCALE = 2;
 const T = TILE * SCALE;       // 32px rendered tile
 const FPS_ANIM = 8;
 const MOVE_SPEED = 1.0;       // tiles/second
-const RENDER_SIZE = 64;       // sprite render size in source pixels
+const SPRITE_SRC_SIZE = 256;  // Kenney sprites are 256×256
+const SPRITE_DRAW_SIZE = 50;  // draw size in world pixels (better proportion to buildings)
+const SPRITE_FRAMES = 8;     // 8 frames per animation
 const SEPARATION_RADIUS = 1.5;
 const SEPARATION_FORCE = 1.8;
 
-// All assets relative to THIS file → ../office-green-iso/assets/
+// Isometric directions
+const DIRECTIONS = ['SE', 'SW', 'NE', 'NW'];
+
+// All environment assets relative to THIS file → ../office-green-iso/assets/
 const ASSETS = '../office-green-iso/assets/';
+
+// Kenney sprites relative to THIS file
+const SPRITE_BASE = 'assets/rendered-sprites/';
+
+// ═══════════════════════════════════════════════════════════════════
+// KENNEY SPRITE LOADER
+// ═══════════════════════════════════════════════════════════════════
+// Path: {SPRITE_BASE}{charModel}/{animType}_{charModel}/{direction}/frame_{NNN}.png
+// e.g.: assets/rendered-sprites/character-male-a/idle_character-male-a/SE/frame_000.png
+
+const spriteCache = {};    // key -> Image
+let loadedCount = 0;
+let totalImages = 0;
+
+function loadImage(path) {
+  if (spriteCache[path]) return spriteCache[path];
+  totalImages++;
+  const img = new Image();
+  img.src = path;
+  img.onload = () => { loadedCount++; };
+  img.onerror = () => { console.warn('Failed to load:', path); loadedCount++; };
+  spriteCache[path] = img;
+  return img;
+}
+
+// Load environment image (uses ASSETS prefix)
+function loadEnvImage(path) {
+  return loadImage(ASSETS + path);
+}
+
+// Load a full sprite set for a character model: idle + walk, 4 dirs, 8 frames
+// Returns { idle: { SE: [img0..7], SW: [...], ... }, walk: { SE: [...], ... } }
+function loadCharacterSprites(charModel) {
+  const set = { idle: {}, walk: {} };
+  for (const animType of ['idle', 'walk']) {
+    for (const dir of DIRECTIONS) {
+      set[animType][dir] = [];
+      for (let f = 0; f < SPRITE_FRAMES; f++) {
+        const fStr = String(f).padStart(3, '0');
+        const path = `${SPRITE_BASE}${charModel}/${animType}_${charModel}/${dir}/frame_${fStr}.png`;
+        set[animType][dir].push(loadImage(path));
+      }
+    }
+  }
+  return set;
+}
+
+// Agent → Character model mapping
+const CHARACTER_MODELS = {
+  apomac:   'character-male-a',
+  forge:    'character-male-c',
+  hunter:   'character-male-d',
+  atlas:    'character-female-a',
+  echo:     'character-female-c',
+  sentinel: 'character-male-e',
+};
+
+// Preload all character sprites
+const characterSprites = {};
+for (const [agentId, charModel] of Object.entries(CHARACTER_MODELS)) {
+  characterSprites[agentId] = loadCharacterSprites(charModel);
+}
+
+// Environment images
+const IMG = {
+  floorTiles:  loadEnvImage('Environment/Tilesets/Floors_Tiles.png'),
+  waterTiles:  loadEnvImage('Environment/Tilesets/Water_tiles.png'),
+  wallTiles:   loadEnvImage('Environment/Tilesets/Wall_Tiles.png'),
+  buildWalls:  loadEnvImage('Environment/Structures/Buildings/Walls.png'),
+  buildFloors: loadEnvImage('Environment/Structures/Buildings/Floors.png'),
+  buildRoofs:  loadEnvImage('Environment/Structures/Buildings/Roofs.png'),
+  buildProps:  loadEnvImage('Environment/Structures/Buildings/Props.png'),
+  tree1:       loadEnvImage('Environment/Props/Static/Trees/Model_01/Size_03.png'),
+  tree2:       loadEnvImage('Environment/Props/Static/Trees/Model_02/Size_03.png'),
+  tree3:       loadEnvImage('Environment/Props/Static/Trees/Model_03/Size_02.png'),
+  anvil:       loadEnvImage('Environment/Structures/Stations/Anvil/Anvil.png'),
+  workbench:   loadEnvImage('Environment/Structures/Stations/Workbench/Workbench.png'),
+  bonfire:     loadEnvImage('Environment/Structures/Stations/Bonfire/Bonfire.png'),
+  sawmill:     loadEnvImage('Environment/Structures/Stations/Sawmill/Base.png'),
+  shadows:     loadEnvImage('Environment/Props/Static/Shadows.png'),
+};
 
 // ─── Map ───────────────────────────────────────────────────────────
 const MAP_W = 42;
 const MAP_H = 42;
 
-// Tile types: 0=grass, 1=walkable(path/bridge/open), 2=water, 3=dirt path
 const tileMap = [];
 for (let y = 0; y < MAP_H; y++) {
-  tileMap[y] = new Uint8Array(MAP_W); // 0 = grass
+  tileMap[y] = new Uint8Array(MAP_W);
 }
 
-// ─── River (row 28–30 horizontal) ─────────────────────────────────
 const RIVER_ROW_START = 28;
 const RIVER_ROW_END   = 30;
 
-// ─── Dirt path network ────────────────────────────────────────────
-// Central vertical path col 20-21
-// Central horizontal path row 18-19
-// Paths lead to each building, river, trees
-
 function buildTileMap() {
-  // Vertical spine: col 20, rows 2..MAP_H-3  (excluding river → bridge)
   for (let y = 2; y < MAP_H - 2; y++) {
     tileMap[y][20] = (y >= RIVER_ROW_START && y <= RIVER_ROW_END) ? 2 : 3;
     tileMap[y][21] = (y >= RIVER_ROW_START && y <= RIVER_ROW_END) ? 2 : 3;
   }
-  // Horizontal upper path row 16-17
   for (let x = 2; x < MAP_W - 2; x++) {
     tileMap[16][x] = 3;
     tileMap[17][x] = 3;
   }
-  // Horizontal lower path row 33-34
   for (let x = 2; x < MAP_W - 2; x++) {
     tileMap[33][x] = 3;
     tileMap[34][x] = 3;
   }
-  // River rows
   for (let x = 0; x < MAP_W; x++) {
     for (let ry = RIVER_ROW_START; ry <= RIVER_ROW_END; ry++) {
       tileMap[ry][x] = 2;
     }
   }
-  // Bridge over river at col 20-21 (override water)
   for (let ry = RIVER_ROW_START; ry <= RIVER_ROW_END; ry++) {
     tileMap[ry][20] = 3;
     tileMap[ry][21] = 3;
   }
-  // Mark all path/bridge tiles walkable: tile 3 = dirt path (walkable)
-  // Water (2) is NOT walkable except bridge
 }
 
 buildTileMap();
@@ -156,84 +228,8 @@ buildTileMap();
 function isWalkable(tx, ty) {
   if (tx < 0 || ty < 0 || tx >= MAP_W || ty >= MAP_H) return false;
   const t = tileMap[ty][tx];
-  return t === 0 || t === 3; // grass + dirt path walkable; water not
+  return t === 0 || t === 3;
 }
-
-// ═══════════════════════════════════════════════════════════════════
-// IMAGE LOADER
-// ═══════════════════════════════════════════════════════════════════
-const imageCache = {};
-let loadedCount = 0;
-let totalImages = 0;
-
-function loadImage(path) {
-  if (imageCache[path]) return imageCache[path];
-  totalImages++;
-  const img = new Image();
-  img.src = ASSETS + path;
-  img.onload = () => { loadedCount++; };
-  img.onerror = () => { console.warn('Failed:', ASSETS + path); loadedCount++; };
-  imageCache[path] = img;
-  return img;
-}
-
-// ═══════════════════════════════════════════════════════════════════
-// SPRITE DEFINITIONS  (Body_A only, village animations)
-// ═══════════════════════════════════════════════════════════════════
-const SPRITE_DEFS = {
-  bodyA: {
-    idle_down:       { path:'Entities/Characters/Body_A/Animations/Idle_Base/Idle_Down-Sheet.png',         fw:64, fh:64, frames:4 },
-    idle_side:       { path:'Entities/Characters/Body_A/Animations/Idle_Base/Idle_Side-Sheet.png',         fw:64, fh:64, frames:4 },
-    idle_up:         { path:'Entities/Characters/Body_A/Animations/Idle_Base/Idle_Up-Sheet.png',           fw:64, fh:64, frames:4 },
-    walk_down:       { path:'Entities/Characters/Body_A/Animations/Walk_Base/Walk_Down-Sheet.png',         fw:64, fh:64, frames:6 },
-    walk_side:       { path:'Entities/Characters/Body_A/Animations/Walk_Base/Walk_Side-Sheet.png',         fw:64, fh:64, frames:6 },
-    walk_up:         { path:'Entities/Characters/Body_A/Animations/Walk_Base/Walk_Up-Sheet.png',           fw:64, fh:64, frames:6 },
-    carry_idle_down: { path:'Entities/Characters/Body_A/Animations/Carry_Idle/Carry_Idle_Down-Sheet.png',  fw:64, fh:64, frames:4 },
-    carry_idle_side: { path:'Entities/Characters/Body_A/Animations/Carry_Idle/Carry_Idle_Side-Sheet.png',  fw:64, fh:64, frames:4 },
-    carry_idle_up:   { path:'Entities/Characters/Body_A/Animations/Carry_Idle/Carry_Idle_Up-Sheet.png',    fw:64, fh:64, frames:4 },
-    crush_down:      { path:'Entities/Characters/Body_A/Animations/Crush_Base/Crush_Down-Sheet.png',       fw:64, fh:64, frames:8 },
-    crush_side:      { path:'Entities/Characters/Body_A/Animations/Crush_Base/Crush_Side-Sheet.png',       fw:64, fh:64, frames:8 },
-    crush_up:        { path:'Entities/Characters/Body_A/Animations/Crush_Base/Crush_Up-Sheet.png',         fw:64, fh:64, frames:8 },
-    collect_down:    { path:'Entities/Characters/Body_A/Animations/Collect_Base/Collect_Down-Sheet.png',   fw:64, fh:64, frames:8 },
-    collect_side:    { path:'Entities/Characters/Body_A/Animations/Collect_Base/Collect_Side-Sheet.png',   fw:64, fh:64, frames:8 },
-    collect_up:      { path:'Entities/Characters/Body_A/Animations/Collect_Base/Collect_Up-Sheet.png',     fw:64, fh:64, frames:8 },
-    watering_down:   { path:'Entities/Characters/Body_A/Animations/Watering_Base/Watering_Down-Sheet.png', fw:64, fh:64, frames:8 },
-    watering_side:   { path:'Entities/Characters/Body_A/Animations/Watering_Base/Watering_Side-Sheet.png', fw:64, fh:64, frames:8 },
-    watering_up:     { path:'Entities/Characters/Body_A/Animations/Watering_Base/Watering_Up-Sheet.png',   fw:64, fh:64, frames:8 },
-    fishing_down:    { path:'Entities/Characters/Body_A/Animations/Fishing_Base/Fishing_Down-Sheet.png',   fw:64, fh:64, frames:8 },
-    fishing_side:    { path:'Entities/Characters/Body_A/Animations/Fishing_Base/Fishing_Side-Sheet.png',   fw:64, fh:64, frames:8 },
-    fishing_up:      { path:'Entities/Characters/Body_A/Animations/Fishing_Base/Fishing_Up-Sheet.png',     fw:64, fh:64, frames:8 },
-    // aliases
-    idle:  { path:'Entities/Characters/Body_A/Animations/Idle_Base/Idle_Down-Sheet.png',  fw:64, fh:64, frames:4 },
-    walk:  { path:'Entities/Characters/Body_A/Animations/Walk_Base/Walk_Down-Sheet.png',  fw:64, fh:64, frames:6 },
-  },
-};
-
-// Preload all sprites
-for (const char of Object.values(SPRITE_DEFS)) {
-  for (const anim of Object.values(char)) {
-    loadImage(anim.path);
-  }
-}
-
-// Environment images
-const IMG = {
-  floorTiles:  loadImage('Environment/Tilesets/Floors_Tiles.png'),
-  waterTiles:  loadImage('Environment/Tilesets/Water_tiles.png'),
-  wallTiles:   loadImage('Environment/Tilesets/Wall_Tiles.png'),
-  buildWalls:  loadImage('Environment/Structures/Buildings/Walls.png'),
-  buildFloors: loadImage('Environment/Structures/Buildings/Floors.png'),
-  buildRoofs:  loadImage('Environment/Structures/Buildings/Roofs.png'),
-  buildProps:  loadImage('Environment/Structures/Buildings/Props.png'),
-  tree1:       loadImage('Environment/Props/Static/Trees/Model_01/Size_03.png'),
-  tree2:       loadImage('Environment/Props/Static/Trees/Model_02/Size_03.png'),
-  tree3:       loadImage('Environment/Props/Static/Trees/Model_03/Size_02.png'),
-  anvil:       loadImage('Environment/Structures/Stations/Anvil/Anvil.png'),
-  workbench:   loadImage('Environment/Structures/Stations/Workbench/Workbench.png'),
-  bonfire:     loadImage('Environment/Structures/Stations/Bonfire/Bonfire.png'),
-  sawmill:     loadImage('Environment/Structures/Stations/Sawmill/Base.png'),
-  shadows:     loadImage('Environment/Props/Static/Shadows.png'),
-};
 
 // ═══════════════════════════════════════════════════════════════════
 // A* PATHFINDER
@@ -242,7 +238,6 @@ function findPath(sx, sy, ex, ey) {
   sx = Math.round(sx); sy = Math.round(sy);
   ex = Math.round(ex); ey = Math.round(ey);
   if (!isWalkable(ex, ey)) {
-    // Try nearby walkable tile
     for (const [dx,dy] of [[0,0],[1,0],[-1,0],[0,1],[0,-1],[1,1],[-1,1],[1,-1],[-1,-1]]) {
       if (isWalkable(ex+dx, ey+dy)) { ex += dx; ey += dy; break; }
     }
@@ -285,21 +280,15 @@ function findPath(sx, sy, ex, ey) {
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// BUILDINGS (village structures, placed as decorative + floor areas)
+// BUILDINGS
 // ═══════════════════════════════════════════════════════════════════
-
-// Each building: { x, y, w, h, label, color }
 const BUILDINGS = [
-  { id:'smithy',   x:5,  y:4,  w:8, h:7, label:'Smithy',    color:'#c84' },    // NW — Forge + Anvil
-  { id:'workshop', x:28, y:4,  w:8, h:7, label:'Workshop',   color:'#8ac' },    // NE — ApoMac + Workbench
-  { id:'sawhouse', x:5,  y:22, w:8, h:7, label:'Sawmill',    color:'#6a4' },    // SW — Sawmill area
-  { id:'lodge',    x:28, y:22, w:8, h:7, label:'River Lodge', color:'#4aa' },   // SE
+  { id:'smithy',   x:5,  y:4,  w:8, h:7, label:'Smithy',    color:'#c84' },
+  { id:'workshop', x:28, y:4,  w:8, h:7, label:'Workshop',   color:'#8ac' },
+  { id:'sawhouse', x:5,  y:22, w:8, h:7, label:'Sawmill',    color:'#6a4' },
+  { id:'lodge',    x:28, y:22, w:8, h:7, label:'River Lodge', color:'#4aa' },
 ];
 
-// Mark building interiors as walkable grass (tile 0) — they're open structures
-// We just draw them as prop decorations on top
-
-// Patrol waypoints per agent (array of [tx, ty])
 const PATROL_ROUTES = {
   hunter: [
     [20, 8], [20, 13], [20, 16], [28, 16], [35, 16],
@@ -308,16 +297,63 @@ const PATROL_ROUTES = {
 };
 
 // ═══════════════════════════════════════════════════════════════════
-// AGENT CLASS
+// ISOMETRIC DIRECTION HELPER
+// ═══════════════════════════════════════════════════════════════════
+// Map a movement vector (dx, dy) to one of SE/SW/NE/NW
+// In screen coords: +x = right, +y = down
+// SE = right+down, SW = left+down, NE = right+up, NW = left+up
+function vectorToIsoDirection(dx, dy) {
+  if (dx >= 0 && dy >= 0) return 'SE';
+  if (dx < 0  && dy >= 0) return 'SW';
+  if (dx >= 0 && dy < 0)  return 'NE';
+  return 'NW';
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// FOOTSTEP SYSTEM (Environmental Integration)
+// ═══════════════════════════════════════════════════════════════════
+const footsteps = []; // Array of {x, y, age, fade}
+
+function addFootstep(x, y) {
+  footsteps.push({ x, y, age: 0, fade: 1 });
+  // Keep only recent footsteps
+  if (footsteps.length > 50) {
+    footsteps.shift();
+  }
+}
+
+function updateFootsteps(dt) {
+  for (let i = footsteps.length - 1; i >= 0; i--) {
+    const step = footsteps[i];
+    step.age += dt;
+    step.fade = Math.max(0, 1 - step.age / 15); // fade over 15 seconds
+    if (step.fade <= 0) {
+      footsteps.splice(i, 1);
+    }
+  }
+}
+
+function renderFootsteps(ctx) {
+  if (footsteps.length === 0) return;
+  ctx.save();
+  for (const step of footsteps) {
+    ctx.fillStyle = `rgba(101, 85, 63, ${step.fade * 0.3})`;
+    ctx.beginPath();
+    ctx.ellipse(step.x * T, step.y * T, 3, 1.5, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// AGENT CLASS (Kenney Mini Characters)
 // ═══════════════════════════════════════════════════════════════════
 class Agent {
   constructor(cfg) {
     this.id        = cfg.id;
     this.name      = cfg.name;
     this.role      = cfg.role;
-    this.tint      = cfg.tint;        // CSS color string e.g. '#4488ff'
-    this.tintAlpha = cfg.tintAlpha || 0.35;
-    this.workAnim  = cfg.workAnim;    // base anim name e.g. 'carry_idle'
+    this.tint      = cfg.tint;
     this.homeX     = cfg.homeX;
     this.homeY     = cfg.homeY;
     this.label     = cfg.label || cfg.name;
@@ -325,56 +361,35 @@ class Agent {
 
     this.x         = cfg.homeX;
     this.y         = cfg.homeY;
-    this.facing    = 'down';
-    this.facingLeft= false;
-    this.animState = 'idle_down';
-    this.animFrame = 0;
-    this.animTimer = 0;
-    this.status    = 'idle';
+    this.direction  = 'SE';        // isometric direction
+    this.animType   = 'idle';      // 'idle' or 'walk'
+    this.animFrame  = 0;
+    this.animTimer  = 0;
+    this.status     = 'idle';
     this.currentTask = cfg.defaultTask || 'Standing by';
 
     this.path      = [];
     this.pathIdx   = 0;
 
-    // Patrol state
     this.patrolRoute  = cfg.patrolRoute || null;
     this.patrolIdx    = 0;
     this.isPatrolling = cfg.patrolRoute != null;
 
-    // Speech
     this.speechText  = '';
     this.speechTimer = 0;
 
-    // Work animation idle timer (cycle work anim periodically)
+    // Work idle timer (cycle between idle directions periodically)
     this.workTimer    = Math.random() * 5;
     this.workInterval = 3 + Math.random() * 4;
     this.isWorking    = cfg.startWorking || false;
 
-    if (this.isWorking) {
-      this.animState = this.workAnim + '_down';
-      this.status = 'working';
-    }
+    // Sprites for this agent
+    this.sprites = characterSprites[cfg.id];
   }
 
   say(text, dur) {
     this.speechText  = text;
     this.speechTimer = dur || 3;
-  }
-
-  setFacing(dx, dy) {
-    const adx = Math.abs(dx), ady = Math.abs(dy);
-    if (ady > adx * 1.2) {
-      this.facing = dy > 0 ? 'down' : 'up';
-    } else {
-      this.facing = 'side';
-    }
-    this.facingLeft = dx < 0;
-  }
-
-  setDirectionalAnim(base) {
-    const key = base + '_' + this.facing;
-    const def = SPRITE_DEFS.bodyA;
-    this.animState = (def[key]) ? key : (base + '_down');
   }
 
   walkTo(tx, ty) {
@@ -383,18 +398,16 @@ class Agent {
       this.path = path;
       this.pathIdx = 0;
       this.status = 'walking';
-      this.setDirectionalAnim('walk');
+      this.animType = 'walk';
     }
   }
 
   update(dt, allAgents) {
     // Animation tick
     this.animTimer += dt;
-    const def = SPRITE_DEFS.bodyA;
-    const anim = def[this.animState] || def.idle_down;
     if (this.animTimer >= 1 / FPS_ANIM) {
       this.animTimer -= 1 / FPS_ANIM;
-      this.animFrame = (this.animFrame + 1) % anim.frames;
+      this.animFrame = (this.animFrame + 1) % SPRITE_FRAMES;
     }
 
     // Path following
@@ -413,10 +426,22 @@ class Agent {
         }
       } else {
         const speed = MOVE_SPEED * dt;
+        const oldX = this.x, oldY = this.y;
         this.x += (dx/dist) * Math.min(speed, dist);
         this.y += (dy/dist) * Math.min(speed, dist);
-        this.setFacing(dx, dy);
-        this.setDirectionalAnim('walk');
+        this.direction = vectorToIsoDirection(dx, dy);
+        this.animType = 'walk';
+        
+        // Add footstep markers every ~0.8 tiles traveled
+        const distMoved = Math.sqrt((this.x - oldX) ** 2 + (this.y - oldY) ** 2);
+        if (!this.lastFootstepX) this.lastFootstepX = this.x;
+        if (!this.lastFootstepY) this.lastFootstepY = this.y;
+        const stepDist = Math.sqrt((this.x - this.lastFootstepX) ** 2 + (this.y - this.lastFootstepY) ** 2);
+        if (stepDist > 0.8) {
+          addFootstep(this.x, this.y + 0.9); // position at agent feet
+          this.lastFootstepX = this.x;
+          this.lastFootstepY = this.y;
+        }
       }
     }
 
@@ -445,14 +470,14 @@ class Agent {
       }
     }
 
-    // Work animation idle when standing
+    // Work animation: periodically change facing direction when idle at home
     if (this.path.length === 0 && this.isWorking) {
       this.workTimer += dt;
       if (this.workTimer >= this.workInterval) {
         this.workTimer = 0;
         this.workInterval = 2 + Math.random() * 3;
-        this.setDirectionalAnim(this.workAnim);
-        this.animFrame = 0;
+        // Rotate to a random direction for visual interest
+        this.direction = DIRECTIONS[Math.floor(Math.random() * DIRECTIONS.length)];
       }
     }
 
@@ -477,56 +502,60 @@ class Agent {
   onArrival() {
     if (this.isPatrolling) {
       this.patrolIdx = (this.patrolIdx + 1) % this.patrolRoute.length;
-      // Brief idle before continuing patrol
       setTimeout(() => {
         if (this.isPatrolling) {
           const wp = this.patrolRoute[this.patrolIdx % this.patrolRoute.length];
           this.walkTo(wp[0], wp[1]);
         }
       }, 800 + Math.random() * 600);
-    } else if (this.isWorking) {
-      this.setDirectionalAnim(this.workAnim);
-      this.animFrame = 0;
-      this.status = 'working';
-    } else {
-      this.setDirectionalAnim('idle');
-      this.status = 'idle';
     }
+    // Go to idle
+    this.animType = 'idle';
+    this.animFrame = 0;
+    this.status = this.isWorking ? 'working' : 'idle';
   }
 
   draw(ctx) {
-    const def = SPRITE_DEFS.bodyA;
-    const anim = def[this.animState] || def.idle_down;
-    const img = imageCache[anim.path];
-    if (!img || !img.complete) return;
+    if (!this.sprites) return;
+    const animSet = this.sprites[this.animType];
+    if (!animSet) return;
+    const frames = animSet[this.direction];
+    if (!frames) return;
+    const frame = this.animFrame % frames.length;
+    const img = frames[frame];
+    if (!img || !img.complete || !img.naturalWidth) return;
 
-    const sx = this.animFrame * anim.fw;
-    const drawW = RENDER_SIZE * SCALE;
-    const drawH = RENDER_SIZE * SCALE;
+    const drawW = SPRITE_DRAW_SIZE;
+    const drawH = SPRITE_DRAW_SIZE;
+    // Center sprite on tile, anchor at bottom-center
     const px = this.x * T - drawW / 2 + T / 2;
-    const py = this.y * T - drawH + T;
+    const py = this.y * T - drawH + T + 4; // +4 to ground the feet
 
+    // Draw shadow FIRST (underneath character)
     ctx.save();
-    ctx.imageSmoothingEnabled = false;
-
-    if (this.facingLeft) {
-      ctx.translate(px + drawW, py);
-      ctx.scale(-1, 1);
-      ctx.drawImage(img, sx, 0, anim.fw, anim.fh, 0, 0, drawW, drawH);
-      // Tint overlay
-      ctx.globalCompositeOperation = 'source-atop';
-      ctx.globalAlpha = this.tintAlpha;
-      ctx.fillStyle = this.tint;
-      ctx.fillRect(0, 0, drawW, drawH);
-    } else {
-      ctx.drawImage(img, sx, 0, anim.fw, anim.fh, px, py, drawW, drawH);
-      ctx.globalCompositeOperation = 'source-atop';
-      ctx.globalAlpha = this.tintAlpha;
-      ctx.fillStyle = this.tint;
-      ctx.fillRect(px, py, drawW, drawH);
-    }
-
+    ctx.fillStyle = 'rgba(0,0,0,0.2)';
+    ctx.beginPath();
+    // Shadow centered at agent's feet, 40px wide × 15px tall ellipse
+    const shadowX = this.x * T + T / 2;
+    const shadowY = this.y * T + T - 2; // slightly above ground level
+    ctx.ellipse(shadowX, shadowY, 20, 7.5, 0, 0, Math.PI * 2);
+    ctx.fill();
     ctx.restore();
+
+    // Draw character sprite with warm sepia tint to match village palette
+    ctx.save();
+    ctx.imageSmoothingEnabled = true; // smooth scaling from 256 to 56
+    
+    // Apply warm sepia tint overlay to match medieval village
+    ctx.filter = 'sepia(25%) saturate(110%) brightness(105%) hue-rotate(-10deg)';
+    ctx.drawImage(img, 0, 0, SPRITE_SRC_SIZE, SPRITE_SRC_SIZE, px, py, drawW, drawH);
+    ctx.filter = 'none';
+    ctx.restore();
+
+    // Add small dust puff when walking for environmental integration
+    if (this.animType === 'walk' && this.animFrame === 3) { // mid-step frame
+      this.drawDustPuff(ctx);
+    }
 
     // Status diamond
     const indicatorX = this.x * T + T / 2;
@@ -572,11 +601,33 @@ class Agent {
     }
   }
 
+  drawDustPuff(ctx) {
+    // Small dust puffs when walking on dirt paths for environmental integration
+    const dustX = this.x * T + T/2 + (Math.random() - 0.5) * 8;
+    const dustY = this.y * T + T - 4 + (Math.random() - 0.5) * 4;
+    
+    ctx.save();
+    ctx.fillStyle = 'rgba(139, 117, 85, 0.4)'; // dusty brown color
+    ctx.beginPath();
+    ctx.arc(dustX, dustY, 2 + Math.random(), 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Smaller secondary dust particles
+    for (let i = 0; i < 2; i++) {
+      ctx.beginPath();
+      const px = dustX + (Math.random() - 0.5) * 6;
+      const py = dustY + (Math.random() - 0.5) * 6;
+      ctx.arc(px, py, 0.5 + Math.random() * 0.5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
   containsPoint(wx, wy) {
-    const drawW = RENDER_SIZE * SCALE;
-    const drawH = RENDER_SIZE * SCALE;
+    const drawW = SPRITE_DRAW_SIZE;
+    const drawH = SPRITE_DRAW_SIZE;
     const sx = this.x * T - drawW/2 + T/2;
-    const sy = this.y * T - drawH + T;
+    const sy = this.y * T - drawH + T + 4;
     return wx >= sx && wx < sx+drawW && wy >= sy && wy < sy+drawH;
   }
 }
@@ -638,27 +689,24 @@ const agents = [];
 
 const AGENT_DEFS = [
   {
-    id:'apomac', name:'ApoMac', role:'Architect',
-    tint:'#4488ff', tintAlpha:0.35,
-    workAnim:'carry_idle',
+    id:'apomac', name:'ApoMac', role:'CEO / Architect',
+    tint:'#4488ff',
     homeX:30, homeY:7,
     defaultTask:'Building the future',
     startWorking:true,
     label:'ApoMac',
   },
   {
-    id:'forge', name:'Forge', role:'Blacksmith',
-    tint:'#ff3322', tintAlpha:0.35,
-    workAnim:'crush',
+    id:'forge', name:'Forge', role:'CTO / Blacksmith',
+    tint:'#ff3322',
     homeX:8, homeY:7,
     defaultTask:'Forging tools',
     startWorking:true,
     label:'Forge',
   },
   {
-    id:'hunter', name:'Hunter', role:'Scout',
-    tint:'#33cc44', tintAlpha:0.35,
-    workAnim:'walk',
+    id:'hunter', name:'Hunter', role:'CRO / Scout',
+    tint:'#33cc44',
     homeX:20, homeY:12,
     defaultTask:'Patrolling the village',
     startWorking:false,
@@ -666,29 +714,26 @@ const AGENT_DEFS = [
     label:'Hunter',
   },
   {
-    id:'atlas', name:'Atlas', role:'Forester',
-    tint:'#ddaa00', tintAlpha:0.35,
-    workAnim:'collect',
+    id:'atlas', name:'Atlas', role:'COO / Forester',
+    tint:'#ddaa00',
     homeX:4, homeY:14,
-    defaultTask:'Collecting timber',
+    defaultTask:'Managing operations',
     startWorking:true,
     label:'Atlas',
   },
   {
-    id:'echo', name:'Echo', role:'Herbalist',
-    tint:'#aa44ff', tintAlpha:0.35,
-    workAnim:'watering',
+    id:'echo', name:'Echo', role:'CMO / Herbalist',
+    tint:'#aa44ff',
     homeX:22, homeY:31,
     defaultTask:'Tending the riverside',
     startWorking:true,
     label:'Echo',
   },
   {
-    id:'sentinel', name:'Sentinel', role:'Fisher',
-    tint:'#00ccdd', tintAlpha:0.35,
-    workAnim:'fishing',
+    id:'sentinel', name:'Sentinel', role:'Auditor / Fisher',
+    tint:'#00ccdd',
     homeX:19, homeY:31,
-    defaultTask:'Fishing at the river',
+    defaultTask:'Watching the river',
     startWorking:true,
     label:'Sentinel',
   },
@@ -701,8 +746,6 @@ for (const def of AGENT_DEFS) {
 // ═══════════════════════════════════════════════════════════════════
 // SCENE PROPS (stations, trees, decorations)
 // ═══════════════════════════════════════════════════════════════════
-
-// Trees: border + forest clusters
 const TREES = [
   // Top border
   {m:0, x:1,  y:0,  s:'large'},
@@ -744,32 +787,22 @@ const TREES = [
   {m:0, x:33, y:35, s:'medium'},
 ];
 
-// Static prop items: { img, srcX, srcY, srcW, srcH, tx, ty, tw, th, animated?, frames?, fps? }
 const PROPS = [];
 
 function buildProps() {
-  // Anvil at smithy (building NW, x:5 y:4)
   PROPS.push({ img: IMG.anvil,
     srcX:0, srcY:0, srcW:192, srcH:128,
     tx:6, ty:8, tw:3, th:2, label:'Anvil' });
-
-  // Workbench at workshop (building NE, x:28 y:4)
   PROPS.push({ img: IMG.workbench,
     srcX:0, srcY:0, srcW:192, srcH:64,
     tx:29, ty:8, tw:3, th:2, label:'Workbench' });
-
-  // Sawmill base at sawhouse (building SW, x:5 y:22)
   PROPS.push({ img: IMG.sawmill,
     srcX:0, srcY:0, srcW:160, srcH:128,
     tx:6, ty:23, tw:3, th:2, label:'Sawmill' });
-
-  // Bonfire near river (animated) — south of path
   PROPS.push({ img: IMG.bonfire,
     srcX:0, srcY:0, srcW:64, srcH:64,
     tx:20, ty:34, tw:2, th:2,
     animated:true, frames:6, fps:8, label:'Bonfire' });
-
-  // Extra bonfire at lodge (x:28 y:22)
   PROPS.push({ img: IMG.bonfire,
     srcX:0, srcY:0, srcW:64, srcH:64,
     tx:30, ty:25, tw:2, th:2,
@@ -791,7 +824,7 @@ let clickMoved = false;
 
 function resize() {
   canvas.width  = window.innerWidth;
-  canvas.height = window.innerHeight - 36 - 32; // minus bars
+  canvas.height = window.innerHeight - 36 - 32;
   canvas.style.marginTop = '36px';
 }
 window.addEventListener('resize', () => { resize(); centerCamera(); });
@@ -858,14 +891,6 @@ function drawTile(img, srcX, srcY, srcW, srcH, tx, ty, tw, th) {
   ctx.drawImage(img, srcX, srcY, srcW, srcH, tx*T, ty*T, tw*T, th*T);
 }
 
-// ─── Ground layer ─────────────────────────────────────────────────
-// Floors_Tiles.png: 16px-grid sheet
-//   Row 0: grass variants (green) cols 0-3
-//   Row 1: wood floor (brown) cols 0-3
-//   Row 2: stone floor / dirt cols 0-3
-//   Row 3: more stone / gray cols 0-3
-// Water_tiles.png: animated water tiles
-
 let waterAnimFrame = 0;
 let waterAnimTimer = 0;
 const WATER_FRAMES = 4;
@@ -875,14 +900,12 @@ function renderGround() {
     for (let x = 0; x < MAP_W; x++) {
       const t = tileMap[y][x];
       if (t === 2) {
-        // Water — use water tiles or blue tint fallback
         if (IMG.waterTiles && IMG.waterTiles.complete && IMG.waterTiles.naturalWidth) {
           const wframe = waterAnimFrame % WATER_FRAMES;
           drawTile(IMG.waterTiles, wframe * 16, 0, 16, 16, x, y);
         } else {
           ctx.fillStyle = '#1155aa';
           ctx.fillRect(x*T, y*T, T, T);
-          // shimmer
           ctx.fillStyle = 'rgba(100,180,255,0.25)';
           const shimmer = Math.sin(Date.now()/600 + x*0.8 + y*0.5) * 0.5 + 0.5;
           ctx.globalAlpha = shimmer * 0.4;
@@ -890,11 +913,9 @@ function renderGround() {
           ctx.globalAlpha = 1;
         }
       } else if (t === 3) {
-        // Dirt path — row 2 of floor tiles
         const variant = (x + y*3) % 3;
         drawTile(IMG.floorTiles, variant*16, 32, 16, 16, x, y);
       } else {
-        // Grass — row 0 of floor tiles
         const variant = (x*7 + y*3) % 4;
         drawTile(IMG.floorTiles, variant*16, 0, 16, 16, x, y);
       }
@@ -902,14 +923,10 @@ function renderGround() {
   }
 }
 
-// ─── River overlay (wave effect, bridge) ─────────────────────────
 function renderRiverOverlay() {
-  // Draw river bank edge decoration
   for (let x = 0; x < MAP_W; x++) {
-    // Top bank of river
     const bankY = RIVER_ROW_START;
-    // Darker edge strip
-    if (x !== 20 && x !== 21) { // skip bridge
+    if (x !== 20 && x !== 21) {
       ctx.save();
       ctx.globalAlpha = 0.4;
       ctx.fillStyle = '#0a3a7a';
@@ -917,13 +934,9 @@ function renderRiverOverlay() {
       ctx.restore();
     }
   }
-
-  // Bridge planks at col 20-21
   for (let ry = RIVER_ROW_START; ry <= RIVER_ROW_END; ry++) {
     for (const bx of [20, 21]) {
-      // Draw row 1 (wood floor) to show bridge planks
       drawTile(IMG.floorTiles, 0, 16, 16, 16, bx, ry);
-      // Bridge rail lines
       ctx.save();
       ctx.strokeStyle = '#7a5530';
       ctx.lineWidth = 2;
@@ -940,37 +953,29 @@ function renderRiverOverlay() {
   }
 }
 
-// ─── Building structures ──────────────────────────────────────────
 function renderBuildings() {
   for (const b of BUILDINGS) {
-    // Floor inside building
     for (let dy = 1; dy < b.h-1; dy++) {
       for (let dx = 1; dx < b.w-1; dx++) {
         drawTile(IMG.floorTiles, 0, 16, 16, 16, b.x+dx, b.y+dy);
       }
     }
-
-    // Wall border using Buildings/Walls.png (if loaded) or colored rect
     if (IMG.buildWalls && IMG.buildWalls.complete && IMG.buildWalls.naturalWidth) {
-      // Top wall: srcY=0 for top row
       for (let dx = 0; dx < b.w; dx++) {
         const isCorner = (dx === 0 || dx === b.w-1);
         const wallSrcX = isCorner ? (dx===0 ? 0 : 32) : 16;
         ctx.drawImage(IMG.buildWalls, wallSrcX, 0, 16, 16, (b.x+dx)*T, b.y*T, T, T);
       }
-      // Bottom wall
       for (let dx = 0; dx < b.w; dx++) {
         const isCorner = (dx === 0 || dx === b.w-1);
         const wallSrcX = isCorner ? (dx===0 ? 0 : 32) : 16;
         ctx.drawImage(IMG.buildWalls, wallSrcX, 32, 16, 16, (b.x+dx)*T, (b.y+b.h-1)*T, T, T);
       }
-      // Left/right walls
       for (let dy = 1; dy < b.h-1; dy++) {
         ctx.drawImage(IMG.buildWalls, 48, 16, 16, 16, b.x*T, (b.y+dy)*T, T, T);
         ctx.drawImage(IMG.buildWalls, 64, 16, 16, 16, (b.x+b.w-1)*T, (b.y+dy)*T, T, T);
       }
     } else {
-      // Fallback: colored border
       ctx.save();
       ctx.strokeStyle = b.color;
       ctx.lineWidth = 2;
@@ -979,24 +984,18 @@ function renderBuildings() {
       ctx.strokeRect(b.x*T+1, b.y*T+1, b.w*T-2, b.h*T-2);
       ctx.restore();
     }
-
-    // Roof on top portion (rows 0-1 of building)
     if (IMG.buildRoofs && IMG.buildRoofs.complete && IMG.buildRoofs.naturalWidth) {
       ctx.save();
       ctx.globalAlpha = 0.85;
-      // Use first 64x64 region of roofs sheet, scaled to building width × 2 tiles
       ctx.drawImage(IMG.buildRoofs, 0, 0, b.w*16, 32, b.x*T, b.y*T, b.w*T, 2*T);
       ctx.restore();
     } else {
-      // Fallback roof: darkened strip
       ctx.save();
       ctx.fillStyle = b.color;
       ctx.globalAlpha = 0.5;
       ctx.fillRect(b.x*T, b.y*T, b.w*T, 2*T);
       ctx.restore();
     }
-
-    // Building label
     ctx.save();
     ctx.font = '6px "Press Start 2P"';
     ctx.textAlign = 'center';
@@ -1012,7 +1011,6 @@ function renderBuildings() {
   }
 }
 
-// ─── Trees ────────────────────────────────────────────────────────
 function renderTreeShadows() {
   if (!IMG.shadows || !IMG.shadows.complete || !IMG.shadows.naturalWidth) return;
   for (const t of TREES) {
@@ -1042,10 +1040,8 @@ function renderTrees() {
   }
 }
 
-// ─── Props ────────────────────────────────────────────────────────
 function renderProp(p) {
   if (!p.img || !p.img.complete || !p.img.naturalWidth) {
-    // Fallback: colored placeholder
     ctx.fillStyle = 'rgba(80,60,30,0.8)';
     ctx.fillRect(p.tx*T, p.ty*T, p.tw*T, p.th*T);
     ctx.strokeStyle = '#a85';
@@ -1071,18 +1067,14 @@ function renderProp(p) {
   ctx.restore();
 }
 
-// ─── Vegetation deco: small flowers/grass along river banks ───────
 function renderBankVegetation() {
-  // Simple green dots / small grass tufts near river
   const t = Date.now() / 1000;
   ctx.save();
   for (let x = 0; x < MAP_W; x++) {
-    if (x === 20 || x === 21) continue; // skip bridge
-    // Above river row
+    if (x === 20 || x === 21) continue;
     const bankTopY = (RIVER_ROW_START - 1) * T + T - 4;
     const bankBotY = (RIVER_ROW_END + 1) * T;
     const sway = Math.sin(t * 1.5 + x * 0.8) * 2;
-    // Grass blade above
     ctx.strokeStyle = '#4a8a2a';
     ctx.lineWidth = 1;
     ctx.beginPath();
@@ -1093,7 +1085,6 @@ function renderBankVegetation() {
     ctx.moveTo(x*T + 14, bankTopY);
     ctx.lineTo(x*T + 16 + sway, bankTopY - 4);
     ctx.stroke();
-    // Flowers (every 3rd tile)
     if (x % 3 === 1) {
       ctx.fillStyle = '#dd88aa';
       ctx.beginPath();
@@ -1104,7 +1095,6 @@ function renderBankVegetation() {
       ctx.arc(x*T + 10 + sway/2, bankTopY - 7, 1, 0, Math.PI*2);
       ctx.fill();
     }
-    // Below river
     ctx.strokeStyle = '#3a7a1a';
     ctx.beginPath();
     ctx.moveTo(x*T + 8, bankBotY + 2);
@@ -1114,7 +1104,6 @@ function renderBankVegetation() {
   ctx.restore();
 }
 
-// ─── Water ripple overlay ─────────────────────────────────────────
 function renderWaterEffects() {
   const t = Date.now() / 1000;
   ctx.save();
@@ -1130,7 +1119,6 @@ function renderWaterEffects() {
   ctx.restore();
 }
 
-// ─── Village name banner ──────────────────────────────────────────
 function renderVillageBanner() {
   const cx = MAP_W * T / 2;
   const cy = 1.2 * T;
@@ -1161,7 +1149,7 @@ function selectAgent(agent) {
   document.getElementById('panel-name').textContent      = agent.name;
   document.getElementById('panel-role').textContent      = agent.role;
   document.getElementById('panel-status').textContent    = agent.status;
-  document.getElementById('panel-anim').textContent      = agent.animState;
+  document.getElementById('panel-anim').textContent      = agent.animType + ' / ' + agent.direction;
   document.getElementById('panel-location').textContent  = `(${Math.round(agent.x)}, ${Math.round(agent.y)})`;
   const tasksEl = document.getElementById('panel-tasks');
   tasksEl.innerHTML = '';
@@ -1169,8 +1157,9 @@ function selectAgent(agent) {
   div.className = 'task';
   div.textContent = agent.currentTask;
   tasksEl.appendChild(div);
+  const charModel = CHARACTER_MODELS[agent.id] || '?';
   document.getElementById('panel-anim-info').textContent =
-    `Anim: ${agent.animState}\nFacing: ${agent.facing}\nFrame: ${agent.animFrame}`;
+    `Model: ${charModel}\nAnim: ${agent.animType}\nDir: ${agent.direction}\nFrame: ${agent.animFrame}/${SPRITE_FRAMES}`;
   document.getElementById('agent-panel').classList.add('open');
 }
 
@@ -1180,7 +1169,6 @@ function closePanel() {
 }
 window.closePanel = closePanel;
 
-// ─── Bottom bar agent dots ─────────────────────────────────────────
 function updateBottomBar() {
   const bar = document.getElementById('bottombar');
   bar.innerHTML = '';
@@ -1212,16 +1200,15 @@ const TASK_PHRASES = {
   apomac:   ['Building the future','Reviewing blueprints','Planning architecture','Hauling materials'],
   forge:    ['Forging tools','Hammering iron','Smithing blades','Tempering steel'],
   hunter:   ['Patrolling the path','Scouting ahead','Checking the perimeter','On watch duty'],
-  atlas:    ['Collecting timber','Chopping trees','Gathering wood','Hauling logs'],
-  echo:     ['Watering plants','Tending herbs','Gathering flowers','River watch'],
-  sentinel: ['Fishing at the river','Casting the line','Waiting for a bite','River patrol'],
+  atlas:    ['Managing operations','Organizing resources','Directing logistics','Checking inventory'],
+  echo:     ['Crafting campaigns','Tending herbs','Gathering flowers','River watch'],
+  sentinel: ['Auditing systems','Casting the line','Waiting for a bite','River patrol'],
 };
 
-// Wander zones per agent (fallback wander when not in work mode)
 const WANDER_ZONES = {
   apomac:   { x1:27, y1:4,  x2:37, y2:14 },
   forge:    { x1:4,  y1:4,  x2:15, y2:14 },
-  hunter:   null,  // uses patrol
+  hunter:   null,
   atlas:    { x1:2,  y1:12, x2:10, y2:21 },
   echo:     { x1:14, y1:28, x2:24, y2:35 },
   sentinel: { x1:16, y1:28, x2:22, y2:35 },
@@ -1238,17 +1225,16 @@ function getWanderTile(agentId) {
 function updateAmbientBehavior(dt) {
   behaviorTimer += dt;
   if (behaviorTimer < BEHAVIOR_INTERVAL) return;
-  behaviorTimer = Math.random() * 2; // stagger
+  behaviorTimer = Math.random() * 2;
 
   for (const agent of agents) {
     if (agent.path.length > 0) continue;
-    if (agent.isPatrolling) continue; // hunter handles itself
+    if (agent.isPatrolling) continue;
 
     const roll = Math.random();
     const tasks = TASK_PHRASES[agent.id] || [];
 
     if (roll < 0.3) {
-      // Wander
       const wp = getWanderTile(agent.id);
       if (wp) {
         agent.walkTo(wp.tx, wp.ty);
@@ -1260,22 +1246,14 @@ function updateAmbientBehavior(dt) {
         }
       }
     } else if (roll < 0.55) {
-      // Return to home and work
       agent.walkTo(agent.homeX, agent.homeY);
       agent.isWorking = true;
       agent.status = 'working';
       const task = tasks[0];
       if (task) agent.currentTask = task;
     } else {
-      // Just stand and do work anim
-      if (agent.isWorking) {
-        agent.setDirectionalAnim(agent.workAnim);
-        agent.animFrame = 0;
-        agent.status = 'working';
-      } else {
-        agent.setDirectionalAnim('idle');
-        agent.status = 'idle';
-      }
+      agent.animType = 'idle';
+      agent.status = agent.isWorking ? 'working' : 'idle';
     }
   }
 }
@@ -1291,37 +1269,34 @@ function gameLoop(now) {
   const dt = Math.min((now - lastTime) / 1000, 0.08);
   lastTime = now;
 
-  // Update water animation
   waterAnimTimer += dt;
   if (waterAnimTimer >= 1/3) {
     waterAnimTimer = 0;
     waterAnimFrame = (waterAnimFrame + 1) % WATER_FRAMES;
   }
 
-  // Update agents
   for (const agent of agents) {
     agent.update(dt, agents);
   }
 
-  // Ambient behaviors
+  updateFootsteps(dt);
   updateAmbientBehavior(dt);
 
-  // Bottom bar refresh
   bottomBarTimer += dt;
   if (bottomBarTimer >= 1) {
     bottomBarTimer = 0;
     updateBottomBar();
   }
 
-  // Panel live refresh
   panelRefreshTimer += dt;
   if (panelRefreshTimer >= 0.5 && selectedAgent) {
     panelRefreshTimer = 0;
     document.getElementById('panel-status').textContent   = selectedAgent.status;
-    document.getElementById('panel-anim').textContent     = selectedAgent.animState;
+    document.getElementById('panel-anim').textContent     = selectedAgent.animType + ' / ' + selectedAgent.direction;
     document.getElementById('panel-location').textContent = `(${Math.round(selectedAgent.x)}, ${Math.round(selectedAgent.y)})`;
+    const charModel = CHARACTER_MODELS[selectedAgent.id] || '?';
     document.getElementById('panel-anim-info').textContent =
-      `Anim: ${selectedAgent.animState}\nFacing: ${selectedAgent.facing}\nFrame: ${selectedAgent.animFrame}`;
+      `Model: ${charModel}\nAnim: ${selectedAgent.animType}\nDir: ${selectedAgent.direction}\nFrame: ${selectedAgent.animFrame}/${SPRITE_FRAMES}`;
   }
 
   // ─── RENDER ────────────────────────────────────────────────────
@@ -1334,32 +1309,34 @@ function gameLoop(now) {
   ctx.translate(camX, camY);
   ctx.imageSmoothingEnabled = false;
 
-  // Layer 1: Ground (grass, paths, water)
+  // Layer 1: Ground
   renderGround();
 
-  // Layer 2: River overlay (bridge planks + bank edges)
+  // Layer 2: River overlay
   renderRiverOverlay();
 
-  // Layer 3: Building floors + walls
+  // Layer 3: Buildings
   renderBuildings();
 
-  // Layer 4: Bank vegetation (behind agents)
+  // Layer 4: Bank vegetation
   renderBankVegetation();
 
   // Layer 5: Water effects
   renderWaterEffects();
 
-  // Layer 6: Tree shadows
+  // Layer 6: Footstep markers
+  renderFootsteps(ctx);
+
+  // Layer 7: Tree shadows
   renderTreeShadows();
 
-  // Layer 7: Z-sorted renderables (agents + props + trees interleaved by Y)
+  // Layer 8: Z-sorted renderables (agents + props + trees)
   const renderables = [];
 
-  // Props
   for (const p of PROPS) {
     renderables.push({ sortY: p.ty + p.th, draw: () => renderProp(p) });
   }
-  // Trees
+
   const treeImgs = [IMG.tree1, IMG.tree2, IMG.tree3];
   for (const t of TREES) {
     const img = treeImgs[t.m % 3];
@@ -1378,7 +1355,7 @@ function gameLoop(now) {
       }
     });
   }
-  // Agents
+
   for (const agent of agents) {
     renderables.push({ sortY: agent.y, draw: () => agent.draw(ctx) });
   }
@@ -1386,19 +1363,19 @@ function gameLoop(now) {
   renderables.sort((a,b) => a.sortY - b.sortY);
   for (const r of renderables) r.draw();
 
-  // Layer 8: Village banner (top)
+  // Layer 9: Village banner
   renderVillageBanner();
 
-  // Layer 9: Selection highlight
+  // Layer 10: Selection highlight
   if (selectedAgent) {
     const sa = selectedAgent;
-    const dw = RENDER_SIZE * SCALE;
-    const dh = RENDER_SIZE * SCALE;
+    const dw = SPRITE_DRAW_SIZE;
+    const dh = SPRITE_DRAW_SIZE;
     ctx.save();
     ctx.strokeStyle = '#5f8';
     ctx.lineWidth = 1;
     ctx.setLineDash([3,3]);
-    ctx.strokeRect(sa.x*T - dw/2 + T/2 - 2, sa.y*T - dh + T - 2, dw+4, dh+4);
+    ctx.strokeRect(sa.x*T - dw/2 + T/2 - 2, sa.y*T - dh + T + 2, dw+4, dh+4);
     ctx.restore();
   }
 
@@ -1419,8 +1396,7 @@ function drawLoadingScreen() {
   ctx.font = '8px "Press Start 2P"';
   ctx.fillStyle = '#8ab';
   const pct = totalImages > 0 ? Math.round((loadedCount / totalImages) * 100) : 0;
-  ctx.fillText(`Loading... ${pct}%`, canvas.width/2, canvas.height/2 + 10);
-  // Progress bar
+  ctx.fillText(`Loading ${loadedCount}/${totalImages} sprites... ${pct}%`, canvas.width/2, canvas.height/2 + 10);
   const bw = 200, bh = 8;
   const bx = canvas.width/2 - bw/2, by = canvas.height/2 + 24;
   ctx.strokeStyle = '#3a5';
@@ -1433,9 +1409,8 @@ function drawLoadingScreen() {
 function waitForLoad() {
   drawLoadingScreen();
   if (loadedCount >= totalImages && totalImages > 0) {
-    console.log('[SpawnKit Village] All assets loaded. Starting game loop.');
+    console.log('[SpawnKit Village] All assets loaded (' + totalImages + '). Starting game loop.');
     updateBottomBar();
-    // Scatter agents slightly
     for (const agent of agents) {
       agent.x = agent.homeX + (Math.random() - 0.5) * 0.5;
       agent.y = agent.homeY + (Math.random() - 0.5) * 0.5;
@@ -1448,7 +1423,7 @@ function waitForLoad() {
 
 requestAnimationFrame(waitForLoad);
 
-console.log('[SpawnKit Village] Initialized. Assets loading:', totalImages);
+console.log('[SpawnKit Village] Kenney Mini Characters initialized. Loading', totalImages, 'sprites...');
 </script>
 </body>
 </html>

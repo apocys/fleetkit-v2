@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Modern Office Revamped — Preview</title>
+<style>
+body { background: #1a1a2e; color: #eee; font-family: sans-serif; margin: 20px; }
+h1 { color: #0af; }
+h2 { color: #ff9; margin-top: 40px; }
+.sheet { max-width: 100%; border: 2px solid #333; margin: 10px 0; image-rendering: pixelated; }
+.singles { display: flex; flex-wrap: wrap; gap: 4px; }
+.singles img { width: 48px; height: 48px; image-rendering: pixelated; border: 1px solid #333; }
+.singles img:hover { border-color: #0af; transform: scale(3); position: relative; z-index: 10; }
+.designs img { image-rendering: pixelated; max-width: 100%; border: 2px solid #333; }
+</style>
+</head>
+<body>
+<h1>🏢 Modern Office Revamped v1.2</h1>
+
+<h2>Room Builder (murs, sols, base)</h2>
+<img class="sheet" src="../lib/sprites/modern-office-revamped/1_Room_Builder_Office/Room_Builder_Office_48x48.png">
+
+<h2>Tileset Principal (tout le mobilier)</h2>
+<img class="sheet" src="../lib/sprites/modern-office-revamped/Modern_Office_48x48.png">
+
+<h2>Office Design 1 (exemple animé)</h2>
+<div class="designs"><img src="../lib/sprites/modern-office-revamped/6_Office_Designs/Office_Design_1.gif"></div>
+
+<h2>Office Design 2 (exemple animé)</h2>
+<div class="designs"><img src="../lib/sprites/modern-office-revamped/6_Office_Designs/Office_Design_2.gif"></div>
+
+<h2>Singles (339 objets individuels 48x48)</h2>
+<div class="singles" id="singles"></div>
+
+<script>
+const container = document.getElementById('singles');
+for (let i = 1; i <= 339; i++) {
+  const img = document.createElement('img');
+  img.src = '../lib/sprites/modern-office-revamped/4_Modern_Office_singles/48x48/Modern_Office_Singles_48x48_' + i + '.png';
+  img.title = '#' + i;
+  img.onerror = function() { this.style.display = 'none'; };
+  container.appendChild(img);
+}
+</script>
+</body>
+</html>

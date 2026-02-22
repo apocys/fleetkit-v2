@@ -1,0 +1,2364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SpawnKit HQ — Green Iso Office</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#1a1a2e; overflow:hidden; font-family:'Press Start 2P',monospace; }
+  canvas { display:block; image-rendering:pixelated; image-rendering:crisp-edges; cursor:grab; }
+  canvas.dragging { cursor:grabbing; }
+
+  /* ─── Top Bar ─── */
+  #topbar {
+    position:fixed; top:0; left:0; right:0; height:36px; z-index:100;
+    background:rgba(20,20,40,0.92); border-bottom:2px solid #3a5; display:flex;
+    align-items:center; padding:0 12px; gap:12px;
+  }
+  #topbar .title { color:#5f8; font-size:10px; letter-spacing:2px; }
+  #topbar .mode { color:#fa5; font-size:7px; padding:2px 6px; border:1px solid #fa5; border-radius:3px; }
+  #topbar .sep { flex:1; }
+  #topbar .zoom-info { color:#8ab; font-size:7px; }
+
+  /* ─── Bottom Bar ─── */
+  #bottombar {
+    position:fixed; bottom:0; left:0; right:0; height:32px; z-index:100;
+    background:rgba(20,20,40,0.92); border-top:2px solid #3a5; display:flex;
+    align-items:center; padding:0 12px; gap:16px; font-size:7px; color:#8ab;
+  }
+  .stat { display:flex; align-items:center; gap:4px; }
+  .stat .dot { width:6px; height:6px; border-radius:50%; }
+  .dot-green { background:#5f8; }
+  .dot-yellow { background:#fd5; }
+  .dot-red { background:#f55; }
+
+  /* ─── Agent Detail Panel ─── */
+  #agent-panel {
+    position:fixed; top:36px; right:0; width:280px; bottom:32px; z-index:99;
+    background:rgba(20,20,40,0.95); border-left:2px solid #3a5;
+    transform:translateX(100%); transition:transform .3s ease;
+    padding:16px; overflow-y:auto; color:#cde;
+  }
+  #agent-panel.open { transform:translateX(0); }
+  #agent-panel h2 { font-size:10px; color:#5f8; margin-bottom:8px; }
+  #agent-panel .role { font-size:7px; color:#fa5; margin-bottom:12px; }
+  #agent-panel .field { font-size:7px; margin-bottom:6px; line-height:1.6; }
+  #agent-panel .field label { color:#8ab; }
+  #agent-panel .close-btn {
+    position:absolute; top:8px; right:8px; background:none; border:1px solid #f55;
+    color:#f55; font-size:8px; cursor:pointer; padding:2px 6px; font-family:inherit;
+  }
+  #agent-panel .task-list { margin-top:8px; }
+  #agent-panel .task { font-size:6px; color:#acd; padding:4px; background:rgba(50,70,50,0.3); margin-bottom:3px; border-left:2px solid #3a5; }
+</style>
+</head>
+<body>
+
+<div id="topbar">
+  <span class="title">⚔ SPAWNKIT HQ</span>
+  <span class="mode" id="mode-badge">DEMO</span>
+  <span class="sep"></span>
+  <span class="zoom-info" id="zoom-info">100%</span>
+</div>
+
+<canvas id="game"></canvas>
+
+<div id="bottombar">
+  <div class="stat"><div class="dot dot-green"></div><span id="stat-agents">0 agents</span></div>
+  <div class="stat"><div class="dot dot-yellow"></div><span id="stat-missions">0 missions</span></div>
+  <div class="stat"><div class="dot dot-red"></div><span id="stat-subagents">0 sub-agents</span></div>
+  <span style="flex:1"></span>
+  <span id="stat-time" style="color:#5f8"></span>
+</div>
+
+<div id="agent-panel">
+  <button class="close-btn" onclick="closePanel()">✕</button>
+  <h2 id="panel-name">—</h2>
+  <div class="role" id="panel-role">—</div>
+  <div class="field"><label>Status: </label><span id="panel-status">—</span></div>
+  <div class="field"><label>Session: </label><span id="panel-session">—</span></div>
+  <div class="field"><label>Current Task: </label></div>
+  <div class="task-list" id="panel-tasks"></div>
+</div>
+
+<!-- Data Bridge -->
+<script>
+  window.OC_RELAY_URL = 'http://localhost:18790';
+  window.OC_RELAY_TOKEN = 'sk-oc-proxy-spawnkit-2026';
+</script>
+<script src="../src/data-bridge.js"></script>
+
+<script>
+'use strict';
+
+// ═══════════════════════════════════════════════════════════════════
+// CONFIG
+// ═══════════════════════════════════════════════════════════════════
+const TILE = 16;           // base tile size in sprite pixels
+const SCALE = 2;           // render scale (pixel-perfect 2x)
+const T = TILE * SCALE;    // rendered tile size = 32px
+const FPS_ANIM = 8;        // sprite animation FPS
+const MOVE_SPEED = 1.2;    // tiles per second for agent movement
+const RENDER_SIZE = 64;    // normalized sprite render size in source pixels (Fix 1)
+const SEPARATION_RADIUS = 1.5; // tiles (Fix 4: collision avoidance)
+const SEPARATION_FORCE = 2.0;  // separation strength (Fix 4)
+
+const ASSETS = 'assets/';
+
+// ═══════════════════════════════════════════════════════════════════
+// MAP DEFINITION  (tile coords — each unit = 1 tile = 16px source)
+// The office is 30 tiles wide × 38 tiles tall + 4-tile outdoor border
+// ═══════════════════════════════════════════════════════════════════
+
+const MAP_W = 38;  // total map width in tiles
+const MAP_H = 46;  // total map height in tiles
+
+// Room definitions: {x, y, w, h} in tile coords (interior, walls excluded)
+const ROOMS = {
+  ceoOffice:    { x:5,  y:5,  w:12, h:8,  label:'CEO Office',    floor:'wood' },
+  ctoLab:       { x:18, y:5,  w:12, h:8,  label:'CTO Lab',       floor:'stone' },
+  cooOffice:    { x:5,  y:14, w:12, h:8,  label:'COO Office',    floor:'wood' },
+  croOffice:    { x:18, y:14, w:12, h:8,  label:'CRO Office',    floor:'wood' },
+  cmoStudio:    { x:5,  y:23, w:12, h:8,  label:'CMO Studio',    floor:'wood' },
+  auditorPost:  { x:18, y:23, w:12, h:8,  label:'Auditor Post',  floor:'stone' },
+  meetingRoom:  { x:5,  y:32, w:25, h:5,  label:'Meeting Room',  floor:'stone' },
+  breakRoom:    { x:5,  y:38, w:12, h:5,  label:'Break Room',    floor:'wood' },
+  openSpace:    { x:18, y:38, w:12, h:5,  label:'Open Space',    floor:'wood' },
+};
+
+// Door positions (tile x, y on wall edge)
+const DOORS = [
+  // Vertical doors (between left and right rooms)
+  {x:17, y:8,  dir:'v'},  // CEO <-> CTO
+  {x:17, y:17, dir:'v'},  // COO <-> CRO
+  {x:17, y:26, dir:'v'},  // CMO <-> Auditor
+  // Horizontal doors (between rows)
+  {x:10, y:13, dir:'h'},  // CEO -> COO
+  {x:24, y:13, dir:'h'},  // CTO -> CRO
+  {x:10, y:22, dir:'h'},  // COO -> CMO
+  {x:24, y:22, dir:'h'},  // CRO -> Auditor
+  {x:10, y:31, dir:'h'},  // CMO -> Meeting
+  {x:24, y:31, dir:'h'},  // Auditor -> Meeting
+  {x:10, y:37, dir:'h'},  // Meeting -> Break
+  {x:24, y:37, dir:'h'},  // Meeting -> Open
+  {x:17, y:40, dir:'v'},  // Break <-> Open
+];
+
+// ═══════════════════════════════════════════════════════════════════
+// IMAGE LOADER
+// ═══════════════════════════════════════════════════════════════════
+const imageCache = {};
+let loadedCount = 0;
+let totalImages = 0;
+
+function loadImage(path) {
+  if (imageCache[path]) return imageCache[path];
+  totalImages++;
+  const img = new Image();
+  img.src = ASSETS + path;
+  img.onload = () => { loadedCount++; };
+  img.onerror = () => { console.warn('Failed to load:', path); loadedCount++; };
+  imageCache[path] = img;
+  return img;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// SPRITE SHEET DEFINITIONS
+// ═══════════════════════════════════════════════════════════════════
+
+// NPC sprites: Knight, Wizzard, Rogue — Idle 128×32 (4×32), Run 384×64 (6×64)
+// Body_A: Idle 256×64 (4×64), Walk/Run 384×64 (6×64)
+// Mobs: same as NPC format (Idle 128×32, Run 384×64)
+// Skeleton-Mage: same format
+
+const SPRITE_DEFS = {
+  // Fix 2: Unified bodyA with 4-direction support for all C-level agents
+  bodyA: {
+    idle_down:  { path:"Entities/Characters/Body_A/Animations/Idle_Base/Idle_Down-Sheet.png",  fw:64, fh:64, frames:4 },
+    idle_side:  { path:"Entities/Characters/Body_A/Animations/Idle_Base/Idle_Side-Sheet.png",  fw:64, fh:64, frames:4 },
+    idle_up:    { path:"Entities/Characters/Body_A/Animations/Idle_Base/Idle_Up-Sheet.png",    fw:64, fh:64, frames:4 },
+    walk_down:  { path:"Entities/Characters/Body_A/Animations/Walk_Base/Walk_Down-Sheet.png",  fw:64, fh:64, frames:6 },
+    walk_side:  { path:"Entities/Characters/Body_A/Animations/Walk_Base/Walk_Side-Sheet.png",  fw:64, fh:64, frames:6 },
+    walk_up:    { path:"Entities/Characters/Body_A/Animations/Walk_Base/Walk_Up-Sheet.png",    fw:64, fh:64, frames:6 },
+    run_down:   { path:"Entities/Characters/Body_A/Animations/Run_Base/Run_Down-Sheet.png",    fw:64, fh:64, frames:6 },
+    run_side:   { path:"Entities/Characters/Body_A/Animations/Run_Base/Run_Side-Sheet.png",    fw:64, fh:64, frames:6 },
+    run_up:     { path:"Entities/Characters/Body_A/Animations/Run_Base/Run_Up-Sheet.png",      fw:64, fh:64, frames:6 },
+    death_down: { path:"Entities/Characters/Body_A/Animations/Death_Base/Death_Down-Sheet.png", fw:64, fh:64, frames:4 },
+    // Work animations (per-role, directional)
+    carry_idle_down:  { path:"Entities/Characters/Body_A/Animations/Carry_Idle/Carry_Idle_Down-Sheet.png",  fw:64, fh:64, frames:4 },
+    carry_idle_side:  { path:"Entities/Characters/Body_A/Animations/Carry_Idle/Carry_Idle_Side-Sheet.png",  fw:64, fh:64, frames:4 },
+    carry_idle_up:    { path:"Entities/Characters/Body_A/Animations/Carry_Idle/Carry_Idle_Up-Sheet.png",    fw:64, fh:64, frames:4 },
+    crush_down:       { path:"Entities/Characters/Body_A/Animations/Crush_Base/Crush_Down-Sheet.png",       fw:64, fh:64, frames:8 },
+    crush_side:       { path:"Entities/Characters/Body_A/Animations/Crush_Base/Crush_Side-Sheet.png",       fw:64, fh:64, frames:8 },
+    crush_up:         { path:"Entities/Characters/Body_A/Animations/Crush_Base/Crush_Up-Sheet.png",         fw:64, fh:64, frames:8 },
+    collect_down:     { path:"Entities/Characters/Body_A/Animations/Collect_Base/Collect_Down-Sheet.png",   fw:64, fh:64, frames:8 },
+    collect_side:     { path:"Entities/Characters/Body_A/Animations/Collect_Base/Collect_Side-Sheet.png",   fw:64, fh:64, frames:8 },
+    collect_up:       { path:"Entities/Characters/Body_A/Animations/Collect_Base/Collect_Up-Sheet.png",     fw:64, fh:64, frames:8 },
+    watering_down:    { path:"Entities/Characters/Body_A/Animations/Watering_Base/Watering_Down-Sheet.png", fw:64, fh:64, frames:8 },
+    watering_side:    { path:"Entities/Characters/Body_A/Animations/Watering_Base/Watering_Side-Sheet.png", fw:64, fh:64, frames:8 },
+    watering_up:      { path:"Entities/Characters/Body_A/Animations/Watering_Base/Watering_Up-Sheet.png",   fw:64, fh:64, frames:8 },
+    fishing_down:     { path:"Entities/Characters/Body_A/Animations/Fishing_Base/Fishing_Down-Sheet.png",   fw:64, fh:64, frames:8 },
+    fishing_side:     { path:"Entities/Characters/Body_A/Animations/Fishing_Base/Fishing_Side-Sheet.png",   fw:64, fh:64, frames:8 },
+    fishing_up:       { path:"Entities/Characters/Body_A/Animations/Fishing_Base/Fishing_Up-Sheet.png",     fw:64, fh:64, frames:8 },
+    // Convenience aliases used by non-directional fallback code
+    idle:  { path:"Entities/Characters/Body_A/Animations/Idle_Base/Idle_Down-Sheet.png",  fw:64, fh:64, frames:4 },
+    walk:  { path:"Entities/Characters/Body_A/Animations/Walk_Base/Walk_Down-Sheet.png",  fw:64, fh:64, frames:6 },
+    run:   { path:"Entities/Characters/Body_A/Animations/Run_Base/Run_Down-Sheet.png",    fw:64, fh:64, frames:6 },
+    death: { path:"Entities/Characters/Body_A/Animations/Death_Base/Death_Down-Sheet.png", fw:64, fh:64, frames:4 },
+  },
+  // Keep legacy NPC sprites (used by fallback/existing references)
+  knight: {
+    idle:  { path:"Entities/Npc's/Knight/Idle/Idle-Sheet.png",  fw:32, fh:32, frames:4 },
+    run:   { path:"Entities/Npc's/Knight/Run/Run-Sheet.png",    fw:64, fh:64, frames:6 },
+    death: { path:"Entities/Npc's/Knight/Death/Death-Sheet.png", fw:32, fh:32, frames:9 },
+  },
+  wizzard: {
+    idle:  { path:"Entities/Npc's/Wizzard/Idle/Idle-Sheet.png",  fw:32, fh:32, frames:4 },
+    run:   { path:"Entities/Npc's/Wizzard/Run/Run-Sheet.png",    fw:64, fh:64, frames:6 },
+    death: { path:"Entities/Npc's/Wizzard/Death/Death-Sheet.png", fw:32, fh:32, frames:12 },
+  },
+  rogue: {
+    idle:  { path:"Entities/Npc's/Rogue/Idle/Idle-Sheet.png",  fw:32, fh:32, frames:4 },
+    run:   { path:"Entities/Npc's/Rogue/Run/Run-Sheet.png",    fw:64, fh:64, frames:6 },
+    death: { path:"Entities/Npc's/Rogue/Death/Death-Sheet.png", fw:32, fh:32, frames:12 },
+  },
+  bodyA_down: {
+    idle:  { path:"Entities/Characters/Body_A/Animations/Idle_Base/Idle_Down-Sheet.png",  fw:64, fh:64, frames:4 },
+    walk:  { path:"Entities/Characters/Body_A/Animations/Walk_Base/Walk_Down-Sheet.png",  fw:64, fh:64, frames:6 },
+    run:   { path:"Entities/Characters/Body_A/Animations/Run_Base/Run_Down-Sheet.png",    fw:64, fh:64, frames:6 },
+    death: { path:"Entities/Characters/Body_A/Animations/Death_Base/Death_Down-Sheet.png", fw:64, fh:64, frames:4 },
+  },
+  bodyA_side: {
+    idle:  { path:"Entities/Characters/Body_A/Animations/Idle_Base/Idle_Side-Sheet.png",  fw:64, fh:64, frames:4 },
+    walk:  { path:"Entities/Characters/Body_A/Animations/Walk_Base/Walk_Side-Sheet.png",  fw:64, fh:64, frames:6 },
+    run:   { path:"Entities/Characters/Body_A/Animations/Run_Base/Run_Side-Sheet.png",    fw:64, fh:64, frames:6 },
+  },
+  skeletonMage: {
+    idle:  { path:"Entities/Mobs/Skeleton Crew/Skeleton - Mage/Idle/Idle-Sheet.png",  fw:32, fh:32, frames:4 },
+    run:   { path:"Entities/Mobs/Skeleton Crew/Skeleton - Mage/Run/Run-Sheet.png",    fw:64, fh:64, frames:6 },
+    death: { path:"Entities/Mobs/Skeleton Crew/Skeleton - Mage/Death/Death-Sheet.png", fw:64, fh:64, frames:6 },
+  },
+  orc: {
+    idle:  { path:"Entities/Mobs/Orc Crew/Orc/Idle/Idle-Sheet.png",  fw:32, fh:32, frames:4 },
+    run:   { path:"Entities/Mobs/Orc Crew/Orc/Run/Run-Sheet.png",    fw:64, fh:64, frames:6 },
+    death: { path:"Entities/Mobs/Orc Crew/Orc/Death/Death-Sheet.png", fw:64, fh:64, frames:6 },
+  },
+  orcWarrior: {
+    idle:  { path:"Entities/Mobs/Orc Crew/Orc - Warrior/Idle/Idle-Sheet.png",  fw:32, fh:32, frames:4 },
+    run:   { path:"Entities/Mobs/Orc Crew/Orc - Warrior/Run/Run-Sheet.png",    fw:64, fh:64, frames:6 },
+    death: { path:"Entities/Mobs/Orc Crew/Orc - Warrior/Death/Death-Sheet.png", fw:64, fh:64, frames:6 },
+  },
+  orcShaman: {
+    idle:  { path:"Entities/Mobs/Orc Crew/Orc - Shaman/Idle/Idle-Sheet.png",  fw:32, fh:32, frames:4 },
+    run:   { path:"Entities/Mobs/Orc Crew/Orc - Shaman/Run/Run-Sheet.png",    fw:64, fh:64, frames:6 },
+    death: { path:"Entities/Mobs/Orc Crew/Orc - Shaman/Death/Death-Sheet.png", fw:64, fh:64, frames:6 },
+  },
+  orcRogue: {
+    idle:  { path:"Entities/Mobs/Orc Crew/Orc - Rogue/Idle/Idle-Sheet.png",  fw:32, fh:32, frames:4 },
+    run:   { path:"Entities/Mobs/Orc Crew/Orc - Rogue/Run/Run-Sheet.png",    fw:64, fh:64, frames:6 },
+    death: { path:"Entities/Mobs/Orc Crew/Orc - Rogue/Death/Death-Sheet.png", fw:64, fh:64, frames:6 },
+  },
+};
+
+// Preload all sprite sheets
+for (const char of Object.values(SPRITE_DEFS)) {
+  for (const anim of Object.values(char)) {
+    loadImage(anim.path);
+  }
+}
+
+// NPC idle sheets for accessory extraction (loaded separately so we can draw to offscreen canvas)
+const NPC_IDLE = {
+  knight:  loadImage("Entities/Npc's/Knight/Idle/Idle-Sheet.png"),
+  wizzard: loadImage("Entities/Npc's/Wizzard/Idle/Idle-Sheet.png"),
+  rogue:   loadImage("Entities/Npc's/Rogue/Idle/Idle-Sheet.png"),
+};
+
+// Environment images
+const IMG = {
+  floorTiles:   loadImage('Environment/Tilesets/Floors_Tiles.png'),
+  wallTiles:    loadImage('Environment/Tilesets/Wall_Tiles.png'),
+  wallVariations: loadImage('Environment/Tilesets/Wall_Variations.png'),
+  furniture:    loadImage('Environment/Props/Static/Furniture.png'),
+  vegetation:   loadImage('Environment/Props/Static/Vegetation.png'),
+  tree1:        loadImage('Environment/Props/Static/Trees/Model_01/Size_03.png'),
+  tree2:        loadImage('Environment/Props/Static/Trees/Model_02/Size_03.png'),
+  tree3:        loadImage('Environment/Props/Static/Trees/Model_03/Size_02.png'),
+  buildWalls:   loadImage('Environment/Structures/Buildings/Walls.png'),
+  buildFloors:  loadImage('Environment/Structures/Buildings/Floors.png'),
+  buildProps:   loadImage('Environment/Structures/Buildings/Props.png'),
+  workbench:    loadImage('Environment/Structures/Stations/Workbench/Workbench.png'),
+  alchemy:      loadImage('Environment/Structures/Stations/Alchemy/Alchemy_Table_03-Sheet.png'),
+  bonfire:      loadImage('Environment/Structures/Stations/Bonfire/Bonfire.png'),
+  cookStation:  loadImage('Environment/Structures/Stations/Cooking Station/Cooking Station.png'),
+  rocks:        loadImage('Environment/Props/Static/Rocks.png'),
+  shadows:      loadImage('Environment/Props/Static/Shadows.png'),
+};
+
+// ═══════════════════════════════════════════════════════════════════
+// ACCESSORY SYSTEM
+// ═══════════════════════════════════════════════════════════════════
+
+// Accessory offscreen canvases, built in initAccessories() after all images load.
+const accessoryCanvas = {}; // key → { canvas, ctx, offsetX, offsetY }
+
+// Directional offsets for accessories (applied on top of base offsetX/Y)
+const ACCESSORY_DIR_OFFSETS = {
+  down: { dx: 0, dy: 0 },
+  side: { dx: 2, dy: 0 },
+  up:   { dx: 0, dy: -1 },
+};
+
+// Accessory definitions
+// offsetX/Y: relative to head center (centre of sprite, row ~8 from top of 64px frame)
+// All pixel dimensions are in sprite-source pixels (pre-SCALE).
+const ACCESSORY_DEFS = {
+  crown: {
+    type: 'sprite',
+    src: 'knight',
+    sx: 10, sy: 4, sw: 12, sh: 7,
+    offsetX: -6, offsetY: -6,
+    recolor: { from: [0x4A, 0x5A, 0x6A, 30], to: [0xFF, 0xD7, 0x00] }, // steel-blue → gold
+  },
+  wizardHat: {
+    type: 'sprite',
+    src: 'wizzard',
+    sx: 9, sy: 3, sw: 14, sh: 10,
+    offsetX: -7, offsetY: -10,
+    recolor: null,
+  },
+  cape: {
+    type: 'sprite',
+    src: 'rogue',
+    sx: 10, sy: 8, sw: 12, sh: 7,
+    offsetX: -6, offsetY: 2,
+    recolor: { from: [0x6B, 0x6B, 0x2A, 30], to: [0x20, 0xB2, 0xAA] }, // olive → teal
+  },
+  visor: {
+    type: 'sprite',
+    src: 'knight',
+    sx: 11, sy: 6, sw: 10, sh: 3,
+    offsetX: -5, offsetY: -2,
+    recolor: null, // keep steel-blue
+  },
+  bandana: {
+    type: 'drawn',
+    sw: 10, sh: 2,
+    offsetX: -5, offsetY: -1,
+    draw(c) {
+      c.fillStyle = '#FF6347';
+      c.fillRect(0, 0, 10, 2);
+      // subtle highlight
+      c.fillStyle = 'rgba(255,255,255,0.3)';
+      c.fillRect(1, 0, 8, 1);
+    },
+  },
+  flower: {
+    type: 'drawn',
+    sw: 7, sh: 7,
+    offsetX: 2, offsetY: -6,
+    draw(c) {
+      // Stem
+      c.fillStyle = '#228B22';
+      c.fillRect(3, 4, 1, 3);
+      // Petals (pink cluster)
+      c.fillStyle = '#DDA0DD';
+      c.fillRect(2, 2, 3, 3); // center mass
+      c.fillRect(3, 1, 1, 1); // top petal
+      c.fillRect(1, 3, 1, 1); // left petal
+      c.fillRect(5, 3, 1, 1); // right petal
+      c.fillRect(3, 5, 1, 1); // bottom petal
+      // Center dot
+      c.fillStyle = '#FFFACD';
+      c.fillRect(3, 3, 1, 1);
+    },
+  },
+};
+
+// Recolor helper: replace pixels whose R,G,B all differ from target by > threshold
+function recolorPixels(imageData, fromRGB, toRGB, tolerance) {
+  tolerance = tolerance || 40;
+  const d = imageData.data;
+  for (let i = 0; i < d.length; i += 4) {
+    if (d[i+3] < 10) continue; // skip transparent
+    const dr = Math.abs(d[i]   - fromRGB[0]);
+    const dg = Math.abs(d[i+1] - fromRGB[1]);
+    const db = Math.abs(d[i+2] - fromRGB[2]);
+    if (dr < tolerance && dg < tolerance && db < tolerance) {
+      // Map relative brightness to destination color
+      const bright = (d[i] + d[i+1] + d[i+2]) / (fromRGB[0] + fromRGB[1] + fromRGB[2] + 1);
+      d[i]   = Math.min(255, toRGB[0] * bright);
+      d[i+1] = Math.min(255, toRGB[1] * bright);
+      d[i+2] = Math.min(255, toRGB[2] * bright);
+    }
+  }
+  return imageData;
+}
+
+function initAccessories() {
+  for (const [key, def] of Object.entries(ACCESSORY_DEFS)) {
+    if (def.type === 'sprite') {
+      const srcImg = NPC_IDLE[def.src];
+      if (!srcImg || !srcImg.complete) continue;
+
+      const oc = document.createElement('canvas');
+      oc.width  = def.sw;
+      oc.height = def.sh;
+      const octx = oc.getContext('2d');
+      octx.imageSmoothingEnabled = false;
+      // Draw frame 0 region from NPC idle sheet (frame 0 = x:0)
+      octx.drawImage(srcImg, def.sx, def.sy, def.sw, def.sh, 0, 0, def.sw, def.sh);
+
+      if (def.recolor) {
+        const imgData = octx.getImageData(0, 0, def.sw, def.sh);
+        recolorPixels(imgData, def.recolor.from, def.recolor.to);
+        octx.putImageData(imgData, 0, 0);
+      }
+
+      accessoryCanvas[key] = { canvas: oc, offsetX: def.offsetX, offsetY: def.offsetY };
+
+    } else if (def.type === 'drawn') {
+      const oc = document.createElement('canvas');
+      oc.width  = def.sw;
+      oc.height = def.sh;
+      const octx = oc.getContext('2d');
+      def.draw(octx);
+      accessoryCanvas[key] = { canvas: oc, offsetX: def.offsetX, offsetY: def.offsetY };
+    }
+  }
+  console.log('[SpawnKit HQ] Accessories initialized:', Object.keys(accessoryCanvas));
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// CANVAS & CAMERA
+// ═══════════════════════════════════════════════════════════════════
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+
+let camX = 0, camY = 0;
+let zoom = 2;
+let isDragging = false;
+let dragStartX, dragStartY, dragCamX, dragCamY;
+
+function resize() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+window.addEventListener('resize', resize);
+resize();
+
+// Center camera on building
+camX = -(MAP_W * T / 2) + canvas.width / (2 * zoom);
+camY = -(MAP_H * T / 2) + canvas.height / (2 * zoom);
+
+// Pan
+canvas.addEventListener('mousedown', e => {
+  if (e.button === 0) {
+    isDragging = true;
+    canvas.classList.add('dragging');
+    dragStartX = e.clientX; dragStartY = e.clientY;
+    dragCamX = camX; dragCamY = camY;
+  }
+});
+window.addEventListener('mousemove', e => {
+  if (!isDragging) return;
+  camX = dragCamX + (e.clientX - dragStartX) / zoom;
+  camY = dragCamY + (e.clientY - dragStartY) / zoom;
+});
+window.addEventListener('mouseup', () => {
+  isDragging = false;
+  canvas.classList.remove('dragging');
+});
+
+// Zoom
+canvas.addEventListener('wheel', e => {
+  e.preventDefault();
+  const oldZoom = zoom;
+  zoom *= e.deltaY < 0 ? 1.15 : 0.87;
+  zoom = Math.max(0.5, Math.min(6, zoom));
+  // Zoom toward mouse
+  const mx = e.clientX, my = e.clientY;
+  camX += mx / zoom - mx / oldZoom;
+  camY += my / zoom - my / oldZoom;
+  document.getElementById('zoom-info').textContent = Math.round(zoom * 100) + '%';
+}, { passive: false });
+
+// ═══════════════════════════════════════════════════════════════════
+// TILE MAP & COLLISION
+// ═══════════════════════════════════════════════════════════════════
+
+// Map layers: 0=empty/outdoor, 1=floor, 2=wall
+const tileMap = [];
+for (let y = 0; y < MAP_H; y++) {
+  tileMap[y] = new Uint8Array(MAP_W); // all 0 = outdoor/grass
+}
+
+// Fill rooms with floor
+for (const room of Object.values(ROOMS)) {
+  for (let dy = 0; dy < room.h; dy++) {
+    for (let dx = 0; dx < room.w; dx++) {
+      tileMap[room.y + dy][room.x + dx] = 1;
+    }
+  }
+}
+
+// Mark walls (1-tile border around rooms)
+function markWalls() {
+  for (const room of Object.values(ROOMS)) {
+    // Top and bottom walls
+    for (let dx = -1; dx <= room.w; dx++) {
+      const wx = room.x + dx;
+      if (wx >= 0 && wx < MAP_W) {
+        if (room.y - 1 >= 0 && tileMap[room.y - 1][wx] === 0) tileMap[room.y - 1][wx] = 2;
+        if (room.y + room.h < MAP_H && tileMap[room.y + room.h][wx] === 0) tileMap[room.y + room.h][wx] = 2;
+      }
+    }
+    // Left and right walls
+    for (let dy = -1; dy <= room.h; dy++) {
+      const wy = room.y + dy;
+      if (wy >= 0 && wy < MAP_H) {
+        if (room.x - 1 >= 0 && tileMap[wy][room.x - 1] === 0) tileMap[wy][room.x - 1] = 2;
+        if (room.x + room.w < MAP_W && tileMap[wy][room.x + room.w] === 0) tileMap[wy][room.x + room.w] = 2;
+      }
+    }
+  }
+  // Clear door tiles
+  for (const d of DOORS) {
+    tileMap[d.y][d.x] = 1;
+    if (d.dir === 'h') { if (d.x+1 < MAP_W) tileMap[d.y][d.x+1] = 1; }
+    else { if (d.y+1 < MAP_H) tileMap[d.y+1][d.x] = 1; }
+  }
+}
+markWalls();
+
+function isWalkable(tx, ty) {
+  if (tx < 0 || ty < 0 || tx >= MAP_W || ty >= MAP_H) return false;
+  return tileMap[ty][tx] === 1;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// A* PATHFINDER
+// ═══════════════════════════════════════════════════════════════════
+function findPath(sx, sy, ex, ey) {
+  sx = Math.round(sx); sy = Math.round(sy);
+  ex = Math.round(ex); ey = Math.round(ey);
+  if (!isWalkable(ex, ey)) return null;
+  if (sx === ex && sy === ey) return [];
+
+  const open = [{ x:sx, y:sy, g:0, h:0, f:0, parent:null }];
+  const closed = new Set();
+  const key = (x,y) => y * MAP_W + x;
+
+  const gScores = new Map();
+  gScores.set(key(sx,sy), 0);
+
+  while (open.length > 0) {
+    open.sort((a,b) => a.f - b.f);
+    const cur = open.shift();
+    if (cur.x === ex && cur.y === ey) {
+      const path = [];
+      let n = cur;
+      while (n.parent) { path.unshift({x:n.x, y:n.y}); n = n.parent; }
+      return path;
+    }
+    closed.add(key(cur.x, cur.y));
+
+    for (const [dx,dy] of [[0,-1],[0,1],[-1,0],[1,0],[-1,-1],[-1,1],[1,-1],[1,1]]) {
+      const nx = cur.x + dx, ny = cur.y + dy;
+      if (!isWalkable(nx, ny)) continue;
+      const k = key(nx, ny);
+      if (closed.has(k)) continue;
+      // Diagonal check — don't cut corners
+      if (dx !== 0 && dy !== 0) {
+        if (!isWalkable(cur.x + dx, cur.y) || !isWalkable(cur.x, cur.y + dy)) continue;
+      }
+      const g = cur.g + (dx !== 0 && dy !== 0 ? 1.414 : 1);
+      if (gScores.has(k) && g >= gScores.get(k)) continue;
+      gScores.set(k, g);
+      const h = Math.abs(nx - ex) + Math.abs(ny - ey);
+      open.push({ x:nx, y:ny, g, h, f:g+h, parent:cur });
+    }
+  }
+  return null; // no path
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// AGENT SYSTEM
+// ═══════════════════════════════════════════════════════════════════
+
+const ORC_SPRITES = ['orc', 'orcWarrior', 'orcShaman', 'orcRogue'];
+let orcSpriteIdx = 0;
+
+class Agent {
+  constructor(id, name, role, spriteKey, room, color) {
+    this.id = id;
+    this.name = name;
+    this.role = role;
+    this.spriteKey = spriteKey;
+    this.room = room;
+    this.color = color;
+    this.status = 'idle'; // idle, working, walking, brainstorm, dead
+    this.currentTask = '';
+    this.session = '';
+
+    // Position (in tile coords, float)
+    const r = ROOMS[room];
+    this.x = r.x + Math.floor(r.w / 2);
+    this.y = r.y + Math.floor(r.h / 2);
+    this.targetX = this.x;
+    this.targetY = this.y;
+    this.path = [];
+    this.pathIdx = 0;
+
+    // Animation
+    this.animState = 'idle'; // idle, run, death, walk (or directional for bodyA)
+    this.animFrame = 0;
+    this.animTimer = 0;
+    this.facingLeft = false;
+    this.facing = 'down'; // Fix 2: direction for bodyA sprites
+    this.deathDone = false;
+
+    // Tint color (for distinguishing similar sprites)
+    this.tintColor = null;
+
+    // Accessory key (crown, wizardHat, bandana, cape, flower, visor)
+    this.accessory = null;
+
+    // Work animation base name (carry_idle, crush, collect, watering, fishing, run)
+    this.workAnim = null;
+
+    // Speech bubble
+    this.speechText = '';
+    this.speechTimer = 0;
+  }
+
+  moveTo(tx, ty) {
+    const path = findPath(Math.round(this.x), Math.round(this.y), tx, ty);
+    if (path && path.length > 0) {
+      this.path = path;
+      this.pathIdx = 0;
+      this.setDirection('walk');
+      this.status = 'walking';
+    }
+  }
+
+  // Fix 2: Set directional animation state
+  setDirection(action) {
+    if (this.spriteKey === 'bodyA') {
+      // death always faces down
+      if (action === 'death') {
+        this.animState = 'death_down';
+        return;
+      }
+      const key = action + '_' + (this.facing || 'down');
+      const spriteDef = SPRITE_DEFS[this.spriteKey];
+      if (spriteDef && spriteDef[key]) {
+        this.animState = key;
+      } else {
+        this.animState = action + '_down'; // fallback
+      }
+    } else {
+      // Non-bodyA sprites: only idle, run, death
+      if (action === 'walk') {
+        this.animState = 'run'; // use run for walking (Fix 3: speed handled in update)
+      } else {
+        this.animState = action;
+      }
+    }
+  }
+
+  // Set the work-specific animation for bodyA agents based on their workAnim + facing direction
+  setWorkAnim() {
+    if (this.spriteKey !== 'bodyA' || !this.workAnim) {
+      this.animState = 'idle';
+      return;
+    }
+    const dir = this.facing || 'down';
+    const key = this.workAnim + '_' + dir;
+    const spriteDef = SPRITE_DEFS[this.spriteKey];
+    if (spriteDef && spriteDef[key]) {
+      this.animState = key;
+    } else {
+      // Fallback: try _down variant
+      const fallback = this.workAnim + '_down';
+      this.animState = (spriteDef && spriteDef[fallback]) ? fallback : 'idle_down';
+    }
+  }
+
+  moveToRoom(roomId) {
+    const r = ROOMS[roomId];
+    if (!r) return;
+    this.room = roomId;
+    let tx, ty;
+    // Fix 4: Use assigned seat for meeting room
+    if (roomId === 'meetingRoom' && typeof assignMeetingSeat === 'function') {
+      const seat = assignMeetingSeat(this);
+      tx = seat.x; ty = seat.y;
+      this.targetX = tx; this.targetY = ty;
+    } else {
+      tx = r.x + 1 + Math.floor(Math.random() * (r.w - 2));
+      ty = r.y + 1 + Math.floor(Math.random() * (r.h - 2));
+    }
+    this.moveTo(tx, ty);
+  }
+
+  say(text, duration) {
+    this.speechText = text;
+    this.speechTimer = duration || 3;
+  }
+
+  update(dt) {
+    // Fix 3: Adjust animation speed — non-bodyA sprites playing 'run' while walking = half speed
+    const isBodyA = this.spriteKey === 'bodyA';
+    const isWalking = this.path.length > 0 && this.status === 'walking';
+    const animFps = (!isBodyA && isWalking) ? FPS_ANIM * 0.5 : FPS_ANIM;
+
+    // Animation frame
+    this.animTimer += dt;
+    if (this.animTimer >= 1 / animFps) {
+      this.animTimer -= 1 / animFps;
+      const spriteDef = SPRITE_DEFS[this.spriteKey];
+      const anim = spriteDef ? (spriteDef[this.animState] || spriteDef.idle) : null;
+      if (anim) {
+        this.animFrame = (this.animFrame + 1) % anim.frames;
+        if ((this.animState === 'death' || this.animState === 'death_down') && this.animFrame === anim.frames - 1) {
+          this.deathDone = true;
+        }
+      }
+    }
+
+    // Path following
+    if (this.path.length > 0 && this.pathIdx < this.path.length) {
+      const target = this.path[this.pathIdx];
+      const dx = target.x - this.x;
+      const dy = target.y - this.y;
+      const dist = Math.sqrt(dx*dx + dy*dy);
+
+      if (dist < 0.15) {
+        this.x = target.x;
+        this.y = target.y;
+        this.pathIdx++;
+        if (this.pathIdx >= this.path.length) {
+          this.path = [];
+          // Fix 2: return to idle with correct direction
+          if (isBodyA) {
+            this.setDirection('idle');
+          } else {
+            this.animState = 'idle';
+          }
+          this.animFrame = 0;
+          this.status = this.status === 'walking' ? 'idle' : this.status;
+        }
+      } else {
+        const speed = MOVE_SPEED * dt;
+        this.x += (dx / dist) * Math.min(speed, dist);
+        this.y += (dy / dist) * Math.min(speed, dist);
+        this.facingLeft = dx < 0;
+
+        // Fix 2: Determine facing direction from movement vector
+        if (isBodyA) {
+          const absDx = Math.abs(dx);
+          const absDy = Math.abs(dy);
+          if (absDy > absDx * 1.5) {
+            this.facing = dy > 0 ? 'down' : 'up';
+          } else {
+            this.facing = 'side';
+          }
+          this.setDirection('walk');
+        }
+      }
+    }
+
+    // Fix 4: Steering separation — apply after path following
+    if (this.status !== 'dead') {
+      let sepX = 0, sepY = 0;
+      for (const other of agents) {
+        if (other === this || other.status === 'dead') continue;
+        const dx = this.x - other.x;
+        const dy = this.y - other.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < SEPARATION_RADIUS && dist > 0.01) {
+          const force = (SEPARATION_RADIUS - dist) / SEPARATION_RADIUS;
+          sepX += (dx / dist) * force;
+          sepY += (dy / dist) * force;
+        }
+      }
+      if (sepX !== 0 || sepY !== 0) {
+        const nx = this.x + sepX * SEPARATION_FORCE * dt;
+        const ny = this.y + sepY * SEPARATION_FORCE * dt;
+        // Clamp to walkable tiles
+        if (isWalkable(Math.round(nx), Math.round(ny))) {
+          this.x = nx;
+          this.y = ny;
+        } else if (isWalkable(Math.round(nx), Math.round(this.y))) {
+          this.x = nx;
+        } else if (isWalkable(Math.round(this.x), Math.round(ny))) {
+          this.y = ny;
+        }
+      }
+    }
+
+    // Speech timer
+    if (this.speechTimer > 0) {
+      this.speechTimer -= dt;
+      if (this.speechTimer <= 0) this.speechText = '';
+    }
+  }
+
+  draw(ctx) {
+    const spriteDef = SPRITE_DEFS[this.spriteKey];
+    if (!spriteDef) return;
+    const anim = spriteDef[this.animState] || spriteDef.idle;
+    const img = imageCache[anim.path];
+    if (!img || !img.complete) return;
+
+    const sx = this.animFrame * anim.fw;
+    const sy = 0;
+    // Fix 1: Always render at normalized RENDER_SIZE (64px * SCALE) for consistent sprite sizing
+    // drawImage handles scaling from source (anim.fw × anim.fh) to dest (drawW × drawH)
+    const drawW = RENDER_SIZE * SCALE;
+    const drawH = RENDER_SIZE * SCALE;
+    // Center sprite on tile position
+    const px = this.x * T - drawW / 2 + T / 2;
+    const py = this.y * T - drawH + T;
+
+    ctx.save();
+    ctx.imageSmoothingEnabled = false; // Fix 1: keep pixel art crisp when scaling up
+    if (this.facingLeft) {
+      ctx.translate(px + drawW, py);
+      ctx.scale(-1, 1);
+      ctx.drawImage(img, sx, sy, anim.fw, anim.fh, 0, 0, drawW, drawH);
+      // Apply tint overlay
+      if (this.tintColor) {
+        ctx.globalCompositeOperation = 'source-atop';
+        ctx.fillStyle = this.tintColor;
+        ctx.fillRect(0, 0, drawW, drawH);
+        ctx.globalCompositeOperation = 'source-over';
+      }
+    } else {
+      ctx.drawImage(img, sx, sy, anim.fw, anim.fh, px, py, drawW, drawH);
+      // Apply tint overlay
+      if (this.tintColor) {
+        ctx.globalCompositeOperation = 'source-atop';
+        ctx.fillStyle = this.tintColor;
+        ctx.fillRect(px, py, drawW, drawH);
+        ctx.globalCompositeOperation = 'source-over';
+      }
+    }
+    ctx.restore();
+
+    // Draw accessory overlay (hat, crown, bandana, etc.)
+    this.drawAccessory(ctx, px, py, drawW, drawH);
+
+    // Status indicator (plumbob-style diamond)
+    const indicatorX = this.x * T + T / 2;
+    const indicatorY = py - 6;
+    const colors = { idle:'#fd5', working:'#5f8', walking:'#5bf', brainstorm:'#d5f', dead:'#f55', error:'#f55' };
+    const col = colors[this.status] || '#fff';
+
+    ctx.save();
+    ctx.translate(indicatorX, indicatorY);
+    // Bobbing animation
+    const bob = Math.sin(Date.now() / 300 + this.x) * 2;
+    ctx.translate(0, bob);
+    // Diamond shape
+    ctx.beginPath();
+    ctx.moveTo(0, -5);
+    ctx.lineTo(4, 0);
+    ctx.lineTo(0, 5);
+    ctx.lineTo(-4, 0);
+    ctx.closePath();
+    ctx.fillStyle = col;
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(0,0,0,0.5)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.restore();
+
+    // Name label with pill background
+    ctx.save();
+    ctx.font = '8px "Press Start 2P"';
+    ctx.textAlign = 'center';
+    const nameW = ctx.measureText(this.name).width;
+    const pillX = indicatorX - nameW / 2 - 4;
+    const pillY = indicatorY - 18;
+    const pillW = nameW + 8;
+    const pillH = 12;
+    // Pill background
+    ctx.fillStyle = 'rgba(10,10,25,0.75)';
+    roundRect(ctx, pillX, pillY, pillW, pillH, 4);
+    ctx.fill();
+    // Pill border in agent color
+    ctx.strokeStyle = this.color;
+    ctx.lineWidth = 1;
+    roundRect(ctx, pillX, pillY, pillW, pillH, 4);
+    ctx.stroke();
+    // Name text
+    ctx.fillStyle = '#fff';
+    ctx.fillText(this.name, indicatorX, indicatorY - 9);
+    ctx.restore();
+
+    // Speech bubble
+    if (this.speechText) {
+      this.drawSpeechBubble(ctx, indicatorX, indicatorY - 24, this.speechText);
+    }
+  }
+
+  drawAccessory(ctx, px, py, drawW, drawH) {
+    if (!this.accessory) return;
+    const ac = accessoryCanvas[this.accessory];
+    if (!ac) return;
+
+    // Head is approximately at row 8 of the 64px source frame, scaled up
+    // In dest pixels: headY ≈ py + (8 / 64) * drawH
+    const headX = px + drawW / 2;
+    const headY = py + (8 / 64) * drawH;
+
+    // Directional offset adjustment
+    const dirOff = ACCESSORY_DIR_OFFSETS[this.facing || 'down'] || ACCESSORY_DIR_OFFSETS.down;
+
+    const drawAW = ac.canvas.width * SCALE;
+    const drawAH = ac.canvas.height * SCALE;
+
+    const ax = headX + (ac.offsetX + dirOff.dx) * SCALE;
+    const ay = headY + (ac.offsetY + dirOff.dy) * SCALE;
+
+    ctx.save();
+    ctx.imageSmoothingEnabled = false;
+    if (this.facingLeft) {
+      // Mirror the accessory: translate to right edge, flip horizontally
+      ctx.translate(ax + drawAW, ay);
+      ctx.scale(-1, 1);
+      ctx.drawImage(ac.canvas, 0, 0, ac.canvas.width, ac.canvas.height, 0, 0, drawAW, drawAH);
+    } else {
+      ctx.drawImage(ac.canvas, 0, 0, ac.canvas.width, ac.canvas.height, ax, ay, drawAW, drawAH);
+    }
+    ctx.restore();
+  }
+
+  drawSpeechBubble(ctx, bx, by, text) {
+    ctx.save();
+    ctx.font = '6px "Press Start 2P"';
+    const lines = this.wrapText(ctx, text, 100);
+    const lineH = 9;
+    const padX = 6, padY = 4;
+    const bw = Math.max(...lines.map(l => ctx.measureText(l).width)) + padX * 2;
+    const bh = lines.length * lineH + padY * 2;
+    const rx = bx - bw / 2;
+    const ry = by - bh;
+
+    // Bubble background
+    ctx.fillStyle = 'rgba(255,255,255,0.92)';
+    ctx.strokeStyle = '#333';
+    ctx.lineWidth = 1;
+    roundRect(ctx, rx, ry, bw, bh, 3);
+    ctx.fill();
+    ctx.stroke();
+
+    // Tail
+    ctx.beginPath();
+    ctx.moveTo(bx - 3, by);
+    ctx.lineTo(bx, by + 5);
+    ctx.lineTo(bx + 3, by);
+    ctx.fillStyle = 'rgba(255,255,255,0.92)';
+    ctx.fill();
+
+    // Text
+    ctx.fillStyle = '#222';
+    ctx.textAlign = 'left';
+    for (let i = 0; i < lines.length; i++) {
+      ctx.fillText(lines[i], rx + padX, ry + padY + lineH * (i + 0.7));
+    }
+    ctx.restore();
+  }
+
+  wrapText(ctx, text, maxW) {
+    const words = text.split(' ');
+    const lines = [];
+    let line = '';
+    for (const w of words) {
+      const test = line ? line + ' ' + w : w;
+      if (ctx.measureText(test).width > maxW && line) {
+        lines.push(line);
+        line = w;
+      } else {
+        line = test;
+      }
+    }
+    if (line) lines.push(line);
+    return lines.length ? lines : [''];
+  }
+
+  containsPoint(px, py) {
+    // Fix 1: Use normalized render size for hit detection
+    const drawW = RENDER_SIZE * SCALE;
+    const drawH = RENDER_SIZE * SCALE;
+    const sx = this.x * T - drawW / 2 + T / 2;
+    const sy = this.y * T - drawH + T;
+    return px >= sx && px < sx + drawW && py >= sy && py < sy + drawH;
+  }
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// CORE AGENTS (C-Level)
+// ═══════════════════════════════════════════════════════════════════
+const agents = [];
+
+// Fix 2: All C-level agents use unified bodyA sprite with 4-direction support
+// Differentiated by distinct tintColor overlays
+// accessory: key into ACCESSORY_DEFS / accessoryCanvas
+// workAnim: base name of work animation (direction suffix appended by setWorkAnim)
+const coreAgents = [
+  { id:'apomac',   name:'ApoMac',   role:'CEO',     sprite:'bodyA', room:'ceoOffice',   color:'#ffd700', tintColor:'rgba(255,215,0,0.20)',   accessory:'crown',     workAnim:'carry_idle' },
+  { id:'forge',    name:'Forge',    role:'CTO',     sprite:'bodyA', room:'ctoLab',      color:'#7b68ee', tintColor:'rgba(123,104,238,0.25)', accessory:'wizardHat', workAnim:'crush'      },
+  { id:'hunter',   name:'Hunter',   role:'CRO',     sprite:'bodyA', room:'croOffice',   color:'#ff6347', tintColor:'rgba(255,99,71,0.20)',   accessory:'bandana',   workAnim:'run'        },
+  { id:'atlas',    name:'Atlas',    role:'COO',     sprite:'bodyA', room:'cooOffice',   color:'#20b2aa', tintColor:'rgba(0,180,180,0.25)',   accessory:'cape',      workAnim:'collect'    },
+  { id:'echo',     name:'Echo',     role:'CMO',     sprite:'bodyA', room:'cmoStudio',   color:'#dda0dd', tintColor:'rgba(200,100,220,0.25)', accessory:'flower',    workAnim:'watering'   },
+  { id:'sentinel', name:'Sentinel', role:'Auditor', sprite:'bodyA', room:'auditorPost', color:'#b0c4de', tintColor:'rgba(176,196,222,0.25)', accessory:'visor',     workAnim:'fishing'    },
+];
+
+for (const def of coreAgents) {
+  const a = new Agent(def.id, def.name, def.role, def.sprite, def.room, def.color);
+  a.tintColor = def.tintColor;
+  a.accessory = def.accessory || null;
+  a.workAnim  = def.workAnim  || null;
+  // Fix 2: Set initial animState for bodyA to directional idle
+  if (def.sprite === 'bodyA') {
+    a.animState = 'idle_down';
+  }
+  agents.push(a);
+}
+
+// Fix 4: Meeting room seat assignments
+const MEETING_SEATS = [
+  { x: ROOMS.meetingRoom.x + 3,  y: ROOMS.meetingRoom.y + 2 },
+  { x: ROOMS.meetingRoom.x + 7,  y: ROOMS.meetingRoom.y + 2 },
+  { x: ROOMS.meetingRoom.x + 11, y: ROOMS.meetingRoom.y + 2 },
+  { x: ROOMS.meetingRoom.x + 15, y: ROOMS.meetingRoom.y + 2 },
+  { x: ROOMS.meetingRoom.x + 19, y: ROOMS.meetingRoom.y + 2 },
+  { x: ROOMS.meetingRoom.x + 3,  y: ROOMS.meetingRoom.y + 4 },
+];
+
+function assignMeetingSeat(agent) {
+  const seat = MEETING_SEATS.find(s =>
+    !agents.some(a => a !== agent && Math.abs(a.targetX - s.x) < 1 && Math.abs(a.targetY - s.y) < 1 && (a.status === 'brainstorm' || (a.path.length > 0 && a.status === 'walking')))
+  );
+  return seat || MEETING_SEATS[Math.floor(Math.random() * MEETING_SEATS.length)];
+}
+
+// Fix 5: Door state tracking
+const doorStates = DOORS.map(() => ({ open: false, timer: 0 }));
+
+function updateDoors(dt) {
+  for (let i = 0; i < DOORS.length; i++) {
+    const d = DOORS[i];
+    const state = doorStates[i];
+    const nearAgent = agents.some(a => {
+      if (a.status === 'dead') return false;
+      const dx = Math.abs(a.x - d.x);
+      const dy = Math.abs(a.y - d.y);
+      return dx < 2 && dy < 2;
+    });
+    if (nearAgent) {
+      state.open = true;
+      state.timer = 0;
+    } else if (state.open) {
+      state.timer += dt;
+      if (state.timer > 1.5) {
+        state.open = false;
+        state.timer = 0;
+      }
+    }
+  }
+}
+
+// Sub-agent pool
+const subAgents = [];
+
+// Map parent agent IDs to tint colors for sub-agents
+const PARENT_TINT = {
+  apomac:   'rgba(255,215,0,0.2)',
+  forge:    'rgba(123,104,238,0.2)',
+  hunter:   'rgba(255,99,71,0.2)',
+  atlas:    'rgba(0,180,180,0.2)',
+  echo:     'rgba(200,100,220,0.2)',
+  sentinel: 'rgba(176,196,222,0.2)',
+};
+
+function spawnSubAgent(name, parentId) {
+  const sprite = ORC_SPRITES[orcSpriteIdx % ORC_SPRITES.length];
+  orcSpriteIdx++;
+  const sa = new Agent('sub_' + Date.now(), name, 'Sub-Agent', sprite, 'openSpace', '#9acd32');
+  sa.tintColor = PARENT_TINT[parentId] || null;
+  sa.status = 'working';
+  sa.say('Spawned!', 2);
+  // Walk in from edge
+  sa.x = ROOMS.openSpace.x;
+  sa.y = ROOMS.openSpace.y + ROOMS.openSpace.h - 1;
+  sa.moveToRoom('openSpace');
+  subAgents.push(sa);
+  agents.push(sa);
+  return sa;
+}
+
+function despawnSubAgent(sa) {
+  sa.status = 'dead';
+  sa.animState = 'death';
+  sa.animFrame = 0;
+  // Remove after death animation
+  setTimeout(() => {
+    const idx = agents.indexOf(sa);
+    if (idx > -1) agents.splice(idx, 1);
+    const sidx = subAgents.indexOf(sa);
+    if (sidx > -1) subAgents.splice(sidx, 1);
+  }, 2000);
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// FURNITURE PLACEMENT
+// Each furniture item: { img, sx, sy, sw, sh, tx, ty, tw, th }
+// (source rect from sprite sheet → placed at tile position with tile size)
+// Furniture.png = 800×864, 16px grid = 50×54 tiles
+// Fix 6: Corrected sprite sheet coordinates based on actual pixel analysis:
+//   Rows 0-12: Large piece left cols 0-5, small items right cols 45-49
+//   Rows 17-20: DOORS and archways (NOT desks — previously misidentified)
+//   Rows 24-27, cols 5-8: Actual benches/desks (wooden plank surfaces)
+//   Rows 28-31, cols 0-4: Shelf boards, counter/bar sections
+//   Rows 36-39, cols 0-3: Large chests/cabinets
+//   Rows 1-10, cols 44-50: Pots, jugs, barrels (right side of sheet)
+// ═══════════════════════════════════════════════════════════════════
+const furnitureItems = [];
+
+function placeFurniture() {
+  const F = IMG.furniture;
+
+  // Helper: place a furniture sprite from the sheet
+  // sx,sy in 16px tile units on the sheet; sw,sh in tiles; tx,ty map position
+  function add(sheetTx, sheetTy, sw, sh, mapTx, mapTy) {
+    furnitureItems.push({
+      img: F,
+      sx: sheetTx * 16, sy: sheetTy * 16,
+      sw: sw * 16, sh: sh * 16,
+      tx: mapTx, ty: mapTy,
+      tw: sw, th: sh
+    });
+  }
+
+  // Helper: placeholder colored rectangle when sprite coords are uncertain
+  // TODO: verify exact sprite sheet coordinates for items marked [placeholder]
+  function addPlaceholder(color, label, mapTx, mapTy, sw, sh) {
+    furnitureItems.push({
+      img: null, // signals placeholder
+      placeholderColor: color,
+      placeholderLabel: label,
+      tx: mapTx, ty: mapTy,
+      tw: sw, th: sh,
+      sx: 0, sy: 0, sw: sw * 16, sh: sh * 16
+    });
+  }
+
+  // ── CEO Office — Grand desk, bookshelf, plant ──
+  // Fix 6: Actual desk — rows 24-26, cols 5-7 (wooden desk, 3×3)
+  add(5, 24, 3, 3, ROOMS.ceoOffice.x + 4, ROOMS.ceoOffice.y + 2);
+  // Large bookshelf — rows 0-4, cols 0-3 (verified: large piece left side)
+  add(0, 0, 4, 5, ROOMS.ceoOffice.x + 9, ROOMS.ceoOffice.y + 1);
+  // Plant corner — vegetation small sprout (rows 12-14 cols 0-2 are sprouts)
+  // TODO: verify exact sprite sheet coordinates [placeholder — small plant]
+  addPlaceholder('rgba(34,85,34,0.8)', '🌿', ROOMS.ceoOffice.x + 1, ROOMS.ceoOffice.y + 1, 1, 2);
+  addPlaceholder('rgba(34,85,34,0.8)', '🌿', ROOMS.ceoOffice.x + 1, ROOMS.ceoOffice.y + 5, 1, 2);
+
+  // ── CTO Lab — Alchemy station, workbench, potions ──
+  furnitureItems.push({
+    img: IMG.alchemy,
+    sx: 0, sy: 0, sw: 400, sh: 400,
+    tx: ROOMS.ctoLab.x + 4, ty: ROOMS.ctoLab.y + 2,
+    tw: 3, th: 3,
+    isStation: true
+  });
+  furnitureItems.push({
+    img: IMG.workbench,
+    sx: 0, sy: 0, sw: 192, sh: 64,
+    tx: ROOMS.ctoLab.x + 8, ty: ROOMS.ctoLab.y + 1,
+    tw: 3, th: 2,
+    isStation: true
+  });
+  // Barrel/pot — Fix 6: right side of sheet rows 5-6, cols 45-46 (verified: pots/barrels)
+  add(45, 5, 2, 2, ROOMS.ctoLab.x + 1, ROOMS.ctoLab.y + 5);
+  // Books/scrolls — TODO: verify exact sprite sheet coordinates [placeholder]
+  addPlaceholder('rgba(80,60,160,0.8)', '📚', ROOMS.ctoLab.x + 1, ROOMS.ctoLab.y + 2, 2, 2);
+
+  // ── COO Office — Organized desk, shelf, neat layout ──
+  // Fix 6: Actual bench/desk — rows 25-27, cols 5-7
+  add(5, 25, 3, 3, ROOMS.cooOffice.x + 4, ROOMS.cooOffice.y + 2);
+  // Shelf — Fix 6: rows 28-31, cols 0-2 (shelf boards, verified)
+  add(0, 28, 3, 4, ROOMS.cooOffice.x + 9, ROOMS.cooOffice.y + 1);
+  // Counter item — rows 28-31, cols 3-4
+  add(3, 28, 2, 3, ROOMS.cooOffice.x + 1, ROOMS.cooOffice.y + 1);
+
+  // ── CRO Office — Sleek desk, large chest ──
+  // Fix 6: Actual desk — rows 24-26, cols 5-7
+  add(5, 24, 3, 3, ROOMS.croOffice.x + 4, ROOMS.croOffice.y + 2);
+  // Fix 6: Large chest — rows 36-38, cols 0-2 (verified: large chests/cabinets)
+  add(0, 36, 3, 3, ROOMS.croOffice.x + 9, ROOMS.croOffice.y + 3);
+  // Small table — TODO: verify exact sprite sheet coordinates [placeholder]
+  addPlaceholder('rgba(100,70,40,0.8)', '🪑', ROOMS.croOffice.x + 1, ROOMS.croOffice.y + 2, 2, 2);
+
+  // ── CMO Studio — Decorative items, plants ──
+  // Fix 6: Desk — rows 24-26, cols 5-7
+  add(5, 24, 3, 3, ROOMS.cmoStudio.x + 4, ROOMS.cmoStudio.y + 2);
+  // Shelf — rows 28-31 cols 0-2
+  add(0, 28, 2, 3, ROOMS.cmoStudio.x + 9, ROOMS.cmoStudio.y + 1);
+  // Plants / flowers — TODO: verify exact sprite sheet coordinates [placeholder]
+  addPlaceholder('rgba(34,100,34,0.8)', '🌸', ROOMS.cmoStudio.x + 1, ROOMS.cmoStudio.y + 1, 2, 2);
+  addPlaceholder('rgba(34,100,34,0.8)', '🌸', ROOMS.cmoStudio.x + 1, ROOMS.cmoStudio.y + 5, 2, 2);
+
+  // ── Auditor Post — Sparse, single desk, barrels ──
+  // Fix 6: Desk — rows 24-26, cols 5-7
+  add(5, 24, 3, 3, ROOMS.auditorPost.x + 4, ROOMS.auditorPost.y + 2);
+  // Barrel — Fix 6: right side rows 5-6, cols 45-46
+  add(45, 5, 2, 2, ROOMS.auditorPost.x + 1, ROOMS.auditorPost.y + 1);
+  add(45, 5, 2, 2, ROOMS.auditorPost.x + 10, ROOMS.auditorPost.y + 1);
+
+  // ── Meeting Room — Bonfire (central) + stools ──
+  furnitureItems.push({
+    img: IMG.bonfire,
+    sx: 0, sy: 0, sw: 64, sh: 64,
+    tx: ROOMS.meetingRoom.x + 11, ty: ROOMS.meetingRoom.y + 1,
+    tw: 2, th: 2,
+    isStation: true, animated: true, animFrames: 6, animFw: 64, animFh: 64
+  });
+  // Stools/seating — TODO: verify exact sprite sheet coordinates [placeholder]
+  for (let i = 0; i < 6; i++) {
+    addPlaceholder('rgba(80,50,20,0.8)', '🪑', ROOMS.meetingRoom.x + 2 + i * 4, ROOMS.meetingRoom.y + 3, 1, 1);
+  }
+
+  // ── Break Room — Cooking station + barrel for drinks ──
+  furnitureItems.push({
+    img: IMG.cookStation,
+    sx: 0, sy: 0, sw: 288, sh: 224,
+    tx: ROOMS.breakRoom.x + 1, ty: ROOMS.breakRoom.y + 1,
+    tw: 4, th: 3,
+    isStation: true
+  });
+  // Fix 6: Barrel — right side rows 5-6, cols 45-46 (verified: barrels)
+  add(45, 5, 2, 2, ROOMS.breakRoom.x + 7, ROOMS.breakRoom.y + 1);
+  add(45, 5, 2, 2, ROOMS.breakRoom.x + 9, ROOMS.breakRoom.y + 2);
+
+  // ── Open Space — Workbenches + tools ──
+  furnitureItems.push({
+    img: IMG.workbench,
+    sx: 0, sy: 0, sw: 192, sh: 64,
+    tx: ROOMS.openSpace.x + 1, ty: ROOMS.openSpace.y + 1,
+    tw: 3, th: 2,
+    isStation: true
+  });
+  furnitureItems.push({
+    img: IMG.workbench,
+    sx: 0, sy: 0, sw: 192, sh: 64,
+    tx: ROOMS.openSpace.x + 7, ty: ROOMS.openSpace.y + 1,
+    tw: 3, th: 2,
+    isStation: true
+  });
+  // Fix 6: Barrel/tools — right side rows 5-6, cols 45-46
+  add(45, 5, 2, 2, ROOMS.openSpace.x + 5, ROOMS.openSpace.y + 1);
+}
+placeFurniture();
+
+// ═══════════════════════════════════════════════════════════════════
+// OUTDOOR DECORATION
+// ═══════════════════════════════════════════════════════════════════
+const trees = [];
+const vegetationPatches = [];
+const pathTiles = []; // walkway tiles
+
+function placeOutdoor() {
+  // Trees along top (varied models and slight offsets for organic feel)
+  trees.push({ model: 0, x: 1, y: 0, size: 'Size_03' });
+  trees.push({ model: 1, x: 7, y: -1, size: 'Size_03' });
+  trees.push({ model: 2, x: 13, y: 0, size: 'Size_03' });
+  trees.push({ model: 0, x: 20, y: -1, size: 'Size_03' });
+  trees.push({ model: 1, x: 26, y: 0, size: 'Size_03' });
+  trees.push({ model: 2, x: 32, y: -1, size: 'Size_03' });
+  // Trees along bottom
+  trees.push({ model: 2, x: 1, y: MAP_H - 3, size: 'Size_02' });
+  trees.push({ model: 0, x: 8, y: MAP_H - 2, size: 'Size_02' });
+  trees.push({ model: 1, x: 15, y: MAP_H - 3, size: 'Size_02' });
+  trees.push({ model: 2, x: 22, y: MAP_H - 2, size: 'Size_02' });
+  trees.push({ model: 0, x: 29, y: MAP_H - 3, size: 'Size_02' });
+  trees.push({ model: 1, x: 35, y: MAP_H - 2, size: 'Size_02' });
+  // Trees on left side
+  trees.push({ model: 1, x: 0, y: 5, size: 'Size_02' });
+  trees.push({ model: 2, x: -1, y: 14, size: 'Size_02' });
+  trees.push({ model: 0, x: 0, y: 23, size: 'Size_02' });
+  trees.push({ model: 1, x: -1, y: 32, size: 'Size_02' });
+  trees.push({ model: 2, x: 0, y: 40, size: 'Size_02' });
+  // Trees on right side
+  trees.push({ model: 0, x: MAP_W - 3, y: 6, size: 'Size_02' });
+  trees.push({ model: 1, x: MAP_W - 2, y: 15, size: 'Size_02' });
+  trees.push({ model: 2, x: MAP_W - 3, y: 24, size: 'Size_02' });
+  trees.push({ model: 0, x: MAP_W - 2, y: 33, size: 'Size_02' });
+  trees.push({ model: 1, x: MAP_W - 3, y: 41, size: 'Size_02' });
+
+  // Vegetation patches between trees (grass clumps, flowers)
+  // Using Vegetation.png: rows 0-1 cols 0-1 = grass, cols 3-4 = flowers, cols 6-7 = more flowers
+  // rows 9-11 = mushrooms/small plants at cols 0-3
+  const vegPositions = [
+    // Grass clumps (veg row 0, cols 0-1, 2 tiles)
+    { sx: 0, sy: 0, sw: 2, sh: 2, x: 5, y: 1 },
+    { sx: 0, sy: 0, sw: 2, sh: 2, x: 17, y: 1 },
+    { sx: 0, sy: 0, sw: 2, sh: 2, x: 30, y: 1 },
+    { sx: 0, sy: 0, sw: 2, sh: 2, x: 3, y: MAP_H - 2 },
+    { sx: 0, sy: 0, sw: 2, sh: 2, x: 25, y: MAP_H - 1 },
+    // Flowers
+    { sx: 3, sy: 0, sw: 2, sh: 2, x: 10, y: 0 },
+    { sx: 6, sy: 0, sw: 2, sh: 2, x: 24, y: 0 },
+    { sx: 3, sy: 0, sw: 2, sh: 2, x: 2, y: 10 },
+    { sx: 6, sy: 0, sw: 2, sh: 2, x: MAP_W - 2, y: 20 },
+    { sx: 9, sy: 0, sw: 2, sh: 2, x: 2, y: 28 },
+    { sx: 3, sy: 0, sw: 2, sh: 2, x: MAP_W - 2, y: 38 },
+    // Mushrooms (row 9-10, cols 0-3)
+    { sx: 0, sy: 9, sw: 1, sh: 2, x: 1, y: 18 },
+    { sx: 1, sy: 9, sw: 1, sh: 2, x: MAP_W - 1, y: 28 },
+    { sx: 2, sy: 9, sw: 1, sh: 2, x: 0, y: 38 },
+  ];
+  for (const v of vegPositions) {
+    vegetationPatches.push(v);
+  }
+
+  // Path/walkway from building entrance to edges
+  // Use floor tile row 2 (stone path) for a different look
+  // Vertical path from bottom of building down
+  for (let y = 43; y < MAP_H; y++) {
+    pathTiles.push({ x: 16, y });
+    pathTiles.push({ x: 17, y });
+  }
+  // Horizontal path from left side to building entrance
+  for (let x = 0; x < 4; x++) {
+    pathTiles.push({ x, y: 20 });
+    pathTiles.push({ x, y: 21 });
+  }
+  // Horizontal path from right side
+  for (let x = MAP_W - 4; x < MAP_W; x++) {
+    pathTiles.push({ x, y: 20 });
+    pathTiles.push({ x, y: 21 });
+  }
+}
+placeOutdoor();
+
+// ═══════════════════════════════════════════════════════════════════
+// RENDERING
+// ═══════════════════════════════════════════════════════════════════
+
+function drawTile(srcImg, srcX, srcY, srcW, srcH, tileX, tileY, tileW, tileH) {
+  if (!srcImg || !srcImg.complete) return;
+  tileW = tileW || 1;
+  tileH = tileH || 1;
+  ctx.drawImage(srcImg,
+    srcX, srcY, srcW, srcH,
+    tileX * T, tileY * T, tileW * T, tileH * T
+  );
+}
+
+// Pre-compute path tile set for fast lookup
+const pathTileSet = new Set();
+
+function renderGround() {
+  // Build path set if needed
+  if (pathTileSet.size === 0) {
+    for (const pt of pathTiles) {
+      pathTileSet.add(pt.y * MAP_W + pt.x);
+    }
+  }
+
+  for (let y = 0; y < MAP_H; y++) {
+    for (let x = 0; x < MAP_W; x++) {
+      if (tileMap[y][x] === 0) {
+        const isPath = pathTileSet.has(y * MAP_W + x);
+        if (isPath) {
+          // Stone path tile (row 2 of floor tiles)
+          const variant = ((x + y) % 3);
+          drawTile(IMG.floorTiles, variant * 16, 2 * 16, 16, 16, x, y);
+        } else {
+          // Grass tile — use floor tiles sheet, first row
+          const variant = ((x + y * 3) % 4);
+          const gx = variant * 16;
+          drawTile(IMG.floorTiles, gx, 0, 16, 16, x, y);
+        }
+      }
+    }
+  }
+}
+
+function renderFloors() {
+  for (const [roomId, room] of Object.entries(ROOMS)) {
+    for (let dy = 0; dy < room.h; dy++) {
+      for (let dx = 0; dx < room.w; dx++) {
+        // Wood floor = row 1, stone = row 2 in floor tiles
+        const floorRow = room.floor === 'stone' ? 2 : 1;
+        const variant = ((dx + dy) % 3);
+        drawTile(IMG.floorTiles, variant * 16, floorRow * 16, 16, 16, room.x + dx, room.y + dy);
+      }
+    }
+  }
+}
+
+// Determine which room a wall tile belongs to (for wall variation)
+function getRoomForWall(x, y) {
+  // Check adjacent tiles for which room they're in
+  for (const [roomId, room] of Object.entries(ROOMS)) {
+    // Check if this wall is adjacent to this room
+    if (x >= room.x - 1 && x <= room.x + room.w &&
+        y >= room.y - 1 && y <= room.y + room.h) {
+      return roomId;
+    }
+  }
+  return null;
+}
+
+// Wall Variations.png: 256x480, 16x30 tiles
+// 3 sets of 10 rows each (rows 0-9, 10-19, 20-29)
+// Set 0 (rows 0-9): lighter/warmer walls → wood rooms
+// Set 1 (rows 10-19): medium walls → transition
+// Set 2 (rows 20-29): darker/cooler walls → stone rooms
+function renderWalls() {
+  for (let y = 0; y < MAP_H; y++) {
+    for (let x = 0; x < MAP_W; x++) {
+      if (tileMap[y][x] !== 2) continue;
+
+      // Determine wall type based on neighbors
+      const hasFloorAbove = y > 0 && tileMap[y-1][x] === 1;
+      const hasFloorBelow = y < MAP_H-1 && tileMap[y+1][x] === 1;
+      const hasFloorLeft = x > 0 && tileMap[y][x-1] === 1;
+      const hasFloorRight = x < MAP_W-1 && tileMap[y][x+1] === 1;
+
+      // Pick wall tile variant from wall tiles sheet (400×400, 16px grid = 25×25)
+      let wtx = 0, wty = 0;
+      if (hasFloorBelow) { wty = 0; } // top wall
+      else if (hasFloorAbove) { wty = 2; } // bottom wall
+      else if (hasFloorRight) { wtx = 0; wty = 1; } // left wall
+      else if (hasFloorLeft) { wtx = 2; wty = 1; } // right wall
+      else { wty = 1; wtx = 1; } // corner/isolated
+
+      // Determine room for wall variation
+      const roomId = getRoomForWall(x, y);
+      const stoneRooms = new Set(['ctoLab', 'auditorPost', 'meetingRoom']);
+      const isStone = roomId && stoneRooms.has(roomId);
+
+      // Use Wall_Variations.png for variation
+      // Each set is 10 rows; pick row offset based on wall direction
+      const varSetOffset = isStone ? 20 : 0; // stone = set 2, wood = set 0
+      const variantCol = (x + y) % 8; // variation within set
+
+      // Draw base wall tile
+      drawTile(IMG.wallTiles, wtx * 16, wty * 16, 16, 16, x, y);
+
+      // Overlay with wall variation for visual texture
+      // Use row 5-9 of each set (the detailed wall sections)
+      if (IMG.wallVariations && IMG.wallVariations.complete) {
+        const varRow = varSetOffset + 5 + (wty % 5);
+        const varCol = variantCol % 8;
+        ctx.globalAlpha = 0.3; // subtle overlay
+        drawTile(IMG.wallVariations, varCol * 16, varRow * 16, 16, 16, x, y);
+        ctx.globalAlpha = 1.0;
+      }
+    }
+  }
+}
+
+// Room banner colors per room type
+const ROOM_BANNER_COLORS = {
+  ceoOffice:   { bg: 'rgba(180,140,40,0.6)',  border: '#ffd700' },
+  ctoLab:      { bg: 'rgba(80,60,160,0.6)',   border: '#7b68ee' },
+  cooOffice:   { bg: 'rgba(30,130,130,0.6)',   border: '#20b2aa' },
+  croOffice:   { bg: 'rgba(180,60,50,0.6)',    border: '#ff6347' },
+  cmoStudio:   { bg: 'rgba(160,100,170,0.6)',  border: '#dda0dd' },
+  auditorPost: { bg: 'rgba(100,120,150,0.6)',  border: '#b0c4de' },
+  meetingRoom: { bg: 'rgba(50,80,50,0.6)',     border: '#5f8' },
+  breakRoom:   { bg: 'rgba(120,90,50,0.6)',    border: '#d4a05a' },
+  openSpace:   { bg: 'rgba(60,100,60,0.6)',    border: '#7cb07c' },
+};
+
+function renderRoomLabels() {
+  ctx.save();
+  ctx.font = '7px "Press Start 2P"';
+  ctx.textAlign = 'center';
+  for (const [roomId, room] of Object.entries(ROOMS)) {
+    const cx = (room.x + room.w / 2) * T;
+    const cy = (room.y + 0.8) * T;
+    const textW = ctx.measureText(room.label).width;
+    const bannerW = textW + 12;
+    const bannerH = 14;
+    const bannerX = cx - bannerW / 2;
+    const bannerY = cy - bannerH + 3;
+
+    // Banner background
+    const colors = ROOM_BANNER_COLORS[roomId] || { bg: 'rgba(40,40,60,0.6)', border: '#5f8' };
+    ctx.fillStyle = colors.bg;
+    roundRect(ctx, bannerX, bannerY, bannerW, bannerH, 3);
+    ctx.fill();
+    // Banner border
+    ctx.strokeStyle = colors.border;
+    ctx.lineWidth = 1;
+    roundRect(ctx, bannerX, bannerY, bannerW, bannerH, 3);
+    ctx.stroke();
+    // Label text
+    ctx.fillStyle = '#fff';
+    ctx.fillText(room.label, cx, cy);
+  }
+  ctx.restore();
+}
+
+function drawFurnitureItem(f) {
+  if (f.img === null && f.placeholderColor) {
+    // Fix 6: Placeholder colored rectangle for unverified sprite coords
+    ctx.save();
+    ctx.fillStyle = f.placeholderColor;
+    ctx.fillRect(f.tx * T, f.ty * T, f.tw * T, f.th * T);
+    ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(f.tx * T, f.ty * T, f.tw * T, f.th * T);
+    if (f.placeholderLabel) {
+      ctx.font = '8px monospace';
+      ctx.fillStyle = 'rgba(255,255,255,0.7)';
+      ctx.textAlign = 'center';
+      ctx.fillText(f.placeholderLabel, (f.tx + f.tw / 2) * T, (f.ty + f.th / 2) * T + 3);
+    }
+    ctx.restore();
+    return;
+  }
+  if (!f.img || !f.img.complete) return;
+  let sx = f.sx, sy = f.sy;
+  // Animated stations
+  if (f.animated) {
+    const frame = Math.floor(Date.now() / (1000 / FPS_ANIM)) % f.animFrames;
+    sy = frame * f.animFh;
+  }
+  ctx.drawImage(f.img, sx, sy, f.sw, f.sh, f.tx * T, f.ty * T, f.tw * T, f.th * T);
+}
+
+function renderFurniture() {
+  for (const f of furnitureItems) {
+    drawFurnitureItem(f);
+  }
+}
+
+function renderTreeShadows() {
+  // Draw shadows under trees using Shadows.png
+  // Shadow sheet: rows 0-2 have large oval shadows (7x3 tiles)
+  // rows 3-5 have medium shadows (5x3)
+  // rows 6+ have small shadows
+  const shadows = IMG.shadows;
+  if (!shadows || !shadows.complete) return;
+
+  for (const t of trees) {
+    const isLarge = t.size === 'Size_03';
+    // Use row 3-5 shadows (medium, 5x3 tiles) for Size_03, row 6-7 (small) for Size_02
+    const shadowSx = 0;
+    const shadowSy = isLarge ? 3 * 16 : 6 * 16;
+    const shadowSw = isLarge ? 5 * 16 : 2 * 16;
+    const shadowSh = isLarge ? 2 * 16 : 2 * 16;
+    const shadowTw = isLarge ? 4 : 2;
+    const shadowTh = isLarge ? 2 : 1;
+
+    ctx.globalAlpha = 0.4;
+    ctx.drawImage(shadows,
+      shadowSx, shadowSy, shadowSw, shadowSh,
+      (t.x + 0.5) * T, (t.y + 1) * T, shadowTw * T, shadowTh * T
+    );
+    ctx.globalAlpha = 1.0;
+  }
+}
+
+function renderTrees() {
+  const treeImgs = [IMG.tree1, IMG.tree2, IMG.tree3];
+  for (const t of trees) {
+    const img = treeImgs[t.model];
+    if (!img || !img.complete) continue;
+    const scale = t.size === 'Size_02' ? 0.7 : 1;
+    const w = img.width * SCALE * scale;
+    const h = img.height * SCALE * scale;
+    ctx.drawImage(img, t.x * T, t.y * T - h + T * 2, w, h);
+  }
+}
+
+function renderVegetation() {
+  const veg = IMG.vegetation;
+  if (!veg || !veg.complete) return;
+  for (const v of vegetationPatches) {
+    ctx.drawImage(veg,
+      v.sx * 16, v.sy * 16, v.sw * 16, v.sh * 16,
+      v.x * T, v.y * T, v.sw * T, v.sh * T
+    );
+  }
+}
+
+// Fix 5: Door sprite definitions from Furniture.png rows 17-20
+// Rows 17-20 in Furniture.png contain door/archway sprites
+const DOOR_SPRITES = {
+  closed_h: { sx: 0*16, sy: 17*16, sw: 2*16, sh: 3*16 },  // Horizontal closed door (2×3 tiles)
+  closed_v: { sx: 4*16, sy: 17*16, sw: 2*16, sh: 3*16 },  // Vertical closed door (2×3 tiles)
+};
+
+function renderDoors() {
+  for (let i = 0; i < DOORS.length; i++) {
+    const d = DOORS[i];
+    const state = doorStates ? doorStates[i] : null;
+    const isOpen = !state || state.open;
+
+    // Always draw floor underneath door position
+    drawTile(IMG.floorTiles, 16, 16, 16, 16, d.x, d.y);
+    if (d.dir === 'h' && d.x + 1 < MAP_W) {
+      drawTile(IMG.floorTiles, 16, 16, 16, 16, d.x + 1, d.y);
+    }
+    if (d.dir === 'v' && d.y + 1 < MAP_H) {
+      drawTile(IMG.floorTiles, 16, 16, 16, 16, d.x, d.y + 1);
+    }
+
+    // Fix 5: Draw closed door sprite when no agent nearby
+    if (!isOpen && IMG.furniture && IMG.furniture.complete) {
+      const ds = d.dir === 'v' ? DOOR_SPRITES.closed_v : DOOR_SPRITES.closed_h;
+      ctx.drawImage(IMG.furniture,
+        ds.sx, ds.sy, ds.sw, ds.sh,
+        d.x * T - T/2, (d.y - 1) * T, (ds.sw / 16) * T, (ds.sh / 16) * T
+      );
+    }
+    // When open: just show the floor tile (door is "open" — current behavior)
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// CLICK DETECTION
+// ═══════════════════════════════════════════════════════════════════
+
+let selectedAgent = null;
+
+canvas.addEventListener('click', e => {
+  if (isDragging) return;
+  // Convert screen coords to world coords
+  const rect = canvas.getBoundingClientRect();
+  const sx = (e.clientX - rect.left);
+  const sy = (e.clientY - rect.top);
+  const wx = sx / zoom - camX;
+  const wy = sy / zoom - camY;
+
+  // Check agents (reverse order = topmost first)
+  for (let i = agents.length - 1; i >= 0; i--) {
+    if (agents[i].containsPoint(wx, wy)) {
+      selectAgent(agents[i]);
+      return;
+    }
+  }
+  closePanel();
+});
+
+function selectAgent(agent) {
+  selectedAgent = agent;
+  document.getElementById('panel-name').textContent = agent.name;
+  document.getElementById('panel-role').textContent = agent.role;
+  document.getElementById('panel-status').textContent = agent.status;
+  document.getElementById('panel-session').textContent = agent.session || '—';
+  const tasksEl = document.getElementById('panel-tasks');
+  tasksEl.innerHTML = '';
+  if (agent.currentTask) {
+    const div = document.createElement('div');
+    div.className = 'task';
+    div.textContent = agent.currentTask;
+    tasksEl.appendChild(div);
+  }
+  document.getElementById('agent-panel').classList.add('open');
+
+  // Emit event for data bridge
+  if (window.SpawnKit && SpawnKit.emit) {
+    SpawnKit.emit('agent:select', agent.id);
+  }
+}
+
+function closePanel() {
+  selectedAgent = null;
+  document.getElementById('agent-panel').classList.remove('open');
+}
+window.closePanel = closePanel;
+
+// ═══════════════════════════════════════════════════════════════════
+// DATA BRIDGE INTEGRATION
+// ═══════════════════════════════════════════════════════════════════
+
+const AGENT_ID_MAP = {
+  main:     'apomac',
+  forge:    'forge',
+  hunter:   'hunter',
+  atlas:    'atlas',
+  echo:     'echo',
+  sentinel: 'sentinel',
+};
+
+function syncFromDataBridge() {
+  if (!window.SpawnKit || !SpawnKit.data) return;
+  const data = SpawnKit.data;
+
+  // Update mode badge
+  document.getElementById('mode-badge').textContent = SpawnKit.mode === 'live' ? 'LIVE' : 'DEMO';
+
+  // Sync agents
+  if (data.agents) {
+    for (const bridgeAgent of data.agents) {
+      const localId = AGENT_ID_MAP[bridgeAgent.parent || bridgeAgent.id];
+      if (!localId) continue;
+      const agent = agents.find(a => a.id === localId);
+      if (!agent) continue;
+
+      // Map status
+      const s = bridgeAgent.status || 'idle';
+      if (s === 'working' || s === 'active' || s === 'busy') {
+        agent.status = 'working';
+        // Use role-specific work animation instead of plain idle
+        if (agent.workAnim) {
+          agent.setWorkAnim();
+        } else {
+          agent.setDirection('idle'); // Fix 2: use setDirection for bodyA
+        }
+        if (agent.room !== getRoomForRole(agent.id)) {
+          agent.moveToRoom(getRoomForRole(agent.id));
+        }
+      } else if (s === 'idle' || s === 'available') {
+        agent.status = 'idle';
+        agent.setDirection('idle'); // Fix 2: use setDirection for bodyA
+      } else if (s === 'brainstorm' || s === 'meeting') {
+        agent.status = 'brainstorm';
+        agent.moveToRoom('meetingRoom'); // Fix 4: uses assignMeetingSeat internally
+      } else if (s === 'error' || s === 'crashed') {
+        agent.status = 'error';
+      }
+
+      agent.session = bridgeAgent.session || '';
+      agent.currentTask = bridgeAgent.currentTask || bridgeAgent.task || '';
+      if (agent.currentTask && agent.status === 'working') {
+        agent.say(agent.currentTask.substring(0, 40), 5);
+      }
+    }
+  }
+
+  // Sync sub-agents
+  if (data.subagents) {
+    const activeSubIds = new Set(data.subagents.filter(s => s.status !== 'completed' && s.status !== 'dead').map(s => s.id || s.sessionId));
+
+    // Spawn new sub-agents
+    for (const sa of data.subagents) {
+      const saId = sa.id || sa.sessionId;
+      if (sa.status === 'completed' || sa.status === 'dead') continue;
+      if (!subAgents.find(a => a.id === saId)) {
+        const newSa = spawnSubAgent(sa.label || sa.name || saId, sa.parent);
+        newSa.id = saId;
+        newSa.currentTask = sa.task || sa.label || '';
+        newSa.say(newSa.currentTask.substring(0, 30), 3);
+      }
+    }
+
+    // Despawn completed sub-agents
+    for (const sa of [...subAgents]) {
+      if (!activeSubIds.has(sa.id)) {
+        despawnSubAgent(sa);
+      }
+    }
+  }
+
+  // Stats
+  const agentCount = agents.filter(a => a.status !== 'dead').length;
+  const missionCount = data.missions ? data.missions.filter(m => m.status === 'active').length : 0;
+  const subCount = subAgents.length;
+  document.getElementById('stat-agents').textContent = agentCount + ' agents';
+  document.getElementById('stat-missions').textContent = missionCount + ' missions';
+  document.getElementById('stat-subagents').textContent = subCount + ' sub-agents';
+}
+
+function getRoomForRole(agentId) {
+  const map = {
+    apomac: 'ceoOffice', forge: 'ctoLab', hunter: 'croOffice',
+    atlas: 'cooOffice', echo: 'cmoStudio', sentinel: 'auditorPost'
+  };
+  return map[agentId] || 'openSpace';
+}
+
+// Listen for data bridge events
+if (window.SpawnKit) {
+  SpawnKit.on('data:refresh', syncFromDataBridge);
+  SpawnKit.on('subagent:spawn', (data) => {
+    spawnSubAgent(data.label || data.name, data.parent);
+  });
+  SpawnKit.on('subagent:complete', (data) => {
+    const sa = subAgents.find(a => a.id === (data.id || data.sessionId));
+    if (sa) despawnSubAgent(sa);
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// AMBIENT BEHAVIORS (Demo mode — agents roam and do things)
+// ═══════════════════════════════════════════════════════════════════
+
+let behaviorTimer = 0;
+const BEHAVIOR_INTERVAL = 5; // seconds between random behavior updates
+
+const TASK_PHRASES = {
+  apomac:   ['Reviewing roadmap', 'Board meeting prep', 'Vision planning', 'Approving PRs'],
+  forge:    ['Building theme', 'Code review', 'Architecture', 'Debugging sprites'],
+  hunter:   ['Pipeline review', 'Deal closing', 'Revenue analysis', 'Lead scoring'],
+  atlas:    ['Ops check', 'Fleet coordination', 'Process optimization', 'Resource allocation'],
+  echo:     ['Content draft', 'Brand strategy', 'Campaign launch', 'Social analytics'],
+  sentinel: ['Audit run', 'Security scan', 'Compliance check', 'Code review'],
+};
+
+function updateAmbientBehavior(dt) {
+  if (SpawnKit && SpawnKit.mode === 'live') return; // Only in demo mode
+
+  behaviorTimer += dt;
+  if (behaviorTimer < BEHAVIOR_INTERVAL) return;
+  behaviorTimer = 0;
+
+  for (const agent of agents) {
+    if (agent.status === 'dead') continue;
+    if (agent.path.length > 0) continue; // busy walking
+
+    const roll = Math.random();
+    if (roll < 0.15) {
+      // Go to meeting room
+      agent.moveToRoom('meetingRoom');
+      agent.status = 'brainstorm';
+      agent.say('Meeting time!', 3);
+    } else if (roll < 0.25) {
+      // Go to break room
+      agent.moveToRoom('breakRoom');
+      agent.status = 'idle';
+      agent.say('Coffee break ☕', 3);
+    } else if (roll < 0.5) {
+      // Back to own office, working
+      agent.moveToRoom(getRoomForRole(agent.id));
+      agent.status = 'working';
+      // Use role-specific work animation
+      if (agent.workAnim) {
+        agent.setWorkAnim();
+      }
+      const tasks = TASK_PHRASES[agent.id];
+      if (tasks) {
+        const task = tasks[Math.floor(Math.random() * tasks.length)];
+        agent.currentTask = task;
+        agent.say(task, 4);
+      }
+    } else if (roll < 0.6) {
+      // Wander within room
+      const r = ROOMS[agent.room];
+      if (r) {
+        const tx = r.x + 1 + Math.floor(Math.random() * (r.w - 2));
+        const ty = r.y + 1 + Math.floor(Math.random() * (r.h - 2));
+        agent.moveTo(tx, ty);
+      }
+    }
+    // else: stay put
+  }
+
+  // Random sub-agent spawn/despawn in demo mode
+  if (Math.random() < 0.2 && subAgents.length < 4) {
+    const names = ['TaskRunner-01', 'CodeBuilder-02', 'DataProc-03', 'Researcher-04', 'OpsRunner-05'];
+    const name = names[Math.floor(Math.random() * names.length)];
+    const sa = spawnSubAgent(name, 'forge');
+    sa.currentTask = 'Processing task...';
+    sa.say('On it!', 2);
+  }
+  if (Math.random() < 0.15 && subAgents.length > 0) {
+    despawnSubAgent(subAgents[0]);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// MAIN LOOP
+// ═══════════════════════════════════════════════════════════════════
+
+let lastTime = performance.now();
+let syncTimer = 0;
+
+function gameLoop(now) {
+  const dt = Math.min((now - lastTime) / 1000, 0.1);
+  lastTime = now;
+
+  // Periodic data sync
+  syncTimer += dt;
+  if (syncTimer >= 2) {
+    syncTimer = 0;
+    syncFromDataBridge();
+  }
+
+  // Update agents
+  for (const agent of agents) {
+    agent.update(dt);
+  }
+
+  // Fix 5: Update door open/close states
+  updateDoors(dt);
+
+  // Ambient behavior
+  updateAmbientBehavior(dt);
+
+  // Update clock
+  const d = new Date();
+  document.getElementById('stat-time').textContent =
+    d.toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' });
+
+  // ─── RENDER ───
+  ctx.save();
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Fill background
+  ctx.fillStyle = '#1a1a2e';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Apply camera
+  ctx.scale(zoom, zoom);
+  ctx.translate(camX, camY);
+
+  // Disable smoothing for pixel art
+  ctx.imageSmoothingEnabled = false;
+
+  // Layer 1: Ground/grass + paths
+  renderGround();
+
+  // Layer 2: Room floors
+  renderFloors();
+
+  // Layer 3: Doors (floor patches)
+  renderDoors();
+
+  // Layer 4: Walls (with variations)
+  renderWalls();
+
+  // Layer 5: Room labels (with banners)
+  renderRoomLabels();
+
+  // Layer 6a: Tree shadows (below trees)
+  renderTreeShadows();
+
+  // Layer 6b: Vegetation patches
+  renderVegetation();
+
+  // Layer 6c: Trees
+  renderTrees();
+
+  // Fix 7: Layer 7+8 — Interleaved Z-sorting: agents + tall furniture by Y position
+  // Furniture sorted by bottom edge (ty + th), agents by their y position
+  const renderables = [
+    ...agents.map(a => ({
+      type: 'agent', obj: a,
+      sortY: a.y,
+      draw: () => a.draw(ctx)
+    })),
+    ...furnitureItems.map(f => ({
+      type: 'furn', obj: f,
+      sortY: f.ty + f.th,
+      draw: () => drawFurnitureItem(f)
+    })),
+  ];
+  renderables.sort((a, b) => a.sortY - b.sortY);
+  for (const r of renderables) r.draw();
+
+  // Selection highlight
+  if (selectedAgent) {
+    const sa = selectedAgent;
+    ctx.save();
+    ctx.strokeStyle = '#5f8';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([3, 3]);
+    // Fix 1: Use normalized render size for selection box
+    const dw = RENDER_SIZE * SCALE;
+    const dh = RENDER_SIZE * SCALE;
+    ctx.strokeRect(
+      sa.x * T - dw/2 + T/2 - 2,
+      sa.y * T - dh + T - 2,
+      dw + 4, dh + 4
+    );
+    ctx.restore();
+  }
+
+  ctx.restore();
+
+  requestAnimationFrame(gameLoop);
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// LOADING SCREEN & INIT
+// ═══════════════════════════════════════════════════════════════════
+
+function drawLoadingScreen() {
+  ctx.fillStyle = '#1a1a2e';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.font = '12px "Press Start 2P"';
+  ctx.fillStyle = '#5f8';
+  ctx.textAlign = 'center';
+  ctx.fillText('⚔ SPAWNKIT HQ', canvas.width/2, canvas.height/2 - 20);
+  ctx.font = '8px "Press Start 2P"';
+  ctx.fillStyle = '#8ab';
+  ctx.fillText(`Loading assets... ${loadedCount}/${totalImages}`, canvas.width/2, canvas.height/2 + 10);
+}
+
+function waitForLoad() {
+  drawLoadingScreen();
+  if (loadedCount >= totalImages) {
+    // All loaded — start!
+    console.log('[SpawnKit HQ] All assets loaded. Starting game loop.');
+    // Build accessory offscreen canvases from NPC idle sprites
+    initAccessories();
+    syncFromDataBridge();
+
+    // Kick off initial agent positions with slight random offset
+    for (const agent of agents) {
+      const r = ROOMS[agent.room];
+      if (r) {
+        agent.x = r.x + 2 + Math.floor(Math.random() * (r.w - 4));
+        agent.y = r.y + 2 + Math.floor(Math.random() * (r.h - 4));
+      }
+    }
+
+    requestAnimationFrame(gameLoop);
+  } else {
+    requestAnimationFrame(waitForLoad);
+  }
+}
+
+// Start loading check
+requestAnimationFrame(waitForLoad);
+
+// Start live data if available
+if (window.SpawnKit && SpawnKit.startLive) {
+  try { SpawnKit.startLive(); } catch(e) {}
+}
+
+console.log('[SpawnKit HQ] Green Iso theme initialized. Mode:', window.SpawnKit ? SpawnKit.mode : 'standalone');
+</script>
+
+<!-- SpawnKit Shared Panels Integration -->
+<script src="../src/spawnkit-panels.js"></script>
+    <script src="../src/fleet-client.js"></script>
+    <script src="../src/fleet-bootstrap.js"></script>
+<script>
+    // Initialize SpawnKit Panels for Green Iso theme
+    SpawnKitPanels.init({ theme: 'green-iso' });
+
+    // Wire Green Iso interactions to panels
+    document.addEventListener('click', function(e) {
+        // Agent character click → detail panel
+        var character = e.target.closest('.character, [data-agent]');
+        if (character && character.dataset.agent) {
+            SpawnKitPanels.openAgentDetail(character.dataset.agent);
+            return;
+        }
+
+        // Furniture/room interactions
+        var furniture = e.target.closest('.furniture, .room-object');
+        if (furniture) {
+            var furnitureType = furniture.dataset.furniture || furniture.className;
+            if (furnitureType.includes('desk') || furnitureType.includes('computer')) {
+                SpawnKitPanels.openMissionsOverlay();
+            } else if (furnitureType.includes('bookshelf') || furnitureType.includes('filing')) {
+                SpawnKitPanels.openMemoryOverlay();
+            } else if (furnitureType.includes('phone') || furnitureType.includes('conference')) {
+                SpawnKitPanels.openChatOverlay();
+            }
+            return;
+        }
+
+        // Panel triggers
+        var panelTrigger = e.target.closest('[data-panel]');
+        if (panelTrigger) {
+            var panelType = panelTrigger.dataset.panel;
+            switch(panelType) {
+                case 'logs':
+                    SpawnKitPanels.openLogsOverlay();
+                    break;
+                case 'chat':
+                    SpawnKitPanels.openChatOverlay();
+                    break;
+                case 'cron':
+                    SpawnKitPanels.openCronOverlay();
+                    break;
+                case 'memory':
+                    SpawnKitPanels.openMemoryOverlay();
+                    break;
+                case 'missions':
+                    SpawnKitPanels.openMissionsOverlay();
+                    break;
+                case 'cockpit':
+                    SpawnKitPanels.openCockpitOverlay();
+                    break;
+            }
+        }
+    });
+
+    // Green Iso bonus interactions
+    function addGreenIsoInteractions() {
+        // Agent pathfinding to meeting room during brainstorms
+        function moveAgentToMeetingRoom(agentId) {
+            var agent = document.querySelector('[data-agent="' + agentId + '"]');
+            var meetingRoom = document.querySelector('.meeting-room, .conference-room');
+            if (agent && meetingRoom) {
+                // Simple animation to meeting room
+                var agentRect = agent.getBoundingClientRect();
+                var meetingRect = meetingRoom.getBoundingClientRect();
+                
+                agent.style.transition = 'transform 2s ease-in-out';
+                agent.style.transform = `translate(${meetingRect.left - agentRect.left + 20}px, ${meetingRect.top - agentRect.top + 20}px)`;
+                
+                setTimeout(() => {
+                    agent.style.transition = '';
+                    agent.style.transform = '';
+                }, 3000);
+            }
+        }
+
+        // Speech bubbles for current tasks
+        function showTaskSpeechBubble(agentElement, task) {
+            var existing = agentElement.querySelector('.task-bubble');
+            if (existing) existing.remove();
+
+            var bubble = document.createElement('div');
+            bubble.className = 'task-bubble';
+            bubble.style.cssText = `
+                position: absolute;
+                top: -40px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: rgba(0,0,0,0.9);
+                color: #4CAF50;
+                border: 1px solid #4CAF50;
+                padding: 6px 10px;
+                font-size: 10px;
+                font-family: 'Fira Code', monospace;
+                white-space: nowrap;
+                z-index: 100;
+                animation: greenIsoTaskBubble 3s ease-out forwards;
+                border-radius: 4px;
+                box-shadow: 0 0 10px rgba(76, 175, 80, 0.3);
+            `;
+            bubble.textContent = '> ' + task;
+            agentElement.style.position = 'relative';
+            agentElement.appendChild(bubble);
+            setTimeout(() => bubble.remove(), 3000);
+        }
+
+        // Furniture interaction hints
+        function addFurnitureHints() {
+            // Add click hints to furniture
+            var desks = document.querySelectorAll('.desk, .computer, .workstation');
+            desks.forEach(function(desk) {
+                if (!desk.dataset.furniture) desk.dataset.furniture = 'desk';
+                addInteractionHint(desk, 'Click for TODO panel');
+            });
+
+            var bookshelves = document.querySelectorAll('.bookshelf, .filing, .archive');
+            bookshelves.forEach(function(shelf) {
+                if (!shelf.dataset.furniture) shelf.dataset.furniture = 'bookshelf';
+                addInteractionHint(shelf, 'Click for Memory panel');
+            });
+
+            var phones = document.querySelectorAll('.phone, .conference, .meeting-room');
+            phones.forEach(function(phone) {
+                if (!phone.dataset.furniture) phone.dataset.furniture = 'phone';
+                addInteractionHint(phone, 'Click for Chat panel');
+            });
+        }
+
+        function addInteractionHint(element, hintText) {
+            element.addEventListener('mouseenter', function() {
+                var hint = document.createElement('div');
+                hint.className = 'interaction-hint';
+                hint.style.cssText = `
+                    position: absolute;
+                    top: -25px;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    background: rgba(0,0,0,0.8);
+                    color: #8BC34A;
+                    padding: 4px 8px;
+                    font-size: 9px;
+                    white-space: nowrap;
+                    border-radius: 3px;
+                    z-index: 150;
+                    pointer-events: none;
+                `;
+                hint.textContent = hintText;
+                element.style.position = 'relative';
+                element.appendChild(hint);
+            });
+
+            element.addEventListener('mouseleave', function() {
+                var hint = element.querySelector('.interaction-hint');
+                if (hint) hint.remove();
+            });
+        }
+
+        // Add CSS for Green Iso animations
+        var style = document.createElement('style');
+        style.textContent = `
+            @keyframes greenIsoTaskBubble {
+                0% { opacity: 0; transform: translateX(-50%) translateY(10px); }
+                10% { opacity: 1; transform: translateX(-50%) translateY(0); }
+                90% { opacity: 1; transform: translateX(-50%) translateY(0); }
+                100% { opacity: 0; transform: translateX(-50%) translateY(-10px); }
+            }
+            .green-iso-console {
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: rgba(0,0,0,0.9);
+                color: #4CAF50;
+                padding: 10px;
+                border: 1px solid #4CAF50;
+                font-family: 'Fira Code', monospace;
+                font-size: 12px;
+                min-width: 250px;
+                max-width: 400px;
+                max-height: 200px;
+                overflow-y: auto;
+                z-index: 200;
+                border-radius: 4px;
+                box-shadow: 0 0 20px rgba(76, 175, 80, 0.2);
+            }
+            .green-iso-console-line {
+                margin: 2px 0;
+                padding: 1px 0;
+                border-bottom: 1px solid rgba(76, 175, 80, 0.1);
+            }
+            .green-iso-hud {
+                position: fixed;
+                bottom: 20px;
+                left: 20px;
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+                z-index: 100;
+            }
+            .green-iso-hud-btn {
+                padding: 8px 12px;
+                background: rgba(0,0,0,0.8);
+                color: #4CAF50;
+                border: 1px solid #4CAF50;
+                font-family: 'Fira Code', monospace;
+                font-size: 10px;
+                cursor: pointer;
+                transition: all 0.2s;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+            }
+            .green-iso-hud-btn:hover {
+                background: rgba(76, 175, 80, 0.1);
+                box-shadow: 0 0 10px rgba(76, 175, 80, 0.3);
+            }
+        `;
+        document.head.appendChild(style);
+
+        // System console for live updates
+        function createSystemConsole() {
+            var console = document.createElement('div');
+            console.className = 'green-iso-console';
+            console.innerHTML = `
+                <div class="green-iso-console-line">SPAWNKIT_SYS_INIT_OK</div>
+                <div class="green-iso-console-line">FLEET_AGENTS_ONLINE: 6</div>
+                <div class="green-iso-console-line">PANEL_SYSTEM_READY</div>
+            `;
+            document.body.appendChild(console);
+
+            // Add periodic system messages
+            setInterval(function() {
+                var agents = SpawnKitPanels.getAgents();
+                var activeCount = Object.keys(agents).filter(function(id) {
+                    return agents[id].status !== 'idle';
+                }).length;
+                
+                var messages = [
+                    'HEARTBEAT_CHECK_OK',
+                    'FLEET_STATUS_NOMINAL',
+                    'ACTIVE_AGENTS: ' + activeCount,
+                    'MEMORY_SYNC_COMPLETE',
+                    'MISSION_QUEUE_UPDATED',
+                    'LOG_ROTATION_OK'
+                ];
+                
+                var line = document.createElement('div');
+                line.className = 'green-iso-console-line';
+                line.textContent = '[' + new Date().toLocaleTimeString() + '] ' + 
+                    messages[Math.floor(Math.random() * messages.length)];
+                console.appendChild(line);
+                
+                // Keep only last 10 lines
+                while (console.children.length > 10) {
+                    console.removeChild(console.firstChild);
+                }
+            }, 10000);
+        }
+
+        // Update agent states and show task bubbles
+        setInterval(function() {
+            var agents = SpawnKitPanels.getAgents();
+            Object.keys(agents).forEach(function(agentId) {
+                var agent = agents[agentId];
+                if (agent.status !== 'idle' && Math.random() < 0.1) {
+                    var agentElements = document.querySelectorAll('[data-agent="' + agentId + '"]');
+                    agentElements.forEach(function(el) {
+                        showTaskSpeechBubble(el, agent.task || 'Processing...');
+                    });
+                }
+            });
+        }, 8000);
+
+        // Initialize features
+        createSystemConsole();
+        addFurnitureHints();
+
+        // Random brainstorm meetings
+        setInterval(function() {
+            if (Math.random() < 0.1) {
+                var agents = Object.keys(SpawnKitPanels.getAgents());
+                var randomAgent = agents[Math.floor(Math.random() * agents.length)];
+                moveAgentToMeetingRoom(randomAgent);
+            }
+        }, 30000);
+    }
+
+    // Initialize Green Iso interactions
+    addGreenIsoInteractions();
+
+    // Add Green Iso HUD
+    function addGreenIsoHUD() {
+        var hud = document.createElement('div');
+        hud.className = 'green-iso-hud';
+        hud.innerHTML = `
+            <button class="green-iso-hud-btn" data-panel="cockpit">█ ADMIN TERM</button>
+            <button class="green-iso-hud-btn" data-panel="missions">█ TASK QUEUE</button>
+            <button class="green-iso-hud-btn" data-panel="logs">█ SYS LOGS</button>
+            <button class="green-iso-hud-btn" data-panel="chat">█ COMM LINK</button>
+            <button class="green-iso-hud-btn" data-panel="memory">█ MEM BANK</button>
+        `;
+        document.body.appendChild(hud);
+    }
+
+    // Initialize after a delay for proper loading
+    setTimeout(function() {
+        addGreenIsoHUD();
+    }, 1000);
+
+    console.log('💚 Green Iso theme loaded with all 18 SpawnKit features!');
+</script>
+</body>
+</html>
