@@ -178,6 +178,54 @@ function loadImage(path) {
 }
 
 // ═══════════════════════════════════════════════════════════════════
+// KENNEY MINI-CHARACTER SPRITES
+// ═══════════════════════════════════════════════════════════════════
+const KENNEY_BASE = 'assets/kenney-mini-characters/samples/';
+
+const KENNEY_CHARS = {
+  'female-a': { idle: 8, walk: 8 },
+  'female-c': { idle: 8, walk: 8 },
+  'male-a':   { idle: 8, walk: 8 },
+  'male-c':   { idle: 8, walk: 8 },
+  'male-d':   { idle: 8, walk: 8 },
+  'male-e':   { idle: 8, walk: 8 },
+};
+
+function loadKenneyImage(path) {
+  // path already includes KENNEY_BASE prefix; src is relative to HTML file
+  if (imageCache[path]) return imageCache[path];
+  totalImages++;
+  const img = new Image();
+  img.src = path;
+  img.onload  = () => { loadedCount++; };
+  img.onerror = () => { console.warn('[Kenney] Failed:', path); loadedCount++; };
+  imageCache[path] = img;
+  return img;
+}
+
+function loadKenneyFrames(charId) {
+  const spec = KENNEY_CHARS[charId];
+  if (!spec) return;
+  const anims = ['idle', 'walk'];
+  const dirs  = ['NE', 'NW', 'SE', 'SW'];
+  for (const anim of anims) {
+    const frameCount = spec[anim];
+    for (const dir of dirs) {
+      for (let f = 0; f < frameCount; f++) {
+        const fname = 'frame_' + String(f).padStart(3, '0') + '.png';
+        const path = `${KENNEY_BASE}character-${charId}/${anim}_character-${charId}/${dir}/${fname}`;
+        loadKenneyImage(path);
+      }
+    }
+  }
+}
+
+function getKenneyDir(dx, dy) {
+  if (Math.abs(dx) > Math.abs(dy)) return dx > 0 ? 'SE' : 'NW';
+  return dy > 0 ? 'SW' : 'NE';
+}
+
+// ═══════════════════════════════════════════════════════════════════
 // SPRITE DEFINITIONS  (Body_A only, village animations)
 // ═══════════════════════════════════════════════════════════════════
 const SPRITE_DEFS = {
@@ -327,6 +375,8 @@ class Agent {
     this.y         = cfg.homeY;
     this.facing    = 'down';
     this.facingLeft= false;
+    this.kenneyChar = cfg.kenneyChar || null;
+    this.kenneyDir  = 'SE';
     this.animState = 'idle_down';
     this.animFrame = 0;
     this.animTimer = 0;
@@ -369,6 +419,10 @@ class Agent {
       this.facing = 'side';
     }
     this.facingLeft = dx < 0;
+    // Also update iso direction for Kenney sprites
+    if (dx !== 0 || dy !== 0) {
+      this.kenneyDir = getKenneyDir(dx, dy);
+    }
   }
 
   setDirectionalAnim(base) {
@@ -494,39 +548,62 @@ class Agent {
     }
   }
 
-  draw(ctx) {
-    const def = SPRITE_DEFS.bodyA;
-    const anim = def[this.animState] || def.idle_down;
-    const img = imageCache[anim.path];
+  drawKenney(ctx) {
+    const charId = this.kenneyChar;
+    const anim = (this.status === 'walking') ? 'walk' : 'idle';
+    const frameCount = KENNEY_CHARS[charId][anim];
+    const frame = Math.floor(this.animFrame % frameCount);
+    const dir = this.kenneyDir || 'SE';
+    const fname = 'frame_' + String(frame).padStart(3, '0') + '.png';
+    const path = `${KENNEY_BASE}character-${charId}/${anim}_character-${charId}/${dir}/${fname}`;
+    const img = imageCache[path];
     if (!img || !img.complete) return;
+    const drawW = 64 * SCALE;
+    const drawH = 64 * SCALE;
+    const px = this.x * T - drawW / 2 + T / 2;
+    const py = this.y * T - drawH + T;
+    ctx.save();
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(img, px, py, drawW, drawH);
+    ctx.restore();
+  }
 
-    const sx = this.animFrame * anim.fw;
+  draw(ctx) {
     const drawW = RENDER_SIZE * SCALE;
     const drawH = RENDER_SIZE * SCALE;
     const px = this.x * T - drawW / 2 + T / 2;
     const py = this.y * T - drawH + T;
 
-    ctx.save();
-    ctx.imageSmoothingEnabled = false;
-
-    if (this.facingLeft) {
-      ctx.translate(px + drawW, py);
-      ctx.scale(-1, 1);
-      ctx.drawImage(img, sx, 0, anim.fw, anim.fh, 0, 0, drawW, drawH);
-      // Tint overlay
-      ctx.globalCompositeOperation = 'source-atop';
-      ctx.globalAlpha = this.tintAlpha;
-      ctx.fillStyle = this.tint;
-      ctx.fillRect(0, 0, drawW, drawH);
+    if (this.kenneyChar) {
+      // Kenney iso sprite rendering — replaces spritesheet body
+      this.drawKenney(ctx);
     } else {
-      ctx.drawImage(img, sx, 0, anim.fw, anim.fh, px, py, drawW, drawH);
-      ctx.globalCompositeOperation = 'source-atop';
-      ctx.globalAlpha = this.tintAlpha;
-      ctx.fillStyle = this.tint;
-      ctx.fillRect(px, py, drawW, drawH);
+      // Original Pixel Crawler spritesheet rendering
+      const def = SPRITE_DEFS.bodyA;
+      const anim = def[this.animState] || def.idle_down;
+      const img = imageCache[anim.path];
+      if (img && img.complete) {
+        const sx = this.animFrame * anim.fw;
+        ctx.save();
+        ctx.imageSmoothingEnabled = false;
+        if (this.facingLeft) {
+          ctx.translate(px + drawW, py);
+          ctx.scale(-1, 1);
+          ctx.drawImage(img, sx, 0, anim.fw, anim.fh, 0, 0, drawW, drawH);
+          ctx.globalCompositeOperation = 'source-atop';
+          ctx.globalAlpha = this.tintAlpha;
+          ctx.fillStyle = this.tint;
+          ctx.fillRect(0, 0, drawW, drawH);
+        } else {
+          ctx.drawImage(img, sx, 0, anim.fw, anim.fh, px, py, drawW, drawH);
+          ctx.globalCompositeOperation = 'source-atop';
+          ctx.globalAlpha = this.tintAlpha;
+          ctx.fillStyle = this.tint;
+          ctx.fillRect(px, py, drawW, drawH);
+        }
+        ctx.restore();
+      }
     }
-
-    ctx.restore();
 
     // Status diamond
     const indicatorX = this.x * T + T / 2;
@@ -645,6 +722,7 @@ const AGENT_DEFS = [
     defaultTask:'Building the future',
     startWorking:true,
     label:'ApoMac',
+    kenneyChar: 'male-e',
   },
   {
     id:'forge', name:'Forge', role:'Blacksmith',
@@ -654,6 +732,7 @@ const AGENT_DEFS = [
     defaultTask:'Forging tools',
     startWorking:true,
     label:'Forge',
+    kenneyChar: 'male-a',
   },
   {
     id:'hunter', name:'Hunter', role:'Scout',
@@ -664,6 +743,7 @@ const AGENT_DEFS = [
     startWorking:false,
     patrolRoute: PATROL_ROUTES.hunter,
     label:'Hunter',
+    kenneyChar: 'male-d',
   },
   {
     id:'atlas', name:'Atlas', role:'Forester',
@@ -673,6 +753,7 @@ const AGENT_DEFS = [
     defaultTask:'Collecting timber',
     startWorking:true,
     label:'Atlas',
+    kenneyChar: 'male-c',
   },
   {
     id:'echo', name:'Echo', role:'Herbalist',
@@ -682,6 +763,7 @@ const AGENT_DEFS = [
     defaultTask:'Tending the riverside',
     startWorking:true,
     label:'Echo',
+    kenneyChar: 'female-a',
   },
   {
     id:'sentinel', name:'Sentinel', role:'Fisher',
@@ -691,12 +773,20 @@ const AGENT_DEFS = [
     defaultTask:'Fishing at the river',
     startWorking:true,
     label:'Sentinel',
+    kenneyChar: 'female-c',
   },
 ];
 
 for (const def of AGENT_DEFS) {
   agents.push(new Agent(def));
 }
+
+// Preload Kenney frames for all agents that use them
+const _usedKenneyChars = new Set(AGENT_DEFS.map(d => d.kenneyChar).filter(Boolean));
+for (const charId of _usedKenneyChars) {
+  loadKenneyFrames(charId);
+}
+console.log('[SpawnKit Village] Kenney chars preloading:', [..._usedKenneyChars]);
 
 // ═══════════════════════════════════════════════════════════════════
 // SCENE PROPS (stations, trees, decorations)
