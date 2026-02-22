@@ -833,6 +833,7 @@ let vpX = 0, vpY = 0;
 let drag = false, dsx = 0, dsy = 0, dvx = 0, dvy = 0;
 
 const MAP = 20;
+window._debugFacing = new URLSearchParams(window.location.search).has('debug');
 
 // ================================================================
 // ISO MATH
@@ -1476,13 +1477,15 @@ function drawChar(ch) {
   // Draw character sprite
   ctx.drawImage(sprite, drawX, drawY, dw, dh);
   
-  // DEBUG: facing direction (disabled for demo)
-  // ctx.save();
-  // ctx.font = `bold ${Math.max(8, 10 * scale)}px monospace`;
-  // ctx.textAlign = 'center';
-  // ctx.fillStyle = ch.moving ? '#ff0' : '#0ff';
-  // ctx.fillText(dir + (ch.moving ? '→' : '•'), s.x, feetScreenY + 12 * scale);
-  // ctx.restore();
+  // DEBUG: facing direction — enable with ?debug=1 in URL
+  if (window._debugFacing) {
+    ctx.save();
+    ctx.font = `bold ${Math.max(8, 10 * scale)}px monospace`;
+    ctx.textAlign = 'center';
+    ctx.fillStyle = ch.moving ? '#ff0' : '#0ff';
+    ctx.fillText(ch.facing + (ch.moving ? '→' : '•'), s.x, feetScreenY + 12 * scale);
+    ctx.restore();
+  }
 
   // Emotion emoji (floating above head)
   if (ch.emotionEmoji && ch.emotionTimer > 0) {
