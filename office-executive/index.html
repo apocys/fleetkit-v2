@@ -844,6 +844,70 @@
             gap: 8px;
         }
 
+        /* ── Communication Hub Tabs ──────────────────── */
+        .comm-tabs {
+            display: flex;
+            align-items: center;
+            gap: 2px;
+            padding: 12px 24px 0;
+            border-bottom: 1px solid var(--border-subtle);
+            flex-shrink: 0;
+        }
+
+        .comm-tab {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            border: none;
+            background: transparent;
+            border-radius: 8px 8px 0 0;
+            font-family: var(--font-family);
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-tertiary);
+            cursor: pointer;
+            transition: all 0.25s var(--ease-smooth);
+            position: relative;
+        }
+
+        .comm-tab:hover {
+            color: var(--text-secondary);
+            background: rgba(0, 0, 0, 0.03);
+        }
+
+        .comm-tab.active {
+            color: var(--text-primary);
+            background: transparent;
+        }
+
+        .comm-tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 8px;
+            right: 8px;
+            height: 2px;
+            background: var(--exec-blue);
+            border-radius: 1px;
+        }
+
+        .comm-tab-icon {
+            font-size: 14px;
+            line-height: 1;
+        }
+
+        /* ── Tab Content Areas ───────────────────────── */
+        .comm-tab-content {
+            display: none;
+            flex: 1;
+            flex-direction: column;
+        }
+
+        .comm-tab-content.active {
+            display: flex;
+        }
+
         .mailbox-close {
             width: 32px;
             height: 32px;
@@ -983,6 +1047,160 @@
             height: 1px;
             background: var(--border-subtle);
             margin: 0 24px;
+        }
+
+        /* ── Live Chat Tab Styles ────────────────────── */
+        .chat-tab-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            scrollbar-width: thin;
+            scrollbar-color: var(--exec-gray-300) transparent;
+        }
+
+        .chat-tab-messages::-webkit-scrollbar { width: 4px; }
+        .chat-tab-messages::-webkit-scrollbar-thumb { background: var(--exec-gray-300); border-radius: 2px; }
+
+        .chat-tab-msg {
+            max-width: 80%; 
+            padding: 10px 14px;
+            border-radius: 14px; 
+            font-size: 13px; 
+            line-height: 1.45;
+            animation: chatMsgIn 0.25s var(--ease-smooth);
+        }
+
+        .chat-tab-msg--user {
+            align-self: flex-end;
+            background: var(--exec-blue);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .chat-tab-msg--ai {
+            align-self: flex-start;
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border-bottom-left-radius: 4px;
+        }
+
+        .chat-tab-msg-time {
+            font-size: 10px; 
+            opacity: 0.6; 
+            margin-top: 4px;
+        }
+
+        .chat-tab-msg--user .chat-tab-msg-time { text-align: right; }
+
+        .chat-tab-input-bar {
+            display: flex; 
+            align-items: center; 
+            gap: 10px;
+            padding: 12px 20px; 
+            border-top: 1px solid var(--border-subtle);
+            flex-shrink: 0;
+        }
+
+        .chat-tab-input {
+            flex: 1; 
+            height: 40px; 
+            padding: 0 14px;
+            background: var(--bg-tertiary); 
+            border: 1px solid var(--border-subtle);
+            border-radius: 20px; 
+            color: var(--text-primary);
+            font-family: var(--font-family); 
+            font-size: 13px;
+            outline: none; 
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .chat-tab-input:focus {
+            border-color: var(--exec-blue);
+            box-shadow: 0 0 0 3px var(--exec-blue-muted);
+        }
+
+        .chat-tab-input::placeholder { color: var(--text-tertiary); }
+
+        .chat-tab-send {
+            width: 40px; 
+            height: 40px;
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            background: var(--exec-blue); 
+            color: white;
+            border: none; 
+            border-radius: 50%; 
+            cursor: pointer;
+            font-size: 16px; 
+            transition: all 0.2s var(--ease-smooth);
+            flex-shrink: 0;
+        }
+
+        .chat-tab-send:hover { 
+            background: var(--exec-blue-hover); 
+            transform: scale(1.05); 
+        }
+
+        .chat-tab-send:active { transform: scale(0.95); }
+
+        .chat-tab-empty {
+            flex: 1; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            color: var(--text-tertiary); 
+            font-size: 13px; 
+            text-align: center;
+            padding: 40px;
+        }
+
+        /* ── Activity Tab Styles ─────────────────────── */
+        .activity-tab-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px 24px;
+            scrollbar-width: thin;
+            scrollbar-color: var(--exec-gray-300) transparent;
+        }
+
+        .activity-tab-content::-webkit-scrollbar { width: 4px; }
+        .activity-tab-content::-webkit-scrollbar-thumb { background: var(--exec-gray-300); border-radius: 2px; }
+
+        .activity-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .activity-item:last-child { border-bottom: none; }
+
+        .activity-icon {
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+
+        .activity-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .activity-text {
+            font-size: 13px;
+            color: var(--text-primary);
+            line-height: 1.4;
+            margin-bottom: 2px;
+        }
+
+        .activity-time {
+            font-size: 11px;
+            color: var(--text-tertiary);
         }
 
         /* ═══════════════════════════════════════════════════
@@ -2312,6 +2530,120 @@
         }
 
         /* ═══════════════════════════════════════════════════
+           Remote Office Panel Styles
+           ═══════════════════════════════════════════════════ */
+        .remote-office-card {
+            background: var(--card-bg, rgba(0,0,0,0.03));
+            border: 1px solid rgba(0,0,0,0.06);
+            border-radius: 14px;
+            padding: 16px;
+            margin-bottom: 12px;
+        }
+        .remote-office-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 10px;
+        }
+        .remote-office-emoji {
+            font-size: 32px;
+        }
+        .remote-office-name {
+            font-size: 16px;
+            font-weight: 600;
+        }
+        .remote-office-status {
+            font-size: 12px;
+            padding: 2px 8px;
+            border-radius: 6px;
+            display: inline-block;
+            margin-top: 2px;
+        }
+        .remote-office-status.online {
+            background: #34C75920;
+            color: #34C759;
+        }
+        .remote-office-status.offline, .remote-office-status.stale {
+            background: #FF3B3020;
+            color: #FF3B30;
+        }
+        .remote-agent {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 0;
+            font-size: 13px;
+            border-bottom: 1px solid rgba(0,0,0,0.04);
+        }
+        .remote-agent:last-child { border-bottom: none; }
+        .remote-agent-status {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        .remote-agent-status.active { background: #34C759; }
+        .remote-agent-status.idle { background: #8E8E93; }
+        .remote-message {
+            padding: 10px;
+            background: rgba(0,122,255,0.05);
+            border-radius: 10px;
+            margin-bottom: 8px;
+            font-size: 13px;
+        }
+        .remote-message-from {
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        .remote-message-text {
+            color: #555;
+            line-height: 1.5;
+        }
+        .remote-message-time {
+            font-size: 11px;
+            color: #999;
+            margin-top: 4px;
+        }
+        .remote-compose {
+            display: flex;
+            gap: 8px;
+            margin-top: 16px;
+            padding-top: 12px;
+            border-top: 1px solid rgba(0,0,0,0.06);
+        }
+        .remote-compose input {
+            flex: 1;
+            padding: 10px 14px;
+            border: 1px solid rgba(0,0,0,0.1);
+            border-radius: 10px;
+            font-size: 13px;
+            font-family: inherit;
+            background: white;
+            outline: none;
+        }
+        .remote-compose input:focus {
+            border-color: #007AFF;
+        }
+        .remote-compose button {
+            padding: 10px 18px;
+            background: #007AFF;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 13px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        .remote-compose button:hover {
+            background: #0056CC;
+        }
+
+        /* ═══════════════════════════════════════════════════
+           Overlay styles for remote office (reusing cron overlay styles)
+           ═══════════════════════════════════════════════════ */
+        /* Remote Office — uses cron-overlay pattern for consistency */
+
+        /* ═══════════════════════════════════════════════════
            Reduced Motion
            ═══════════════════════════════════════════════════ */
         @media (prefers-reduced-motion: reduce) {
@@ -2822,6 +3154,10 @@
                 <span class="statusbar-action-icon" aria-hidden="true">⚙️</span>
                 <span>Settings</span>
             </button>
+            <button class="statusbar-action" id="remoteBtn" aria-label="Remote Offices">
+                <span class="statusbar-action-icon" aria-hidden="true">🏙️</span>
+                <span>Remote</span>
+            </button>
             <div class="exec-command-input">
                 <input
                     type="text"
@@ -2838,19 +3174,84 @@
     </div>
     <!-- /exec-container -->
 
-    <!-- ═══ Mailbox Slide-In Panel ═══ -->
-    <div class="mailbox-overlay" id="mailboxOverlay" role="dialog" aria-modal="true" aria-label="CEO Mailbox">
+    <!-- ═══ CEO Communications Hub (was Mailbox) ═══ -->
+    <div class="mailbox-overlay" id="mailboxOverlay" role="dialog" aria-modal="true" aria-label="CEO Communications">
         <div class="mailbox-backdrop" id="mailboxBackdrop"></div>
         <div class="mailbox-panel">
             <div class="mailbox-header">
                 <div class="mailbox-title">
                     <span aria-hidden="true">📬</span>
-                    Inbox
+                    CEO Communications
                 </div>
-                <button class="mailbox-close" id="mailboxClose" aria-label="Close mailbox">×</button>
+                <button class="mailbox-close" id="mailboxClose" aria-label="Close communications">×</button>
             </div>
-            <div class="mailbox-messages" id="mailboxMessages">
-                <!-- Messages populated by JS -->
+            
+            <!-- Communication Tabs -->
+            <div class="comm-tabs">
+                <button class="comm-tab active" id="chatTab" data-tab="chat">
+                    <span class="comm-tab-icon" aria-hidden="true">💬</span>
+                    <span>Chat</span>
+                </button>
+                <button class="comm-tab" id="messagesTab" data-tab="messages">
+                    <span class="comm-tab-icon" aria-hidden="true">📩</span>
+                    <span>Messages</span>
+                </button>
+                <button class="comm-tab" id="activityTab" data-tab="activity">
+                    <span class="comm-tab-icon" aria-hidden="true">🔔</span>
+                    <span>Activity</span>
+                </button>
+            </div>
+
+            <!-- Chat Tab Content -->
+            <div class="comm-tab-content active" id="chatTabContent">
+                <div class="chat-tab-messages" id="chatTabMessages">
+                    <div class="chat-tab-empty" id="chatTabEmpty">No messages yet. Send a message to the CEO.</div>
+                </div>
+                <div class="chat-tab-input-bar">
+                    <input class="chat-tab-input" id="chatTabInput" type="text" placeholder="Send a message..." autocomplete="off" spellcheck="false" />
+                    <button class="chat-tab-send" id="chatTabSend" aria-label="Send">↑</button>
+                </div>
+            </div>
+
+            <!-- Messages Tab Content -->
+            <div class="comm-tab-content" id="messagesTabContent">
+                <div class="mailbox-messages" id="mailboxMessages">
+                    <!-- Messages populated by JS -->
+                </div>
+            </div>
+
+            <!-- Activity Tab Content -->
+            <div class="comm-tab-content" id="activityTabContent">
+                <div class="activity-tab-content" id="activityTabContent">
+                    <div class="activity-item">
+                        <span class="activity-icon">🤖</span>
+                        <div class="activity-content">
+                            <div class="activity-text">Forge spawned sub-agent for optimization task</div>
+                            <div class="activity-time">5 minutes ago</div>
+                        </div>
+                    </div>
+                    <div class="activity-item">
+                        <span class="activity-icon">📅</span>
+                        <div class="activity-content">
+                            <div class="activity-text">Morning brief cron executed</div>
+                            <div class="activity-time">2 hours ago</div>
+                        </div>
+                    </div>
+                    <div class="activity-item">
+                        <span class="activity-icon">✅</span>
+                        <div class="activity-content">
+                            <div class="activity-text">Sentinel audit passed (Grade A)</div>
+                            <div class="activity-time">3 hours ago</div>
+                        </div>
+                    </div>
+                    <div class="activity-item">
+                        <span class="activity-icon">🔄</span>
+                        <div class="activity-content">
+                            <div class="activity-text">Fleet relay connected</div>
+                            <div class="activity-time">8 hours ago</div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -2913,8 +3314,8 @@
         </div>
     </div>
 
-    <!-- ═══ CEO Chat Panel (Feature 2) ═══ -->
-    <div class="chat-overlay" id="chatOverlay" role="dialog" aria-modal="true" aria-label="CEO Chat">
+    <!-- ═══ CEO Chat Panel (HIDDEN - moved to Communications Hub) ═══ -->
+    <div class="chat-overlay" id="chatOverlay" role="dialog" aria-modal="true" aria-label="CEO Chat" style="display: none;">
         <div class="chat-backdrop" id="chatBackdrop"></div>
         <div class="chat-panel">
             <div class="chat-header">
@@ -2928,15 +3329,7 @@
                 <div class="chat-empty" id="chatEmpty">No messages yet. Send a mission to the CEO.</div>
             </div>
             <div class="chat-input-bar">
-                <select id="chatRouteSelect" style="padding:4px 8px;border-radius:8px;border:1px solid var(--border-medium);background:var(--bg-tertiary);color:var(--text-secondary);font-size:11px;font-family:var(--font-family);cursor:pointer;flex-shrink:0;" title="Route message to...">
-                    <option value="ceo">📬 Direct to CEO</option>
-                    <option value="atlas">📊 Via Atlas (COO)</option>
-                    <option value="forge">🔨 Via Forge (CTO)</option>
-                    <option value="hunter">💰 Via Hunter (CRO)</option>
-                    <option value="echo">📢 Via Echo (CMO)</option>
-                    <option value="sentinel">🛡️ Via Sentinel (QA)</option>
-                </select>
-                <input class="chat-input" id="chatInput" type="text" placeholder="Send a mission..." autocomplete="off" spellcheck="false" style="flex:1;" />
+                <input class="chat-input" id="chatInput" type="text" placeholder="Send a message..." autocomplete="off" spellcheck="false" style="flex:1;" />
                 <button class="chat-send" id="chatSend" aria-label="Send">↑</button>
             </div>
         </div>
@@ -3010,17 +3403,29 @@
         </div>
     </div>
 
+    <!-- ═══ Remote Offices Panel ═══ -->
+    <div class="cron-overlay" id="remoteOverlay" role="dialog" aria-modal="true" aria-label="Remote Offices">
+        <div class="cron-backdrop" id="remoteBackdrop"></div>
+        <div class="cron-panel" style="max-width:520px;">
+            <div class="cron-header">
+                <div class="cron-title">
+                    <span aria-hidden="true">🏙️</span>
+                    Remote Offices
+                </div>
+                <button class="cron-close" id="remoteClose" aria-label="Close">×</button>
+            </div>
+            <div class="cron-body" id="remoteBody">
+                <div class="cron-empty">Connecting to fleet relay…</div>
+            </div>
+        </div>
+    </div>
+
     <!-- ═══ Toast ═══ -->
     <div class="exec-toast" id="execToast"></div>
 
     <!-- ═══════════════════════════════════════════════════
          JavaScript — Interactions & State Bridge
          ═══════════════════════════════════════════════════ -->
-    <!-- Real Data Configuration for Sycopa's fleet-relay -->
-    <script>
-        window.OC_RELAY_URL = 'https://fleet.spawnkit.ai';
-        window.OC_RELAY_TOKEN = 'sk-oc-proxy-spawnkit-2026';
-    </script>
     <script src="../src/data-bridge.js"></script>
     <script>
     // Read config from setup wizard (if available)
@@ -3044,6 +3449,7 @@
 
     (function() {
         'use strict';
+        try {
 
         /* ═══════════════════════════════════════════════
            Configuration & Mock Data
@@ -3236,16 +3642,27 @@
         });
 
         /* ═══════════════════════════════════════════════
-           Mailbox Panel — Open / Close
+           CEO Communications Hub (was Mailbox) — Open / Close / Tabs
            ═══════════════════════════════════════════════ */
 
-        function openMailbox(e) {
-            if (e) e.stopPropagation();
+        function openMailbox(tab) {
+            if (typeof tab === 'object') tab = undefined; // Handle event object
             closeTodoPanel();
             closeDetailPanel();
+            closeChatPanel(); // Close old chat panel if open
             mailboxOverlay.classList.add('open');
-            mailboxClose.focus();
+            
+            // Switch to specified tab or default to Messages when opened via mailbox button
+            if (tab === 'chat') {
+                switchCommTab('chat');
+                document.getElementById('chatTabInput').focus();
+            } else {
+                switchCommTab('messages'); // Default to Messages tab when opened via CEO mailbox button
+                mailboxClose.focus();
+            }
+            
             document.body.style.overflow = 'hidden';
+            loadChatTabTranscript(); // Load chat data when opening
         }
 
         function closeMailbox() {
@@ -3254,7 +3671,41 @@
             mailboxBtn.focus();
         }
 
-        mailboxBtn.addEventListener('click', openMailbox);
+        function switchCommTab(tabName) {
+            // Update tab buttons
+            document.querySelectorAll('.comm-tab').forEach(tab => {
+                tab.classList.remove('active');
+                if (tab.dataset.tab === tabName) {
+                    tab.classList.add('active');
+                }
+            });
+            
+            // Update tab content
+            document.querySelectorAll('.comm-tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            const targetContent = document.getElementById(tabName + 'TabContent');
+            if (targetContent) {
+                targetContent.classList.add('active');
+            }
+            
+            // Load content based on tab
+            if (tabName === 'chat') {
+                loadChatTabTranscript();
+            } else if (tabName === 'messages') {
+                loadLiveMessages(); // Refresh messages
+            } else if (tabName === 'activity') {
+                loadActivityData();
+            }
+        }
+
+        // Tab click handlers
+        document.getElementById('chatTab').addEventListener('click', () => switchCommTab('chat'));
+        document.getElementById('messagesTab').addEventListener('click', () => switchCommTab('messages'));
+        document.getElementById('activityTab').addEventListener('click', () => switchCommTab('activity'));
+
+        mailboxBtn.addEventListener('click', () => openMailbox('messages')); // Open to Messages tab
         mailboxBackdrop.addEventListener('click', closeMailbox);
         mailboxClose.addEventListener('click', closeMailbox);
         
@@ -3283,9 +3734,9 @@
             var avatarId = AVATAR_MAP[agent.name];
             var avatarEl = document.getElementById('detailAvatar');
             if (avatarId) {
-                avatarEl.innerHTML = '<svg><use href="#' + avatarId + '"/></svg><div class="detail-hero-status" id="detailStatusDot"></div>';
+                avatarEl.innerHTML = '<svg><use href="#' + esc(avatarId) + '"/></svg><div class="detail-hero-status" id="detailStatusDot"></div>';
             } else {
-                avatarEl.innerHTML = '<div style="width:64px;height:64px;border-radius:50%;background:' + agent.color + ';display:flex;align-items:center;justify-content:center;color:#fff;font-size:24px;font-weight:700">' + agent.name.charAt(0) + '</div>';
+                avatarEl.innerHTML = '<div style="width:64px;height:64px;border-radius:50%;background:' + esc(agent.color) + ';display:flex;align-items:center;justify-content:center;color:#fff;font-size:24px;font-weight:700">' + esc(agent.name.charAt(0)) + '</div>';
             }
             var sc = (agent.status === 'active' || agent.status === 'working') ? 'var(--status-active)' :
                      (agent.status === 'busy' || agent.status === 'building') ? 'var(--status-busy)' : 'var(--status-idle)';
@@ -3330,15 +3781,15 @@
             var todoData = LIVE_AGENT_DATA[agentId];
             if (todoData) {
                 body += '<div class="detail-section"><div class="detail-section-title">Current Task</div>';
-                body += '<div style="font-size:14px;font-weight:500;color:var(--text-primary)">' + (todoData.currentTask || agent.task || 'Idle') + '</div>';
+                body += '<div style="font-size:14px;font-weight:500;color:var(--text-primary)">' + esc(todoData.currentTask || agent.task || 'Idle') + '</div>';
                 body += '</div>';
 
                 if (todoData.todos && todoData.todos.length) {
                     body += '<div class="detail-section"><div class="detail-section-title">TODO List</div>';
                     todoData.todos.forEach(function(todo) {
                         body += '<div class="detail-todo-item' + (todo.status === 'done' ? ' detail-todo-item--done' : '') + '">';
-                        body += '<span class="detail-todo-icon">' + todo.icon + '</span>';
-                        body += '<span class="detail-todo-text">' + todo.text + '</span>';
+                        body += '<span class="detail-todo-icon">' + esc(todo.icon) + '</span>';
+                        body += '<span class="detail-todo-text">' + esc(todo.text) + '</span>';
                         body += '</div>';
                     });
                     body += '</div>';
@@ -3351,7 +3802,7 @@
                 body += '<div class="detail-section"><div class="detail-section-title">Skills</div>';
                 body += '<div class="detail-skill-chips" id="detailSkillChips">';
                 agentSkills.forEach(function(s, idx) {
-                    body += '<span class="detail-skill-chip" data-skill-idx="' + idx + '">' + (s.name || s) + ' <button class="skill-remove-btn" data-skill-name="' + (s.name || s) + '" title="Remove skill" style="background:none;border:none;cursor:pointer;color:var(--text-tertiary);font-size:11px;margin-left:4px;padding:0 2px;">×</button></span>';
+                    body += '<span class="detail-skill-chip" data-skill-idx="' + idx + '">' + esc(s.name || s) + ' <button class="skill-remove-btn" data-skill-name="' + esc(s.name || s) + '" title="Remove skill" style="background:none;border:none;cursor:pointer;color:var(--text-tertiary);font-size:11px;margin-left:4px;padding:0 2px;">×</button></span>';
                 });
                 body += '</div>';
                 body += '<button class="detail-add-skill-btn" id="addSkillBtn" style="margin-top:8px;padding:6px 14px;border-radius:8px;border:1px dashed var(--border-medium);background:transparent;color:var(--exec-blue);font-size:12px;font-weight:500;cursor:pointer;">+ Add Skill</button>';
@@ -3456,9 +3907,9 @@
                     // Replace soul excerpt with inline editor
                     var editHtml = '<div class="soul-editor" style="display:flex;flex-direction:column;gap:8px;">';
                     editHtml += '<label style="font-size:11px;color:var(--text-tertiary);">Name</label>';
-                    editHtml += '<input type="text" id="editName" value="' + (agent.name || '') + '" style="padding:6px 10px;border-radius:8px;border:1px solid var(--border-medium);font-size:13px;background:var(--bg-tertiary);color:var(--text-primary);" />';
+                    editHtml += '<input type="text" id="editName" value="' + esc(agent.name || '') + '" style="padding:6px 10px;border-radius:8px;border:1px solid var(--border-medium);font-size:13px;background:var(--bg-tertiary);color:var(--text-primary);" />';
                     editHtml += '<label style="font-size:11px;color:var(--text-tertiary);">Role</label>';
-                    editHtml += '<input type="text" id="editRole" value="' + (agent.role || '') + '" style="padding:6px 10px;border-radius:8px;border:1px solid var(--border-medium);font-size:13px;background:var(--bg-tertiary);color:var(--text-primary);" />';
+                    editHtml += '<input type="text" id="editRole" value="' + esc(agent.role || '') + '" style="padding:6px 10px;border-radius:8px;border:1px solid var(--border-medium);font-size:13px;background:var(--bg-tertiary);color:var(--text-primary);" />';
                     editHtml += '<label style="font-size:11px;color:var(--text-tertiary);">Traits</label>';
                     editHtml += '<input type="text" id="editTraits" placeholder="e.g. meticulous, strategic" style="padding:6px 10px;border-radius:8px;border:1px solid var(--border-medium);font-size:13px;background:var(--bg-tertiary);color:var(--text-primary);" />';
                     editHtml += '<div style="display:flex;gap:8px;margin-top:4px;">';
@@ -3616,7 +4067,9 @@
         // Close panels on Escape — all overlays
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
-                if (document.getElementById('missionsOverlay').classList.contains('open')) {
+                if (document.getElementById('remoteOverlay').classList.contains('open')) {
+                    closeRemotePanel();
+                } else if (document.getElementById('missionsOverlay').classList.contains('open')) {
                     closeMissionsPanel();
                 } else if (document.getElementById('settingsOverlay').classList.contains('open')) {
                     closeSettingsPanel();
@@ -3640,11 +4093,20 @@
 
         /* ── Update Mailbox Badge ───────────────────── */
         function updateMailboxBadge() {
-            var unreadCount = LIVE_MESSAGES.filter(function(msg) { return !msg.read; }).length;
+            var messagesUnread = LIVE_MESSAGES.filter(function(msg) { return !msg.read; }).length;
+            
+            // Count unread chat messages (simple heuristic: recent messages in chat history)
+            var chatUnread = 0;
+            if (chatHistory.length > 0) {
+                var recent = chatHistory.slice(-3).filter(function(m) { return m.role === 'ai' && !m.typing; });
+                chatUnread = recent.length; // Assume recent AI messages are unread
+            }
+            
+            var totalUnread = messagesUnread + chatUnread;
             var badge = document.getElementById('mailboxBadge');
             if (badge) {
-                badge.textContent = unreadCount;
-                if (unreadCount === 0) {
+                badge.textContent = totalUnread;
+                if (totalUnread === 0) {
                     badge.style.opacity = '0.5';
                 } else {
                     badge.style.opacity = '1';
@@ -3653,7 +4115,7 @@
             
             // Update mailbox button aria-label
             if (mailboxBtn) {
-                var label = 'Open mailbox — ' + unreadCount + ' unread message' + (unreadCount === 1 ? '' : 's');
+                var label = 'Open communications — ' + totalUnread + ' unread message' + (totalUnread === 1 ? '' : 's');
                 mailboxBtn.setAttribute('aria-label', label);
             }
         }
@@ -3775,17 +4237,17 @@
                 // Dispatch indicator
                 var dispatchHtml = '';
                 if (msg.assignedTo) {
-                    dispatchHtml = '<div class="mail-dispatch"><span>📨</span> <span class="mail-dispatch-arrow">→</span> <strong>' + msg.assignedTo + '</strong></div>';
+                    dispatchHtml = '<div class="mail-dispatch"><span>📨</span> <span class="mail-dispatch-arrow">→</span> <strong>' + esc(msg.assignedTo) + '</strong></div>';
                 }
 
                 item.innerHTML =
-                    '<div class="mail-avatar" style="background: ' + msg.color + ';" aria-hidden="true">' + avatarContent + '</div>' +
+                    '<div class="mail-avatar" style="background: ' + esc(msg.color) + ';" aria-hidden="true">' + avatarContent + '</div>' +
                     '<div class="mail-content">' +
                         '<div class="mail-header">' +
-                            '<span class="mail-sender">' + msg.sender + '</span>' +
-                            '<span class="mail-time">' + msg.time + '</span>' +
+                            '<span class="mail-sender">' + esc(msg.sender) + '</span>' +
+                            '<span class="mail-time">' + esc(msg.time) + '</span>' +
                         '</div>' +
-                        '<div class="mail-preview">' + msg.text + '</div>' +
+                        '<div class="mail-preview">' + esc(msg.text) + '</div>' +
                         '<div class="mail-flags">' + priorityFlag + '</div>' +
                         dispatchHtml +
                     '</div>' + unreadIndicator;
@@ -3886,10 +4348,10 @@
             if (e.key === 'Enter' && commandInput.value.trim()) {
                 var cmd = commandInput.value.trim();
                 commandInput.value = '';
-                // Open chat panel and send as mission
-                openChatPanel();
-                chatInput.value = cmd;
-                sendChatMessage();
+                // Open mailbox to chat tab and send as mission
+                openMailbox('chat');
+                chatTabInput.value = cmd;
+                sendChatTabMessage();
             }
         });
 
@@ -4030,111 +4492,147 @@
         setInterval(updateClock, 30000);
 
         /* ═══════════════════════════════════════════════
-           CEO Chat Panel (Feature 2)
+           Chat Tab Functionality (integrated into Communications Hub)
            ═══════════════════════════════════════════════ */
-        var chatOverlay  = document.getElementById('chatOverlay');
-        var chatBackdrop = document.getElementById('chatBackdrop');
-        var chatCloseBtn = document.getElementById('chatClose');
-        var chatMsgsEl   = document.getElementById('chatMessages');
-        var chatInput    = document.getElementById('chatInput');
-        var chatSendBtn  = document.getElementById('chatSend');
-        var chatEmptyEl  = document.getElementById('chatEmpty');
+        var chatTabMsgsEl = document.getElementById('chatTabMessages');
+        var chatTabInput = document.getElementById('chatTabInput');
+        var chatTabSendBtn = document.getElementById('chatTabSend');
+        var chatTabEmptyEl = document.getElementById('chatTabEmpty');
 
-        function openChatPanel() {
-            closeAllPanels();
-            chatOverlay.classList.add('open');
-            chatInput.focus();
-            document.body.style.overflow = 'hidden';
-            loadChatTranscript();
+        // Update chat button to open mailbox with chat tab
+        document.getElementById('chatBtn').addEventListener('click', () => openMailbox('chat'));
+
+        // Keep old chat panel references for compatibility but hide the panel
+        var chatOverlay = document.getElementById('chatOverlay');
+        if (chatOverlay) {
+            chatOverlay.style.display = 'none'; // Hide old chat panel
         }
+
         function closeChatPanel() {
-            chatOverlay.classList.remove('open');
+            // For compatibility - now handled by closeMailbox
+            if (chatOverlay) chatOverlay.classList.remove('open');
             document.body.style.overflow = '';
         }
 
-        document.getElementById('chatBtn').addEventListener('click', openChatPanel);
-        chatBackdrop.addEventListener('click', closeChatPanel);
-        chatCloseBtn.addEventListener('click', closeChatPanel);
-
-        function loadChatTranscript() {
+        /* ── Chat Tab Functions ─────────────────────── */
+        function loadChatTabTranscript() {
             if (!API) return;
             try {
                 var transcript = API.getTranscript('agent:main:main');
                 if (transcript && transcript.length > 0) {
                     chatHistory = transcript.slice(-50).map(function(m) {
                         return {
-                            role: m.role === 'user' ? 'user' : 'system',
+                            role: m.role === 'user' ? 'user' : 'ai',
                             text: m.text || m.content || '',
                             time: m.timestamp ? new Date(m.timestamp).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}) : ''
                         };
                     });
-                    renderChatMessages();
+                    renderChatTabMessages();
                 }
             } catch(e) { console.warn('Chat transcript load:', e); }
         }
 
-        function renderChatMessages() {
+        function renderChatTabMessages() {
             if (chatHistory.length === 0) {
-                chatEmptyEl.style.display = '';
+                chatTabEmptyEl.style.display = '';
                 return;
             }
-            chatEmptyEl.style.display = 'none';
-            chatMsgsEl.innerHTML = '';
+            chatTabEmptyEl.style.display = 'none';
+            chatTabMsgsEl.innerHTML = '';
             chatHistory.forEach(function(m) {
                 var div = document.createElement('div');
-                div.className = 'chat-msg chat-msg--' + m.role;
+                div.className = 'chat-tab-msg chat-tab-msg--' + m.role;
                 var preview = m.text.length > 300 ? m.text.substring(0, 300) + '…' : m.text;
-                div.innerHTML = '<div>' + preview.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</div>' +
-                    (m.time ? '<div class="chat-msg-time">' + m.time + '</div>' : '');
-                chatMsgsEl.appendChild(div);
+                div.innerHTML = '<div>' + esc(preview) + '</div>' +
+                    (m.time ? '<div class="chat-tab-msg-time">' + esc(m.time) + '</div>' : '');
+                chatTabMsgsEl.appendChild(div);
             });
-            chatMsgsEl.scrollTop = chatMsgsEl.scrollHeight;
+            chatTabMsgsEl.scrollTop = chatTabMsgsEl.scrollHeight;
         }
 
-        async function sendChatMessage() {
-            var text = chatInput.value.trim();
+        // Legacy function for compatibility
+        function loadChatTranscript() {
+            loadChatTabTranscript();
+        }
+
+        function renderChatMessages() {
+            renderChatTabMessages();
+        }
+
+        async function sendChatTabMessage() {
+            var text = chatTabInput.value.trim();
             if (!text) return;
-            chatInput.value = '';
+            chatTabInput.value = '';
 
             var now = new Date();
             var timeStr = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
             chatHistory.push({ role: 'user', text: text, time: timeStr });
-            renderChatMessages();
+            renderChatTabMessages();
 
-            // Determine target from route dropdown (NEW #6)
-            var routeDropdown = document.getElementById('chatRouteSelect');
-            var targetAgent = routeDropdown ? routeDropdown.value : 'ceo';
+            // Show typing indicator
+            chatHistory.push({ role: 'ai', text: '⌛ Thinking...', time: timeStr, typing: true });
+            renderChatTabMessages();
 
-            // Send via API — FIX #2: actually check success
-            if (API && typeof API.sendMission === 'function') {
-                try {
-                    var result = await API.sendMission(text, targetAgent);
-                    if (result && result.success) {
-                        var targetLabel = targetAgent === 'ceo' ? 'CEO inbox' : targetAgent + ' inbox';
-                        chatHistory.push({ role: 'system', text: '✅ Mission dispatched to ' + targetLabel, time: timeStr });
-                        renderChatMessages();
-                    } else {
-                        chatHistory.push({ role: 'system', text: '⚠️ Dispatch failed: ' + (result.error || 'Unknown error'), time: timeStr });
-                        renderChatMessages();
-                    }
-                } catch(e) {
-                    chatHistory.push({ role: 'system', text: '⚠️ Could not dispatch: ' + e.message, time: timeStr });
-                    renderChatMessages();
+            try {
+                // Send to live OpenClaw via fleet relay
+                const response = await fetch('https://fleet.spawnkit.ai/api/oc/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer sk-oc-proxy-spawnkit-2026',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ message: text })
+                });
+
+                // Remove typing indicator
+                chatHistory = chatHistory.filter(msg => !msg.typing);
+
+                if (!response.ok) {
+                    const error = await response.text();
+                    chatHistory.push({ role: 'ai', text: '⚠️ Request failed: ' + error, time: timeStr });
+                    renderChatTabMessages();
+                    return;
                 }
-            } else {
-                chatHistory.push({ role: 'system', text: '📡 API not connected — message queued', time: timeStr });
-                renderChatMessages();
+
+                const data = await response.json();
+                if (data.ok && data.result && data.result.reply) {
+                    // Display AI response (XSS-safe)
+                    chatHistory.push({ role: 'ai', text: esc(data.result.reply), time: timeStr });
+                } else {
+                    chatHistory.push({ role: 'ai', text: '⚠️ Invalid response: ' + JSON.stringify(data), time: timeStr });
+                }
+                renderChatTabMessages();
+
+            } catch (error) {
+                // Remove typing indicator
+                chatHistory = chatHistory.filter(msg => !msg.typing);
+                chatHistory.push({ role: 'ai', text: '⚠️ Network error: ' + esc(error.message), time: timeStr });
+                renderChatTabMessages();
             }
         }
 
-        chatSendBtn.addEventListener('click', sendChatMessage);
-        chatInput.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') { e.preventDefault(); sendChatMessage(); }
+        // Legacy function for compatibility
+        async function sendChatMessage() {
+            return sendChatTabMessage();
+        }
+
+        chatTabSendBtn.addEventListener('click', sendChatTabMessage);
+        chatTabInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') { e.preventDefault(); sendChatTabMessage(); }
         });
 
-        // Auto-refresh chat every 10s when open
+        /* ── Activity Tab Functions ────────────────── */
+        async function loadActivityData() {
+            // For now, keep static demo data. In future, this could load from API
+            // The activity content is already populated in HTML, so no action needed
+            console.log('Activity tab loaded');
+        }
+
+        // Auto-refresh chat every 10s when communications hub is open with chat tab active
         setInterval(function() {
-            if (chatOverlay.classList.contains('open')) loadChatTranscript();
+            if (mailboxOverlay.classList.contains('open') && document.getElementById('chatTab').classList.contains('active')) {
+                loadChatTabTranscript();
+            }
         }, 10000);
 
         /* ═══════════════════════════════════════════════
@@ -4192,7 +4690,7 @@
             var html = '';
             Object.keys(groups).forEach(function(owner) {
                 html += '<div class="cron-group">';
-                html += '<div class="cron-group-title">' + owner + '</div>';
+                html += '<div class="cron-group-title">' + esc(owner) + '</div>';
                 groups[owner].forEach(function(c) {
                     var statusCls = c.status === 'active' ? 'active' : c.status === 'error' ? 'error' : 'paused';
                     var icon = c.status === 'active' ? '⏰' : c.status === 'error' ? '❌' : '⏸️';
@@ -4200,12 +4698,12 @@
                     html += '<div class="cron-item">';
                     html += '<span class="cron-item-icon">' + icon + '</span>';
                     html += '<div class="cron-item-info">';
-                    html += '<div class="cron-item-name">' + (c.name || c.id || 'Unnamed') + '</div>';
+                    html += '<div class="cron-item-name">' + esc(c.name || c.id || 'Unnamed') + '</div>';
                     html += '<div class="cron-item-schedule">' + humanCron(c.schedule) + '</div>';
                     html += '<div class="cron-item-next">Next: ' + nextRun + '</div>';
                     html += '</div>';
-                    html += '<span class="cron-item-status cron-item-status--' + statusCls + '">' + (c.status || 'unknown') + '</span>';
-                    html += '<button class="cron-toggle ' + (c.status === 'active' ? 'on' : '') + '" data-cron-id="' + (c.id || '') + '" aria-label="Toggle"></button>';
+                    html += '<span class="cron-item-status cron-item-status--' + statusCls + '">' + esc(c.status || 'unknown') + '</span>';
+                    html += '<button class="cron-toggle ' + (c.status === 'active' ? 'on' : '') + '" data-cron-id="' + esc(c.id || '') + '" aria-label="Toggle"></button>';
                     html += '</div>';
                 });
                 html += '</div>';
@@ -4305,8 +4803,8 @@
                 html += '<div class="memory-daily-list">';
                 mem.daily.slice(0, 14).forEach(function(d) {
                     html += '<div class="memory-daily-item">';
-                    html += '<span class="memory-daily-item-date">' + (d.date || d.name || '—') + '</span>';
-                    html += '<span>' + (d.preview || d.description || 'Daily log') + '</span>';
+                    html += '<span class="memory-daily-item-date">' + esc(d.date || d.name || '—') + '</span>';
+                    html += '<span>' + esc(d.preview || d.description || 'Daily log') + '</span>';
                     html += '<span class="memory-daily-item-size">' + (d.size ? (d.size / 1024).toFixed(1) + ' KB' : '') + '</span>';
                     html += '</div>';
                 });
@@ -4341,6 +4839,12 @@
         }
 
         /* Close all panels helper */
+        function closeRemotePanel() {
+            var el = document.getElementById('remoteOverlay');
+            if (el) el.classList.remove('open');
+            document.body.style.overflow = '';
+        }
+
         function closeAllPanels() {
             closeMailbox();
             closeTodoPanel();
@@ -4349,6 +4853,7 @@
             closeChatPanel();
             closeCronPanel();
             closeMemoryPanel();
+            closeRemotePanel();
         }
 
         /* ═══════════════════════════════════════════════
@@ -4458,9 +4963,9 @@
                             var modelIdentity = window.ModelIdentity.getIdentity(subagent.model);
                             var roleEl = card.querySelector('.sub-agent-role');
                             if (roleEl) {
-                                roleEl.innerHTML = subagent.task + ' <span class="model-badge" style="color: ' + 
-                                    modelIdentity.color + '; font-size: 8px; font-weight: 600;">(' + 
-                                    modelIdentity.level + ')</span>';
+                                roleEl.innerHTML = esc(subagent.task) + ' <span class="model-badge" style="color: ' + 
+                                    esc(modelIdentity.color) + '; font-size: 8px; font-weight: 600;">(' + 
+                                    esc(modelIdentity.level) + ')</span>';
                             }
                         }
                     }
@@ -4536,8 +5041,8 @@
                         html += '<div class="cron-item">';
                         html += '<span class="cron-item-icon">🚀</span>';
                         html += '<div class="cron-item-info">';
-                        html += '<div class="cron-item-name">' + (sa.name || sa.label || sa.id) + '</div>';
-                        html += '<div class="cron-item-schedule">Parent: ' + (sa.parentAgent || 'main') + ' • ' + duration + 'm</div>';
+                        html += '<div class="cron-item-name">' + esc(sa.name || sa.label || sa.id) + '</div>';
+                        html += '<div class="cron-item-schedule">Parent: ' + esc(sa.parentAgent || 'main') + ' • ' + duration + 'm</div>';
                         html += '<div style="margin-top:4px;height:4px;background:var(--bg-tertiary);border-radius:2px;overflow:hidden;"><div style="width:' + Math.round(progress * 100) + '%;height:100%;background:var(--exec-blue);border-radius:2px;transition:width 0.3s;"></div></div>';
                         html += '</div>';
                         html += '<span class="cron-item-status cron-item-status--active">' + Math.round(progress * 100) + '%</span>';
@@ -4553,8 +5058,8 @@
                         html += '<div class="cron-item" style="opacity:0.7">';
                         html += '<span class="cron-item-icon">✅</span>';
                         html += '<div class="cron-item-info">';
-                        html += '<div class="cron-item-name">' + (sa.name || sa.label || sa.id) + '</div>';
-                        html += '<div class="cron-item-schedule">Parent: ' + (sa.parentAgent || 'main') + '</div>';
+                        html += '<div class="cron-item-name">' + esc(sa.name || sa.label || sa.id) + '</div>';
+                        html += '<div class="cron-item-schedule">Parent: ' + esc(sa.parentAgent || 'main') + '</div>';
                         html += '</div>';
                         html += '<span class="cron-item-status" style="color:var(--status-active);">Done</span>';
                         html += '</div>';
@@ -4569,7 +5074,7 @@
                         html += '<div class="cron-item" style="opacity:0.6">';
                         html += '<span class="cron-item-icon">❌</span>';
                         html += '<div class="cron-item-info">';
-                        html += '<div class="cron-item-name">' + (sa.name || sa.label || sa.id) + '</div>';
+                        html += '<div class="cron-item-name">' + esc(sa.name || sa.label || sa.id) + '</div>';
                         html += '</div>';
                         html += '<span class="cron-item-status cron-item-status--error">Error</span>';
                         html += '</div>';
@@ -4579,7 +5084,7 @@
 
                 missionsBody.innerHTML = html;
             } catch(e) {
-                missionsBody.innerHTML = '<div class="cron-empty">Error loading missions: ' + e.message + '</div>';
+                missionsBody.innerHTML = '<div class="cron-empty">Error loading missions: ' + esc(e.message) + '</div>';
             }
         }
 
@@ -4634,7 +5139,7 @@
                 html += '<div class="cron-item" style="flex-wrap:wrap;">';
                 html += '<div class="cron-item-info" style="flex:1;min-width:150px;">';
                 html += '<div class="cron-item-name">' + providerLabels[prov] + '</div>';
-                html += '<div class="cron-item-schedule" style="font-family:monospace;font-size:11px;">' + masked + '</div>';
+                html += '<div class="cron-item-schedule" style="font-family:monospace;font-size:11px;">' + esc(masked) + '</div>';
                 html += '</div>';
                 html += '<div style="display:flex;gap:4px;align-items:center;">';
                 html += '<input type="password" id="apikey-' + prov + '" placeholder="' + (providerPrefixes[prov] || '') + '..." style="width:160px;padding:4px 8px;border-radius:6px;border:1px solid var(--border-medium);font-size:11px;font-family:monospace;background:var(--bg-tertiary);color:var(--text-primary);" />';
@@ -4664,9 +5169,9 @@
             html += '<div></div>';
             html += '<div style="font-size:10px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.5px;">SpawnKit</div>';
             mappings.forEach(function(m) {
-                html += '<div style="font-size:13px;padding:4px 0;">' + m.icon + ' ' + m.openclaw + '</div>';
+                html += '<div style="font-size:13px;padding:4px 0;">' + m.icon + ' ' + esc(m.openclaw) + '</div>';
                 html += '<div style="font-size:12px;color:var(--exec-blue);text-align:center;">→</div>';
-                html += '<div style="font-size:13px;padding:4px 0;color:var(--text-secondary);">' + m.spawnkit + '</div>';
+                html += '<div style="font-size:13px;padding:4px 0;color:var(--text-secondary);">' + esc(m.spawnkit) + '</div>';
             });
             html += '</div>';
             html += '</div>';
@@ -4707,6 +5212,132 @@
                 });
             });
         }
+
+        /* ═══════════════════════════════════════════════
+           Remote Office Panel
+           ═══════════════════════════════════════════════ */
+        function openRemoteOverlay() {
+            closeAllPanels();
+            var overlay = document.getElementById('remoteOverlay');
+            overlay.classList.add('open');
+            document.body.style.overflow = 'hidden';
+            renderRemote();
+        }
+
+        function renderRemote() {
+            var body = document.getElementById('remoteBody');
+            if (!body) return;
+            
+            var isConnected = window.FleetClient && window.FleetClient.isConnected();
+            var offices = isConnected ? window.FleetClient.getOffices() : {};
+            var fleetMailbox = isConnected ? window.FleetClient.getMailbox() : [];
+            
+            var html = '<div style="margin-bottom:16px">';
+            html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">';
+            html += '<span style="font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:#8E8E93;font-weight:600">Connected Offices</span>';
+            html += '<span style="font-size:11px;color:' + (isConnected ? '#34C759' : '#FF3B30') + ';font-weight:500">' + (isConnected ? '● Connected' : '○ Disconnected') + '</span>';
+            html += '</div>';
+            
+            var officeKeys = Object.keys(offices);
+            if (officeKeys.length === 0) {
+                // Demo fallback
+                html += '<div class="remote-office-card">';
+                html += '<div class="remote-office-header">';
+                html += '<span class="remote-office-emoji">🎭</span>';
+                html += '<div><div class="remote-office-name">Sycopa HQ</div>';
+                html += '<div class="remote-office-status offline">Waiting for connection...</div></div>';
+                html += '</div>';
+                html += '<div style="font-size:12px;color:#8E8E93;padding:8px 0">Fleet relay: fleet.spawnkit.ai</div>';
+                html += '</div>';
+            } else {
+                officeKeys.forEach(function(id) {
+                    var office = offices[id];
+                    var statusClass = (office.status === 'online') ? 'online' : 'offline';
+                    var statusText = (office.status === 'online') ? 'Online' : (office.status === 'stale' ? 'Stale' : 'Offline');
+                    
+                    html += '<div class="remote-office-card">';
+                    html += '<div class="remote-office-header">';
+                    html += '<span class="remote-office-emoji">' + esc(office.officeEmoji || office.emoji || '🏢') + '</span>';
+                    html += '<div><div class="remote-office-name">' + esc(office.officeName || office.name || id) + '</div>';
+                    html += '<div class="remote-office-status ' + statusClass + '">' + statusText + '</div></div>';
+                    html += '</div>';
+                    
+                    // Show agents
+                    if (office.agents && office.agents.length > 0) {
+                        html += '<div style="margin:8px 0">';
+                        office.agents.forEach(function(agent) {
+                            html += '<div class="remote-agent">';
+                            html += '<div class="remote-agent-status ' + (agent.status || 'idle') + '"></div>';
+                            html += '<span>' + esc(agent.emoji || '🤖') + '</span>';
+                            html += '<span style="font-weight:500">' + esc(agent.name) + '</span>';
+                            html += '<span style="color:#8E8E93;font-size:12px">— ' + esc(agent.currentTask || 'Standby') + '</span>';
+                            html += '</div>';
+                        });
+                        html += '</div>';
+                        html += '<div style="font-size:12px;color:#8E8E93">' + office.agents.length + ' agents • ' + (office.activeMissions || 0) + ' missions • ' + (office.totalTokens || '0') + ' tokens</div>';
+                    }
+                    html += '</div>';
+                });
+            }
+            html += '</div>';
+            
+            // Inter-office messages section
+            html += '<div style="margin-bottom:16px">';
+            html += '<div style="font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:#8E8E93;font-weight:600;margin-bottom:12px">Inter-Office Messages</div>';
+            
+            if (fleetMailbox.length === 0) {
+                html += '<div style="padding:20px;text-align:center;color:#8E8E93;font-size:13px">📭 No inter-office messages yet</div>';
+            } else {
+                fleetMailbox.slice(-10).forEach(function(msg) {
+                    html += '<div class="remote-message">';
+                    html += '<div class="remote-message-from">' + esc(msg.from || 'Unknown') + ' → ' + esc(msg.to || 'You') + '</div>';
+                    html += '<div class="remote-message-text">' + esc(msg.text || '') + '</div>';
+                    if (msg.timestamp) {
+                        var d = new Date(msg.timestamp);
+                        html += '<div class="remote-message-time">' + d.toLocaleTimeString() + '</div>';
+                    }
+                    html += '</div>';
+                });
+            }
+            html += '</div>';
+            
+            // Compose
+            html += '<div class="remote-compose">';
+            html += '<input type="text" id="remoteMessageInput" placeholder="Send message to remote office..." onkeydown="if(event.key===\'Enter\')sendRemoteMessage()">';
+            html += '<button onclick="sendRemoteMessage()">Send</button>';
+            html += '</div>';
+            
+            body.innerHTML = html;
+        }
+
+        function sendRemoteMessage() {
+            var input = document.getElementById('remoteMessageInput');
+            if (!input || !input.value.trim()) return;
+            var text = input.value.trim();
+            
+            if (window.FleetClient && window.FleetClient.isConnected()) {
+                var offices = window.FleetClient.getOffices();
+                var firstOffice = Object.keys(offices)[0];
+                if (firstOffice) {
+                    FleetClient.sendMessage(firstOffice, text, 'medium');
+                    input.value = '';
+                    showToast('📬 Message sent to ' + (offices[firstOffice].officeName || firstOffice));
+                }
+            } else {
+                showToast('Not connected to fleet relay');
+            }
+        }
+
+        // Helper: escape HTML (if not already defined)
+        function esc(s) {
+            if (typeof s !== 'string') return '';
+            return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        }
+
+        // Wire up remote button + close handlers
+        document.getElementById('remoteBtn').addEventListener('click', openRemoteOverlay);
+        document.getElementById('remoteBackdrop').addEventListener('click', closeRemotePanel);
+        document.getElementById('remoteClose').addEventListener('click', closeRemotePanel);
 
         /* ═══════════════════════════════════════════════
            Decommission Animation (NEW #7)
@@ -4784,7 +5415,7 @@
                 if (active && active.length > 0) {
                     if (count) count.textContent = active.length;
                     preview.innerHTML = active.slice(0, 2).map(function(sa) {
-                        return '<div class="meeting-active">🔴 ' + (sa.label || 'sub-agent') + '</div>';
+                        return '<div class="meeting-active">🔴 ' + esc(sa.label || 'sub-agent') + '</div>';
                     }).join('');
                     if (active.length > 2) {
                         preview.innerHTML += '<div class="meeting-active" style="opacity:0.6">+' + (active.length - 2) + ' more</div>';
@@ -4821,10 +5452,33 @@
             if (typeof SpawnKitUX !== 'undefined') {
                 SpawnKitUX.ready();
             }
+
+            // Fleet client auto-refresh
+            if (window.FleetClient) {
+                FleetClient.on('office:update', function() {
+                    if (document.getElementById('remoteOverlay') && document.getElementById('remoteOverlay').classList.contains('open')) {
+                        renderRemote();
+                    }
+                });
+                FleetClient.on('message:new', function(msg) {
+                    showToast('📬 New message from ' + ((msg.message && msg.message.from) || 'remote'));
+                    if (document.getElementById('remoteOverlay') && document.getElementById('remoteOverlay').classList.contains('open')) {
+                        renderRemote();
+                    }
+                });
+            }
         });
 
+        } catch(e) {
+            console.error('SpawnKit Executive initialization error:', e);
+            // Safe error message escaping (fallback if esc() fails)
+            var errorMsg = e.message ? String(e.message).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;') : 'Unknown error';
+            document.body.innerHTML = '<div style="padding:40px;text-align:center;font-family:system-ui"><h2>⚠️ SpawnKit failed to load</h2><p style="color:#666">Please refresh the page. Error: ' + errorMsg + '</p></div>';
+        }
     })();
     </script>
 
+    <script src="../src/fleet-client.js"></script>
+    <script src="../src/fleet-bootstrap.js"></script>
 </body>
 </html>
