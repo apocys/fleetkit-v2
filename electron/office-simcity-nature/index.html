@@ -1065,14 +1065,9 @@ function getTinted(img, key) {
   tc.width = w; tc.height = h;
   const tctx = tc.getContext('2d');
   tctx.drawImage(img, 0, 0);
-  // Lighten dark shadow areas (back-facing sprites too dark from single sun light)
+  // Subtle warm tint only — no lightening (was washing out sprites)
   tctx.globalCompositeOperation = 'source-atop';
-  tctx.fillStyle = 'rgba(180, 190, 170, 0.12)';
-  tctx.fillRect(0, 0, w, h);
-  // Warm sepia tint
-  tctx.fillStyle = 'rgba(130, 110, 50, 0.08)';
-  tctx.fillRect(0, 0, w, h);
-  tctx.fillStyle = 'rgba(60, 90, 40, 0.04)';
+  tctx.fillStyle = 'rgba(100, 90, 40, 0.06)';
   tctx.fillRect(0, 0, w, h);
   tctx.globalCompositeOperation = 'source-over';
   _tintCache[key] = tc;
@@ -1449,14 +1444,14 @@ function drawChar(ch) {
   const { x, y } = iso(ch.c, ch.r);
   const s = toScreen(x, y);
 
-  // Scale character to fill ~1 tile height (adjusted for v5 sprites with larger content area)
-  const targetH = DH * scale * 1.62;
+  // Scale character to fit nicely in ~1 tile (v5 sprites have contentH ~107-131px)
+  const targetH = DH * scale * 1.2;
   const imgScale = targetH / metrics.contentH;
   const dw = 256 * imgScale;
   const dh = 256 * imgScale;
 
   // Position: feet at diamond center point
-  const feetScreenY = s.y + DH * scale * 0.15;
+  const feetScreenY = s.y + DH * scale * 0.35;
   const drawX = s.x - metrics.centerX * imgScale;
   const drawY = feetScreenY - metrics.feetY * imgScale;
 
