@@ -834,6 +834,7 @@ let drag = false, dsx = 0, dsy = 0, dvx = 0, dvy = 0;
 
 const MAP = 20;
 window._debugFacing = new URLSearchParams(window.location.search).has('debug');
+let selectedAgentName = null;
 
 // ================================================================
 // ISO MATH
@@ -1485,6 +1486,31 @@ function drawChar(ch) {
   ctx.fill();
   ctx.restore();
 
+  // Selection highlight — pulsing glow ring under selected agent
+  if (selectedAgentName && ch.agent.name === selectedAgentName) {
+    ctx.save();
+    const pulse = 0.6 + 0.4 * Math.sin(Date.now() * 0.004);
+    const glowW = shW * 1.8;
+    const glowH = shH * 1.8;
+    ctx.beginPath();
+    ctx.ellipse(s.x, feetScreenY, glowW, glowH, 0, 0, Math.PI * 2);
+    const agentCol = ch.agent.color || '#34C759';
+    const gg = ctx.createRadialGradient(s.x, feetScreenY, 0, s.x, feetScreenY, glowW);
+    gg.addColorStop(0, agentCol + Math.round(90 * pulse).toString(16).padStart(2,'0'));
+    gg.addColorStop(0.6, agentCol + Math.round(40 * pulse).toString(16).padStart(2,'0'));
+    gg.addColorStop(1, agentCol + '00');
+    ctx.fillStyle = gg;
+    ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(s.x, feetScreenY, shW * 1.3, shH * 1.3, 0, 0, Math.PI * 2);
+    ctx.strokeStyle = agentCol;
+    ctx.lineWidth = 2 * scale * pulse;
+    ctx.globalAlpha = 0.8 * pulse;
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+    ctx.restore();
+  }
+
   // Draw character sprite
   ctx.drawImage(sprite, drawX, drawY, dw, dh);
   
@@ -1706,6 +1732,7 @@ agents.forEach(a => {
   el.innerHTML = `<span class="dot" style="background:${a.color}"></span>${a.emoji} ${a.name}`;
   el.addEventListener('click', function(e) {
     e.stopPropagation();
+    selectedAgentName = a.name;
     if (typeof openVillageDetail === 'function') openVillageDetail(a);
   });
   labelsCont.appendChild(el);
@@ -1787,8 +1814,10 @@ cvs.addEventListener('click', e => {
     hit = agents.find(a => Math.abs(a.col - t.col) <= 1 && Math.abs(a.row - t.row) <= 1);
   }
   if (hit) {
+    selectedAgentName = hit.name;
     openVillageDetail(hit);
   } else {
+    selectedAgentName = null;
     closeVillageDetail();
   }
 });
