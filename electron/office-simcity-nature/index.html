@@ -697,6 +697,7 @@
   <button onclick="doZoom(1.25)">+</button>
   <button onclick="doZoom(0.8)">−</button>
   <button onclick="resetView()">⌂</button>
+  <button id="audioMuteBtn" onclick="toggleMute()" title="Toggle sound">🔇</button>
 </div>
 <canvas id="c"></canvas>
 
@@ -900,12 +901,12 @@ function screenToTile(sx, sy) {
 // AGENTS
 // ================================================================
 const agents = [
-  { name: 'ApoMac', role: 'CEO',      emoji: '🍎', color: '#007AFF', row: 6,  col: 5  },
-  { name: 'Forge',  role: 'CTO',      emoji: '🔨', color: '#FF9F0A', row: 6,  col: 13 },
-  { name: 'Hunter', role: 'CRO',      emoji: '🎯', color: '#FF453A', row: 11, col: 4  },
-  { name: 'Echo',   role: 'CMO',      emoji: '📢', color: '#0A84FF', row: 11, col: 14 },
-  { name: 'Sentinel', role: 'Security', emoji: '🛡️', color: '#30D158', row: 14, col: 7  },
-  { name: 'Atlas',  role: 'COO',      emoji: '📊', color: '#BF5AF2', row: 14, col: 11 },
+  { name: 'ApoMac',   role: 'CEO',      emoji: '🍎', color: '#007AFF', row: 7,  col: 7  },
+  { name: 'Forge',    role: 'CTO',      emoji: '🔨', color: '#FF9F0A', row: 7,  col: 12 },
+  { name: 'Hunter',   role: 'CRO',      emoji: '🎯', color: '#FF453A', row: 11, col: 5  },
+  { name: 'Echo',     role: 'CMO',      emoji: '📢', color: '#0A84FF', row: 11, col: 14 },
+  { name: 'Sentinel', role: 'Security', emoji: '🛡️', color: '#30D158', row: 5,  col: 10 },
+  { name: 'Atlas',    role: 'COO',      emoji: '📊', color: '#BF5AF2', row: 13, col: 10 },
 ];
 agents.forEach(a => a.status = 'Active');
 
@@ -920,7 +921,7 @@ const AGENT_CHAR = {
 };
 
 // ================================================================
-// MAP DATA
+// MAP DATA — Hand-designed village layout
 // ================================================================
 const ground = [];
 const objects = [];
@@ -934,16 +935,8 @@ let _seed = 42;
 function rng() { _seed = (_seed * 16807) % 2147483647; return _seed / 2147483647; }
 
 function P(r, c) { if (r >= 0 && r < MAP && c >= 0 && c < MAP) ground[r][c] = 1; }
-
-for (let c = 2; c < 18; c++) { P(8, c); P(9, c); }
-for (let r = 6; r <= 8; r++)  { P(r, 5); P(r, 6); }
-for (let r = 6; r <= 8; r++)  { P(r, 13); P(r, 14); }
-for (let r = 9; r <= 11; r++) { P(r, 4); P(r, 5); }
-for (let r = 9; r <= 11; r++) { P(r, 14); P(r, 15); }
-for (let r = 9; r <= 14; r++) { P(r, 7); P(r, 8); }
-for (let r = 9; r <= 14; r++) { P(r, 11); P(r, 12); }
-
 function O(r, c, name) { if (r >= 0 && r < MAP && c >= 0 && c < MAP && !objects[r][c]) objects[r][c] = name; }
+function OF(r, c, name) { if (r >= 0 && r < MAP && c >= 0 && c < MAP) objects[r][c] = name; } // force-place
 
 const trees = [
   'tree_default_NE','tree_default_dark_NE','tree_oak_NE','tree_oak_dark_NE',
@@ -968,54 +961,120 @@ const crops = ['crop_pumpkin_NE','crop_carrot_NE','crop_melon_NE','crop_turnip_N
 
 function rndTree() { return rng() < 0.35 ? fallTrees[Math.floor(rng()*fallTrees.length)] : trees[Math.floor(rng()*trees.length)]; }
 
+// ── Forest border (rows 0-2 and 17-19, col edges) ────────────────
 for (let r = 0; r <= 2; r++)
   for (let c = 0; c < MAP; c++)
-    if (rng() < 0.78) O(r, c, rndTree());
-
+    if (rng() < 0.82) O(r, c, rndTree());
 for (let r = 3; r <= 4; r++)
-  for (let c = 0; c < MAP; c++) {
-    if (rng() < 0.3) O(r, c, rndTree());
-    else if (rng() < 0.08) O(r, c, rng()<0.5 ? 'mushroom_redGroup_NE' : 'mushroom_tanGroup_NE');
-  }
-
-for (let r = 18; r <= 19; r++)
   for (let c = 0; c < MAP; c++)
-    if (rng() < 0.72) O(r, c, rndTree());
-
-for (let r = 3; r < 18; r++) {
-  if (rng() < 0.6) O(r, 0, rndTree());
+    if (rng() < 0.35) O(r, c, rndTree());
+for (let r = 17; r <= 19; r++)
+  for (let c = 0; c < MAP; c++)
+    if (rng() < 0.78) O(r, c, rndTree());
+for (let r = 5; r < 17; r++) {
+  if (rng() < 0.65) O(r, 0, rndTree());
   if (rng() < 0.55) O(r, 1, rndTree());
-  if (rng() < 0.6) O(r, 19, rndTree());
+  if (rng() < 0.65) O(r, 19, rndTree());
   if (rng() < 0.55) O(r, 18, rndTree());
 }
 
+// ── Central Plaza (3x3 path tiles around campfire at r=9,c=9) ────
+// Plaza center: row 9, col 9-10
+for (let pr = 8; pr <= 11; pr++)
+  for (let pc = 8; pc <= 11; pc++)
+    P(pr, pc);
+
+// ── Spoke paths from plaza ────────────────────────────────────────
+// North spoke (toward Sentinel watchtower)
+for (let r = 4; r <= 8; r++)  { P(r, 9); P(r, 10); }
+// South spoke (toward farm area)
+for (let r = 11; r <= 16; r++) { P(r, 9); P(r, 10); }
+// West spoke (toward ApoMac & Hunter tents)
+for (let c = 4; c <= 8; c++)  { P(9, c); P(10, c); }
+// East spoke (toward Forge & Echo tents)
+for (let c = 11; c <= 15; c++) { P(9, c); P(10, c); }
+
+// Northwest path (ApoMac tent at r=7, c=7)
+for (let r = 7; r <= 9; r++)  { P(r, 7); P(r, 8); }
+// Northeast path (Forge tent at r=7, c=12)
+for (let r = 7; r <= 9; r++)  { P(r, 11); P(r, 12); }
+// Southwest path (Hunter tent at r=11, c=5)
+for (let r = 9; r <= 11; r++) { P(r, 5); P(r, 6); }
+// Southeast path (Echo tent at r=11, c=14)
+for (let r = 9; r <= 11; r++) { P(r, 13); P(r, 14); }
+// Atlas path (r=13, c=10)
+for (let r = 12; r <= 13; r++) { P(r, 9); P(r, 10); P(r, 11); }
+
+// ── North watchtower area (Sentinel) — r=5, c=10 ────────────────
+P(5, 9); P(5, 10); P(5, 11);
+P(6, 9); P(6, 10); P(6, 11);
+
+// ── Farm area (bottom-left) r=14-16, c=3-7 ───────────────────────
+for (let pr = 14; pr <= 16; pr++)
+  for (let pc = 3; pc <= 7; pc++)
+    P(pr, pc);
+
+// ── Place agent tents ─────────────────────────────────────────────
 agents.forEach(a => O(a.row, a.col, 'tent_detailedOpen_NE'));
 
-O(8, 10, 'campfire_stones_NE');
-O(9, 9, 'campfire_logs_NE');
+// ── Campfire at plaza center ──────────────────────────────────────
+O(9, 9, 'campfire_stones_NE');
+O(10, 10, 'campfire_logs_NE');
 
-O(5, 5, 'log_stack_NE');
-O(5, 13, 'log_stackLarge_NE');
-O(12, 4, 'log_NE');
-O(12, 14, 'log_large_NE');
-O(7, 9, 'sign_NE');
-O(7, 10, 'sign_NE');
-O(4, 8, 'stump_round_NE');
-O(4, 12, 'stump_old_NE');
+// ── Signs at plaza entrance ───────────────────────────────────────
+O(8, 8, 'sign_NE');
+O(8, 11, 'sign_NE');
 
-for (let r = 5; r <= 17; r++)
-  for (let c = 2; c < 18; c++)
-    if (!objects[r][c] && ground[r][c] !== 1 && rng() < 0.1)
-      O(r, c, deco[Math.floor(rng() * deco.length)]);
+// ── Sentinel Watchtower (north) ───────────────────────────────────
+// Use log stacks as tower base
+O(4, 9, 'log_stackLarge_NE');
+O(4, 10, 'log_stackLarge_NE');
+O(4, 11, 'stump_round_NE');
 
-for (let r = 15; r <= 17; r++)
-  for (let c = 3; c < 17; c++)
-    if (!objects[r][c] && ground[r][c] !== 1 && rng() < 0.22)
-      O(r, c, rng() < 0.5 ? flowers[Math.floor(rng()*flowers.length)] : crops[Math.floor(rng()*crops.length)]);
+// ── Log seats around plaza ────────────────────────────────────────
+O(11, 8, 'log_NE');
+O(11, 11, 'log_NE');
+O(8, 9, 'log_NE');
 
-for (let c = 3; c < 17; c++)
-  if (!objects[15][c] && ground[15][c] !== 1 && rng() < 0.25)
-    O(15, c, 'fence_simple_NE');
+// ── Farm area crops & fences ──────────────────────────────────────
+// Fence boundary
+O(14, 3, 'fence_simple_NE'); O(14, 4, 'fence_simple_NE');
+O(14, 5, 'fence_simple_NE'); O(14, 6, 'fence_simple_NE'); O(14, 7, 'fence_simple_NE');
+O(16, 3, 'fence_simple_NE'); O(16, 4, 'fence_simple_NE');
+O(16, 5, 'fence_simple_NE'); O(16, 6, 'fence_simple_NE'); O(16, 7, 'fence_simple_NE');
+// Crops inside farm
+O(15, 3, 'crop_pumpkin_NE'); O(15, 4, 'crop_carrot_NE'); O(15, 5, 'crop_melon_NE');
+O(15, 6, 'crop_turnip_NE'); O(15, 7, 'crop_carrot_NE');
+
+// ── Decorative elements around plaza ─────────────────────────────
+O(8, 13, 'plant_bushSmall_NE'); O(8, 14, 'plant_bush_NE');
+O(12, 6, 'mushroom_redGroup_NE'); O(12, 13, 'mushroom_tanGroup_NE');
+O(7, 5, 'stump_old_NE'); O(7, 14, 'stump_round_NE');
+O(6, 7, 'rock_smallA_NE'); O(6, 12, 'rock_smallB_NE');
+O(13, 7, 'stone_smallA_NE'); O(13, 12, 'stone_smallB_NE');
+
+// ── Flowers scattered near paths ─────────────────────────────────
+const flowerSpots = [
+  [5,7],[5,8],[5,11],[5,12],
+  [10,5],[10,6],[10,13],[10,14],
+  [12,8],[12,11],[13,8],[13,11],
+  [7,9],[7,10],[6,9],[6,10]
+];
+flowerSpots.forEach(([r,c]) => {
+  if (!objects[r][c]) O(r, c, flowers[Math.floor(rng()*flowers.length)]);
+});
+
+// ── Sparse deco on grass (not on path tiles) ──────────────────────
+const decoSpots = [
+  [5,3],[5,4],[5,15],[5,16],
+  [9,2],[9,3],[9,16],[9,17],
+  [13,2],[13,3],[13,15],[13,16],
+  [6,3],[6,4],[6,15],[6,16],
+  [11,3],[11,15],[10,3],[10,16]
+];
+decoSpots.forEach(([r,c]) => {
+  if (!objects[r][c] && ground[r][c] !== 1) O(r, c, deco[Math.floor(rng() * deco.length)]);
+});
 
 // ================================================================
 // IMAGE LOADING
@@ -1058,6 +1117,7 @@ const CHAR_NAMES = [
   'character-male-a', 'character-male-c', 'character-male-d',
   'character-female-a', 'character-female-c', 'character-male-e'
 ];
+// NPC models reuse existing char sprites — no extra loading needed
 const ANIMS = ['idle', 'walk'];
 const DIRS = ['NE', 'NW', 'SE', 'SW'];
 const FRAME_COUNT = 8;
@@ -1152,8 +1212,8 @@ const COLLAB_BUBBLES = {
 
 const EMOTION_EMOJIS = ['💡', '🔥', '✅', '🎯', '📊', '🛡️', '⚡', '🚀', '💪', '🏆'];
 
-// Campfire zone (tiles near the campfire objects)
-const CAMPFIRE_ZONE = {c: 9.5, r: 8.8};
+// Campfire zone (tiles near the campfire objects) — central plaza
+const CAMPFIRE_ZONE = {c: 9.5, r: 9.5};
 
 // BFS pathfinding on the ground grid (path tiles only)
 function findPath(startC, startR, endC, endR) {
@@ -1262,14 +1322,135 @@ const chars = agents.map((a, i) => {
   stateTimer: 3000 + Math.random() * 6000,  // time until next state change (staggered)
   meetTarget: null,    // which agent we're visiting
   meetTimer: 0,        // time spent at meeting point
+  // Idle routine state
+  idleRoutine: null,   // 'lookaround' | 'thinking' | 'smallwander' | null
+  idleRoutineTimer: 0, // time left in idle routine
+  idleRoutineCd: 2000 + Math.random() * 4000, // cooldown before next idle routine
+  smallWanderTarget: null, // {c, r} offset target for small wander
   // Speech
   bubble: null,        // {text, life, maxLife}
   bubbleCd: 1000 + Math.random() * 3000,    // cooldown before next bubble
   // Emotion
   emotionEmoji: null,
   emotionTimer: 0,
+  // Decommission
+  decommissioning: false,
+  decommissionAlpha: 1,
+  decommissionScale: 1,
 };});
 
+// ================================================================
+// BACKGROUND NPCs — wander on paths, not in agent panel
+// ================================================================
+const NPC_CHAR_MODELS = [
+  'character-male-a', 'character-female-a', 'character-male-c',
+  'character-female-c', 'character-male-d', 'character-male-e'
+];
+const NPC_DEFS = [
+  { name: 'Villager', emoji: '👤', charIdx: 0 },
+  { name: 'Farmer',   emoji: '👨‍🌾', charIdx: 1 },
+  { name: 'Scout',    emoji: '🏃', charIdx: 2 },
+  { name: 'Traveler', emoji: '🧭', charIdx: 3 },
+  { name: 'Elder',    emoji: '🧓', charIdx: 4 },
+];
+
+// Collect all path tiles for NPC wandering
+function getPathTiles() {
+  const tiles = [];
+  for (let r = 0; r < MAP; r++)
+    for (let c = 0; c < MAP; c++)
+      if (ground[r][c] === 1 && !objects[r][c]) tiles.push({c: c+0.5, r: r+0.5});
+  return tiles;
+}
+
+// Stagger NPC spawns — build after map is set up
+let pathTiles = [];
+const npcs = [];
+
+function initNPCs() {
+  pathTiles = getPathTiles();
+  if (pathTiles.length === 0) return;
+  NPC_DEFS.forEach((def, i) => {
+    // Pick a random path tile to start on
+    const start = pathTiles[Math.floor(Math.random() * pathTiles.length)];
+    npcs.push({
+      name: def.name,
+      charName: NPC_CHAR_MODELS[def.charIdx % NPC_CHAR_MODELS.length],
+      c: start.c, r: start.r,
+      facing: ['NE','SE','SW','NW'][i % 4],
+      frame: Math.floor(Math.random() * FRAME_COUNT),
+      ft: 0,
+      moving: false,
+      path: [],
+      pathIdx: 0,
+      wanderTimer: 500 + Math.random() * 2000,
+      bubble: null,
+      bubbleCd: 4000 + Math.random() * 8000,
+      isNPC: true,
+      scale: 0.9,  // slightly smaller than agents
+    });
+  });
+}
+
+const NPC_WANDER_BUBBLES = [
+  '🌿 Nice day!', '👋 Hello!', '🍎 Market soon?', '🌾 Good harvest!',
+  '🐦 Birds singing!', '🌤️ Lovely weather', '🍄 Found mushrooms!', '💧 Fresh water'
+];
+
+function updateNPCs(dt) {
+  npcs.forEach(ch => {
+    // Bubble timer
+    if (ch.bubbleCd > 0) ch.bubbleCd -= dt;
+    if (ch.bubble) {
+      ch.bubble.life -= dt;
+      if (ch.bubble.life <= 0) ch.bubble = null;
+    }
+
+    if (ch.moving && ch.path.length > 0) {
+      const target = ch.path[ch.pathIdx];
+      if (!target) { ch.moving = false; ch.path = []; return; }
+      const dx = target.c - ch.c, dy = target.r - ch.r;
+      const d = Math.sqrt(dx*dx + dy*dy);
+      if (d < 0.1) {
+        ch.c = target.c; ch.r = target.r;
+        ch.pathIdx++;
+        if (ch.pathIdx >= ch.path.length) {
+          ch.moving = false; ch.path = [];
+          ch.wanderTimer = 1000 + Math.random() * 3000;
+        }
+      } else {
+        const spd = 0.0016 * dt; // slightly slower than agents
+        ch.c += (dx/d)*spd; ch.r += (dy/d)*spd;
+        ch.facing = getFacing(dx/d, dy/d);
+        ch.ft += dt;
+        if (ch.ft > 110) { ch.frame = (ch.frame+1) % FRAME_COUNT; ch.ft -= 110; }
+      }
+    } else {
+      // Idle animation
+      ch.ft += dt;
+      if (ch.ft > 220) { ch.frame = (ch.frame+1) % FRAME_COUNT; ch.ft -= 220; }
+      ch.wanderTimer -= dt;
+      if (ch.wanderTimer <= 0) {
+        // Pick a random path tile to wander to
+        if (pathTiles.length > 0) {
+          const dest = pathTiles[Math.floor(Math.random() * pathTiles.length)];
+          ch.path = findPath(ch.c, ch.r, dest.c, dest.r);
+          ch.pathIdx = 0;
+          ch.moving = ch.path.length > 0;
+        }
+        ch.wanderTimer = 500 + Math.random() * 2000;
+      }
+      // Random NPC bubble
+      if (ch.bubbleCd <= 0 && !ch.bubble && Math.random() < 0.005) {
+        const txt = NPC_WANDER_BUBBLES[Math.floor(Math.random() * NPC_WANDER_BUBBLES.length)];
+        ch.bubble = { text: txt, life: 2500, maxLife: 2500 };
+        ch.bubbleCd = 8000 + Math.random() * 8000;
+      }
+    }
+  });
+}
+
+// ================================================================
 // Decide next action for an agent
 function decideNextAction(ch) {
   const roll = Math.random();
@@ -1337,6 +1518,20 @@ function getFacing(dx, dy) {
 
 function updateChars(dt) {
   chars.forEach(ch => {
+    // Handle decommission animation
+    if (ch.decommissioning) {
+      ch.decommissionAlpha -= dt / 800;
+      ch.decommissionScale -= dt / 1200;
+      if (ch.decommissionAlpha <= 0) {
+        ch.decommissionAlpha = 0;
+        ch.decommissionScale = 0;
+        // Remove label
+        const el = labelEls[ch.agent.name];
+        if (el) el.style.display = 'none';
+      }
+      return; // Skip normal logic
+    }
+
     // Bubble timers
     if (ch.bubbleCd > 0) ch.bubbleCd -= dt;
     if (ch.bubble) {
@@ -1418,10 +1613,109 @@ function updateChars(dt) {
       if (ch.stateTimer <= 0) {
         decideNextAction(ch);
       }
+
+      // ── Idle Routines (only when WORKING at home) ──
+      if (ch.state === STATE.WORKING) {
+        if (ch.idleRoutineCd > 0) ch.idleRoutineCd -= dt;
+        
+        if (!ch.idleRoutine && ch.idleRoutineCd <= 0) {
+          // Pick a random idle routine
+          const roll = Math.random();
+          if (roll < 0.30) {
+            // Look around: cycle through facing directions
+            ch.idleRoutine = 'lookaround';
+            ch.idleRoutineTimer = 1200 + Math.random() * 800;
+            ch._lookDirs = ['NE','SE','SW','NW'];
+            ch._lookIdx = 0;
+            ch._lookStep = 0;
+          } else if (roll < 0.55) {
+            // Thinking: face tent briefly then return
+            ch.idleRoutine = 'thinking';
+            ch.idleRoutineTimer = 1500 + Math.random() * 1000;
+            ch._thinkPhase = 'face_tent'; // then 'face_back'
+            ch._origFacing = ch.facing;
+            ch.facing = 'NE'; // face toward tent (northwest-ish)
+          } else if (roll < 0.78) {
+            // Small wander: move ±0.3 tiles from home
+            ch.idleRoutine = 'smallwander';
+            const drc = (Math.random() - 0.5) * 0.6;
+            const drr = (Math.random() - 0.5) * 0.6;
+            ch.smallWanderTarget = { c: ch.homeC + drc, r: ch.homeR + drr };
+            ch.idleRoutineTimer = 2000 + Math.random() * 1500;
+          } else {
+            // Show work bubble more frequently
+            ch.idleRoutineCd = 500 + Math.random() * 1000;
+            if (ch.bubbleCd <= 0 && !ch.bubble) showBubble(ch, 'work');
+          }
+        }
+        
+        if (ch.idleRoutine) {
+          ch.idleRoutineTimer -= dt;
+          
+          if (ch.idleRoutine === 'lookaround') {
+            ch._lookStep += dt;
+            if (ch._lookStep > 350) {
+              ch._lookStep = 0;
+              ch._lookIdx = (ch._lookIdx + 1) % ch._lookDirs.length;
+              ch.facing = ch._lookDirs[ch._lookIdx];
+            }
+            if (ch.idleRoutineTimer <= 0) {
+              ch.facing = 'SE';
+              ch.idleRoutine = null;
+              ch.idleRoutineCd = 3000 + Math.random() * 5000;
+            }
+          } else if (ch.idleRoutine === 'thinking') {
+            if (ch._thinkPhase === 'face_tent' && ch.idleRoutineTimer < 700) {
+              ch._thinkPhase = 'face_back';
+              ch.facing = ch._origFacing || 'SE';
+              if (ch.bubbleCd <= 0 && !ch.bubble) showBubble(ch, 'work');
+            }
+            if (ch.idleRoutineTimer <= 0) {
+              ch.idleRoutine = null;
+              ch.idleRoutineCd = 3000 + Math.random() * 6000;
+            }
+          } else if (ch.idleRoutine === 'smallwander') {
+            const t = ch.smallWanderTarget;
+            if (t) {
+              const dx = t.c - ch.c, dy = t.r - ch.r;
+              const d = Math.sqrt(dx*dx + dy*dy);
+              if (d < 0.05 || ch.idleRoutineTimer <= 0) {
+                // Return home
+                const hx = ch.homeC - ch.c, hy = ch.homeR - ch.r;
+                const hd = Math.sqrt(hx*hx + hy*hy);
+                if (hd < 0.05) {
+                  ch.c = ch.homeC; ch.r = ch.homeR;
+                  ch.idleRoutine = null;
+                  ch.smallWanderTarget = null;
+                  ch.idleRoutineCd = 3000 + Math.random() * 6000;
+                } else {
+                  const spd = 0.0008 * dt;
+                  ch.c += (hx/hd)*spd; ch.r += (hy/hd)*spd;
+                  ch.facing = getFacing(hx/hd, hy/hd);
+                }
+              } else {
+                const spd = 0.0008 * dt;
+                ch.c += (dx/d)*spd; ch.r += (dy/d)*spd;
+                ch.facing = getFacing(dx/d, dy/d);
+                // Animate walk-like (slow)
+                ch.ft += dt;
+                if (ch.ft > 220) { ch.frame = (ch.frame + 1) % FRAME_COUNT; ch.ft -= 220; }
+              }
+            } else {
+              ch.idleRoutine = null;
+              ch.idleRoutineCd = 3000 + Math.random() * 6000;
+            }
+          }
+        }
+      }
       
-      // Random work bubble when idle at home
-      if (ch.state === STATE.WORKING && ch.bubbleCd <= 0 && !ch.bubble && Math.random() < 0.01) {
+      // Random work bubble when idle at home (more frequent: 0.015)
+      if (ch.state === STATE.WORKING && ch.bubbleCd <= 0 && !ch.bubble && Math.random() < 0.015) {
         showBubble(ch, 'work');
+      }
+      // Random social/collab bubble at campfire/meeting
+      if ((ch.state === STATE.AT_CAMPFIRE || ch.state === STATE.MEETING) && ch.bubbleCd <= 0 && !ch.bubble && Math.random() < 0.012) {
+        showBubble(ch, ch.state === STATE.AT_CAMPFIRE ? 'social' : 'collab');
       }
       // Random emotion emoji
       if (!ch.emotionEmoji && Math.random() < 0.002) {
@@ -1469,20 +1763,32 @@ const CHAR_METRICS = {
 const SPRITE_DIR_REMAP = { 'SE': 'SW', 'SW': 'SE', 'NW': 'NE', 'NE': 'NW' };
 
 function drawChar(ch) {
+  // Handle decommission animation
+  if (ch.decommissioning) {
+    if (ch.decommissionAlpha <= 0) return;
+    ctx.save();
+    ctx.globalAlpha = ch.decommissionAlpha;
+  }
+
   const anim = ch.moving ? 'walk' : 'idle';
   const dir = SPRITE_DIR_REMAP[ch.facing] || ch.facing;
   const key = `char:${ch.charName}:${anim}:${dir}:${ch.frame}`;
   const rawImg = imgs[key];
-  if (!rawImg || !rawImg.complete || !rawImg.naturalWidth) return;
+  if (!rawImg || !rawImg.complete || !rawImg.naturalWidth) {
+    if (ch.decommissioning) ctx.restore();
+    return;
+  }
   
   const sprite = getTinted(rawImg, key) || rawImg;
-  const metrics = CHAR_METRICS[ch.charName];
+  const metrics = CHAR_METRICS[ch.charName] || CHAR_METRICS['character-male-a'];
 
   const { x, y } = iso(ch.c, ch.r);
   const s = toScreen(x, y);
 
+  // Scale character: NPCs are 0.9x, agents 1.0x; also apply decommission shrink
+  const charSizeMultiplier = (ch.isNPC ? 0.9 : 1.0) * (ch.decommissionScale || 1.0);
   // Scale character to fit nicely in ~1 tile (v5 sprites have contentH ~107-131px)
-  const targetH = DH * scale * 1.2;
+  const targetH = DH * scale * 1.2 * charSizeMultiplier;
   const imgScale = targetH / metrics.contentH;
   const dw = 256 * imgScale;
   const dh = 256 * imgScale;
@@ -1611,8 +1917,68 @@ function drawChar(ch) {
     ctx.textBaseline = 'middle';
     ctx.fillText(ch.bubble.text, bx, by - ph/2);
     ctx.restore();
+
+    // Sound: pop when bubble first appears (only agents, not silent)
+    if (ch.bubble.life > ch.bubble.maxLife - 100 && !ch.bubble._popped) {
+      ch.bubble._popped = true;
+      if (!ch.isNPC) audioPlayBubblePop();
+    }
   }
+
+  if (ch.decommissioning) ctx.restore();
 }
+
+// ================================================================
+// DECOMMISSION
+// ================================================================
+function spawnDecommissionPuff(ch) {
+  // Spawn 💨 emoji particles and smoke puffs
+  const { x, y } = iso(ch.c, ch.r);
+  const s = toScreen(x, y);
+  for (let i = 0; i < 12; i++) {
+    const angle = (Math.PI * 2 * i / 12) + (Math.random() - 0.5) * 0.5;
+    const spd = 0.5 + Math.random() * 1.5;
+    particles.push({
+      x: s.x + (Math.random()-0.5)*10*scale,
+      y: s.y - 20*scale,
+      vx: Math.cos(angle) * spd,
+      vy: Math.sin(angle) * spd - 1.5,
+      life: 1, decay: 0.012 + Math.random() * 0.008,
+      size: 3 + Math.random() * 3,
+      type: 'puff',
+      color: '#b0c8b0'
+    });
+  }
+  // Emoji puff
+  particles.push({
+    x: s.x, y: s.y - 30*scale,
+    vx: 0, vy: -1.2,
+    life: 1, decay: 0.008,
+    size: 18, type: 'emoji', emoji: '💨'
+  });
+}
+
+window.decommission = function(agentName) {
+  const ch = chars.find(c => c.agent.name === agentName);
+  if (!ch || ch.decommissioning) return;
+  ch.decommissioning = true;
+  ch.decommissionAlpha = 1;
+  ch.decommissionScale = 1;
+  spawnDecommissionPuff(ch);
+  // Hide selection if this agent was selected
+  if (selectedAgentName === agentName) {
+    selectedAgentName = null;
+    if (typeof closeVillageDetail === 'function') closeVillageDetail();
+  }
+  // After animation completes, remove from chars array
+  setTimeout(() => {
+    const idx = chars.indexOf(ch);
+    if (idx !== -1) chars.splice(idx, 1);
+    const el = labelEls[agentName];
+    if (el) el.remove();
+    delete labelEls[agentName];
+  }, 900);
+};
 
 // ================================================================
 // PARTICLES — Campfire embers + floating ambient (fireflies/pollen)
@@ -1620,7 +1986,7 @@ function drawChar(ch) {
 const particles = [];
 
 function spawnCampfireParticle() {
-  [[10, 8], [9, 9]].forEach(([pc, pr]) => {
+  [[9, 9], [10, 10]].forEach(([pc, pr]) => {
     if (Math.random() < 0.3) {
       const { x, y } = iso(pc + 0.5, pr + 0.5);
       const s = toScreen(x, y);
@@ -1675,6 +2041,18 @@ function updateAndDrawParticles(tick) {
       ctx.beginPath();
       ctx.arc(p.x, p.y, p.size * scale * 3, 0, Math.PI * 2);
       ctx.fill();
+    } else if (p.type === 'puff') {
+      ctx.globalAlpha = p.life * 0.5;
+      ctx.fillStyle = p.color || '#b0c8b0';
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size * scale * (2 - p.life), 0, Math.PI * 2);
+      ctx.fill();
+    } else if (p.type === 'emoji') {
+      ctx.globalAlpha = p.life;
+      ctx.font = `${Math.round(p.size * scale)}px sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(p.emoji, p.x, p.y);
     } else {
       const drift = Math.sin(tick * 0.02 + p.phase) * 0.3;
       p.x += drift;
@@ -1688,7 +2066,7 @@ function updateAndDrawParticles(tick) {
   ctx.restore();
   
   // Campfire glow
-  [[10, 8], [9, 9]].forEach(([pc, pr]) => {
+  [[9, 9], [10, 10]].forEach(([pc, pr]) => {
     const { x, y } = iso(pc + 0.5, pr + 0.5);
     const s = toScreen(x, y);
     ctx.save();
@@ -1702,6 +2080,249 @@ function updateAndDrawParticles(tick) {
     ctx.fillRect(s.x - DW * scale * 2, s.y - DH * scale * 2, DW * scale * 4, DH * scale * 4);
     ctx.restore();
   });
+}
+
+// ================================================================
+// AUDIO SYSTEM — Web Audio API, procedural sounds, starts muted
+// ================================================================
+let audioCtx = null;
+let audioMuted = true;  // Start muted
+let _ambientNode = null, _campfireNode = null, _campfireGain = null;
+let _ambientGain = null;
+let _audioInited = false;
+let _lastFootstep = 0;
+
+function getAudioCtx() {
+  if (!audioCtx) {
+    try {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    } catch(e) { return null; }
+  }
+  return audioCtx;
+}
+
+// Brown noise buffer generator
+function makeBrownNoiseBuffer(ctx, duration) {
+  const sr = ctx.sampleRate;
+  const len = Math.floor(sr * duration);
+  const buf = ctx.createBuffer(1, len, sr);
+  const data = buf.getChannelData(0);
+  let lastOut = 0;
+  for (let i = 0; i < len; i++) {
+    const white = Math.random() * 2 - 1;
+    data[i] = (lastOut + 0.02 * white) / 1.02;
+    lastOut = data[i];
+    data[i] *= 3.5;
+  }
+  return buf;
+}
+
+// White noise buffer generator
+function makeWhiteNoiseBuffer(ctx, duration) {
+  const sr = ctx.sampleRate;
+  const len = Math.floor(sr * duration);
+  const buf = ctx.createBuffer(1, len, sr);
+  const data = buf.getChannelData(0);
+  for (let i = 0; i < len; i++) data[i] = Math.random() * 2 - 1;
+  return buf;
+}
+
+function initAudio() {
+  if (_audioInited) return;
+  const ctx = getAudioCtx();
+  if (!ctx) return;
+  _audioInited = true;
+
+  // ── Ambient forest loop (filtered brown noise + bird chirps) ─────
+  try {
+    const ambGain = ctx.createGain();
+    ambGain.gain.value = audioMuted ? 0 : 0.04;
+    _ambientGain = ambGain;
+
+    const brownBuf = makeBrownNoiseBuffer(ctx, 4.0);
+    const ambSrc = ctx.createBufferSource();
+    ambSrc.buffer = brownBuf;
+    ambSrc.loop = true;
+
+    const ambFilter = ctx.createBiquadFilter();
+    ambFilter.type = 'bandpass';
+    ambFilter.frequency.value = 800;
+    ambFilter.Q.value = 0.3;
+
+    ambSrc.connect(ambFilter);
+    ambFilter.connect(ambGain);
+    ambGain.connect(ctx.destination);
+    ambSrc.start();
+    _ambientNode = ambSrc;
+
+    // Bird chirps — scheduled sine sweep
+    function schedBird() {
+      if (audioMuted) { setTimeout(schedBird, 3000 + Math.random() * 5000); return; }
+      const c = getAudioCtx();
+      if (!c) return;
+      const g = c.createGain();
+      g.gain.setValueAtTime(0.03, c.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.4);
+      g.connect(c.destination);
+      const o = c.createOscillator();
+      o.type = 'sine';
+      const baseFreq = 1800 + Math.random() * 1200;
+      o.frequency.setValueAtTime(baseFreq, c.currentTime);
+      o.frequency.linearRampToValueAtTime(baseFreq * 1.6, c.currentTime + 0.12);
+      o.frequency.linearRampToValueAtTime(baseFreq * 0.9, c.currentTime + 0.3);
+      o.connect(g);
+      o.start();
+      o.stop(c.currentTime + 0.45);
+      // Second chirp
+      const o2 = c.createOscillator();
+      o2.type = 'sine';
+      o2.frequency.setValueAtTime(baseFreq * 1.3, c.currentTime + 0.15);
+      o2.frequency.linearRampToValueAtTime(baseFreq * 1.9, c.currentTime + 0.27);
+      const g2 = c.createGain();
+      g2.gain.setValueAtTime(0, c.currentTime + 0.14);
+      g2.gain.linearRampToValueAtTime(0.025, c.currentTime + 0.18);
+      g2.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.45);
+      g2.connect(c.destination);
+      o2.connect(g2);
+      o2.start(c.currentTime + 0.14);
+      o2.stop(c.currentTime + 0.48);
+      setTimeout(schedBird, 4000 + Math.random() * 8000);
+    }
+    setTimeout(schedBird, 2000 + Math.random() * 4000);
+  } catch(e) {}
+
+  // ── Campfire crackle (brown noise + random pops) ──────────────────
+  try {
+    const cfGain = ctx.createGain();
+    cfGain.gain.value = audioMuted ? 0 : 0.0;  // 0 initially, updated by proximity
+    _campfireGain = cfGain;
+
+    const cfBuf = makeBrownNoiseBuffer(ctx, 3.0);
+    const cfSrc = ctx.createBufferSource();
+    cfSrc.buffer = cfBuf;
+    cfSrc.loop = true;
+
+    const cfFilt = ctx.createBiquadFilter();
+    cfFilt.type = 'lowpass';
+    cfFilt.frequency.value = 600;
+
+    cfSrc.connect(cfFilt);
+    cfFilt.connect(cfGain);
+    cfGain.connect(ctx.destination);
+    cfSrc.start();
+    _campfireNode = cfSrc;
+
+    // Random crackle pops
+    function schedCrackle() {
+      if (!audioMuted && _campfireGain && _campfireGain.gain.value > 0.01) {
+        try {
+          const c = getAudioCtx();
+          const popBuf = makeWhiteNoiseBuffer(c, 0.04);
+          const popSrc = c.createBufferSource();
+          popSrc.buffer = popBuf;
+          const popGain = c.createGain();
+          popGain.gain.setValueAtTime(0.06 * (_campfireGain.gain.value / 0.08), c.currentTime);
+          popGain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.04);
+          const popFilt = c.createBiquadFilter();
+          popFilt.type = 'highpass';
+          popFilt.frequency.value = 2000;
+          popSrc.connect(popFilt);
+          popFilt.connect(popGain);
+          popGain.connect(c.destination);
+          popSrc.start();
+          popSrc.stop(c.currentTime + 0.05);
+        } catch(e) {}
+      }
+      setTimeout(schedCrackle, 200 + Math.random() * 600);
+    }
+    schedCrackle();
+  } catch(e) {}
+}
+
+// Footstep sound (short filtered noise burst)
+function audioPlayFootstep() {
+  if (audioMuted) return;
+  const now = Date.now();
+  if (now - _lastFootstep < 280) return; // throttle
+  _lastFootstep = now;
+  const c = getAudioCtx();
+  if (!c) return;
+  try {
+    const buf = makeWhiteNoiseBuffer(c, 0.06);
+    const src = c.createBufferSource();
+    src.buffer = buf;
+    const filt = c.createBiquadFilter();
+    filt.type = 'bandpass';
+    filt.frequency.value = 200 + Math.random() * 200;
+    filt.Q.value = 0.5;
+    const gain = c.createGain();
+    gain.gain.setValueAtTime(0.04, c.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.06);
+    src.connect(filt);
+    filt.connect(gain);
+    gain.connect(c.destination);
+    src.start();
+    src.stop(c.currentTime + 0.07);
+  } catch(e) {}
+}
+
+// Bubble pop sound (sine tone, quick decay)
+function audioPlayBubblePop() {
+  if (audioMuted) return;
+  const c = getAudioCtx();
+  if (!c) return;
+  try {
+    const osc = c.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(900, c.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(400, c.currentTime + 0.12);
+    const gain = c.createGain();
+    gain.gain.setValueAtTime(0.08, c.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.15);
+    osc.connect(gain);
+    gain.connect(c.destination);
+    osc.start();
+    osc.stop(c.currentTime + 0.16);
+  } catch(e) {}
+}
+
+// Update campfire volume based on camera proximity to campfire
+function updateAudioSpatial() {
+  if (audioMuted || !_campfireGain) return;
+  // Campfire at iso col=9.5, row=9.5 → screen position
+  const { x, y } = iso(9.5, 9.5);
+  const s = toScreen(x, y);
+  const cx = cvs.width / 2, cy = cvs.height / 2;
+  const dist = Math.sqrt((s.x - cx) * (s.x - cx) + (s.y - cy) * (s.y - cy));
+  const maxDist = 300 * scale;
+  const vol = Math.max(0, Math.min(0.08, 0.08 * (1 - dist / maxDist)));
+  _campfireGain.gain.setTargetAtTime(vol, audioCtx.currentTime, 0.3);
+}
+
+// Footstep trigger for walking chars
+function audioTickFootsteps(dt) {
+  if (audioMuted) return;
+  const anyWalking = chars.some(ch => ch.moving && !ch.decommissioning) || npcs.some(ch => ch.moving);
+  if (anyWalking) {
+    // schedule footstep based on time
+    if (Date.now() - _lastFootstep > 300) audioPlayFootstep();
+  }
+}
+
+// Mute button toggle
+function toggleMute() {
+  audioMuted = !audioMuted;
+  const btn = document.getElementById('audioMuteBtn');
+  if (btn) btn.textContent = audioMuted ? '🔇' : '🔊';
+  if (!_audioInited && !audioMuted) {
+    initAudio();
+  }
+  if (_ambientGain) {
+    _ambientGain.gain.setTargetAtTime(audioMuted ? 0 : 0.04, audioCtx.currentTime, 0.5);
+  }
+  if (_campfireGain) {
+    _campfireGain.gain.setTargetAtTime(audioMuted ? 0 : 0.0, audioCtx.currentTime, 0.5);
+  }
 }
 
 // ================================================================
@@ -1743,7 +2364,11 @@ function render() {
     }
   }
   chars.forEach(ch => {
-    drawables.push({ type: 'char', c: ch.c, r: ch.r, depth: ch.c + ch.r, ch });
+    if (!ch.decommissioning || ch.decommissionAlpha > 0)
+      drawables.push({ type: 'char', c: ch.c, r: ch.r, depth: ch.c + ch.r, ch });
+  });
+  npcs.forEach(ch => {
+    drawables.push({ type: 'npc', c: ch.c, r: ch.r, depth: ch.c + ch.r, ch });
   });
   // Sort by depth (back to front); for same depth, objects before characters
   drawables.sort((a, b) => a.depth - b.depth || (a.type === 'obj' ? -1 : 1));
@@ -1921,6 +2546,9 @@ function loop(t) {
   const dt = lt ? Math.min(t - lt, 50) : 16;
   lt = t;
   updateChars(dt);
+  updateNPCs(dt);
+  updateAudioSpatial();
+  audioTickFootsteps(dt);
   render();
   requestAnimationFrame(loop);
 }
@@ -2748,6 +3376,8 @@ requestAnimationFrame(checkReady);
     prefetchData();
     setInterval(prefetchData, 30000);
     loadLiveAgentData();
+    // Init NPCs after map is ready
+    if (typeof initNPCs === 'function') initNPCs();
   };
 
 })();
