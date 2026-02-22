@@ -4,12 +4,14 @@
     'use strict';
     
     // Default config — connects to production relay
+    // ⚠️ TOKEN: Do NOT hardcode tokens here. Pass via electron main process or env.
+    // Set window.FLEET_TOKEN before this script loads, or configure via fleet-config.json
     var FLEET_CONFIG = {
         relayUrl: 'wss://fleet.spawnkit.ai/ws/fleet',
-        token: 'sk-fleet-d74ca1f7a1b8136cb96041cef3d415bdcac948615188f5a2',
-        officeId: 'apomac',
-        officeName: 'ApoMac HQ',
-        officeEmoji: '🍎'
+        token: window.FLEET_TOKEN || '',  // injected by Electron main process
+        officeId: window.FLEET_OFFICE_ID || 'apomac',
+        officeName: window.FLEET_OFFICE_NAME || 'ApoMac HQ',
+        officeEmoji: window.FLEET_OFFICE_EMOJI || '🍎'
     };
     
     // Wait for DOM + SpawnKitPanels to be ready
