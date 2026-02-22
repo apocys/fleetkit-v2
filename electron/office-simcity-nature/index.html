@@ -1427,9 +1427,13 @@ const CHAR_METRICS = {
   'character-male-e':   { feetY: 174, headY: 98, centerX: 128, contentH: 76 },
 };
 
-// Sprite folders SE and NW are swapped due to camera orbit mapping error in Blender render.
-// Rather than re-render 384 sprites, remap at lookup time.
-const SPRITE_DIR_REMAP = { 'SE': 'NW', 'NW': 'SE', 'SW': 'SW', 'NE': 'NE' };
+// Sprite direction remap — no remap needed. Camera orbit in Blender:
+//   cam 315° → SE folder: front-right (face visible, walking screen ↘)
+//   cam 225° → SW folder: front-left  (face visible, walking screen ↙)
+//   cam 135° → NW folder: back-left   (back visible, walking screen ↖)
+//   cam  45° → NE folder: back-right  (back visible, walking screen ↗)
+// These match iso directions directly.
+const SPRITE_DIR_REMAP = { 'SE': 'SE', 'SW': 'SW', 'NW': 'NW', 'NE': 'NE' };
 
 function drawChar(ch) {
   const anim = ch.moving ? 'walk' : 'idle';
