@@ -1065,11 +1065,14 @@ function getTinted(img, key) {
   tc.width = w; tc.height = h;
   const tctx = tc.getContext('2d');
   tctx.drawImage(img, 0, 0);
-  // Warm sepia — source-atop only touches opaque pixels
+  // Lighten dark shadow areas (back-facing sprites too dark from single sun light)
   tctx.globalCompositeOperation = 'source-atop';
-  tctx.fillStyle = 'rgba(130, 110, 50, 0.12)';
+  tctx.fillStyle = 'rgba(180, 190, 170, 0.12)';
   tctx.fillRect(0, 0, w, h);
-  tctx.fillStyle = 'rgba(60, 90, 40, 0.06)';
+  // Warm sepia tint
+  tctx.fillStyle = 'rgba(130, 110, 50, 0.08)';
+  tctx.fillRect(0, 0, w, h);
+  tctx.fillStyle = 'rgba(60, 90, 40, 0.04)';
   tctx.fillRect(0, 0, w, h);
   tctx.globalCompositeOperation = 'source-over';
   _tintCache[key] = tc;
@@ -1419,13 +1422,14 @@ function showBubble(ch, type) {
 // ================================================================
 
 // Character content metrics (approximate from bbox analysis)
+// Metrics updated for v5 sprites (25° camera elevation)
 const CHAR_METRICS = {
-  'character-male-a':   { feetY: 174, headY: 98, centerX: 128, contentH: 76 },
-  'character-male-c':   { feetY: 174, headY: 90, centerX: 128, contentH: 84 },
-  'character-male-d':   { feetY: 174, headY: 96, centerX: 128, contentH: 78 },
-  'character-female-a': { feetY: 188, headY: 93, centerX: 128, contentH: 95 },
-  'character-female-c': { feetY: 174, headY: 93, centerX: 128, contentH: 81 },
-  'character-male-e':   { feetY: 174, headY: 98, centerX: 128, contentH: 76 },
+  'character-male-a':   { feetY: 197, headY: 90, centerX: 127, contentH: 107 },
+  'character-male-c':   { feetY: 197, headY: 74, centerX: 128, contentH: 123 },
+  'character-male-d':   { feetY: 197, headY: 85, centerX: 128, contentH: 112 },
+  'character-female-a': { feetY: 209, headY: 78, centerX: 128, contentH: 131 },
+  'character-female-c': { feetY: 197, headY: 78, centerX: 128, contentH: 119 },
+  'character-male-e':   { feetY: 197, headY: 90, centerX: 128, contentH: 107 },
 };
 
 // Sprite direction remap — no remap needed. Camera orbit in Blender:
