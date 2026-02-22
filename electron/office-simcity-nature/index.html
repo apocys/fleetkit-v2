@@ -1453,8 +1453,8 @@ function drawChar(ch) {
   const { x, y } = iso(ch.c, ch.r);
   const s = toScreen(x, y);
 
-  // Scale character so it's ~85% of diamond height
-  const targetH = DH * scale * 1.15;
+  // Scale character to fill ~1 tile height (adjusted for v5 sprites with larger content area)
+  const targetH = DH * scale * 1.62;
   const imgScale = targetH / metrics.contentH;
   const dw = 256 * imgScale;
   const dh = 256 * imgScale;
