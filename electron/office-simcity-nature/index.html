@@ -1072,9 +1072,9 @@ function getTinted(img, key) {
   for (let i = 0; i < px.length; i += 4) {
     if (px[i+3] === 0) continue; // skip transparent
     const brightness = (px[i] + px[i+1] + px[i+2]) / 3;
-    if (brightness < 80) {
-      // Lift dark pixels by ~40 to reduce harsh shadows
-      const lift = Math.round(40 * (1 - brightness / 80));
+    if (brightness < 100) {
+      // Lift dark pixels by ~60 to reduce harsh shadows
+      const lift = Math.round(60 * (1 - brightness / 100));
       px[i]   = Math.min(255, px[i] + lift);
       px[i+1] = Math.min(255, px[i+1] + lift);
       px[i+2] = Math.min(255, px[i+2] + lift);
@@ -1467,7 +1467,7 @@ function drawChar(ch) {
   const dh = 256 * imgScale;
 
   // Position: feet grounded at tile center
-  const feetScreenY = s.y + DH * scale * 0.5;
+  const feetScreenY = s.y + DH * scale * 0.65;
   const drawX = s.x - metrics.centerX * imgScale;
   const drawY = feetScreenY - metrics.feetY * imgScale;
 
