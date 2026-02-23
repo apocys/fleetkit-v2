@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SpawnKit — Executive Office V4</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/executive-v4.css">
+</head>
+<body>
+    <!-- ═══ Ambient Background ═══ -->
+    <div class="exec-backdrop" aria-hidden="true"></div>
+    <div class="exec-particles" aria-hidden="true">
+        <div class="exec-particle"></div>
+        <div class="exec-particle"></div>
+        <div class="exec-particle"></div>
+    </div>
+
+    <!-- ═══ SVG Avatar Definitions (hidden, referenced by use) ═══ -->
+    <svg xmlns="http://www.w3.org/2000/svg" style="display:none">
+        <defs>
+            <!-- ── ApoMac: Tech CEO with glasses ── -->
+            <symbol id="avatar-ceo" viewBox="0 0 48 48">
+                <circle cx="24" cy="24" r="24" fill="#007AFF"/>
+                <circle cx="24" cy="20" r="10" fill="#F5D6B8"/>
+                <path d="M14 42c0-8 4.5-14 10-14s10 6 10 14" fill="#1C1C1E"/>
+                <!-- Hair -->
+                <path d="M14 17c0-6 4.5-11 10-11s10 5 10 11c0 1-.2 2-.5 2.8-.8-4-4.5-7-9.5-7s-8.7 3-9.5 7c-.3-.8-.5-1.8-.5-2.8z" fill="#3A3A3C"/>
+                <!-- Glasses -->
+                <rect x="15.5" y="17.5" width="7" height="5.5" rx="2.5" fill="none" stroke="#1C1C1E" stroke-width="1.5"/>
+                <rect x="25.5" y="17.5" width="7" height="5.5" rx="2.5" fill="none" stroke="#1C1C1E" stroke-width="1.5"/>
+                <line x1="22.5" y1="20" x2="25.5" y2="20" stroke="#1C1C1E" stroke-width="1.2"/>
+                <!-- Eyes behind glasses -->
+                <circle cx="19" cy="20.2" r="1.2" fill="#1C1C1E"/>
+                <circle cx="29" cy="20.2" r="1.2" fill="#1C1C1E"/>
+                <!-- Smile -->
+                <path d="M20 24.5c0 0 2 2.5 4 2.5s4-2.5 4-2.5" fill="none" stroke="#C4856A" stroke-width="1" stroke-linecap="round"/>
+            </symbol>
+
+            <!-- ── Atlas: Operations Manager with wrench ── -->
+            <symbol id="avatar-atlas" viewBox="0 0 48 48">
+                <circle cx="24" cy="24" r="24" fill="#BF5AF2"/>
+                <circle cx="24" cy="20" r="9" fill="#F5D6B8"/>
+                <path d="M15 40c0-7 4-12 9-12s9 5 9 12" fill="#1C1C1E"/>
+                <!-- Hair -->
+                <path d="M15 16c0-5 4-9 9-9s9 4 9 9c0 1-.3 2-.7 2.8-.6-3.5-3.8-6-7.3-6s-6.7 2.5-7.3 6c-.4-.8-.7-1.8-.7-2.8z" fill="#8E4EC6"/>
+                <!-- Eyes -->
+                <circle cx="20" cy="19" r="1.5" fill="#1C1C1E"/>
+                <circle cx="28" cy="19" r="1.5" fill="#1C1C1E"/>
+                <!-- Smile -->
+                <path d="M19 24c0 0 2.5 3 5 3s5-3 5-3" fill="none" stroke="#C4856A" stroke-width="1.2" stroke-linecap="round"/>
+                <!-- Wrench tool -->
+                <path d="M32 38l-3-3 2-2 3 3-2 2z" fill="#FFD700" stroke="#E6C200" stroke-width="0.5"/>
+            </symbol>
+
+            <!-- ── Forge: Technical Builder with hard hat ── -->
+            <symbol id="avatar-forge" viewBox="0 0 48 48">
+                <circle cx="24" cy="24" r="24" fill="#FF9F0A"/>
+                <circle cx="24" cy="21" r="9" fill="#F5D6B8"/>
+                <path d="M15 42c0-8 4-13 9-13s9 5 9 13" fill="#1C1C1E"/>
+                <!-- Hard hat -->
+                <ellipse cx="24" cy="14" rx="10" ry="4" fill="#FFD700"/>
+                <ellipse cx="24" cy="12" rx="8" ry="3" fill="#FF9F0A"/>
+                <!-- Eyes -->
+                <circle cx="20" cy="20" r="1.5" fill="#1C1C1E"/>
+                <circle cx="28" cy="20" r="1.5" fill="#1C1C1E"/>
+                <!-- Smile -->
+                <path d="M19 25c0 0 2.5 2.5 5 2.5s5-2.5 5-2.5" fill="none" stroke="#C4856A" stroke-width="1" stroke-linecap="round"/>
+                <!-- Tool belt -->
+                <rect x="18" y="35" width="12" height="3" fill="#8B4513"/>
+            </symbol>
+
+            <!-- ── Hunter: Sales Hunter with target ── -->
+            <symbol id="avatar-hunter" viewBox="0 0 48 48">
+                <circle cx="24" cy="24" r="24" fill="#FF453A"/>
+                <circle cx="24" cy="20" r="9" fill="#F5D6B8"/>
+                <path d="M15 40c0-7 4-12 9-12s9 5 9 12" fill="#1C1C1E"/>
+                <!-- Hair (spiky) -->
+                <path d="M15 15c1-6 4.5-10 9-10s8 4 9 10l-2-1c-1-3-3-5-7-5s-6 2-7 5l-2 1z" fill="#D2001C"/>
+                <!-- Eyes (determined) -->
+                <circle cx="20" cy="19" r="1.5" fill="#1C1C1E"/>
+                <circle cx="28" cy="19" r="1.5" fill="#1C1C1E"/>
+                <!-- Smile (confident) -->
+                <path d="M19 24c0 0 2.5 3 5 3s5-3 5-3" fill="none" stroke="#C4856A" stroke-width="1.2" stroke-linecap="round"/>
+                <!-- Target badge -->
+                <circle cx="38" cy="10" r="5" fill="#FFD700"/>
+                <circle cx="38" cy="10" r="3" fill="#FF453A"/>
+                <circle cx="38" cy="10" r="1" fill="#FFD700"/>
+            </symbol>
+
+            <!-- ── Echo: Marketing Voice with megaphone ── -->
+            <symbol id="avatar-echo" viewBox="0 0 48 48">
+                <circle cx="24" cy="24" r="24" fill="#0A84FF"/>
+                <circle cx="24" cy="20" r="9" fill="#F5D6B8"/>
+                <path d="M15 40c0-7 4-12 9-12s9 5 9 12" fill="#1C1C1E"/>
+                <!-- Hair (flowing) -->
+                <path d="M15 16c0-6 4-10 9-10s9 4 9 10c-1-4-4-7-9-7s-8 3-9 7z" fill="#FFD700"/>
+                <!-- Eyes (expressive) -->
+                <circle cx="20" cy="19" r="1.5" fill="#1C1C1E"/>
+                <circle cx="28" cy="19" r="1.5" fill="#1C1C1E"/>
+                <!-- Smile (bright) -->
+                <path d="M18 24c0 0 3 4 6 4s6-4 6-4" fill="none" stroke="#C4856A" stroke-width="1.3" stroke-linecap="round"/>
+                <!-- Megaphone -->
+                <path d="M35 35l5 2v4l-5 2-3-4z" fill="#FFD700" stroke="#E6C200" stroke-width="0.5"/>
+                <circle cx="32" cy="39" r="1.5" fill="#0A84FF"/>
+            </symbol>
+
+            <!-- ── Sentinel: Guardian with shield ── -->
+            <symbol id="avatar-sentinel" viewBox="0 0 48 48">
+                <circle cx="24" cy="24" r="24" fill="#30D158"/>
+                <circle cx="24" cy="20" r="9" fill="#F5D6B8"/>
+                <path d="M15 40c0-7 4-12 9-12s9 5 9 12" fill="#1C1C1E"/>
+                <!-- Hair (neat) -->
+                <path d="M15 15c0-5 4.5-9 9-9s9 4 9 9c-0.5-3.5-4-6-9-6s-8.5 2.5-9 6z" fill="#2D5016"/>
+                <!-- Eyes (alert) -->
+                <circle cx="20" cy="19" r="1.5" fill="#1C1C1E"/>
+                <circle cx="28" cy="19" r="1.5" fill="#1C1C1E"/>
+                <!-- Smile (protective) -->
+                <path d="M19 24c0 0 2.5 2.5 5 2.5s5-2.5 5-2.5" fill="none" stroke="#C4856A" stroke-width="1" stroke-linecap="round"/>
+                <!-- Shield badge -->
+                <path d="M36 8l4 2v6l-4 4-4-4v-6l4-2z" fill="#FFD700" stroke="#30D158" stroke-width="1"/>
+                <path d="M36 10v6l-2 2v-6l2-2z" fill="#30D158"/>
+            </symbol>
+        </defs>
+    </svg>
+
+    <!-- ═══ Main Application Container ═══ -->
+    <div class="exec-container">
+        <!-- Navigation -->
+        <nav class="exec-nav">
+            <div class="nav-toggle-group">
+                <button class="nav-toggle-btn active" data-panel="fleet">
+                    <span class="nav-toggle-icon">🏢</span>
+                    <span>Fleet</span>
+                </button>
+                <button class="nav-toggle-btn" data-panel="missions">
+                    <span class="nav-toggle-icon">🎯</span>
+                    <span>Missions</span>
+                </button>
+                <button class="nav-toggle-btn" data-panel="sessions">
+                    <span class="nav-toggle-icon">⚙️</span>
+                    <span>Sessions</span>
+                </button>
+                <button class="nav-toggle-btn" data-panel="skills">
+                    <span class="nav-toggle-icon">🎯</span>
+                    <span>Skills</span>
+                </button>
+            </div>
+        </nav>
+
+        <!-- Panel Container -->
+        <main class="exec-panels">
+            <!-- Fleet Grid Panel -->
+            <div class="exec-panel active" id="fleet-panel">
+                <!-- Content populated by FleetGridPanel -->
+            </div>
+
+            <!-- Agent Detail Panel -->
+            <div class="exec-panel" id="agent-panel">
+                <!-- Content populated by AgentPanel -->
+            </div>
+
+            <!-- Mission Center Panel -->
+            <div class="exec-panel" id="missions-panel">
+                <!-- Content populated by MissionCenterPanel -->
+            </div>
+
+            <!-- Session Viewer Panel -->
+            <div class="exec-panel" id="sessions-panel">
+                <!-- Content populated by SessionViewerPanel -->
+            </div>
+
+            <!-- Skills Center Panel -->
+            <div class="exec-panel" id="skills-panel">
+                <!-- Content populated by SkillCenterPanel -->
+            </div>
+        </main>
+    </div>
+
+    <!-- Chat Panel (Overlay) -->
+    <div id="chat-panel">
+        <!-- Content populated by ChatPanel -->
+    </div>
+
+    <!-- Connection Status Indicator -->
+    <div id="connection-status" class="connection-status">
+        <div class="connection-dot"></div>
+        <span class="connection-text">Connecting...</span>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- ═══════════════════════════════════════════════════ -->
+    <!-- JavaScript Loading -->
+    <!-- ═══════════════════════════════════════════════════ -->
+
+    <!-- Auto-detect local OpenClaw gateway -->
+    <script>
+        (function() {
+            var stored = {};
+            try { stored = JSON.parse(localStorage.getItem('spawnkit-config') || '{}'); } catch(e) {}
+            
+            var params = new URLSearchParams(window.location.search);
+            var relayUrl = stored.relayUrl || params.get('relay') || 'http://127.0.0.1:8222';
+            var relayToken = stored.relayToken || params.get('token') || '';
+            
+            window.OC_RELAY_URL = relayUrl;
+            if (relayToken) window.OC_RELAY_TOKEN = relayToken;
+            
+            console.log('🔌 SpawnKit Executive Office V4: relay=' + relayUrl + ' token=' + (relayToken ? '***' : 'none'));
+        })();
+    </script>
+
+    <!-- Core Data Layer -->
+    <script src="js/data-layer.js"></script>
+
+    <!-- Components -->
+    <script src="js/components/countdown-timer.js"></script>
+    <script src="js/components/todo-list.js"></script>
+    <script src="js/components/wizard.js"></script>
+
+    <!-- Panels -->
+    <script src="js/panels/fleet-grid.js"></script>
+    <script src="js/panels/agent-panel.js"></script>
+    <script src="js/panels/mission-center.js"></script>
+    <script src="js/panels/session-viewer.js"></script>
+    <script src="js/panels/chat-panel.js"></script>
+
+    <!-- Navigation Controller -->
+    <script>
+        (function() {
+            'use strict';
+            
+            // Navigation controller
+            class NavigationController {
+                constructor() {
+                    this.currentPanel = 'fleet';
+                    this.init();
+                    this.bindEvents();
+                }
+
+                init() {
+                    this.updatePanelVisibility();
+                }
+
+                bindEvents() {
+                    // Navigation button clicks
+                    document.querySelectorAll('.nav-toggle-btn').forEach(btn => {
+                        btn.addEventListener('click', () => {
+                            const panel = btn.dataset.panel;
+                            this.navigateToPanel(panel);
+                        });
+                    });
+
+                    // Listen for navigation events
+                    FleetEvents.on('navigate', (data) => {
+                        this.navigateToPanel(data.panel, data);
+                    });
+
+                    // Listen for connection status updates
+                    FleetEvents.on('connection:changed', (data) => {
+                        this.updateConnectionStatus(data);
+                    });
+
+                    // Listen for toast notifications
+                    FleetEvents.on('toast:show', (data) => {
+                        this.showToast(data.message, data.type, data.duration);
+                    });
+                }
+
+                navigateToPanel(panelName, data = {}) {
+                    if (!panelName || panelName === this.currentPanel) return;
+
+                    // Update navigation buttons
+                    document.querySelectorAll('.nav-toggle-btn').forEach(btn => {
+                        btn.classList.toggle('active', btn.dataset.panel === panelName);
+                    });
+
+                    // Update panels
+                    document.querySelectorAll('.exec-panel').forEach(panel => {
+                        panel.classList.remove('active');
+                    });
+
+                    const targetPanel = document.getElementById(`${panelName}-panel`);
+                    if (targetPanel) {
+                        targetPanel.classList.add('active');
+                        this.currentPanel = panelName;
+                    }
+                }
+
+                updatePanelVisibility() {
+                    document.querySelectorAll('.exec-panel').forEach(panel => {
+                        panel.classList.remove('active');
+                    });
+
+                    const activePanel = document.getElementById(`${this.currentPanel}-panel`);
+                    if (activePanel) {
+                        activePanel.classList.add('active');
+                    }
+                }
+
+                updateConnectionStatus(data) {
+                    const statusEl = document.getElementById('connection-status');
+                    if (!statusEl) return;
+
+                    statusEl.classList.remove('show', 'connection-status--online', 'connection-status--offline');
+                    
+                    const textEl = statusEl.querySelector('.connection-text');
+                    if (textEl) {
+                        if (data.connected) {
+                            textEl.textContent = 'Connected';
+                            statusEl.classList.add('connection-status--online');
+                        } else {
+                            textEl.textContent = 'Disconnected';
+                            statusEl.classList.add('connection-status--offline');
+                        }
+                    }
+
+                    // Show status briefly
+                    statusEl.classList.add('show');
+                    setTimeout(() => {
+                        statusEl.classList.remove('show');
+                    }, 3000);
+                }
+
+                showToast(message, type = 'info', duration = 3000) {
+                    let container = document.getElementById('toast-container');
+                    if (!container) {
+                        container = document.createElement('div');
+                        container.id = 'toast-container';
+                        container.className = 'toast-container';
+                        document.body.appendChild(container);
+                    }
+
+                    const toast = document.createElement('div');
+                    toast.className = `toast toast--${type}`;
+                    toast.innerHTML = `
+                        <div class="toast-content">
+                            <span class="toast-icon">${this.getToastIcon(type)}</span>
+                            <span class="toast-message">${message}</span>
+                        </div>
+                        <button class="toast-close">×</button>
+                    `;
+
+                    container.appendChild(toast);
+
+                    // Animate in
+                    requestAnimationFrame(() => {
+                        toast.classList.add('toast--show');
+                    });
+
+                    // Close button
+                    toast.querySelector('.toast-close').addEventListener('click', () => {
+                        this.removeToast(toast);
+                    });
+
+                    // Auto remove
+                    setTimeout(() => {
+                        this.removeToast(toast);
+                    }, duration);
+                }
+
+                removeToast(toast) {
+                    if (toast && toast.parentNode) {
+                        toast.classList.remove('toast--show');
+                        setTimeout(() => {
+                            if (toast.parentNode) {
+                                toast.parentNode.removeChild(toast);
+                            }
+                        }, 300);
+                    }
+                }
+
+                getToastIcon(type) {
+                    const icons = {
+                        success: '✅',
+                        error: '❌',
+                        warning: '⚠️',
+                        info: 'ℹ️'
+                    };
+                    return icons[type] || icons.info;
+                }
+            }
+
+            // Keyboard shortcuts
+            document.addEventListener('keydown', (e) => {
+                // Global shortcuts
+                if (e.ctrlKey || e.metaKey) {
+                    switch (e.key) {
+                        case '1':
+                            e.preventDefault();
+                            FleetEvents.emit('navigate', { panel: 'fleet' });
+                            break;
+                        case '2':
+                            e.preventDefault();
+                            FleetEvents.emit('navigate', { panel: 'missions' });
+                            break;
+                        case '3':
+                            e.preventDefault();
+                            FleetEvents.emit('navigate', { panel: 'sessions' });
+                            break;
+                        case 'k':
+                            e.preventDefault();
+                            FleetEvents.emit('chat:open', { target: 'ceo' });
+                            break;
+                    }
+                }
+
+                // Quick actions
+                if (e.key === '/' && !e.target.matches('input, textarea, [contenteditable]')) {
+                    e.preventDefault();
+                    // Could open command palette
+                    console.log('Command palette shortcut');
+                }
+            });
+
+            // Initialize navigation when DOM is ready
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', () => {
+                    window.NavigationController = new NavigationController();
+                });
+            } else {
+                window.NavigationController = new NavigationController();
+            }
+
+        })();
+    </script>
+
+    <!-- User Configuration -->
+    <script>
+        // Read config from setup wizard (if available)
+        try {
+            const setupConfig = JSON.parse(localStorage.getItem('spawnkit-config') || '{}');
+            if (setupConfig.userName) {
+                // Replace "ApoMac" with the user's name in the CEO display
+                document.addEventListener('DOMContentLoaded', () => {
+                    const ceoNames = document.querySelectorAll('[data-agent="ceo"] .agent-name, .ceo-name');
+                    ceoNames.forEach(el => el.textContent = setupConfig.userName);
+                });
+            }
+        } catch(e) { 
+            console.warn('Failed to load user config:', e);
+        }
+    </script>
+
+    <!-- Additional CSS for new components -->
+    <style>
+        /* Toast notifications */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            pointer-events: none;
+        }
+
+        .toast {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-medium);
+            border-radius: 8px;
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+            transform: translateX(100%);
+            opacity: 0;
+            transition: all 0.3s var(--ease-smooth);
+            pointer-events: auto;
+            max-width: 320px;
+        }
+
+        .toast--show {
+            transform: translateX(0);
+            opacity: 1;
+        }
+
+        .toast--success {
+            border-left: 4px solid var(--status-active);
+        }
+
+        .toast--error {
+            border-left: 4px solid var(--status-error);
+        }
+
+        .toast--warning {
+            border-left: 4px solid var(--status-busy);
+        }
+
+        .toast--info {
+            border-left: 4px solid var(--exec-blue);
+        }
+
+        .toast-content {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex: 1;
+        }
+
+        .toast-icon {
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+
+        .toast-message {
+            font-size: 13px;
+            color: var(--text-primary);
+            line-height: 1.4;
+        }
+
+        .toast-close {
+            background: none;
+            border: none;
+            color: var(--text-tertiary);
+            cursor: pointer;
+            font-size: 16px;
+            padding: 2px;
+            border-radius: 4px;
+            transition: all 0.2s var(--ease-smooth);
+        }
+
+        .toast-close:hover {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        /* Additional wizard styles */
+        .wizard-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.5);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s var(--ease-smooth);
+        }
+
+        .wizard-overlay.open {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .wizard-overlay.open .wizard-modal {
+            transform: scale(1);
+        }
+
+        .wizard-modal {
+            width: 480px;
+            max-width: 90vw;
+            max-height: 80vh;
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            border: 1px solid var(--border-medium);
+            display: flex;
+            flex-direction: column;
+            transform: scale(0.95);
+            transition: transform 0.3s var(--ease-smooth);
+            box-shadow: 0 24px 80px rgba(0, 0, 0, 0.18);
+        }
+
+        /* Agent type selection cards */
+        .agent-type-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 8px;
+        }
+
+        .agent-type-card {
+            padding: 16px;
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s var(--ease-smooth);
+        }
+
+        .agent-type-card:hover {
+            border-color: var(--border-medium);
+            background: var(--bg-tertiary);
+        }
+
+        .agent-type-card.selected {
+            border-color: var(--exec-blue);
+            background: var(--exec-blue-muted);
+        }
+
+        .agent-type-icon {
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+
+        .agent-type-name {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: var(--text-primary);
+        }
+
+        .agent-type-desc {
+            font-size: 12px;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+    </style>
+</body>
+</html>
