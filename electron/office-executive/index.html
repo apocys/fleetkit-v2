@@ -4049,15 +4049,17 @@
             window.SpawnKit.on('data:refresh', createAPIBridge);
         }
         
-        // Fallback: Try every 2 seconds until SpawnKit is available
+        // Fallback: Try every 500ms until SpawnKit is available
         const bridgeRetryInterval = setInterval(() => {
-            if (window.SpawnKit && window.SpawnKit.data && !window.API) {
+            if (window.SpawnKit && window.SpawnKit.data && !API) {
                 createAPIBridge();
-                if (window.API) {
+                if (API) {
                     clearInterval(bridgeRetryInterval);
+                    prefetchPanelData(); // Immediate prefetch once bridge is ready
+                    console.log('🔌 API bridge connected + prefetch done');
                 }
             }
-        }, 2000);
+        }, 500);
 
         var AGENTS = {
             ceo:      { name: setupConfig.userName || 'ApoMac', role: setupConfig.ceoName || 'CEO', color: '#007AFF', status: 'active', task: 'Orchestrating fleet operations' },
