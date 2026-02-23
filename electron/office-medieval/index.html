@@ -780,11 +780,29 @@
                 model.scale.setScalar(def.scale);
             }
 
-            // Enable shadows on all meshes
+            // Enable shadows + apply fallback colors if textures didn't load
+            const castleColors = {
+                'wall': 0xa89a85, 'tower': 0x9a8c78, 'gate': 0x8b7d6a,
+                'door': 0x7a5c3a, 'bridge': 0x8b6f4e, 'stairs': 0x9a8c78,
+                'flag': 0xcc3333, 'tree': 0x4a8a2e, 'rock': 0x7a7570,
+                'siege': 0x8b6f4e, 'log': 0x6b5030, 'trunk': 0x5a4020,
+            };
+            const pathKey = (def.path || '').split('/').pop().replace('.glb', '');
+            const colorKey = Object.keys(castleColors).find(k => pathKey.includes(k));
+            const fallbackColor = castleColors[colorKey] || 0xa89a85;
+
             model.traverse((child) => {
                 if (child.isMesh) {
                     child.castShadow = true;
                     child.receiveShadow = true;
+                    // If material has no map (texture didn't load), apply fallback color
+                    if (child.material && !child.material.map) {
+                        child.material = new THREE.MeshStandardMaterial({
+                            color: fallbackColor,
+                            roughness: 0.85,
+                            metalness: 0.05,
+                        });
+                    }
                 }
             });
 
@@ -829,7 +847,7 @@
                 try {
                     const gltf = await this.loadModel(`assets/characters/character-${def.char}.glb`);
                     const model = gltf.scene;
-                    model.scale.setScalar(0.9);
+                    model.scale.setScalar(0.5);
 
                     const wp = waypoints[i];
                     model.position.set(wp[0].x, 0, wp[0].z);
