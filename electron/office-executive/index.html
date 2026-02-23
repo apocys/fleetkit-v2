@@ -3139,6 +3139,28 @@
         </defs>
     </svg>
 
+    <!-- ═══ Setup / Login Overlay ═══ -->
+    <div id="setupOverlay" style="position:fixed;inset:0;z-index:10000;background:var(--bg-primary);display:none;align-items:center;justify-content:center;">
+        <div style="max-width:400px;width:100%;padding:32px;">
+            <div style="text-align:center;margin-bottom:24px;">
+                <div style="font-size:48px;margin-bottom:8px;">🏰</div>
+                <h1 style="font-size:22px;font-weight:700;color:var(--text-primary);margin:0 0 4px;">SpawnKit</h1>
+                <p style="font-size:14px;color:var(--text-secondary);margin:0;">Connect to your AI fleet</p>
+            </div>
+            <div style="margin-bottom:16px;">
+                <label style="font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-tertiary);display:block;margin-bottom:4px;">OpenClaw Gateway URL</label>
+                <input type="text" id="setupRelayUrl" placeholder="http://localhost:8222" style="width:100%;box-sizing:border-box;padding:12px;border-radius:10px;border:1px solid var(--border-primary);background:var(--bg-secondary);color:var(--text-primary);font-size:14px;">
+            </div>
+            <div style="margin-bottom:16px;">
+                <label style="font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-tertiary);display:block;margin-bottom:4px;">Auth Token (optional)</label>
+                <input type="password" id="setupRelayToken" placeholder="sk-oc-..." style="width:100%;box-sizing:border-box;padding:12px;border-radius:10px;border:1px solid var(--border-primary);background:var(--bg-secondary);color:var(--text-primary);font-size:14px;">
+            </div>
+            <button onclick="connectSetup()" style="width:100%;padding:14px;border-radius:10px;border:none;background:var(--exec-blue);color:white;font-weight:600;font-size:15px;cursor:pointer;margin-bottom:12px;">Connect</button>
+            <button onclick="enterDemoMode()" style="width:100%;padding:12px;border-radius:10px;border:1px solid var(--border-primary);background:transparent;color:var(--text-secondary);font-size:13px;cursor:pointer;">Try Demo Mode</button>
+            <div id="setupStatus" style="margin-top:12px;text-align:center;font-size:12px;color:var(--text-tertiary);"></div>
+        </div>
+    </div>
+
     <!-- ═══ Main Container ═══ -->
     <div class="exec-container">
 
@@ -3397,6 +3419,7 @@
                 <span class="statusbar-action-icon" aria-hidden="true">🏙️</span>
                 <span>Remote</span>
             </button>
+            <button class="statusbar-action" id="themesBtn" aria-label="Themes">🎨 Themes</button>
             <button class="statusbar-action" id="addAgentBtn" aria-label="Add Agent" style="background:linear-gradient(135deg, rgba(48,209,88,0.12), rgba(0,122,255,0.08)); border-color:rgba(48,209,88,0.3);">
                 <span class="statusbar-action-icon" aria-hidden="true">➕</span>
                 <span>Add Agent</span>
@@ -3681,6 +3704,18 @@
         </div>
     </div>
 
+    <!-- ═══ Themes Panel ═══ -->
+    <div class="cron-overlay" id="themesOverlay" role="dialog">
+        <div class="cron-backdrop" id="themesBackdrop"></div>
+        <div class="cron-panel" style="max-width:420px;">
+            <div class="cron-header">
+                <div><h2 style="margin:0;font-size:17px;font-weight:600;">🎨 Switch Theme</h2></div>
+                <button class="cron-close" id="themesClose" aria-label="Close">&times;</button>
+            </div>
+            <div class="cron-body" id="themesBody"></div>
+        </div>
+    </div>
+
     <!-- ═══ Chat History Modal ═══ -->
     <div class="chat-history-overlay" id="chatHistoryOverlay" role="dialog" aria-modal="true" aria-label="Chat History">
         <div class="chat-history-backdrop" id="chatHistoryBackdrop"></div>
@@ -3774,6 +3809,62 @@
         console.debug('🔌 SpawnKit Local: relay=' + relayUrl + ' token=' + (relayToken ? '***' : 'none'));
       })();
     </script>
+
+    <!-- ═══ Setup / Demo Mode Logic ═══ -->
+    <script>
+    // Show setup if no relay configured and not in demo mode
+    (function() {
+        var config = {};
+        try { config = JSON.parse(localStorage.getItem('spawnkit-config') || '{}'); } catch(e) {}
+        var hasConfig = config.relayUrl || window.location.hostname.includes('spawnkit.ai');
+        var isDemo = config.demoMode || false;
+        if (!hasConfig && !isDemo) {
+            var overlay = document.getElementById('setupOverlay');
+            if (overlay) overlay.style.display = 'flex';
+        }
+    })();
+
+    function connectSetup() {
+        var urlEl = document.getElementById('setupRelayUrl');
+        var tokenEl = document.getElementById('setupRelayToken');
+        var statusEl = document.getElementById('setupStatus');
+        var url = urlEl ? urlEl.value.trim() : '';
+        var token = tokenEl ? tokenEl.value.trim() : '';
+        if (!url) { if (statusEl) statusEl.textContent = 'Please enter a gateway URL'; return; }
+        if (statusEl) statusEl.textContent = '⏳ Connecting...';
+        var headers = { 'Accept': 'application/json' };
+        if (token) headers['Authorization'] = 'Bearer ' + token;
+        fetch(url.replace(/\/+$/, '') + '/api/oc/health', { headers: headers })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data && data.ok) {
+                    var cfg = { relayUrl: url, relayToken: token, connectedAt: Date.now() };
+                    localStorage.setItem('spawnkit-config', JSON.stringify(cfg));
+                    window.OC_RELAY_URL = url;
+                    window.OC_API_URL = url;
+                    if (token) window.OC_RELAY_TOKEN = token;
+                    var overlay = document.getElementById('setupOverlay');
+                    if (overlay) overlay.style.display = 'none';
+                    if (typeof showToast === 'function') showToast('✅ Connected to gateway');
+                    if (typeof SpawnKit !== 'undefined' && SpawnKit.refresh) SpawnKit.refresh();
+                } else {
+                    if (statusEl) statusEl.textContent = '⚠️ Server responded but health check failed';
+                }
+            })
+            .catch(function(err) {
+                if (statusEl) statusEl.textContent = '❌ Connection failed: ' + (err.message || 'Cannot reach server');
+            });
+    }
+
+    function enterDemoMode() {
+        var cfg = { demoMode: true, enteredAt: Date.now() };
+        localStorage.setItem('spawnkit-config', JSON.stringify(cfg));
+        var overlay = document.getElementById('setupOverlay');
+        if (overlay) overlay.style.display = 'none';
+        if (typeof showToast === 'function') showToast('👋 Welcome to Demo Mode');
+    }
+    </script>
+
     <script src="./src/data-bridge.js"></script>
     <script>
     // Read config from setup wizard (if available)
@@ -3837,6 +3928,12 @@
         var liveCronData = null;
         var liveMemoryData = null;
         var chatHistory = [];
+
+        // Restore chat history from localStorage on init
+        try {
+            var _savedChatHistory = JSON.parse(localStorage.getItem('spawnkit-chat-history') || '[]');
+            if (_savedChatHistory.length) chatHistory = _savedChatHistory;
+        } catch(e) {}
 
         /* Pre-fetch cron + memory data for panels */
         function prefetchPanelData() {
@@ -5213,19 +5310,37 @@
             }
         }
 
+        /* ── Persist chat history to localStorage ──── */
+        function persistChatHistory() {
+            try {
+                localStorage.setItem('spawnkit-chat-history', JSON.stringify(chatHistory.slice(-200)));
+            } catch(e) {}
+        }
+
         function loadChatTabTranscript() {
             if (!API) return;
             try {
                 var transcript = API.getTranscript('agent:main:main');
                 if (transcript && transcript.length > 0) {
-                    chatHistory = transcript.slice(-50).map(function(m) {
+                    var apiMessages = transcript.slice(-50).map(function(m) {
                         return {
                             role: m.role === 'user' ? 'user' : 'ai',
                             text: m.text || m.content || '',
-                            time: m.timestamp ? new Date(m.timestamp).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}) : ''
+                            time: m.timestamp ? new Date(m.timestamp).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}) : '',
+                            channel: m.channel || (m.metadata && m.metadata.channel) || 'spawnkit'
                         };
                     });
+                    // Merge: keep existing local-only messages, add new ones from API
+                    var existingTexts = new Set(chatHistory.map(function(m) { return m.text; }));
+                    apiMessages.forEach(function(m) {
+                        if (!existingTexts.has(m.text)) {
+                            chatHistory.push(m);
+                        }
+                    });
+                    // Keep only last 200
+                    if (chatHistory.length > 200) chatHistory = chatHistory.slice(-200);
                     renderChatTabMessages();
+                    persistChatHistory();
                 }
             } catch(e) { console.warn('Chat transcript load:', e); }
         }
@@ -5241,11 +5356,18 @@
                 var div = document.createElement('div');
                 div.className = 'chat-tab-msg chat-tab-msg--' + m.role;
                 var preview = m.text.length > 300 ? m.text.substring(0, 300) + '…' : m.text;
-                div.innerHTML = '<div>' + esc(preview) + '</div>' +
+                // Channel badge
+                var channelBadge = '';
+                if (m.channel && m.channel !== 'spawnkit') {
+                    var channelEmoji = { telegram: '✈️', signal: '🔐', whatsapp: '💬', discord: '🎮' }[m.channel] || '💬';
+                    channelBadge = '<span style="font-size:10px;background:var(--bg-tertiary);padding:1px 4px;border-radius:3px;margin-left:4px;">' + channelEmoji + '</span>';
+                }
+                div.innerHTML = '<div>' + esc(preview) + channelBadge + '</div>' +
                     (m.time ? '<div class="chat-tab-msg-time">' + esc(m.time) + '</div>' : '');
                 chatTabMsgsEl.appendChild(div);
             });
             chatTabMsgsEl.scrollTop = chatTabMsgsEl.scrollHeight;
+            persistChatHistory();
         }
 
         // Legacy function for compatibility
@@ -5313,12 +5435,14 @@
                     console.warn('[Chat] Unexpected response:', data);
                 }
                 renderChatTabMessages();
+                persistChatHistory();
 
             } catch (error) {
                 // Remove typing indicator
                 chatHistory = chatHistory.filter(msg => !msg.typing);
                 chatHistory.push({ role: 'ai', text: '⚠️ Network error: ' + esc(error.message), time: timeStr });
                 renderChatTabMessages();
+                persistChatHistory();
             }
         }
 
@@ -6236,6 +6360,52 @@
             renderRemote();
         }
 
+        /* ── Remote Config helpers ─────────────────── */
+        function getRemoteConfig() {
+            try { return JSON.parse(localStorage.getItem('spawnkit-remote-config') || '{}'); } catch(e) { return {}; }
+        }
+
+        function saveRemoteConfig() {
+            var url = document.getElementById('remoteRelayUrl');
+            var token = document.getElementById('remoteRelayToken');
+            var name = document.getElementById('remoteOfficeName');
+            if (!url || !url.value.trim()) { showToast('Please enter a relay URL'); return; }
+            var config = {
+                relayUrl: url.value.trim(),
+                relayToken: token ? token.value.trim() : '',
+                officeName: name ? name.value.trim() : 'My Office',
+                savedAt: Date.now()
+            };
+            localStorage.setItem('spawnkit-remote-config', JSON.stringify(config));
+            // Update global relay settings
+            window.OC_RELAY_URL = config.relayUrl;
+            if (config.relayToken) window.OC_RELAY_TOKEN = config.relayToken;
+            showToast('✅ Remote config saved');
+            testRemoteConnection();
+        }
+
+        function testRemoteConnection() {
+            var config = getRemoteConfig();
+            var statusEl = document.getElementById('remoteConnStatus');
+            if (!statusEl) return;
+            if (!config.relayUrl) { statusEl.innerHTML = '⚠️ No relay URL configured'; return; }
+            statusEl.innerHTML = '⏳ Testing connection...';
+            var headers = { 'Accept': 'application/json' };
+            if (config.relayToken) headers['Authorization'] = 'Bearer ' + config.relayToken;
+            fetch(config.relayUrl.replace(/\/+$/, '') + '/api/oc/health', { headers: headers, mode: 'cors' })
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    if (data && data.ok) {
+                        statusEl.innerHTML = '✅ Connected! Uptime: ' + Math.round((data.uptime || 0) / 60) + 'm';
+                    } else {
+                        statusEl.innerHTML = '⚠️ Server responded but health check failed';
+                    }
+                })
+                .catch(function(err) {
+                    statusEl.innerHTML = '❌ Connection failed: ' + (err.message || 'Unknown error');
+                });
+        }
+
         function renderRemote() {
             var body = document.getElementById('remoteBody');
             if (!body) return;
@@ -6252,14 +6422,30 @@
             
             var officeKeys = Object.keys(offices);
             if (officeKeys.length === 0) {
-                // Demo fallback
-                html += '<div class="remote-office-card">';
-                html += '<div class="remote-office-header">';
-                html += '<span class="remote-office-emoji">🎭</span>';
-                html += '<div><div class="remote-office-name">Sycopa HQ</div>';
-                html += '<div class="remote-office-status offline">Waiting for connection...</div></div>';
+                // Real config form (replaces old Sycopa HQ placeholder)
+                var remoteConf = getRemoteConfig();
+                var savedRelayUrl = remoteConf.relayUrl || '';
+                var savedToken = remoteConf.relayToken || '';
+                var savedName = remoteConf.officeName || '';
+                html += '<div style="padding:16px;">';
+                html += '<div style="font-size:13px;font-weight:600;color:var(--text-primary);margin-bottom:12px;">Connect to Remote Office</div>';
+                html += '<div style="margin-bottom:12px;">';
+                html += '<label style="font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-tertiary);display:block;margin-bottom:4px;">Fleet Relay URL</label>';
+                html += '<input type="text" id="remoteRelayUrl" value="' + esc(savedRelayUrl) + '" placeholder="https://fleet.spawnkit.ai" style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:8px;border:1px solid var(--border-primary);background:var(--bg-tertiary);color:var(--text-primary);font-size:13px;">';
                 html += '</div>';
-                html += '<div style="font-size:12px;color:#8E8E93;padding:8px 0">Fleet relay: fleet.spawnkit.ai</div>';
+                html += '<div style="margin-bottom:12px;">';
+                html += '<label style="font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-tertiary);display:block;margin-bottom:4px;">Auth Token</label>';
+                html += '<input type="password" id="remoteRelayToken" value="' + esc(savedToken) + '" placeholder="sk-fleet-..." style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:8px;border:1px solid var(--border-primary);background:var(--bg-tertiary);color:var(--text-primary);font-size:13px;">';
+                html += '</div>';
+                html += '<div style="margin-bottom:12px;">';
+                html += '<label style="font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-tertiary);display:block;margin-bottom:4px;">Office Name</label>';
+                html += '<input type="text" id="remoteOfficeName" value="' + esc(savedName) + '" placeholder="My Office" style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:8px;border:1px solid var(--border-primary);background:var(--bg-tertiary);color:var(--text-primary);font-size:13px;">';
+                html += '</div>';
+                html += '<div style="display:flex;gap:8px;">';
+                html += '<button onclick="saveRemoteConfig()" style="flex:1;padding:10px;border-radius:8px;border:none;background:var(--exec-blue);color:white;font-weight:600;font-size:13px;cursor:pointer;">Save & Connect</button>';
+                html += '<button onclick="testRemoteConnection()" style="padding:10px 16px;border-radius:8px;border:1px solid var(--border-primary);background:transparent;color:var(--text-secondary);font-size:13px;cursor:pointer;">Test</button>';
+                html += '</div>';
+                html += '<div id="remoteConnStatus" style="margin-top:12px;font-size:12px;color:var(--text-tertiary);"></div>';
                 html += '</div>';
             } else {
                 officeKeys.forEach(function(id) {
@@ -6350,6 +6536,43 @@
         document.getElementById('remoteBtn').addEventListener('click', openRemoteOverlay);
         document.getElementById('remoteBackdrop').addEventListener('click', closeRemotePanel);
         document.getElementById('remoteClose').addEventListener('click', closeRemotePanel);
+
+        /* ── Theme Selector ──────────────────────────── */
+        document.getElementById('themesBtn').addEventListener('click', function() {
+            closeAllPanels();
+            document.getElementById('themesOverlay').classList.add('open');
+            renderThemes();
+        });
+        document.getElementById('themesBackdrop').addEventListener('click', function() {
+            document.getElementById('themesOverlay').classList.remove('open');
+        });
+        document.getElementById('themesClose').addEventListener('click', function() {
+            document.getElementById('themesOverlay').classList.remove('open');
+        });
+
+        function renderThemes() {
+            var body = document.getElementById('themesBody');
+            if (!body) return;
+            var themes = [
+                { name: 'Executive Office', emoji: '🏢', desc: 'Professional C-suite dashboard', url: '/office-executive/', active: true },
+                { name: 'Medieval Castle', emoji: '🏰', desc: '3D castle with Kenney assets', url: 'https://themes.spawnkit.ai/office-medieval/' },
+                { name: 'SimCity', emoji: '🏙️', desc: 'Isometric city management', url: 'https://themes.spawnkit.ai/office-simcity/' },
+                { name: 'Nature Village', emoji: '🌿', desc: 'Cozy pixel-art village', url: 'https://themes.spawnkit.ai/office-simcity-nature/' }
+            ];
+            var html = '';
+            themes.forEach(function(t) {
+                html += '<div style="display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:12px;' +
+                    (t.active ? 'background:var(--exec-blue-muted);border:1px solid var(--exec-blue);' : 'background:var(--bg-tertiary);border:1px solid var(--border-primary);cursor:pointer;') +
+                    'margin-bottom:8px;" ' +
+                    (t.active ? '' : 'onclick="window.location.href=\'' + t.url + '\'"') + '>';
+                html += '<span style="font-size:28px;">' + t.emoji + '</span>';
+                html += '<div><div style="font-weight:600;font-size:14px;color:var(--text-primary);">' + t.name +
+                    (t.active ? ' <span style="font-size:11px;color:var(--exec-blue);font-weight:500;">ACTIVE</span>' : '') + '</div>';
+                html += '<div style="font-size:12px;color:var(--text-secondary);margin-top:2px;">' + t.desc + '</div></div>';
+                html += '</div>';
+            });
+            body.innerHTML = html;
+        }
 
         /* ═══════════════════════════════════════════════
            Decommission Animation (NEW #7)
