@@ -273,14 +273,14 @@
      ═══════════════════════════════════════════════════ */
   .v-detail-overlay {
     position: fixed; inset: 0; z-index: 200;
-    pointer-events: none; opacity: 0;
+    pointer-events: none;
     transition: opacity 300ms var(--v-ease);
   }
   .v-detail-overlay.open {
-    pointer-events: auto; opacity: 1;
+    pointer-events: none; /* overlay never blocks canvas */
   }
-  .v-detail-overlay.open .v-detail-backdrop { opacity: 1; }
-  .v-detail-overlay.open .v-detail-panel { transform: translateX(0); animation: vDetailPop 400ms cubic-bezier(0.25, 1, 0.5, 1); }
+  .v-detail-overlay.open .v-detail-backdrop { opacity: 0; pointer-events: none; } /* no backdrop dim */
+  .v-detail-overlay.open .v-detail-panel { transform: translateX(0); pointer-events: auto; animation: vDetailPop 400ms cubic-bezier(0.25, 1, 0.5, 1); }
   @keyframes vDetailPop {
     0% { transform: translateX(100%); box-shadow: none; }
     60% { transform: translateX(-6px); }
@@ -2675,28 +2675,29 @@ window.addEventListener('mouseup', () => { drag = false; cvs.classList.remove('g
 cvs.addEventListener('click', e => {
   if (Math.abs(e.clientX - dsx) > 4 || Math.abs(e.clientY - dsy) > 4) return;
   const t = screenToTile(e.clientX, e.clientY);
-  // Also check proximity to character's current position (not just tent)
+  // Check proximity to character's current screen position (pixel-accurate)
   let hit = null;
   let bestDist = Infinity;
   chars.forEach(ch => {
-    const dc = Math.abs(ch.c - (t.col + 0.5));
-    const dr = Math.abs(ch.r - (t.row + 0.5));
-    const d = dc + dr;
-    if (d < 2.5 && d < bestDist) {
-      bestDist = d;
+    if (ch.decommissioning) return;
+    const { x, y } = iso(ch.c, ch.r);
+    const s = toScreen(x, y);
+    // Check if click is within ~40px of character center on screen
+    const sdx = Math.abs(e.clientX - s.x);
+    const sdy = Math.abs(e.clientY - (s.y - 10 * scale)); // offset up since char center is above feet
+    const sd = Math.sqrt(sdx*sdx + sdy*sdy);
+    if (sd < 45 * scale && sd < bestDist) {
+      bestDist = sd;
       hit = ch.agent;
     }
   });
-  // Fallback: also check tent locations
-  if (!hit) {
-    hit = agents.find(a => Math.abs(a.col - t.col) <= 1 && Math.abs(a.row - t.row) <= 1);
-  }
   if (hit) {
     selectedAgentName = hit.name;
-    openVillageDetail(hit);
+    if (typeof openVillageDetail === 'function') openVillageDetail(hit);
   } else {
+    // Click on empty space — just deselect, no panel
     selectedAgentName = null;
-    closeVillageDetail();
+    if (typeof closeVillageDetail === 'function') closeVillageDetail();
   }
 });
 
