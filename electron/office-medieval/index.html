@@ -713,16 +713,19 @@
                     const midX = (a.x + b.x) / 2;
                     const midY = (a.y + b.y) / 2;
 
-                    const seg = new THREE.Mesh(new THREE.PlaneGeometry(len + 0.2, riverWidth), riverMat.clone());
-                    seg.rotation.x = -Math.PI / 2;
+                    // Create river segment flat on ground, rotated to align with flow
+                    const segGeo = new THREE.PlaneGeometry(len + 0.3, riverWidth);
+                    segGeo.rotateX(-Math.PI / 2);  // lay flat
+                    segGeo.rotateY(-angle);         // align to river direction
+                    const seg = new THREE.Mesh(segGeo, riverMat.clone());
                     seg.position.set(midX, 0, midY);
-                    seg.rotation.y = -angle;
                     grp.add(seg);
 
-                    const shSeg = new THREE.Mesh(new THREE.PlaneGeometry(len + 0.2, riverWidth * 0.7), shimMat.clone());
-                    shSeg.rotation.x = -Math.PI / 2;
+                    const shGeo = new THREE.PlaneGeometry(len + 0.3, riverWidth * 0.7);
+                    shGeo.rotateX(-Math.PI / 2);
+                    shGeo.rotateY(-angle);
+                    const shSeg = new THREE.Mesh(shGeo, shimMat.clone());
                     shSeg.position.set(midX, 0, midY);
-                    shSeg.rotation.y = -angle;
                     shimGrp.add(shSeg);
                 }
                 this.scene.add(grp);
