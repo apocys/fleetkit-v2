@@ -4090,10 +4090,10 @@
         var chatHistory = [];
 
         /* Pre-fetch cron + memory data for panels */
-        function prefetchPanelData() {
+        async function prefetchPanelData() {
             if (!API) return;
-            try { liveCronData = API.getCrons(); } catch(e) {}
-            try { liveMemoryData = API.getMemory(); } catch(e) {}
+            try { liveCronData = await API.getCrons(); } catch(e) {}
+            try { liveMemoryData = await API.getMemory(); } catch(e) {}
         }
         prefetchPanelData();
         setInterval(prefetchPanelData, 30000);
@@ -5972,7 +5972,7 @@
         async function renderMemory() {
             var mem = liveMemoryData;
             if (API && !mem) {
-                try { mem = API.getMemory(); } catch(e) {}
+                try { mem = await API.getMemory(); } catch(e) {}
             }
             // Direct SpawnKit.data fallback (bridge may not have prefetched yet)
             if (!mem && window.SpawnKit && window.SpawnKit.data && window.SpawnKit.data.memory) {
