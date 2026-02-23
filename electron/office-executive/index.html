@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="data:,">
     <title>SpawnKit — Executive Office</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -3890,7 +3891,7 @@
         if (isAppProd) {
             relayUrl = window.location.origin;
         } else if (isThemes) {
-            relayUrl = stored.relayUrl || params.get('relay') || ''; // no default — demo mode
+            relayUrl = params.get('relay') || ''; // themes = static only, ignore stored config, only explicit ?relay= param
         } else {
             var defaultUrl = 'http://127.0.0.1:8222';
             relayUrl = stored.relayUrl || params.get('relay') || defaultUrl;
@@ -7182,11 +7183,12 @@
     (function() {
         'use strict';
 
-        var RELAY_URL = window.OC_RELAY_URL || 'http://127.0.0.1:18789';
+        var RELAY_URL = window.OC_RELAY_URL || '';
         var RELAY_TOKEN = window.OC_RELAY_TOKEN || '';
 
         // ── Relay fetch helper ──
         function relayGet(endpoint) {
+            if (!RELAY_URL) return Promise.resolve(null);
             var url = RELAY_URL.replace(/\/+$/, '') + endpoint;
             var headers = { 'Accept': 'application/json' };
             if (RELAY_TOKEN) headers['Authorization'] = 'Bearer ' + RELAY_TOKEN;
@@ -8555,6 +8557,7 @@
         
         // API URL helper
         function getApiUrl() {
+            if (window.SPAWNKIT_DEMO) return null;
             return window.OC_API_URL || (window.location.hostname.includes('spawnkit.ai') ? window.location.origin : 'http://127.0.0.1:8222');
         }
         
