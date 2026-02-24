@@ -8034,6 +8034,144 @@
         .mc-body { grid-template-columns: 1fr; }
         .mc-col:nth-child(3) { display: none; }
     }
+
+    /* ═══════════════════════════════════════════════════
+       MISSION CENTER — kanban & mission management styles
+       ═══════════════════════════════════════════════════ */
+
+    /* Container */
+    .mission-center-container { padding: 24px; height: 100%; overflow-y: auto; box-sizing: border-box; }
+
+    /* Header */
+    .mission-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; }
+    .mission-header h2 { font-size: 20px; font-weight: 600; }
+    .mission-stats { display: flex; gap: 20px; margin-top: 8px; }
+    .mission-stat { display: flex; flex-direction: column; }
+    .mission-stat-value { font-size: 24px; font-weight: 700; color: var(--exec-blue, #007AFF); }
+    .mission-stat-label { font-size: 11px; color: var(--text-tertiary, #999); text-transform: uppercase; letter-spacing: 0.5px; }
+
+    /* Missions grid */
+    .missions-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
+
+    /* Mission card */
+    .mission-card { background: var(--bg-secondary, #f8f8f8); border: 1px solid var(--border-subtle, #e8e8e8); border-radius: var(--room-radius, 14px); padding: 20px; cursor: pointer; transition: all 0.2s var(--ease-smooth, ease); }
+    .mission-card:hover { border-color: var(--exec-blue, #007AFF); box-shadow: 0 4px 12px rgba(0,122,255,0.1); transform: translateY(-1px); }
+    .mission-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .mission-card-body { margin-bottom: 12px; }
+    .mission-card-footer { display: flex; justify-content: space-between; align-items: center; padding-top: 12px; border-top: 1px solid var(--border-subtle, #e8e8e8); }
+
+    /* Status indicator inside cards */
+    .mission-status-indicator { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-tertiary, #999); text-transform: capitalize; }
+    .mission-status-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .mission-status-dot.status-pill--active    { background: #30D158; }
+    .mission-status-dot.status-pill--paused    { background: #FFD60A; }
+    .mission-status-dot.status-pill--completed { background: var(--exec-blue, #007AFF); }
+    .mission-status-dot.status-pill--idle      { background: #aeaeb2; }
+
+    /* Mission card content */
+    .mission-name { font-size: 16px; font-weight: 600; margin-bottom: 12px; }
+    .mission-progress-section { margin-bottom: 12px; }
+    .mission-todo-count, .mission-agents { display: flex; align-items: center; gap: 4px; }
+    .mission-meta { display: flex; gap: 16px; margin-top: 12px; font-size: 12px; color: var(--text-secondary, #666); }
+    .mission-date { font-size: 11px; color: var(--text-tertiary, #999); }
+    .mission-view-btn { background: none; border: none; color: var(--exec-blue, #007AFF); cursor: pointer; font-size: 12px; font-weight: 500; }
+    .mission-view-btn:hover { text-decoration: underline; }
+    .mission-menu-btn { background: none; border: none; cursor: pointer; font-size: 18px; color: var(--text-tertiary, #999); padding: 4px 8px; border-radius: 6px; line-height: 1; }
+    .mission-menu-btn:hover { background: var(--exec-blue-muted, rgba(0,122,255,0.08)); }
+
+    /* Progress bars */
+    .progress-bar,
+    .progress-bar-large { height: 6px; background: var(--border-subtle, #e8e8e8); border-radius: 3px; overflow: hidden; }
+    .progress-bar-large { height: 8px; margin: 12px 0 8px; }
+    .progress-fill { height: 100%; background: var(--exec-blue, #007AFF); border-radius: 3px; transition: width 0.3s ease; }
+    .progress-text, .progress-detail-text { font-size: 12px; color: var(--text-tertiary, #999); margin-top: 4px; }
+
+    /* ── Status pills ── */
+    .status-pill { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 500; padding: 4px 10px; border-radius: 12px; }
+    .status-pill--active    { background: rgba(48,209,88,0.15);  color: #30D158; }
+    .status-pill--paused    { background: rgba(255,214,10,0.15);  color: #C69800; }
+    .status-pill--completed { background: rgba(0,122,255,0.15);   color: var(--exec-blue, #007AFF); }
+
+    /* ── Mission detail header ── */
+    .mission-detail-header { margin-bottom: 24px; }
+    .mission-detail-nav { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+    .back-to-missions-btn { background: none; border: none; cursor: pointer; font-size: 16px; padding: 6px 10px; border-radius: 8px; color: var(--text-secondary, #666); transition: background 0.15s; }
+    .back-to-missions-btn:hover { background: var(--exec-blue-muted, rgba(0,122,255,0.08)); }
+    .mission-breadcrumb { font-size: 13px; color: var(--text-tertiary, #999); display: flex; gap: 6px; align-items: center; }
+    .breadcrumb-current { color: var(--text-primary, #1a1a1a); font-weight: 500; }
+    .mission-title-section { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; flex-wrap: wrap; }
+    .mission-title { font-size: 20px; font-weight: 600; }
+    .mission-status-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 500; padding: 4px 10px; border-radius: 12px; }
+    .mission-meta-detail { display: flex; gap: 16px; margin-top: 12px; font-size: 12px; color: var(--text-secondary, #666); flex-wrap: wrap; }
+    .meta-item { display: flex; align-items: center; gap: 6px; }
+    .meta-label { color: var(--text-tertiary, #999); }
+    .assigned-agents { display: flex; flex-wrap: wrap; gap: 6px; }
+    .agent-tag { display: inline-flex; align-items: center; gap: 4px; background: var(--exec-blue-muted, rgba(0,122,255,0.08)); color: var(--exec-blue, #007AFF); padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 500; cursor: pointer; transition: background 0.15s; }
+    .agent-tag:hover { background: rgba(0,122,255,0.16); }
+
+    /* ══ Kanban board ══ */
+    .mission-kanban { display: flex; gap: 16px; min-height: 400px; overflow-x: auto; padding: 0 4px 12px; }
+    .kanban-column { flex: 1; min-width: 240px; background: var(--bg-tertiary, #f2f2f7); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; }
+    .kanban-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding: 0 4px; }
+    .kanban-title { font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+    .kanban-count { background: var(--border-medium, #ddd); border-radius: 10px; padding: 2px 8px; font-size: 11px; font-weight: 600; }
+    .kanban-tasks { display: flex; flex-direction: column; gap: 8px; min-height: 100px; flex: 1; }
+    .kanban-column--blocked .kanban-header { color: var(--status-error, #FF453A); }
+
+    /* Kanban task cards */
+    .kanban-task { background: var(--bg-secondary, #fff); border: 1px solid var(--border-subtle, #e8e8e8); border-radius: 10px; padding: 12px; cursor: grab; transition: all 0.15s; user-select: none; }
+    .kanban-task:active { cursor: grabbing; }
+    .kanban-task:hover { border-color: var(--exec-blue, #007AFF); box-shadow: 0 2px 8px rgba(0,122,255,0.08); }
+    .kanban-task.dragging { opacity: 0.5; transform: rotate(2deg); box-shadow: 0 8px 24px rgba(0,0,0,0.15); }
+    .kanban-tasks.drag-over { background: rgba(0,122,255,0.05); border-radius: 10px; outline: 2px dashed rgba(0,122,255,0.3); }
+    .task-content { margin-bottom: 8px; }
+    .task-title { font-size: 13px; font-weight: 500; line-height: 1.4; }
+    .task-assignee { font-size: 11px; color: var(--text-tertiary, #999); margin-top: 4px; display: flex; align-items: center; gap: 4px; }
+    .task-actions { display: flex; gap: 4px; flex-wrap: wrap; }
+    .task-action-btn { background: none; border: none; cursor: pointer; font-size: 14px; padding: 4px 6px; border-radius: 6px; transition: background 0.15s; line-height: 1; }
+    .task-action-btn:hover { background: var(--exec-blue-muted, rgba(0,122,255,0.08)); }
+
+    /* Add Task row */
+    .kanban-add-task { display: flex; gap: 6px; margin-top: 8px; flex-shrink: 0; }
+    .kanban-add-input { flex: 1; padding: 8px 10px; border: 1px solid var(--border-subtle, #e8e8e8); border-radius: 8px; font-size: 12px; background: var(--bg-secondary, #fff); outline: none; font-family: inherit; min-width: 0; }
+    .kanban-add-input:focus { border-color: var(--exec-blue, #007AFF); box-shadow: 0 0 0 3px rgba(0,122,255,0.1); }
+    .kanban-add-btn { background: var(--exec-blue, #007AFF); color: #fff; border: none; border-radius: 8px; width: 32px; height: 32px; cursor: pointer; font-size: 18px; font-weight: 600; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: background 0.15s; line-height: 1; }
+    .kanban-add-btn:hover { background: var(--exec-blue-hover, #0062cc); }
+
+    /* ── Context menu ── */
+    .mission-context-menu { background: var(--bg-secondary, #fff); border: 1px solid var(--border-medium, #ddd); border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,0.12); overflow: hidden; min-width: 180px; }
+    .menu-item { display: block; width: 100%; padding: 10px 16px; background: none; border: none; text-align: left; font-size: 13px; cursor: pointer; color: var(--text-primary, #1a1a1a); font-family: inherit; transition: background 0.12s; }
+    .menu-item:hover { background: var(--exec-blue-muted, rgba(0,122,255,0.08)); }
+    .menu-item--danger { color: var(--status-error, #FF453A); }
+    .menu-item--danger:hover { background: rgba(255,69,58,0.08); }
+
+    /* ── Empty / error states ── */
+    .empty-state, .error-state { text-align: center; padding: 60px 20px; }
+    .empty-icon, .error-icon { font-size: 48px; margin-bottom: 16px; }
+    .empty-state h3, .error-state h3 { font-size: 18px; margin-bottom: 8px; }
+    .empty-state p, .error-state p { color: var(--text-tertiary, #999); font-size: 14px; margin-bottom: 20px; }
+    .placeholder-icon { font-size: 48px; }
+    .mission-placeholder { text-align: center; padding: 60px 20px; color: var(--text-tertiary, #999); }
+    .mission-placeholder h3 { margin: 16px 0 8px; font-size: 18px; color: var(--text-primary, #1a1a1a); }
+
+    /* ── Quick create form (empty state) ── */
+    .quick-mission-form { display: flex; gap: 8px; margin-top: 16px; max-width: 400px; margin-left: auto; margin-right: auto; }
+    .quick-mission-form input,
+    .quick-mission-input { flex: 1; padding: 10px 14px; border: 1px solid var(--border-medium, #ddd); border-radius: 10px; font-size: 14px; outline: none; font-family: inherit; }
+    .quick-mission-form input:focus,
+    .quick-mission-input:focus { border-color: var(--exec-blue, #007AFF); box-shadow: 0 0 0 3px rgba(0,122,255,0.1); }
+    .quick-mission-form button,
+    .quick-mission-submit-btn { padding: 10px 20px; background: var(--exec-blue, #007AFF); color: #fff; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; font-size: 14px; font-family: inherit; transition: background 0.15s; white-space: nowrap; }
+    .quick-mission-form button:hover,
+    .quick-mission-submit-btn:hover { background: var(--exec-blue-hover, #0062cc); }
+
+    /* ── Generic buttons ── */
+    .btn { padding: 8px 16px; border: none; border-radius: 10px; font-weight: 600; font-size: 13px; cursor: pointer; transition: all 0.15s; font-family: inherit; display: inline-flex; align-items: center; gap: 6px; }
+    .btn--primary { background: var(--exec-blue, #007AFF); color: #fff; }
+    .btn--primary:hover { background: var(--exec-blue-hover, #0062cc); }
+    .btn--secondary { background: var(--bg-tertiary, #f2f2f7); color: var(--text-primary, #1a1a1a); border: 1px solid var(--border-subtle, #e8e8e8); }
+    .btn--secondary:hover { background: var(--border-subtle, #e8e8e8); }
+    .create-mission-btn { display: inline-flex; align-items: center; gap: 6px; }
     </style>
 
     <!-- Mission Control HTML -->

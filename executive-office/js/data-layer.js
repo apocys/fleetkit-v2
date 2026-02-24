@@ -47,6 +47,8 @@ window.FleetEvents = FleetEvents;
 // Central state management
 class FleetStateClass {
     constructor() {
+        this.STORAGE_KEY = 'fleetkit_state';
+
         this.data = {
             agents: [],
             missions: [],
@@ -82,9 +84,99 @@ class FleetStateClass {
         this.refreshInterval = null;
         this.retryCount = 0;
         this.maxRetries = 3;
+
+        // Load persisted missions immediately (before API calls)
+        this._loadFromStorage();
     }
 
-    // API Request helper
+    // ─── localStorage persistence ────────────────────────────────────────────
+
+    _saveToStorage() {
+        try {
+            const persisted = {
+                missions: this.data.missions,
+                // We only persist user-created / user-modified data
+            };
+            localStorage.setItem(this.STORAGE_KEY, JSON.stringify(persisted));
+        } catch (err) {
+            console.warn('FleetState: failed to save to localStorage', err);
+        }
+    }
+
+    _loadFromStorage() {
+        try {
+            const raw = localStorage.getItem(this.STORAGE_KEY);
+            if (!raw) return;
+            const persisted = JSON.parse(raw);
+            if (Array.isArray(persisted.missions) && persisted.missions.length > 0) {
+                this.data.missions = persisted.missions;
+                console.log(`FleetState: loaded ${this.data.missions.length} missions from localStorage`);
+            }
+        } catch (err) {
+            console.warn('FleetState: failed to load from localStorage', err);
+        }
+    }
+
+    // ─── Mission mutation methods ─────────────────────────────────────────────
+
+    addMission(mission) {
+        this.data.missions.push(mission);
+        this._saveToStorage();
+        FleetEvents.emit('data:missions:updated', this.data.missions);
+    }
+
+    updateMission(missionId, updates) {
+        const idx = this.data.missions.findIndex(m => m.id === missionId);
+        if (idx === -1) return false;
+        this.data.missions[idx] = { ...this.data.missions[idx], ...updates };
+        this._saveToStorage();
+        FleetEvents.emit('data:missions:updated', this.data.missions);
+        FleetEvents.emit('mission:updated', { missionId, mission: this.data.missions[idx] });
+        return true;
+    }
+
+    deleteMission(missionId) {
+        this.data.missions = this.data.missions.filter(m => m.id !== missionId);
+        this._saveToStorage();
+        FleetEvents.emit('data:missions:updated', this.data.missions);
+    }
+
+    addTodo(missionId, todo) {
+        const mission = this.data.missions.find(m => m.id === missionId);
+        if (!mission) return false;
+        mission.todo = mission.todo || [];
+        mission.todo.push(todo);
+        this._recalcProgress(mission);
+        this._saveToStorage();
+        FleetEvents.emit('data:missions:updated', this.data.missions);
+        FleetEvents.emit('mission:updated', { missionId, mission });
+        return true;
+    }
+
+    updateTodo(missionId, todoId, updates) {
+        const mission = this.data.missions.find(m => m.id === missionId);
+        if (!mission) return false;
+        const todoIdx = mission.todo.findIndex(t => t.id === todoId);
+        if (todoIdx === -1) return false;
+        mission.todo[todoIdx] = { ...mission.todo[todoIdx], ...updates };
+        this._recalcProgress(mission);
+        this._saveToStorage();
+        FleetEvents.emit('data:missions:updated', this.data.missions);
+        FleetEvents.emit('mission:updated', { missionId, mission });
+        return true;
+    }
+
+    _recalcProgress(mission) {
+        if (!mission.todo || mission.todo.length === 0) {
+            mission.progress = 0;
+            return;
+        }
+        const done = mission.todo.filter(t => t.status === 'done').length;
+        mission.progress = done / mission.todo.length;
+    }
+
+    // ─── API Request helper ───────────────────────────────────────────────────
+
     async makeRequest(endpoint, options = {}) {
         const url = `${this.apiUrl}${endpoint}`;
         const config = {
@@ -145,9 +237,19 @@ class FleetStateClass {
         try {
             const sessions = await this.makeRequest('/api/oc/sessions');
             
-            // Map sessions to agents and missions
+            // Map sessions to agents and update missions only if we have none persisted
             this.data.agents = this.mapSessionsToAgents(sessions);
-            this.data.missions = this.mapSessionsToMissions(sessions);
+
+            // Merge API missions with locally-created ones: locally-created ones
+            // have ids starting with 'mission-', API ones use session keys.
+            const apiMissions = this.mapSessionsToMissions(sessions);
+            const localMissions = this.data.missions.filter(m => String(m.id).startsWith('mission-'));
+            const apiIds = new Set(apiMissions.map(m => m.id));
+            // Keep local missions that don't collide with API missions
+            const kept = localMissions.filter(m => !apiIds.has(m.id));
+            this.data.missions = [...apiMissions, ...kept];
+            this._saveToStorage();
+
             this.data.sessions.active = sessions.filter(s => s.status === 'active');
             
             FleetEvents.emit('data:sessions:updated', sessions);
@@ -177,7 +279,6 @@ class FleetStateClass {
     async fetchAgents() {
         try {
             const agents = await this.makeRequest('/api/oc/agents');
-            // This might be different from sessions-based agents
             FleetEvents.emit('data:agents:raw:updated', agents);
             return agents;
         } catch (error) {

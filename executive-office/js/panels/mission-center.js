@@ -45,6 +45,11 @@ class MissionCenterPanel {
         FleetEvents.on('mission:todo:updated', (data) => {
             this.handleMissionTodoUpdate(data);
         });
+
+        // Listen for mission action events (delete, pause)
+        FleetEvents.on('mission:action', (data) => {
+            this.handleMissionAction(data);
+        });
     }
 
     render() {
@@ -91,9 +96,10 @@ class MissionCenterPanel {
                         <div class="empty-icon">🎯</div>
                         <h3>No Active Missions</h3>
                         <p>Create your first mission to orchestrate your fleet</p>
-                        <button class="create-mission-btn btn btn--primary">
-                            Create Mission
-                        </button>
+                        <div class="quick-mission-form">
+                            <input type="text" class="quick-mission-input" placeholder="Mission name...">
+                            <button class="quick-mission-submit-btn">Create</button>
+                        </div>
                     </div>
                 </div>
             `;
@@ -151,9 +157,9 @@ class MissionCenterPanel {
     }
 
     renderMissionCard(mission) {
-        const statusIcon = this.getMissionStatusIcon(mission.status);
-        const progressPercent = Math.round(mission.progress * 100);
-        const completedTodos = mission.todo.filter(t => t.status === 'done').length;
+        const progressPercent = Math.round((mission.progress || 0) * 100);
+        const completedTodos = (mission.todo || []).filter(t => t.status === 'done').length;
+        const totalTodos = (mission.todo || []).length;
         
         return `
             <div class="mission-card" data-mission-id="${mission.id}">
@@ -179,11 +185,11 @@ class MissionCenterPanel {
                     <div class="mission-meta">
                         <div class="mission-todo-count">
                             <span class="todo-icon">📋</span>
-                            ${completedTodos}/${mission.todo.length} tasks
+                            ${completedTodos}/${totalTodos} tasks
                         </div>
                         <div class="mission-agents">
                             <span class="agents-icon">👥</span>
-                            ${mission.assignedAgents.length} agents
+                            ${(mission.assignedAgents || []).length} agents
                         </div>
                     </div>
                 </div>
@@ -231,7 +237,7 @@ class MissionCenterPanel {
     }
 
     renderMissionDetailHeader(mission) {
-        const progressPercent = Math.round(mission.progress * 100);
+        const progressPercent = Math.round((mission.progress || 0) * 100);
         
         return `
             <div class="mission-detail-header">
@@ -265,7 +271,7 @@ class MissionCenterPanel {
                         <div class="meta-item">
                             <span class="meta-label">Assigned Agents:</span>
                             <div class="assigned-agents">
-                                ${this.renderAssignedAgents(mission.assignedAgents)}
+                                ${this.renderAssignedAgents(mission.assignedAgents || [])}
                             </div>
                         </div>
                         <div class="meta-item">
@@ -293,65 +299,43 @@ class MissionCenterPanel {
     }
 
     renderMissionKanban(mission) {
-        const todosByStatus = this.groupTodosByStatus(mission.todo);
+        const todosByStatus = this.groupTodosByStatus(mission.todo || []);
         
-        return `
-            <div class="mission-kanban">
-                <div class="kanban-column">
+        const columns = [
+            { key: 'pending',  icon: '⬜', label: 'Pending',     todos: todosByStatus.pending,  alwaysShow: true  },
+            { key: 'progress', icon: '🔄', label: 'In Progress', todos: todosByStatus.progress, alwaysShow: true  },
+            { key: 'done',     icon: '✅', label: 'Done',        todos: todosByStatus.done,     alwaysShow: true  },
+            { key: 'blocked',  icon: '🔴', label: 'Blocked',     todos: todosByStatus.blocked,  alwaysShow: false }
+        ];
+
+        const columnsHtml = columns
+            .filter(col => col.alwaysShow || col.todos.length > 0)
+            .map(col => `
+                <div class="kanban-column${col.key === 'blocked' ? ' kanban-column--blocked' : ''}">
                     <div class="kanban-header">
                         <h3 class="kanban-title">
-                            <span class="kanban-icon">⬜</span>
-                            Pending
+                            <span class="kanban-icon">${col.icon}</span>
+                            ${col.label}
                         </h3>
-                        <div class="kanban-count">${todosByStatus.pending.length}</div>
+                        <div class="kanban-count">${col.todos.length}</div>
                     </div>
-                    <div class="kanban-tasks" data-status="pending">
-                        ${todosByStatus.pending.map(todo => this.renderKanbanTask(todo, mission.id)).join('')}
+                    <div class="kanban-tasks" data-status="${col.key}">
+                        ${col.todos.map(todo => this.renderKanbanTask(todo, mission.id)).join('')}
+                    </div>
+                    <div class="kanban-add-task">
+                        <input type="text"
+                               placeholder="Add task..."
+                               class="kanban-add-input"
+                               data-status="${col.key}"
+                               data-mission-id="${mission.id}">
+                        <button class="kanban-add-btn"
+                                data-status="${col.key}"
+                                data-mission-id="${mission.id}">+</button>
                     </div>
                 </div>
-                
-                <div class="kanban-column">
-                    <div class="kanban-header">
-                        <h3 class="kanban-title">
-                            <span class="kanban-icon">🔄</span>
-                            In Progress
-                        </h3>
-                        <div class="kanban-count">${todosByStatus.progress.length}</div>
-                    </div>
-                    <div class="kanban-tasks" data-status="progress">
-                        ${todosByStatus.progress.map(todo => this.renderKanbanTask(todo, mission.id)).join('')}
-                    </div>
-                </div>
-                
-                <div class="kanban-column">
-                    <div class="kanban-header">
-                        <h3 class="kanban-title">
-                            <span class="kanban-icon">✅</span>
-                            Done
-                        </h3>
-                        <div class="kanban-count">${todosByStatus.done.length}</div>
-                    </div>
-                    <div class="kanban-tasks" data-status="done">
-                        ${todosByStatus.done.map(todo => this.renderKanbanTask(todo, mission.id)).join('')}
-                    </div>
-                </div>
-                
-                ${todosByStatus.blocked.length > 0 ? `
-                    <div class="kanban-column kanban-column--blocked">
-                        <div class="kanban-header">
-                            <h3 class="kanban-title">
-                                <span class="kanban-icon">🔴</span>
-                                Blocked
-                            </h3>
-                            <div class="kanban-count">${todosByStatus.blocked.length}</div>
-                        </div>
-                        <div class="kanban-tasks" data-status="blocked">
-                            ${todosByStatus.blocked.map(todo => this.renderKanbanTask(todo, mission.id)).join('')}
-                        </div>
-                    </div>
-                ` : ''}
-            </div>
-        `;
+            `).join('');
+
+        return `<div class="mission-kanban">${columnsHtml}</div>`;
     }
 
     renderKanbanTask(todo, missionId) {
@@ -395,16 +379,87 @@ class MissionCenterPanel {
                 break;
         }
         
+        // Delete button for all statuses
+        actions.push(`<button class="task-action-btn" data-action="delete" data-todo-id="${todo.id}" data-mission-id="${missionId}" title="Delete Task">🗑️</button>`);
+
         return actions.join('');
     }
 
+    // ─── "Create Mission" logic ──────────────────────────────────────────────
+
+    createMission(name) {
+        name = (name || '').trim();
+        if (!name) return;
+
+        const newMission = {
+            id: 'mission-' + Date.now(),
+            name,
+            status: 'active',
+            progress: 0,
+            assignedAgents: [],
+            todo: [],
+            createdAt: new Date().toISOString()
+        };
+
+        FleetState.addMission(newMission);
+        // addMission already emits data:missions:updated, which triggers updateMissionsList
+    }
+
+    // ─── "Add Task" logic ─────────────────────────────────────────────────────
+
+    addTaskToMission(missionId, text, status) {
+        text = (text || '').trim();
+        if (!text) return;
+
+        const mission = FleetState.getMission(missionId);
+        if (!mission) return;
+
+        const existingIds = (mission.todo || []).map(t => t.id);
+        const newId = existingIds.length > 0 ? Math.max(...existingIds) + 1 : 1;
+
+        const newTodo = {
+            id: newId,
+            text,
+            status: status || 'pending'
+        };
+
+        FleetState.addTodo(missionId, newTodo);
+
+        // Re-render kanban inline
+        const updatedMission = FleetState.getMission(missionId);
+        if (updatedMission && this.view === 'detail' && this.currentMissionId === missionId) {
+            const kanbanContainer = this.container.querySelector('.mission-kanban');
+            if (kanbanContainer) {
+                kanbanContainer.outerHTML = this.renderMissionKanban(updatedMission);
+                this.bindMissionDetailEvents();
+            }
+        }
+    }
+
+    // ─── Event binding ────────────────────────────────────────────────────────
+
     bindMissionsListEvents() {
-        // Create mission button
+        // Header "Create Mission" button → open modal
         this.container.querySelectorAll('.create-mission-btn').forEach(btn => {
             btn.addEventListener('click', () => {
-                FleetEvents.emit('wizard:open', { type: 'create-mission' });
+                this.showCreateMissionModal();
             });
         });
+
+        // Quick create form in empty state
+        const quickInput = this.container.querySelector('.quick-mission-input');
+        const quickBtn   = this.container.querySelector('.quick-mission-submit-btn');
+
+        if (quickBtn && quickInput) {
+            const submit = () => {
+                this.createMission(quickInput.value);
+                quickInput.value = '';
+            };
+            quickBtn.addEventListener('click', submit);
+            quickInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') submit();
+            });
+        }
 
         // Mission card clicks
         this.container.querySelectorAll('.mission-view-btn').forEach(btn => {
@@ -436,10 +491,10 @@ class MissionCenterPanel {
         // Task action buttons
         this.container.querySelectorAll('.task-action-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
-                const action = e.target.dataset.action;
-                const todoId = e.target.dataset.todoId;
-                const missionId = e.target.dataset.missionId;
-                this.handleTaskAction(missionId, parseInt(todoId), action);
+                const action    = e.currentTarget.dataset.action;
+                const todoId    = parseInt(e.currentTarget.dataset.todoId, 10);
+                const missionId = e.currentTarget.dataset.missionId;
+                this.handleTaskAction(missionId, todoId, action);
             });
         });
 
@@ -451,54 +506,74 @@ class MissionCenterPanel {
             });
         });
 
+        // ── Add Task inputs ──────────────────────────────────────────────────
+        this.container.querySelectorAll('.kanban-add-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const missionId = btn.dataset.missionId;
+                const status    = btn.dataset.status;
+                const input = this.container.querySelector(
+                    `.kanban-add-input[data-status="${status}"][data-mission-id="${missionId}"]`
+                );
+                if (input) {
+                    this.addTaskToMission(missionId, input.value, status);
+                    input.value = '';
+                }
+            });
+        });
+
+        this.container.querySelectorAll('.kanban-add-input').forEach(input => {
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    const missionId = input.dataset.missionId;
+                    const status    = input.dataset.status;
+                    this.addTaskToMission(missionId, input.value, status);
+                    input.value = '';
+                }
+            });
+        });
+
         // Drag and drop for kanban tasks
         this.initializeDragAndDrop();
     }
 
     handleTaskAction(missionId, todoId, action) {
+        if (action === 'delete') {
+            // Remove the todo from the mission directly
+            const mission = FleetState.getMission(missionId);
+            if (!mission) return;
+            mission.todo = (mission.todo || []).filter(t => t.id !== todoId);
+            FleetState._recalcProgress(mission);
+            FleetState._saveToStorage();
+            FleetEvents.emit('data:missions:updated', FleetState.getMissions());
+            // Re-render kanban
+            if (this.view === 'detail' && this.currentMissionId === missionId) {
+                const kanbanContainer = this.container.querySelector('.mission-kanban');
+                if (kanbanContainer) {
+                    kanbanContainer.outerHTML = this.renderMissionKanban(mission);
+                    this.bindMissionDetailEvents();
+                }
+            }
+            return;
+        }
+
         const statusMap = {
-            start: 'progress',
+            start:   'progress',
             complete: 'done',
-            pause: 'pending',
+            pause:   'pending',
             unblock: 'pending',
-            reopen: 'pending'
+            reopen:  'pending'
         };
 
         const newStatus = statusMap[action];
         if (!newStatus) return;
 
-        // Emit the update event
-        FleetEvents.emit('mission:todo:updated', {
-            missionId,
-            todoId,
-            status: newStatus
-        });
+        FleetState.updateTodo(missionId, todoId, { status: newStatus });
 
-        // Update the UI immediately
-        this.updateTaskStatus(missionId, todoId, newStatus);
-    }
-
-    updateTaskStatus(missionId, todoId, newStatus) {
-        // Find the task element and move it to the appropriate column
-        const taskElement = this.container.querySelector(`[data-todo-id="${todoId}"][data-mission-id="${missionId}"]`);
-        if (!taskElement) return;
-
-        // Update the mission data locally
+        // Re-render kanban
         const mission = FleetState.getMission(missionId);
-        if (mission) {
-            const todo = mission.todo.find(t => t.id === todoId);
-            if (todo) {
-                todo.status = newStatus;
-                // Update mission progress
-                const completedTodos = mission.todo.filter(t => t.status === 'done').length;
-                mission.progress = completedTodos / mission.todo.length;
-            }
-        }
-
-        // Re-render the kanban to reflect the changes
-        if (this.view === 'detail' && this.currentMissionId === missionId) {
+        if (mission && this.view === 'detail' && this.currentMissionId === missionId) {
             const kanbanContainer = this.container.querySelector('.mission-kanban');
-            if (kanbanContainer && mission) {
+            if (kanbanContainer) {
                 kanbanContainer.outerHTML = this.renderMissionKanban(mission);
                 this.bindMissionDetailEvents();
             }
@@ -506,7 +581,29 @@ class MissionCenterPanel {
     }
 
     handleMissionTodoUpdate(data) {
-        this.updateTaskStatus(data.missionId, data.todoId, data.status);
+        // Legacy path kept for external callers
+        this.handleTaskAction(data.missionId, data.todoId, 
+            { pending: 'pause', progress: 'start', done: 'complete' }[data.status] || 'pause'
+        );
+    }
+
+    handleMissionAction(data) {
+        const { missionId, action } = data;
+        switch (action) {
+            case 'delete':
+                FleetState.deleteMission(missionId);
+                if (this.view === 'detail' && this.currentMissionId === missionId) {
+                    FleetEvents.emit('navigate', { panel: 'missions' });
+                }
+                break;
+            case 'pause': {
+                const mission = FleetState.getMission(missionId);
+                if (mission) {
+                    FleetState.updateMission(missionId, { status: 'paused' });
+                }
+                break;
+            }
+        }
     }
 
     initializeDragAndDrop() {
@@ -544,11 +641,19 @@ class MissionCenterPanel {
                 column.classList.remove('drag-over');
 
                 try {
-                    const data = JSON.parse(e.dataTransfer.getData('application/json'));
+                    const dragData = JSON.parse(e.dataTransfer.getData('application/json'));
                     const newStatus = column.dataset.status;
                     
-                    if (data.currentStatus !== newStatus) {
-                        this.handleTaskAction(data.missionId, parseInt(data.todoId), this.getActionForStatus(newStatus));
+                    if (dragData.currentStatus !== newStatus) {
+                        FleetState.updateTodo(dragData.missionId, parseInt(dragData.todoId, 10), { status: newStatus });
+                        const mission = FleetState.getMission(dragData.missionId);
+                        if (mission && this.view === 'detail' && this.currentMissionId === dragData.missionId) {
+                            const kanbanContainer = this.container.querySelector('.mission-kanban');
+                            if (kanbanContainer) {
+                                kanbanContainer.outerHTML = this.renderMissionKanban(mission);
+                                this.bindMissionDetailEvents();
+                            }
+                        }
                     }
                 } catch (error) {
                     console.warn('Drag and drop failed:', error);
@@ -557,22 +662,104 @@ class MissionCenterPanel {
         });
     }
 
+    // ─── Create Mission Modal ─────────────────────────────────────────────────
+
+    showCreateMissionModal() {
+        // Remove any existing modal
+        const existing = document.getElementById('create-mission-modal');
+        if (existing) existing.remove();
+
+        const overlay = document.createElement('div');
+        overlay.id = 'create-mission-modal';
+        overlay.style.cssText = `
+            position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 9999;
+        `;
+        overlay.innerHTML = `
+            <div style="
+                background: var(--bg-primary, #fff);
+                border-radius: 16px;
+                padding: 32px;
+                width: 440px;
+                max-width: 90vw;
+                box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+            ">
+                <h2 style="font-size:18px;font-weight:700;margin-bottom:8px;">🚀 New Mission</h2>
+                <p style="font-size:13px;color:var(--text-tertiary,#888);margin-bottom:20px;">
+                    Give your mission a name to get started.
+                </p>
+                <div class="quick-mission-form" style="margin-top:0;">
+                    <input type="text" id="modal-mission-name" class="quick-mission-form input"
+                           placeholder="Mission name..." autofocus
+                           style="flex:1;padding:10px 14px;border:1px solid var(--border-medium,#ddd);
+                                  border-radius:10px;font-size:14px;outline:none;font-family:inherit;">
+                    <button id="modal-mission-create"
+                            style="padding:10px 20px;background:var(--exec-blue,#007AFF);color:#fff;
+                                   border:none;border-radius:10px;font-weight:600;cursor:pointer;
+                                   font-size:14px;white-space:nowrap;">
+                        Create
+                    </button>
+                </div>
+                <div style="display:flex;justify-content:flex-end;margin-top:16px;">
+                    <button id="modal-mission-cancel"
+                            style="background:none;border:none;color:var(--text-secondary,#666);
+                                   cursor:pointer;font-size:13px;padding:6px 12px;">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(overlay);
+
+        const nameInput = overlay.querySelector('#modal-mission-name');
+        const createBtn = overlay.querySelector('#modal-mission-create');
+        const cancelBtn = overlay.querySelector('#modal-mission-cancel');
+
+        const submit = () => {
+            const name = nameInput.value.trim();
+            if (!name) {
+                nameInput.style.borderColor = '#FF453A';
+                nameInput.focus();
+                return;
+            }
+            this.createMission(name);
+            overlay.remove();
+        };
+
+        createBtn.addEventListener('click', submit);
+        nameInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') submit();
+            if (e.key === 'Escape') overlay.remove();
+        });
+        cancelBtn.addEventListener('click', () => overlay.remove());
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) overlay.remove();
+        });
+
+        // focus after insertion
+        setTimeout(() => nameInput.focus(), 50);
+    }
+
+    // ─── Helpers ──────────────────────────────────────────────────────────────
+
     getActionForStatus(status) {
         const actionMap = {
-            pending: 'pause',
+            pending:  'pause',
             progress: 'start',
-            done: 'complete',
-            blocked: 'block'
+            done:     'complete',
+            blocked:  'block'
         };
         return actionMap[status] || 'pause';
     }
 
     groupTodosByStatus(todos) {
         return {
-            pending: todos.filter(t => t.status === 'pending'),
+            pending:  todos.filter(t => t.status === 'pending'),
             progress: todos.filter(t => t.status === 'progress'),
-            done: todos.filter(t => t.status === 'done'),
-            blocked: todos.filter(t => t.status === 'blocked')
+            done:     todos.filter(t => t.status === 'done'),
+            blocked:  todos.filter(t => t.status === 'blocked')
         };
     }
 
@@ -585,25 +772,35 @@ class MissionCenterPanel {
     handleMissionUpdate(data) {
         // Handle mission updates (status changes, etc.)
         if (this.view === 'detail' && this.currentMissionId === data.missionId) {
-            this.renderMissionDetail(data.missionId);
+            const mission = FleetState.getMission(data.missionId);
+            if (mission) {
+                // Update kanban and header in place
+                const kanban = this.container.querySelector('.mission-kanban');
+                if (kanban) {
+                    kanban.outerHTML = this.renderMissionKanban(mission);
+                    this.bindMissionDetailEvents();
+                }
+            }
         } else if (this.view === 'list') {
             this.updateMissionsList();
         }
     }
 
     showMissionMenu(button, missionId) {
-        // Simple context menu (could be enhanced with a proper dropdown)
+        // Remove any existing context menus
+        document.querySelectorAll('.mission-context-menu').forEach(m => m.remove());
+
         const menu = document.createElement('div');
         menu.className = 'mission-context-menu';
         menu.innerHTML = `
-            <button class="menu-item" data-action="edit" data-mission-id="${missionId}">Edit Mission</button>
-            <button class="menu-item" data-action="pause" data-mission-id="${missionId}">Pause Mission</button>
+            <button class="menu-item" data-action="view"   data-mission-id="${missionId}">View Details</button>
+            <button class="menu-item" data-action="pause"  data-mission-id="${missionId}">Pause Mission</button>
             <button class="menu-item menu-item--danger" data-action="delete" data-mission-id="${missionId}">Delete Mission</button>
         `;
 
         // Position the menu
         const rect = button.getBoundingClientRect();
-        menu.style.position = 'absolute';
+        menu.style.position = 'fixed';
         menu.style.top = `${rect.bottom + 5}px`;
         menu.style.right = `${window.innerWidth - rect.right}px`;
         menu.style.zIndex = '1000';
@@ -614,8 +811,8 @@ class MissionCenterPanel {
         menu.querySelectorAll('.menu-item').forEach(item => {
             item.addEventListener('click', (e) => {
                 const action = e.target.dataset.action;
-                const missionId = e.target.dataset.missionId;
-                this.handleMissionMenuAction(action, missionId);
+                const id     = e.target.dataset.missionId;
+                this.handleMissionMenuAction(action, id);
                 menu.remove();
             });
         });
@@ -635,15 +832,15 @@ class MissionCenterPanel {
 
     handleMissionMenuAction(action, missionId) {
         switch (action) {
-            case 'edit':
-                FleetEvents.emit('wizard:open', { type: 'edit-mission', missionId });
+            case 'view':
+                FleetEvents.emit('navigate', { panel: 'mission', id: missionId });
                 break;
             case 'pause':
-                FleetEvents.emit('mission:action', { missionId, action: 'pause' });
+                FleetState.updateMission(missionId, { status: 'paused' });
                 break;
             case 'delete':
                 if (confirm('Are you sure you want to delete this mission?')) {
-                    FleetEvents.emit('mission:action', { missionId, action: 'delete' });
+                    FleetState.deleteMission(missionId);
                 }
                 break;
         }
@@ -651,29 +848,24 @@ class MissionCenterPanel {
 
     getMissionStatusIcon(status) {
         const icons = {
-            active: '🟢',
-            paused: '🟡',
+            active:    '🟢',
+            paused:    '🟡',
             completed: '✅',
-            failed: '❌'
+            failed:    '❌'
         };
         return icons[status] || '⚪';
     }
 
     formatDate(dateString) {
         const date = new Date(dateString);
-        const now = new Date();
+        const now  = new Date();
         const diffTime = Math.abs(now - date);
         const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
 
-        if (diffDays === 0) {
-            return 'Today';
-        } else if (diffDays === 1) {
-            return 'Yesterday';
-        } else if (diffDays < 7) {
-            return `${diffDays} days ago`;
-        } else {
-            return date.toLocaleDateString();
-        }
+        if (diffDays === 0)      return 'Today';
+        if (diffDays === 1)      return 'Yesterday';
+        if (diffDays < 7)        return `${diffDays} days ago`;
+        return date.toLocaleDateString();
     }
 
     show() {
@@ -689,7 +881,7 @@ class MissionCenterPanel {
     }
 
     destroy() {
-        // Remove event listeners
+        // Remove event listeners (best-effort)
         FleetEvents.off('navigate', this.showMissionsList.bind(this));
         FleetEvents.off('data:missions:updated', this.updateMissionsList.bind(this));
         FleetEvents.off('mission:updated', this.handleMissionUpdate.bind(this));
