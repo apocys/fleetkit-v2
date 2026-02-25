@@ -1299,6 +1299,7 @@
             });
         }
 
+        window.openMeetingPanel = openMeetingPanel;
         async function openMeetingPanel() {
             closeTodoPanel(); // Close TODO panel if open
             closeMailbox();   // Close mailbox if open

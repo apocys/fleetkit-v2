@@ -242,6 +242,7 @@
       var btn = document.getElementById('missionsBtn');
       if (btn) { btn.click(); return; }
     } else if (name === 'boardroom') {
+      if (typeof openMeetingPanel === 'function') { openMeetingPanel(); return; }
       var overlay = document.getElementById('meetingOverlay');
       if (overlay) { overlay.classList.add('open'); return; }
       var meetBtn = document.getElementById('meetingBtn');
