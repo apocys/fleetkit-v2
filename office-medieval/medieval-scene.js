@@ -151,7 +151,7 @@ class MedievalCastle3D {
 
     setupLighting() {
         // Ambient (warm, soft) — lowered for shadow contrast
-        this.ambientLight = new THREE.AmbientLight(0xfff5e0, 0.3);
+        this.ambientLight = new THREE.AmbientLight(0xfff5e0, 0.45);
         this.scene.add(this.ambientLight);
 
         // Hemisphere light for sky/ground color bleed
@@ -303,12 +303,12 @@ class MedievalCastle3D {
 
     addVillageBuildings() {
         const buildings = [
-            { name: '⚔️ Mission Hall', color: 0xCC3333, x: -8, z: 16, w: 2, h: 1.8, d: 2.5 },
-            { name: '🍺 Tavern', color: 0xCC8833, x: -3, z: 18, w: 1.8, h: 1.5, d: 1.8 },
-            { name: '📚 Library', color: 0x3366CC, x: 3, z: 17, w: 2, h: 2, d: 1.5 },
-            { name: '🔨 Forge Workshop', color: 0x666666, x: 8, z: 16, w: 2.2, h: 1.2, d: 2 },
-            { name: '🏪 Market', color: 0x33AA55, x: 5, z: 20, w: 2.5, h: 1, d: 2 },
-            { name: '🏠 Chapel', color: 0xFFFFEE, x: -6, z: 20, w: 1.5, h: 2.5, d: 1.5 },
+            { name: '⚔️ Mission Hall', color: 0xCC3333, x: -10, z: 20, w: 2, h: 1.8, d: 2.5 },
+            { name: '🍺 Tavern', color: 0xCC8833, x: -4, z: 23, w: 1.8, h: 1.5, d: 1.8 },
+            { name: '📚 Library', color: 0x3366CC, x: 4, z: 22, w: 2, h: 2, d: 1.5 },
+            { name: '🔨 Forge Workshop', color: 0x666666, x: 10, z: 20, w: 2.2, h: 1.2, d: 2 },
+            { name: '🏪 Market', color: 0x33AA55, x: 6, z: 26, w: 2.5, h: 1, d: 2 },
+            { name: '🏠 Chapel', color: 0xFFFFEE, x: -8, z: 26, w: 1.5, h: 2.5, d: 1.5 },
         ];
 
         this.buildingLabels = [];
@@ -377,19 +377,21 @@ class MedievalCastle3D {
         const defs = [];
 
         // ─────────────────────────────────────────────────────────────────
-        // MAIN KEEP — 6-story grand cathedral-fortress tower (scale 1.8)
+        // MAIN KEEP — 8-story tower at scale 1.0 (pieces tile perfectly)
         // ─────────────────────────────────────────────────────────────────
-        const ks = 1.8;
-        defs.push({ path: 'assets/castle/tower-square-mid-color.glb',          x: 0, y: 0 * ks, z: 0, ry: 0, scale: ks, label: 'Keep base' });
-        defs.push({ path: 'assets/castle/tower-square-mid-color.glb',          x: 0, y: 1 * ks, z: 0, ry: 0, scale: ks, label: 'Keep mid 1' });
-        defs.push({ path: 'assets/castle/tower-square-mid-color.glb',          x: 0, y: 2 * ks, z: 0, ry: 0, scale: ks, label: 'Keep mid 2' });
-        defs.push({ path: 'assets/castle/tower-square-mid-color.glb',          x: 0, y: 3 * ks, z: 0, ry: 0, scale: ks, label: 'Keep mid 3' });
-        defs.push({ path: 'assets/castle/tower-square-mid-open.glb',           x: 0, y: 4 * ks, z: 0, ry: 0, scale: ks, label: 'Keep mid open' });
-        defs.push({ path: 'assets/castle/tower-square-top-roof-high-windows.glb', x: 0, y: 5 * ks, z: 0, ry: 0, scale: ks, label: 'Keep roof' });
-        defs.push({ path: 'assets/castle/flag-wide.glb',                       x: 0, y: 6 * ks, z: 0, ry: 0, scale: ks, label: 'Keep flag' });
-        // Keep entrance details
-        defs.push({ path: 'assets/castle/door.glb',                x:  0,   y: 0, z:  0.9, ry: 0,            scale: 1.8, label: 'Keep door' });
-        defs.push({ path: 'assets/castle/stairs-stone-square.glb', x:  0,   y: 0, z:  2.2, ry: 0,            scale: 1.2, label: 'Keep stairs' });
+        const ks = 1.0;
+        defs.push({ path: 'assets/castle/tower-square-base-color.glb',          x: 0, y: 0, z: 0, ry: 0, scale: 1, label: 'Keep base' });
+        defs.push({ path: 'assets/castle/tower-square-mid-windows.glb',         x: 0, y: 1, z: 0, ry: 0, scale: 1, label: 'Keep mid 1' });
+        defs.push({ path: 'assets/castle/tower-square-mid-color.glb',           x: 0, y: 2, z: 0, ry: 0, scale: 1, label: 'Keep mid 2' });
+        defs.push({ path: 'assets/castle/tower-square-mid-windows.glb',         x: 0, y: 3, z: 0, ry: 0, scale: 1, label: 'Keep mid 3' });
+        defs.push({ path: 'assets/castle/tower-square-mid-color.glb',           x: 0, y: 4, z: 0, ry: 0, scale: 1, label: 'Keep mid 4' });
+        defs.push({ path: 'assets/castle/tower-square-mid-windows.glb',         x: 0, y: 5, z: 0, ry: 0, scale: 1, label: 'Keep mid 5' });
+        defs.push({ path: 'assets/castle/tower-square-mid-open.glb',            x: 0, y: 6, z: 0, ry: 0, scale: 1, label: 'Keep mid 6' });
+        defs.push({ path: 'assets/castle/tower-square-top-roof-high.glb',       x: 0, y: 7, z: 0, ry: 0, scale: 1, label: 'Keep roof' });
+        defs.push({ path: 'assets/castle/flag-wide.glb',                        x: 0, y: 8, z: 0, ry: 0, scale: 1, label: 'Keep flag' });
+        // Keep entrance details at scale 1
+        defs.push({ path: 'assets/castle/door.glb',                x:  0,   y: 0, z:  0.5, ry: 0, scale: 1, label: 'Keep door' });
+        defs.push({ path: 'assets/castle/stairs-stone-square.glb', x:  0,   y: 0, z:  1.5, ry: 0, scale: 1, label: 'Keep stairs' });
 
         // ─────────────────────────────────────────────────────────────────
         // INNER BAILEY — hexagonal corner towers at (±7, ±7)
@@ -558,14 +560,14 @@ class MedievalCastle3D {
         defs.push({ path: 'assets/castle/wall-half-modular.glb',      x: -2,  y: 0, z:  3,   ry: 0,           scale: 1, label: 'Keep courtyard wall W' });
         defs.push({ path: 'assets/castle/wall-half-modular.glb',      x:  2,  y: 0, z:  3,   ry: 0,           scale: 1, label: 'Keep courtyard wall E' });
         // Top-wood hex tower accent (one variant for variety)
-        defs.push({ path: 'assets/castle/tower-hexagon-top-wood.glb', x: -7,  y: 4.2, z: -7, ry: 0,           scale: 1, label: 'Inner NW hex top wood' });
+        defs.push({ path: 'assets/castle/tower-hexagon-top-wood.glb', x: -7,  y: 4,   z: -7, ry: 0,           scale: 1, label: 'Inner NW hex top wood' });
         // Round roof tops on two outer corner towers for visual variety
         defs.push({ path: 'assets/castle/tower-square-top-roof-rounded.glb', x: -11, y: 3, z: -11, ry: 0, scale: 1, label: 'Outer NW round roof' });
         defs.push({ path: 'assets/castle/tower-square-top-roof-rounded.glb', x:  11, y: 3, z:  11, ry: 0, scale: 1, label: 'Outer SE round roof' });
         // Square arch on outer north wall mid-tower
         defs.push({ path: 'assets/castle/tower-square-arch.glb',      x:  0,  y: 0, z: -11.5, ry: Math.PI,   scale: 1, label: 'Outer N arch' });
         // Mid-door tower piece on keep outer face
-        defs.push({ path: 'assets/castle/tower-square-mid-door.glb',  x:  0,  y: 1.8, z: 0.9, ry: 0,         scale: 1.2, label: 'Keep mid door' });
+        defs.push({ path: 'assets/castle/tower-square-mid-door.glb',  x:  0,  y: 1, z: 0.5, ry: 0,           scale: 1,   label: 'Keep mid door' });
         // Base-border accent at base of keep
         defs.push({ path: 'assets/castle/tower-square-base-border.glb', x: 0, y: 0, z: 0,    ry: 0,           scale: ks,  label: 'Keep base border' });
         // Ground terrain patches around base
@@ -707,7 +709,7 @@ class MedievalCastle3D {
         for (let i = 0; i < agentDefs.length; i++) {
             const def = agentDefs[i];
             const mesh = this.createCharacterMesh(def.color, def.crown);
-            mesh.scale.setScalar(0.35);
+            mesh.scale.setScalar(0.5);
 
             const wp = waypoints[i];
             mesh.position.set(wp[0].x, 0, wp[0].z);
@@ -967,7 +969,7 @@ class MedievalCastle3D {
 
         // Ambient follows
         if (this.ambientLight) {
-            this.ambientLight.intensity = isNight ? 0.08 : isDusk ? 0.2 : 0.3;
+            this.ambientLight.intensity = isNight ? 0.08 : isDusk ? 0.2 : 0.45;
             this.ambientLight.color.setHex(isNight ? 0x223355 : 0xfff5e0);
         }
         if (this.hemiLight) {
@@ -998,14 +1000,20 @@ class MedievalCastle3D {
             // Project 3D position to screen
             const pos = new THREE.Vector3();
             charData.group.getWorldPosition(pos);
-            pos.y += 0.55; // Above character head (scaled for 0.35x chars)
+            pos.y += 0.7; // Above character head (scaled for 0.5x chars)
 
             const projected = pos.clone().project(this.camera);
             const x = (projected.x * 0.5 + 0.5) * rect.width;
             const y = (-projected.y * 0.5 + 0.5) * rect.height;
 
-            label.style.left = x + 'px';
-            label.style.top = y + 'px';
+            // Clamp to viewport bounds
+            if (projected.z > 1 || x < -50 || x > rect.width + 50 || y < -50 || y > rect.height + 50) {
+                label.style.display = 'none';
+            } else {
+                label.style.display = '';
+                label.style.left = Math.min(x, rect.width - 60) + 'px';
+                label.style.top = y + 'px';
+            }
 
             // Show label if hovered or selected
             if (agentId === this.hoveredAgent) {
@@ -1020,14 +1028,20 @@ class MedievalCastle3D {
             }
         });
 
-        // Update building label positions
+        // Update building label positions (clamped to viewport)
         if (this.buildingLabels) {
             this.buildingLabels.forEach(({ label, position }) => {
                 const projected = position.clone().project(this.camera);
                 const x = (projected.x * 0.5 + 0.5) * rect.width;
                 const y = (-projected.y * 0.5 + 0.5) * rect.height;
-                label.style.left = x + 'px';
-                label.style.top = y + 'px';
+                // Hide if behind camera or outside viewport bounds
+                if (projected.z > 1 || x < -50 || x > rect.width + 50 || y < -50 || y > rect.height + 50) {
+                    label.style.display = 'none';
+                } else {
+                    label.style.display = '';
+                    label.style.left = Math.min(x, rect.width - 80) + 'px';
+                    label.style.top = y + 'px';
+                }
             });
         }
     }
