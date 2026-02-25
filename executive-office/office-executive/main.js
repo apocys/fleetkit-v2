@@ -1021,7 +1021,18 @@
                 html += typeof renderMarkdown === 'function' ? renderMarkdown(result.answer) : '<pre style="white-space:pre-wrap;font-family:inherit;margin:0;">' + esc(result.answer) + '</pre>';
                 html += '</div>';
             }
+            // Mission-specific actions
+            if (result.isMission) {
+                html += '<div style="background:var(--exec-blue-bg, rgba(0,122,255,0.08));border:1px solid var(--exec-blue,#007AFF);border-radius:10px;padding:12px;margin-bottom:12px;text-align:center;">';
+                html += '<div style="font-size:12px;font-weight:600;color:var(--exec-blue,#007AFF);margin-bottom:6px;">🎯 Mission Created in Mission Control</div>';
+                html += '<button class="brainstorm-btn-primary" id="btnViewMissionControl" style="background:var(--exec-blue);color:white;border:none;font-weight:600;padding:8px 20px;">View in Mission Control →</button>';
+                html += '</div>';
+            }
+
             html += '<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">';
+            if (result.isMission) {
+                html += '<button class="brainstorm-btn-secondary" id="btnExecuteMission" style="background:var(--exec-green,#34C759);color:white;border:none;font-weight:600;">🚀 Execute Now</button>';
+            }
             html += '<button class="brainstorm-btn-secondary" id="btnBrainstormFollowUp" style="background:var(--exec-blue);color:white;border:none;font-weight:600;">💬 Follow Up</button>';
             html += '<button class="brainstorm-btn-secondary" id="btnBrainstormSave" style="border-color:var(--exec-blue);color:var(--exec-blue);font-weight:600;">📌 Save</button>';
             html += '<button class="brainstorm-btn-primary" id="btnNewTopic">New Topic</button>';
@@ -1287,6 +1298,29 @@
             if (closeBtn) closeBtn.addEventListener('click', function() {
                 var meetingOverlayEl = document.getElementById('meetingOverlay');
                 if (meetingOverlayEl) meetingOverlayEl.classList.remove('open');
+            });
+
+            // ── Mission-specific buttons ──────────────────
+            var viewMCBtn = document.getElementById('btnViewMissionControl');
+            if (viewMCBtn) viewMCBtn.addEventListener('click', function() {
+                // Close boardroom, navigate to Mission Control
+                closeMeetingPanel();
+                if (typeof FleetEvents !== 'undefined') {
+                    FleetEvents.emit('navigate', { panel: 'missions' });
+                }
+            });
+
+            var executeBtn = document.getElementById('btnExecuteMission');
+            if (executeBtn) executeBtn.addEventListener('click', function() {
+                if (!_brainstormCompleted || !_brainstormCompleted.question) return;
+                // Send the original mission text to the main agent for execution
+                closeMeetingPanel();
+                openMailbox('chat');
+                setTimeout(function() {
+                    chatTabInput.value = _brainstormCompleted.question;
+                    sendChatTabMessage();
+                }, 300);
+                showToast('🚀 Mission sent to agent for execution');
             });
         }
 
@@ -1699,6 +1733,192 @@
         });
 
         /* ═══════════════════════════════════════════════
+           Slash Commands — /mission /m /mr
+           ═══════════════════════════════════════════════ */
+
+        /**
+         * Parse slash commands from input text.
+         * Returns { command, body } or null if not a slash command.
+         *   /mission <text>  or  /m <text>  → { command: 'mission', body: text }
+         *   /mr <text>                      → { command: 'mr', body: text }
+         */
+        function parseSlashCommand(text) {
+            if (!text || text[0] !== '/') return null;
+            var match = text.match(/^\/(mission|mr|m)\s+([\s\S]+)/i);
+            if (!match) return null;
+            var cmd = match[1].toLowerCase();
+            // Normalize: /m → mission, /mission → mission, /mr → mr
+            if (cmd === 'm') cmd = 'mission';
+            return { command: cmd, body: match[2].trim() };
+        }
+
+        /**
+         * Extract actionable tasks from a brainstorm answer.
+         * Looks for bullet points, numbered lists, headers with action words.
+         */
+        function extractTasksFromAnswer(answer) {
+            if (!answer) return [];
+            var tasks = [];
+            var lines = answer.split('\n');
+            var inRecommendation = false;
+            for (var i = 0; i < lines.length; i++) {
+                var line = lines[i].trim();
+                // Detect recommendation/action/implementation sections
+                if (/^#{1,3}\s.*(recommend|action|implement|next step|todo|task|plan)/i.test(line)) {
+                    inRecommendation = true;
+                    continue;
+                }
+                if (/^#{1,3}\s/.test(line) && inRecommendation) {
+                    inRecommendation = false;
+                }
+                // Extract bullet/numbered items in recommendation sections, or any actionable line
+                if (inRecommendation || /^[-*•]\s|^\d+[\.\)]\s/.test(line)) {
+                    var taskText = line.replace(/^[-*•]\s+|^\d+[\.\)]\s+/, '').replace(/\*\*/g, '').trim();
+                    if (taskText.length > 5 && taskText.length < 200 && !/^(confidence|note|source|caveat)/i.test(taskText)) {
+                        tasks.push(taskText);
+                    }
+                }
+            }
+            // Deduplicate and limit to 10
+            var seen = {};
+            return tasks.filter(function(t) {
+                var key = t.toLowerCase().substring(0, 40);
+                if (seen[key]) return false;
+                seen[key] = true;
+                return true;
+            }).slice(0, 10);
+        }
+
+        /**
+         * Handle /mission or /m: brainstorm → create mission card → show boardroom
+         */
+        async function handleMissionCommand(body) {
+            showToast('🧠 Analyzing mission — brainstorming first...');
+
+            // Close boardroom if open
+            var meetingOverlayEl = document.getElementById('meetingOverlay');
+            if (meetingOverlayEl) meetingOverlayEl.classList.remove('open');
+
+            try {
+                var apiUrl = window.OC_API_URL || (window.location.hostname.includes('spawnkit.ai') ? window.location.origin : 'http://127.0.0.1:8222');
+                var response = await skFetch(apiUrl + '/api/brainstorm', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ question: body, complexity: 'deep' })
+                });
+                var data = await response.json();
+
+                if (!data.ok || !data.answer) {
+                    showToast('⚠️ Brainstorm failed: ' + (data.error || 'No response'));
+                    return;
+                }
+
+                // Store brainstorm result for boardroom display
+                _brainstormCompleted = {
+                    question: body,
+                    answer: data.answer,
+                    complexity: 'deep',
+                    timestamp: new Date().toISOString(),
+                    isMission: true  // Flag for mission flow
+                };
+                saveBrainstormToHistory(_brainstormCompleted);
+
+                // Extract tasks from the brainstorm answer
+                var tasks = extractTasksFromAnswer(data.answer);
+
+                // Create a mission in Mission Control via FleetState
+                if (typeof FleetState !== 'undefined' && FleetState.addMission) {
+                    var missionId = 'mission-' + Date.now();
+                    var missionName = body.length > 60 ? body.substring(0, 57) + '...' : body;
+                    var todoItems = tasks.map(function(t, idx) {
+                        return { id: idx + 1, text: t, status: 'pending' };
+                    });
+                    FleetState.addMission({
+                        id: missionId,
+                        name: missionName,
+                        status: 'active',
+                        progress: 0,
+                        assignedAgents: [],
+                        todo: todoItems,
+                        createdAt: new Date().toISOString(),
+                        brainstormAnswer: data.answer
+                    });
+                    showToast('✅ Mission created with ' + todoItems.length + ' tasks — opening boardroom...');
+                } else {
+                    showToast('✅ Brainstorm complete — opening boardroom...');
+                }
+
+                // Open boardroom to show results (with Execute button added)
+                setTimeout(function() {
+                    openMeetingPanel();
+                }, 300);
+
+            } catch (err) {
+                showToast('⚠️ Error: ' + err.message);
+            }
+        }
+
+        /**
+         * Handle /mr: brainstorm only, show results in boardroom
+         */
+        async function handleMrCommand(body) {
+            showToast('🧠 Starting brainstorm session...');
+
+            var meetingOverlayEl = document.getElementById('meetingOverlay');
+            if (meetingOverlayEl) meetingOverlayEl.classList.remove('open');
+
+            try {
+                var apiUrl = window.OC_API_URL || (window.location.hostname.includes('spawnkit.ai') ? window.location.origin : 'http://127.0.0.1:8222');
+                var response = await skFetch(apiUrl + '/api/brainstorm', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ question: body, complexity: 'deep' })
+                });
+                var data = await response.json();
+
+                if (!data.ok || !data.answer) {
+                    showToast('⚠️ Brainstorm failed: ' + (data.error || 'No response'));
+                    return;
+                }
+
+                _brainstormCompleted = {
+                    question: body,
+                    answer: data.answer,
+                    complexity: 'deep',
+                    timestamp: new Date().toISOString(),
+                    isMission: false
+                };
+                saveBrainstormToHistory(_brainstormCompleted);
+                showToast('✅ Brainstorm complete!');
+
+                setTimeout(function() {
+                    openMeetingPanel();
+                }, 300);
+
+            } catch (err) {
+                showToast('⚠️ Error: ' + err.message);
+            }
+        }
+
+        /**
+         * Try to handle text as a slash command. Returns true if handled.
+         */
+        function handleSlashCommand(text) {
+            var parsed = parseSlashCommand(text);
+            if (!parsed) return false;
+
+            if (parsed.command === 'mission') {
+                handleMissionCommand(parsed.body);
+                return true;
+            }
+            if (parsed.command === 'mr') {
+                handleMrCommand(parsed.body);
+                return true;
+            }
+            return false;
+        }
+
+        /* ═══════════════════════════════════════════════
            Command Input — Enter to send via postMessage
            ═══════════════════════════════════════════════ */
 
@@ -1706,7 +1926,11 @@
             if (e.key === 'Enter' && commandInput.value.trim()) {
                 var cmd = commandInput.value.trim();
                 commandInput.value = '';
-                // Open mailbox to chat tab and send as mission
+
+                // Check for slash commands first
+                if (handleSlashCommand(cmd)) return;
+
+                // Default: send as chat message
                 openMailbox('chat');
                 chatTabInput.value = cmd;
                 sendChatTabMessage();
@@ -2285,6 +2509,18 @@
             var text = chatTabInput.value.trim();
             if (!text) return;
             chatTabInput.value = '';
+
+            // Intercept slash commands before sending to chat API
+            if (handleSlashCommand(text)) {
+                // Show the command in chat history for context
+                var now = new Date();
+                var timeStr = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+                chatHistory.push({ role: 'user', text: text, time: timeStr });
+                chatHistory.push({ role: 'ai', text: '🧠 Processing command...', time: timeStr });
+                localStorage.setItem('spawnkit-chat-history', JSON.stringify(chatHistory.filter(m => !m.typing).slice(-50)));
+                renderChatTabMessages();
+                return;
+            }
 
             var now = new Date();
             var timeStr = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
