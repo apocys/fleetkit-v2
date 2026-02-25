@@ -260,6 +260,7 @@
     } else if (name === 'explore') {
       if (window.UseCaseExplorer) { window.UseCaseExplorer.open(); return; }
     } else if (name === 'marketplace') {
+      if (window.SkillMarketplace) { window.SkillMarketplace.open(); return; }
       if (typeof openMarketplace === 'function') {
         openMarketplace();
       } else {
