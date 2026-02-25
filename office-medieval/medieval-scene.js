@@ -50,7 +50,7 @@ class MedievalCastle3D {
         await this.loadAllModels();
         this.setupDataBridge();
         this.animate();
-        this.playSound('horn');
+        // Horn plays on first user click (see setupAudio)
     }
 
     // ── Three.js Setup ──────────────────────────────────────
@@ -1411,24 +1411,32 @@ class MedievalCastle3D {
     // ── Audio ────────────────────────────────────────────────
 
     setupAudio() {
-        try {
-            this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            const tone = (dur, freq, decay, vol) => {
-                const sr = this.audioContext.sampleRate;
-                const buf = this.audioContext.createBuffer(1, dur * sr, sr);
-                const d = buf.getChannelData(0);
-                for (let i = 0; i < d.length; i++) d[i] = Math.sin(2 * Math.PI * freq * (i / sr)) * Math.exp(-(i / sr) * decay) * vol;
-                return buf;
-            };
-            this.sounds.set('select', tone(0.15, 600, 10, 0.2));
-            this.sounds.set('horn', (() => {
-                const sr = this.audioContext.sampleRate;
-                const buf = this.audioContext.createBuffer(1, 1.2 * sr, sr);
-                const d = buf.getChannelData(0);
-                for (let i = 0; i < d.length; i++) { const t = i / sr; d[i] = Math.sin(2 * Math.PI * 220 * t) * Math.sin(Math.PI * t / 1.2) * 0.3; }
-                return buf;
-            })());
-        } catch (e) { this.soundEnabled = false; }
+        // Defer AudioContext creation to first user gesture (Chrome autoplay policy)
+        const initOnGesture = () => {
+            if (this.audioContext) return;
+            try {
+                this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const tone = (dur, freq, decay, vol) => {
+                    const sr = this.audioContext.sampleRate;
+                    const buf = this.audioContext.createBuffer(1, dur * sr, sr);
+                    const d = buf.getChannelData(0);
+                    for (let i = 0; i < d.length; i++) d[i] = Math.sin(2 * Math.PI * freq * (i / sr)) * Math.exp(-(i / sr) * decay) * vol;
+                    return buf;
+                };
+                this.sounds.set('select', tone(0.15, 600, 10, 0.2));
+                this.sounds.set('horn', (() => {
+                    const sr = this.audioContext.sampleRate;
+                    const buf = this.audioContext.createBuffer(1, 1.2 * sr, sr);
+                    const d = buf.getChannelData(0);
+                    for (let i = 0; i < d.length; i++) { const t = i / sr; d[i] = Math.sin(2 * Math.PI * 220 * t) * Math.sin(Math.PI * t / 1.2) * 0.3; }
+                    return buf;
+                })());
+                // Play horn on first interaction
+                this.playSound('horn');
+            } catch (e) { this.soundEnabled = false; }
+        };
+        document.addEventListener('click', initOnGesture, { once: true });
+        document.addEventListener('keydown', initOnGesture, { once: true });
     }
 
     playSound(name) {

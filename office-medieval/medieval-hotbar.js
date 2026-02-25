@@ -15,9 +15,10 @@
         slot.addEventListener('mouseenter', () => { slot.style.borderColor = 'rgba(255,200,50,0.6)'; slot.style.transform = 'translateY(-2px)'; });
         slot.addEventListener('mouseleave', () => { slot.style.borderColor = 'rgba(255,255,255,0.15)'; slot.style.transform = 'none'; });
         slot.addEventListener('click', () => {
-            if (item.action === 'chat' && window.ThemeChat) ThemeChat.open();
-            if (item.action === 'skills' && window.KanbanBoard) KanbanBoard.open();
-            if (item.action === 'settings' && window.ThemeCustomize) ThemeCustomize.open();
+            if (item.action === 'missions' && typeof openMissionControl === 'function') openMissionControl();
+            if (item.action === 'chat' && window.ThemeChat) ThemeChat.show();
+            if (item.action === 'skills' && window.KanbanBoard) KanbanBoard.show();
+            if (item.action === 'settings' && window.ThemeCustomize) ThemeCustomize.show();
         });
         hotbar.appendChild(slot);
     });
