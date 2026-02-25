@@ -95,6 +95,11 @@
   }
 
   function showOverlay() {
+    // Use Deploy Wizard instead of old auth popup if available
+    if (window.DeployWizard) {
+      window.DeployWizard.open();
+      return;
+    }
     if (document.getElementById('sk-auth-overlay')) return;
     var overlay = createOverlay();
     document.body.appendChild(overlay);

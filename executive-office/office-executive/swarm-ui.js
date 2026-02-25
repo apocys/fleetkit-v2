@@ -155,6 +155,7 @@
       badge.style.display = 'none';
       badge.innerHTML = '<span class="md-swarm-pulse"></span><span class="md-swarm-count">0</span> agents working';
       badge.addEventListener('click', function () {
+        if (typeof openMeetingPanel === 'function') { openMeetingPanel(); return; }
         if (window.MissionDesk) window.MissionDesk.activate();
       });
       actions.parentNode.insertBefore(badge, actions.nextSibling);

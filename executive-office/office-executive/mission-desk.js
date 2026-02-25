@@ -249,6 +249,7 @@
       var meetBtn = document.getElementById('meetingBtn');
       if (meetBtn) meetBtn.click();
     } else if (name === 'skills') {
+      if (window.SkillMarketplace) { window.SkillMarketplace.open(); return; }
       var orchBtn = document.getElementById('orchBtn') || document.getElementById('addAgentBtn');
       if (orchBtn) {
         orchBtn.click();
