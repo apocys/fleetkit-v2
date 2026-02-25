@@ -14,35 +14,19 @@
 
     // ── Inject CSS ───────────────────────────────────────────────────────
     var style = document.createElement('style');
-    style.textContent = [
-        '.bp-card{background:rgba(22,33,62,0.6);border:1px solid var(--border-stone,rgba(168,162,153,0.2));',
-        'border-radius:8px;padding:12px;margin-bottom:8px;cursor:pointer;transition:border-color 0.2s;}',
-        '.bp-card:hover{border-color:rgba(201,169,89,0.5);}',
-        '.bp-card.bp-expanded{border-color:rgba(201,169,89,0.6);}',
-        '.bp-section-title{font-family:"Crimson Text",serif;font-size:14px;color:rgba(201,169,89,0.9);',
-        'margin:16px 0 8px;text-transform:uppercase;letter-spacing:0.5px;}',
-        '.bp-row{display:flex;align-items:center;gap:8px;}',
-        '.bp-status{width:8px;height:8px;border-radius:50%;background:#666;flex-shrink:0;}',
-        '.bp-status.active{background:#4caf50;} .bp-status.idle{background:#ff9800;}',
-        '.bp-status.thinking{background:#2196f3;animation:bp-pulse 1s infinite;}',
-        '@keyframes bp-pulse{0%,100%{opacity:1}50%{opacity:0.4}}',
-        '.bp-tag{font-size:10px;background:rgba(201,169,89,0.15);border:1px solid rgba(201,169,89,0.3);',
-        'border-radius:4px;padding:1px 5px;color:rgba(201,169,89,0.8);}',
-        '.bp-btn{background:rgba(201,169,89,0.15);border:1px solid rgba(201,169,89,0.4);',
-        'color:rgba(201,169,89,0.9);border-radius:6px;padding:5px 12px;cursor:pointer;font-size:12px;}',
-        '.bp-btn:hover{background:rgba(201,169,89,0.25);}',
-        '.bp-input{width:100%;box-sizing:border-box;background:rgba(15,52,96,0.5);',
-        'border:1px solid rgba(168,162,153,0.3);border-radius:6px;padding:8px;color:#f4e4bc;',
-        'font-size:13px;resize:none;}',
-        '.bp-input:focus{outline:none;border-color:rgba(201,169,89,0.5);}',
-        '.bp-progress-bar{height:4px;background:rgba(168,162,153,0.2);border-radius:2px;margin-top:6px;}',
-        '.bp-progress-fill{height:100%;background:rgba(201,169,89,0.7);border-radius:2px;transition:width 0.4s;}',
-        '.bp-detail{margin-top:8px;font-size:12px;color:rgba(168,162,153,0.8);}',
-        '.bp-empty{text-align:center;color:rgba(168,162,153,0.5);padding:32px 16px;font-style:italic;}',
-        '.bp-skill-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}',
-        '.bp-conn-row{display:flex;justify-content:space-between;align-items:center;',
-        'padding:8px 0;border-bottom:1px solid rgba(168,162,153,0.1);}',
-    ].join('');
+    style.textContent = '.bp-card{background:rgba(22,33,62,0.6);border:1px solid var(--border-stone,rgba(168,162,153,0.2));border-radius:8px;padding:12px;margin-bottom:8px;cursor:pointer;transition:border-color 0.2s;}'
+        + '.bp-card:hover{border-color:rgba(201,169,89,0.5);}.bp-card.bp-expanded{border-color:rgba(201,169,89,0.6);}'
+        + '.bp-section-title{font-family:"Crimson Text",serif;font-size:14px;color:rgba(201,169,89,0.9);margin:16px 0 8px;text-transform:uppercase;letter-spacing:0.5px;}'
+        + '.bp-row{display:flex;align-items:center;gap:8px;}.bp-status{width:8px;height:8px;border-radius:50%;background:#666;flex-shrink:0;}'
+        + '.bp-status.active{background:#4caf50;}.bp-status.idle{background:#ff9800;}.bp-status.thinking{background:#2196f3;animation:bp-pulse 1s infinite;}'
+        + '@keyframes bp-pulse{0%,100%{opacity:1}50%{opacity:0.4}}'
+        + '.bp-tag{font-size:10px;background:rgba(201,169,89,0.15);border:1px solid rgba(201,169,89,0.3);border-radius:4px;padding:1px 5px;color:rgba(201,169,89,0.8);}'
+        + '.bp-btn{background:rgba(201,169,89,0.15);border:1px solid rgba(201,169,89,0.4);color:rgba(201,169,89,0.9);border-radius:6px;padding:5px 12px;cursor:pointer;font-size:12px;}'
+        + '.bp-btn:hover{background:rgba(201,169,89,0.25);}.bp-input{width:100%;box-sizing:border-box;background:rgba(15,52,96,0.5);border:1px solid rgba(168,162,153,0.3);border-radius:6px;padding:8px;color:#f4e4bc;font-size:13px;resize:none;}'
+        + '.bp-input:focus{outline:none;border-color:rgba(201,169,89,0.5);}.bp-progress-bar{height:4px;background:rgba(168,162,153,0.2);border-radius:2px;margin-top:6px;}'
+        + '.bp-progress-fill{height:100%;background:rgba(201,169,89,0.7);border-radius:2px;transition:width 0.4s;}.bp-detail{margin-top:8px;font-size:12px;color:rgba(168,162,153,0.8);}'
+        + '.bp-empty{text-align:center;color:rgba(168,162,153,0.5);padding:32px 16px;font-style:italic;}.bp-skill-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}'
+        + '.bp-conn-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(168,162,153,0.1);}';
     document.head.appendChild(style);
 
     // ── Ensure panel DOM exists ─────────────────────────────────────────
@@ -346,44 +330,28 @@
     }
 
     // ── Hook into building click ─────────────────────────────────────────
+    var BUILDING_DEFS = [
+        { name: '⚔️ Mission Hall', x: -10, z: 20 },
+        { name: '🍺 Tavern',        x: -4,  z: 23 },
+        { name: '📚 Library',       x: 4,   z: 22 },
+        { name: '🔨 Forge Workshop',x: 10,  z: 20 },
+        { name: '🏪 Market',        x: 6,   z: 26 },
+        { name: '🏠 Chapel',        x: -8,  z: 26 },
+    ];
+
     function patchBuildingClick(app) {
-        // Tag building groups with userData.buildingName + collect refs
         if (!app._buildingGroups) {
             app._buildingGroups = {};
-            // Walk scene children and match by known names
-            var names = Object.keys(BUILDING_PANELS);
-            app.scene.children.forEach(function (obj) {
-                if (obj.isGroup) {
-                    // Check if any child mesh position matches a known building
-                    // Buildings are at known positions; match by label text if available
-                    // We'll match by comparing scene.children group index to buildingLabels
+            var groups = app.scene.children.filter(function (o) { return o.isGroup; });
+            BUILDING_DEFS.forEach(function (def) {
+                var match = groups.find(function (g) {
+                    return Math.abs(g.position.x - def.x) < 0.5 && Math.abs(g.position.z - def.z) < 0.5;
+                });
+                if (match) {
+                    match.userData.buildingName = def.name;
+                    app._buildingGroups[def.name] = match;
                 }
             });
-
-            // Rebuild from buildingLabels (authoritative source)
-            if (app.buildingLabels && app.buildingLabels.length) {
-                var groups = app.scene.children.filter(function (o) { return o.isGroup; });
-                // Buildings were added in addVillageBuildings() — each has a label
-                // The groups are in scene.children; we match by label order (same forEach)
-                // But scene has many groups (agents etc.). Filter by known building positions.
-                var BUILDING_DEFS = [
-                    { name: '⚔️ Mission Hall', x: -10, z: 20 },
-                    { name: '🍺 Tavern',        x: -4,  z: 23 },
-                    { name: '📚 Library',       x: 4,   z: 22 },
-                    { name: '🔨 Forge Workshop',x: 10,  z: 20 },
-                    { name: '🏪 Market',        x: 6,   z: 26 },
-                    { name: '🏠 Chapel',        x: -8,  z: 26 },
-                ];
-                BUILDING_DEFS.forEach(function (def) {
-                    var match = groups.find(function (g) {
-                        return Math.abs(g.position.x - def.x) < 0.5 && Math.abs(g.position.z - def.z) < 0.5;
-                    });
-                    if (match) {
-                        match.userData.buildingName = def.name;
-                        app._buildingGroups[def.name] = match;
-                    }
-                });
-            }
         }
 
         // Patch onSceneClick
