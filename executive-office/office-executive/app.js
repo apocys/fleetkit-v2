@@ -539,7 +539,7 @@
                 overlay.classList.remove('open');
             });
         }
-        overlay.addEventListener('click', function(e) {
+        if (overlay) overlay.addEventListener('click', function(e) {
             if (e.target === overlay) overlay.classList.remove('open');
         });
 

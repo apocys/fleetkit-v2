@@ -39,9 +39,15 @@
 
   async function fetchSubagents() {
     try {
-      var headers = {};
-      if (API_TOKEN) headers['Authorization'] = 'Bearer ' + API_TOKEN;
-      var resp = await fetch(getApiUrl() + '/api/oc/sessions', { headers: headers });
+      var url = getApiUrl() + '/api/oc/sessions';
+      var resp;
+      if (window.ThemeAuth) {
+        resp = await ThemeAuth.fetch(url);
+      } else {
+        var headers = {};
+        if (API_TOKEN) headers['Authorization'] = 'Bearer ' + API_TOKEN;
+        resp = await fetch(url, { headers: headers });
+      }
       if (!resp.ok) return [];
       var data = await resp.json();
       return (Array.isArray(data) ? data : []).filter(function (s) { return s.kind === 'subagent'; });
