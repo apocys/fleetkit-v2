@@ -88,6 +88,15 @@
         '<button class="md-action" data-action="skills"><span class="md-action-icon">⚡</span><span class="md-action-label">Skills</span></button>' +
         '<button class="md-action" data-action="marketplace"><span class="md-action-icon">🏪</span><span class="md-action-label">Marketplace</span></button>' +
       '</div>' +
+      '<div class="md-section-label">Connect Anywhere</div>' +
+      '<div class="md-channels" id="missionDeskChannels">' +
+        '<div class="md-channel" title="Telegram"><span class="md-channel-icon">✈️</span><span class="md-channel-name">Telegram</span><span class="md-channel-status md-channel-on">Connected</span></div>' +
+        '<div class="md-channel" title="WhatsApp"><span class="md-channel-icon">💬</span><span class="md-channel-name">WhatsApp</span><span class="md-channel-status md-channel-on">Connected</span></div>' +
+        '<div class="md-channel" title="Signal"><span class="md-channel-icon">🔒</span><span class="md-channel-name">Signal</span><span class="md-channel-status md-channel-off">Available</span></div>' +
+        '<div class="md-channel" title="Discord"><span class="md-channel-icon">🎮</span><span class="md-channel-name">Discord</span><span class="md-channel-status md-channel-off">Available</span></div>' +
+        '<div class="md-channel" title="iMessage"><span class="md-channel-icon">🍎</span><span class="md-channel-name">iMessage</span><span class="md-channel-status md-channel-off">Available</span></div>' +
+        '<div class="md-channel" title="Slack"><span class="md-channel-icon">📡</span><span class="md-channel-name">Slack</span><span class="md-channel-status md-channel-off">Available</span></div>' +
+      '</div>' +
     '</div>';
 
     var chat = '<div id="chatExpanded">' +
