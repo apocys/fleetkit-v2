@@ -652,7 +652,7 @@
       var skipOnboarding = params.has('skipOnboarding');
       var alreadyOnboarded = localStorage.getItem('spawnkit-onboarded');
 
-      if (!alreadyOnboarded && !skipOnboarding) {
+      if (!alreadyOnboarded && !skipOnboarding && !window.__skOnboardingV2) {
         openWizard();
       }
     })();
