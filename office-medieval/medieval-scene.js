@@ -136,15 +136,16 @@ class MedievalCastle3D {
 
     setupLighting() {
         // Ambient (warm, soft) — lowered for shadow contrast
-        const ambient = new THREE.AmbientLight(0xfff5e0, 0.3);
-        this.scene.add(ambient);
+        this.ambientLight = new THREE.AmbientLight(0xfff5e0, 0.3);
+        this.scene.add(this.ambientLight);
 
         // Hemisphere light for sky/ground color bleed
-        const hemi = new THREE.HemisphereLight(0x87ceeb, 0x3a6830, 0.25);
-        this.scene.add(hemi);
+        this.hemiLight = new THREE.HemisphereLight(0x87ceeb, 0x3a6830, 0.25);
+        this.scene.add(this.hemiLight);
 
         // Sun directional light with shadows — stronger for defined shadows
         const sun = new THREE.DirectionalLight(0xffe8cc, 1.8);
+        this.sunLight = sun;
         sun.position.set(18, 30, 12); // Slightly higher and further for better shadow angles
         sun.castShadow = true;
         sun.shadow.mapSize.width = 4096;
@@ -178,8 +179,8 @@ class MedievalCastle3D {
     }
 
     createGround() {
-        // Expanded terrain (radius 40)
-        const groundGeo = new THREE.PlaneGeometry(100, 100, 40, 40);
+        // Expanded terrain (120×120)
+        const groundGeo = new THREE.PlaneGeometry(120, 120, 48, 48);
         const groundMat = new THREE.MeshStandardMaterial({
             color: 0x4a7a2e,
             roughness: 0.95,
@@ -533,26 +534,26 @@ class MedievalCastle3D {
 
         const emoticons = { idle: '\u{1F4A4}', working: '\u2694\uFE0F', chatting: '\u{1F4AC}', eating: '\u{1F356}', sleeping: '\u{1F634}' };
 
-        // Patrol waypoints inside the inner courtyard (radius ~6)
+        // Waypoints spread across entire map (castle, village, fields)
         const waypoints = [
-            // Sycopa — CEO, stately center patrol
-            [{ x: 0, z: 0 }, { x: 2, z: 1.5 }, { x: -1, z: 2.5 }, { x: -2, z: -1 }, { x: 1, z: -2 }],
-            // Forge — CTO, moves between inner corners
-            [{ x: -4, z: -4 }, { x: -4, z: 4 }, { x: 4, z: 4 }, { x: 4, z: -4 }],
-            // Atlas — COO, scouts inner walls
-            [{ x: -5, z: 0 }, { x: 0, z: -5 }, { x: 5, z: 0 }, { x: 0, z: 5 }],
-            // Hunter — CRO, fast patrol, goes near gate
-            [{ x: 0, z: 4 }, { x: 2, z: 7 }, { x: -2, z: 8 }, { x: 0, z: 5 }],
-            // Echo — CMO, wanders courtyard
-            [{ x: -3, z: 1 }, { x: 1, z: 4 }, { x: 3, z: 0 }, { x: 1, z: -3 }, { x: -2, z: -2 }],
-            // Sentinel — QA, patrols gate entrance
-            [{ x: -3, z: 7 }, { x: 3, z: 7 }, { x: 3, z: 4 }, { x: -3, z: 4 }],
+            // Sycopa — CEO, patrols castle + village center
+            [{ x: 0, z: 0 }, { x: -3, z: 16 }, { x: 5, z: 17 }, { x: 0, z: 8 }, { x: -2, z: -3 }],
+            // Forge — CTO, workshop area + forge building
+            [{ x: 8, z: 16 }, { x: 12, z: 20 }, { x: 5, z: 22 }, { x: 3, z: 14 }, { x: 8, z: 12 }],
+            // Atlas — COO, wide patrol: castle walls → village → fields
+            [{ x: -10, z: 0 }, { x: -12, z: 18 }, { x: 8, z: 24 }, { x: 15, z: 10 }, { x: 5, z: -5 }],
+            // Hunter — CRO, fast scout: fields, edges, river
+            [{ x: 0, z: 12 }, { x: 18, z: 16 }, { x: -16, z: 22 }, { x: -10, z: 8 }, { x: 10, z: 6 }],
+            // Echo — CMO, village tavern area + library
+            [{ x: -3, z: 18 }, { x: 3, z: 17 }, { x: -8, z: 16 }, { x: -6, z: 20 }, { x: 0, z: 15 }],
+            // Sentinel — QA, guard: castle gate → outer walls → bridge
+            [{ x: 0, z: 10 }, { x: -8, z: 10 }, { x: -10, z: 4 }, { x: 10, z: 4 }, { x: 8, z: 10 }],
         ];
 
         for (let i = 0; i < agentDefs.length; i++) {
             const def = agentDefs[i];
             const mesh = this.createCharacterMesh(def.color, def.crown);
-            mesh.scale.setScalar(0.8);
+            mesh.scale.setScalar(0.35);
 
             const wp = waypoints[i];
             mesh.position.set(wp[0].x, 0, wp[0].z);
@@ -664,6 +665,9 @@ class MedievalCastle3D {
         // Animate animals
         this.animateAnimals(delta);
 
+        // Day/night cycle
+        this.updateDayNight(elapsed);
+
         // Update label positions
         this.updateLabels();
 
@@ -674,6 +678,9 @@ class MedievalCastle3D {
     animateCharacters(delta, elapsed) {
         this.characterModels.forEach((charData, agentId) => {
             const { group, waypoints, speed } = charData;
+
+            // Skip if being dragged
+            if (charData._paused) return;
 
             // Move along waypoints
             const from = waypoints[charData.waypointIndex];
@@ -692,7 +699,9 @@ class MedievalCastle3D {
             const x = from.x + (to.x - from.x) * t;
             const z = from.z + (to.z - from.z) * t;
 
-            group.position.set(x, 0, z);
+            // Walking bob
+            const bob = Math.sin(elapsed * 6 + charData.bobPhase) * 0.03;
+            group.position.set(x, bob, z);
 
             // Face direction of movement
             const dx = to.x - from.x;
@@ -777,6 +786,43 @@ class MedievalCastle3D {
         });
     }
 
+    // ── Day/Night Cycle (60s = full day) ─────────────────
+    updateDayNight(elapsed) {
+        const cycle = (elapsed % 60) / 60; // 0-1 over 60 seconds
+        const sunAngle = cycle * Math.PI * 2 - Math.PI / 2; // -π/2 to 3π/2
+        const sunHeight = Math.sin(sunAngle);
+        const isNight = sunHeight < -0.1;
+        const isDusk = sunHeight >= -0.1 && sunHeight < 0.15;
+
+        // Move sun position
+        if (this.sunLight) {
+            this.sunLight.position.set(
+                Math.cos(sunAngle) * 25,
+                Math.max(sunHeight * 30, 2),
+                12
+            );
+            // Dim sun at night
+            this.sunLight.intensity = isNight ? 0.2 : isDusk ? 0.8 : 1.8;
+            this.sunLight.color.setHex(isNight ? 0x334466 : isDusk ? 0xff8844 : 0xffe8cc);
+        }
+
+        // Ambient follows
+        if (this.ambientLight) {
+            this.ambientLight.intensity = isNight ? 0.08 : isDusk ? 0.2 : 0.3;
+            this.ambientLight.color.setHex(isNight ? 0x223355 : 0xfff5e0);
+        }
+        if (this.hemiLight) {
+            this.hemiLight.intensity = isNight ? 0.1 : 0.25;
+        }
+
+        // Torches glow brighter at night
+        if (this.torchLights) {
+            this.torchLights.forEach(t => {
+                t.intensity = isNight ? 4 : isDusk ? 3 : 2;
+            });
+        }
+    }
+
     updateLabels() {
         const container = document.getElementById('scene-container');
         const rect = container.getBoundingClientRect();
@@ -788,7 +834,7 @@ class MedievalCastle3D {
             // Project 3D position to screen
             const pos = new THREE.Vector3();
             charData.group.getWorldPosition(pos);
-            pos.y += 1.0; // Above character head (scaled for 0.8x chars)
+            pos.y += 0.55; // Above character head (scaled for 0.35x chars)
 
             const projected = pos.clone().project(this.camera);
             const x = (projected.x * 0.5 + 0.5) * rect.width;
@@ -828,10 +874,79 @@ class MedievalCastle3D {
         const container = document.getElementById('scene-container');
 
         // Click to select
-        container.addEventListener('click', (e) => this.onSceneClick(e));
+        container.addEventListener('click', (e) => {
+            if (!this._wasDragging) this.onSceneClick(e);
+            this._wasDragging = false;
+        });
 
         // Hover
         container.addEventListener('mousemove', (e) => this.onSceneHover(e));
+
+        // ── Drag & Drop Characters ──
+        this._dragTarget = null;
+        this._wasDragging = false;
+        this._dragPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+        this._dragIntersect = new THREE.Vector3();
+
+        container.addEventListener('pointerdown', (e) => {
+            const ndc = this.getMouseNDC(e);
+            this.raycaster.setFromCamera(ndc, this.camera);
+            const targets = [];
+            this.characterModels.forEach((data) => {
+                data.group.traverse(child => { if (child.isMesh) targets.push(child); });
+            });
+            const hits = this.raycaster.intersectObjects(targets, false);
+            if (hits.length > 0) {
+                let obj = hits[0].object;
+                while (obj.parent && !obj.userData.agentId) obj = obj.parent;
+                if (obj.userData.agentId) {
+                    this._dragTarget = obj;
+                    this._wasDragging = false;
+                    this.controls.enabled = false;
+                    container.style.cursor = 'grabbing';
+                    // Pause patrol for dragged character
+                    const cd = this.characterModels.get(obj.userData.agentId);
+                    if (cd) cd._paused = true;
+                }
+            }
+        });
+
+        container.addEventListener('pointermove', (e) => {
+            if (!this._dragTarget) return;
+            this._wasDragging = true;
+            const ndc = this.getMouseNDC(e);
+            this.raycaster.setFromCamera(ndc, this.camera);
+            if (this.raycaster.ray.intersectPlane(this._dragPlane, this._dragIntersect)) {
+                this._dragTarget.position.x = this._dragIntersect.x;
+                this._dragTarget.position.z = this._dragIntersect.z;
+            }
+        });
+
+        container.addEventListener('pointerup', () => {
+            if (this._dragTarget) {
+                const agentId = this._dragTarget.userData.agentId;
+                const cd = this.characterModels.get(agentId);
+                if (cd) {
+                    // Update waypoints to new position + generate new patrol area
+                    const px = this._dragTarget.position.x;
+                    const pz = this._dragTarget.position.z;
+                    cd.waypoints = [
+                        { x: px, z: pz },
+                        { x: px + 2, z: pz + 1.5 },
+                        { x: px - 1.5, z: pz + 2 },
+                        { x: px - 2, z: pz - 1 },
+                        { x: px + 1, z: pz - 1.5 },
+                    ];
+                    cd.waypointIndex = 0;
+                    cd.nextWaypointIndex = 1;
+                    cd.progress = 0;
+                    cd._paused = false;
+                }
+                this._dragTarget = null;
+                this.controls.enabled = true;
+                container.style.cursor = '';
+            }
+        });
 
         // UI buttons
         document.getElementById('btn-toggle-sound').addEventListener('click', () => {
