@@ -25,7 +25,15 @@
     { tier: 'expert', emoji: '🏰', title: 'Themed AI Offices', desc: 'Visualize your AI team in 3D medieval castles, isometric cities, or executive offices.', status: 'working', tryCmd: null },
     { tier: 'expert', emoji: '🧠', title: 'Persistent Memory', desc: 'Agent remembers past conversations, decisions, preferences. MEMORY.md + semantic search.', status: 'working', tryCmd: 'What do you remember about our recent projects?' },
     { tier: 'expert', emoji: '⚡', title: 'Cron Automation', desc: 'Schedule recurring tasks: monitoring, reports, backups, proactive checks. Any interval.', status: 'working', tryCmd: '/m Show me all active cron jobs' },
-    { tier: 'expert', emoji: '🎙️', title: 'Voice Pipeline', desc: 'Text-to-speech for responses. Build audio content, podcasts, voiceovers.', status: 'working', tryCmd: 'Say "Welcome to SpawnKit" in speech' }
+    { tier: 'expert', emoji: '🎙️', title: 'Voice Pipeline', desc: 'Text-to-speech for responses. Build audio content, podcasts, voiceovers.', status: 'working', tryCmd: 'Say "Welcome to SpawnKit" in speech' },
+    { tier: 'intermediate', emoji: '📺', title: 'YouTube Transcripts', desc: 'Extract transcripts from any YouTube video. Summarize, analyze, or quote what was said. Works even from servers blocked by YouTube.', status: 'working', tryCmd: '/m Extract the transcript from https://youtu.be/X3uum6W2xEI' },
+    { tier: 'advanced', emoji: '📧', title: 'Email Pipeline', desc: 'Ingest emails, score/classify them with custom rubrics, auto-draft replies, escalate to Telegram. Full inbox automation.', status: 'beta', tryCmd: null },
+    { tier: 'advanced', emoji: '📇', title: 'CRM & Contact Intelligence', desc: 'Auto-discover contacts from email/calendar, research companies, track relationships. Natural language queries against your network.', status: 'beta', tryCmd: null },
+    { tier: 'advanced', emoji: '🎯', title: 'Meeting Intelligence', desc: 'Ingest meeting transcripts, extract action items, assign to team members, sync to project management tools.', status: 'beta', tryCmd: null },
+    { tier: 'expert', emoji: '📰', title: 'Knowledge Base', desc: 'Save articles, posts, videos to a searchable knowledge base. Auto-summarize, embed, and cross-reference with your CRM and projects.', status: 'beta', tryCmd: null },
+    { tier: 'expert', emoji: '💰', title: 'Financial Tracking', desc: 'Import transactions from QuickBooks/CSV, query your finances in natural language. Revenue by client, spend by category, trends.', status: 'beta', tryCmd: null },
+    { tier: 'expert', emoji: '🛡️', title: 'Security Councils', desc: 'Nightly automated security scans: file permissions, gateway configs, secret leaks, prompt injection defense. Self-healing from logs.', status: 'beta', tryCmd: null },
+    { tier: 'expert', emoji: '📊', title: 'LLM Usage Tracking', desc: 'Track which models you use, how many tokens, estimated costs. Query usage by task type, time period, or model.', status: 'working', tryCmd: '/m Show my session status and model usage' }
   ];
 
   var CSS = [
