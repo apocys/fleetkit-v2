@@ -243,23 +243,21 @@
     }
 
     function buildAgentDetail(a) {
-        var parts = ['<div class="bp-detail" style="margin-top:10px">'];
-        if (a.thinking) parts.push('<div style="color:#2196f3;margin-bottom:6px">💭 Thinking…</div>');
-        var progress = a.progress || 0;
-        parts.push('<div class="bp-progress-bar"><div class="bp-progress-fill" style="width:' + progress + '%"></div></div>');
-        parts.push('<div style="font-size:11px;color:rgba(168,162,153,0.6);margin-bottom:6px">' + progress + '% complete</div>');
+        var p = a.progress || 0;
+        var h = '<div class="bp-detail" style="margin-top:10px">';
+        if (a.thinking) h += '<div style="color:#2196f3;margin-bottom:6px">💭 Thinking…</div>';
+        h += '<div class="bp-progress-bar"><div class="bp-progress-fill" style="width:' + p + '%"></div></div>';
+        h += '<div style="font-size:11px;color:rgba(168,162,153,0.6);margin-bottom:6px">' + p + '% complete</div>';
         if (a.todo && a.todo.length) {
-            parts.push('<div style="font-size:11px;color:rgba(201,169,89,0.7);margin-bottom:4px">Tasks:</div>');
-            a.todo.forEach(function (t) { parts.push('<div style="font-size:11px;padding-left:8px">• ' + esc(t) + '</div>'); });
+            h += '<div style="font-size:11px;color:rgba(201,169,89,0.7);margin-bottom:4px">Tasks:</div>';
+            a.todo.forEach(function (t) { h += '<div style="font-size:11px;padding-left:8px">• ' + esc(t) + '</div>'; });
         }
         if (a.skills && a.skills.length) {
-            parts.push('<div style="font-size:11px;color:rgba(201,169,89,0.7);margin:6px 0 4px">Skills:</div>');
-            parts.push('<div class="bp-row" style="flex-wrap:wrap;gap:4px">');
-            a.skills.forEach(function (sk) { parts.push('<span class="bp-tag">' + esc(sk) + '</span>'); });
-            parts.push('</div>');
+            h += '<div style="font-size:11px;color:rgba(201,169,89,0.7);margin:6px 0 4px">Skills:</div><div class="bp-row" style="flex-wrap:wrap;gap:4px">';
+            a.skills.forEach(function (sk) { h += '<span class="bp-tag">' + esc(sk) + '</span>'; });
+            h += '</div>';
         }
-        parts.push('</div>');
-        return parts.join('');
+        return h + '</div>';
     }
 
     // ── Render: Forge ───────────────────────────────────────────────────
@@ -300,28 +298,16 @@
 
     // ── Render: Settings ────────────────────────────────────────────────
     function renderSettings(container) {
-        if (window.ThemeCustomize && typeof window.ThemeCustomize.open === 'function') {
-            window.ThemeCustomize.open();
-        }
-        var connections = [
-            { name: 'Telegram',  icon: '✉️',  key: 'telegram' },
-            { name: 'WhatsApp',  icon: '📱',  key: 'whatsapp' },
-            { name: 'Discord',   icon: '🎮',  key: 'discord' },
-            { name: 'API',       icon: '🔌',  key: 'api' },
-        ];
-        var rows = connections.map(function (c) {
-            var active = (window.OC_CONNECTIONS && window.OC_CONNECTIONS[c.key]);
-            return '<div class="bp-conn-row"><span>' + c.icon + ' ' + c.name + '</span><span>' + (active ? '✅' : '❌') + '</span></div>';
+        if (window.ThemeCustomize && typeof window.ThemeCustomize.open === 'function') window.ThemeCustomize.open();
+        var conns = [['✉️','Telegram','telegram'],['📱','WhatsApp','whatsapp'],['🎮','Discord','discord'],['🔌','API','api']];
+        var rows = conns.map(function (c) {
+            var on = window.OC_CONNECTIONS && window.OC_CONNECTIONS[c[2]];
+            return '<div class="bp-conn-row"><span>' + c[0] + ' ' + c[1] + '</span><span>' + (on ? '✅' : '❌') + '</span></div>';
         }).join('');
-        container.innerHTML = [
-            '<div class="bp-section-title">Connections</div>',
-            '<div style="margin-bottom:16px">' + rows + '</div>',
-            '<div class="bp-section-title">Theme</div>',
-            '<div class="bp-card" style="cursor:default">',
-            '<div style="font-size:12px;color:rgba(168,162,153,0.7)">Theme: Medieval Castle</div>',
-            '<div style="font-size:12px;color:rgba(168,162,153,0.7);margin-top:4px">Version: v4.0</div>',
-            '</div>',
-        ].join('');
+        container.innerHTML = '<div class="bp-section-title">Connections</div><div style="margin-bottom:16px">' + rows + '</div>'
+            + '<div class="bp-section-title">Theme</div><div class="bp-card" style="cursor:default">'
+            + '<div style="font-size:12px;color:rgba(168,162,153,0.7)">Theme: Medieval Castle</div>'
+            + '<div style="font-size:12px;color:rgba(168,162,153,0.7);margin-top:4px">Version: v4.0</div></div>';
     }
 
     // ── Utility ─────────────────────────────────────────────────────────

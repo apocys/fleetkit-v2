@@ -233,7 +233,7 @@
       toggleBtn.className  = 'control-btn';
       toggleBtn.title      = 'Royal Messenger';
       toggleBtn.textContent = '💬';
-      toggleBtn.style.cssText = 'position:fixed;bottom:20px;right:20px;z-index:101;width:48px;height:48px;border-radius:50%;background:rgba(62,48,30,0.9);border:1px solid rgba(180,150,100,0.4);color:#E8D5B0;font-size:20px;cursor:pointer;';
+      toggleBtn.style.cssText = 'display:none;'; // Hidden — hotbar key 2 handles chat
       toggleBtn.addEventListener('click', function() {
         if (chatContainer.style.display === 'none') {
           chatContainer.style.display = 'block';
@@ -334,7 +334,7 @@
       kanbanBtn.className = 'control-btn';
       kanbanBtn.title = 'Quest Board';
       kanbanBtn.textContent = '📋';
-      kanbanBtn.style.cssText = 'position:fixed;bottom:20px;right:80px;z-index:101;width:48px;height:48px;border-radius:50%;background:rgba(62,48,30,0.9);border:1px solid rgba(180,150,100,0.4);color:#E8D5B0;font-size:20px;cursor:pointer;';
+      kanbanBtn.style.cssText = 'display:none;'; // Hidden — hotbar key 3 handles skills
       kanbanBtn.addEventListener('click', function() { kanbanContainer.style.display = kanbanContainer.style.display === 'none' ? 'block' : 'none'; });
       document.body.appendChild(kanbanBtn);
     }
@@ -356,7 +356,7 @@
       customBtn.className = 'control-btn';
       customBtn.title = 'Customize';
       customBtn.textContent = '⚙️';
-      customBtn.style.cssText = 'position:fixed;bottom:20px;right:140px;z-index:101;width:48px;height:48px;border-radius:50%;background:rgba(62,48,30,0.9);border:1px solid rgba(180,150,100,0.4);color:#E8D5B0;font-size:20px;cursor:pointer;';
+      customBtn.style.cssText = 'display:none;'; // Hidden — hotbar key 5 handles settings
       customBtn.addEventListener('click', function() { window.ThemeCustomize.toggle(); });
       document.body.appendChild(customBtn);
 

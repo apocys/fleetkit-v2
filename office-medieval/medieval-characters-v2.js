@@ -79,7 +79,21 @@ function updateCharacterZones(app) {
         const agentData = agents.get(id);
         const agentName = agentData ? (agentData.name || id) : id;
 
-        labelEl.innerHTML = `<span class="char-emoji">${emoji}</span> ${agentName}`;
+        labelEl.innerHTML = `${agentName}`;
+
+        // Separate always-visible emoji bubble above character
+        let emojiEl = labelEl._emojiEl;
+        if (!emojiEl) {
+            emojiEl = document.createElement('div');
+            emojiEl.className = 'char-emoji-float';
+            emojiEl.style.cssText = 'position:absolute;pointer-events:none;font-size:16px;z-index:40;text-align:center;filter:drop-shadow(0 1px 2px rgba(0,0,0,0.6));transition:opacity 0.3s;';
+            (document.getElementById('labels-container') || document.body).appendChild(emojiEl);
+            labelEl._emojiEl = emojiEl;
+        }
+        emojiEl.textContent = emoji;
+        // Position above the label
+        emojiEl.style.left = labelEl.style.left;
+        emojiEl.style.top = (parseFloat(labelEl.style.top || 0) - 20) + 'px';
 
         // Speech bubble on zone change
         if (zoneName !== prevZone) {

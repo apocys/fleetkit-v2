@@ -417,37 +417,38 @@ class MedievalCastle3D {
             defs.push({ path: 'assets/castle/flag-pennant.glb',       x: tc.x, y: 4, z: tc.z, ry: tc.ryFlag, scale: 1, label: tc.label + ' flag' });
         });
 
-        // Inner bailey walls — N side (z=-7), full wall segments at 2-unit intervals
-        for (let xi = -6; xi <= 6; xi += 2) {
+        // Inner bailey walls — using wall-half at every 1-unit for ZERO gaps
+        // N side (z=-7): x from -6 to 6 (corners at ±7 cover the ends)
+        for (let xi = -6; xi <= 6; xi += 1) {
             const isDoor = xi === 0;
             defs.push({
-                path: isDoor ? 'assets/castle/wall-doorway.glb' : 'assets/castle/wall.glb',
+                path: isDoor ? 'assets/castle/wall-narrow-gate.glb' : 'assets/castle/wall-half.glb',
                 x: xi, y: 0, z: -7, ry: 0, scale: 1, label: 'Inner N wall'
             });
         }
-        // Inner bailey walls — S side (z=7), south doorway
-        for (let xi = -6; xi <= 6; xi += 2) {
+        // S side (z=7)
+        for (let xi = -6; xi <= 6; xi += 1) {
             const isDoor = xi === 0;
             defs.push({
-                path: isDoor ? 'assets/castle/wall-doorway.glb' : 'assets/castle/wall.glb',
+                path: isDoor ? 'assets/castle/wall-narrow-gate.glb' : 'assets/castle/wall-half.glb',
                 x: xi, y: 0, z: 7, ry: 0, scale: 1, label: 'Inner S wall'
             });
         }
         defs.push({ path: 'assets/castle/wall-narrow-stairs.glb', x: 3, y: 0, z: 7, ry: Math.PI, scale: 1, label: 'Inner S stairs' });
 
-        // Inner bailey walls — E side (x=7)
-        for (let zi = -6; zi <= 6; zi += 2) {
+        // E side (x=7): z from -6 to 6
+        for (let zi = -6; zi <= 6; zi += 1) {
             const isDoor = zi === 0;
             defs.push({
-                path: isDoor ? 'assets/castle/wall-doorway.glb' : 'assets/castle/wall.glb',
+                path: isDoor ? 'assets/castle/wall-narrow-gate.glb' : 'assets/castle/wall-half.glb',
                 x: 7, y: 0, z: zi, ry: Math.PI / 2, scale: 1, label: 'Inner E wall'
             });
         }
-        // Inner bailey walls — W side (x=-7)
-        for (let zi = -6; zi <= 6; zi += 2) {
+        // W side (x=-7)
+        for (let zi = -6; zi <= 6; zi += 1) {
             const isDoor = zi === 0;
             defs.push({
-                path: isDoor ? 'assets/castle/wall-doorway.glb' : 'assets/castle/wall.glb',
+                path: isDoor ? 'assets/castle/wall-narrow-gate.glb' : 'assets/castle/wall-half.glb',
                 x: -7, y: 0, z: zi, ry: Math.PI / 2, scale: 1, label: 'Inner W wall'
             });
         }
@@ -660,6 +661,22 @@ class MedievalCastle3D {
         head.position.y = 0.82;
         head.castShadow = true;
         group.add(head);
+        // Eyes
+        const eyeMat = new THREE.MeshStandardMaterial({ color: 0x222222 });
+        const eyeGeo = new THREE.BoxGeometry(0.04, 0.04, 0.02);
+        const leftEye = new THREE.Mesh(eyeGeo, eyeMat);
+        leftEye.position.set(-0.055, 0.84, 0.115);
+        group.add(leftEye);
+        const rightEye = new THREE.Mesh(eyeGeo, eyeMat);
+        rightEye.position.set(0.055, 0.84, 0.115);
+        group.add(rightEye);
+        // Mouth
+        const mouth = new THREE.Mesh(
+            new THREE.BoxGeometry(0.07, 0.02, 0.02),
+            new THREE.MeshStandardMaterial({ color: 0x663333 })
+        );
+        mouth.position.set(0, 0.76, 0.115);
+        group.add(mouth);
         // Crown (CEO only)
         if (crownColor) {
             const crown = new THREE.Mesh(
@@ -841,7 +858,7 @@ class MedievalCastle3D {
             const from = waypoints[charData.waypointIndex];
             const to = waypoints[charData.nextWaypointIndex];
 
-            charData.progress += delta * speed * 0.3;
+            charData.progress += delta * speed * 0.1; // 3× slower movement
 
             if (charData.progress >= 1) {
                 charData.progress = 0;

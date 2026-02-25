@@ -97,12 +97,79 @@
     chirp();
   }
 
+  // Medieval ambient music — low drone with modal harmony
+  function startMedievalDrone(master) {
+    // Dorian mode drone in D (D, E, F, G, A, Bb, C)
+    var droneGain = ctx.createGain();
+    droneGain.gain.value = 0.06;
+    droneGain.connect(master);
+
+    // Constant tonic drone (D2 = 73.42 Hz)
+    var tonic = ctx.createOscillator();
+    tonic.type = 'sawtooth';
+    tonic.frequency.value = 73.42;
+    var tonicFilter = ctx.createBiquadFilter();
+    tonicFilter.type = 'lowpass';
+    tonicFilter.frequency.value = 200;
+    tonic.connect(tonicFilter);
+    tonicFilter.connect(droneGain);
+    tonic.start();
+
+    // Fifth drone (A2 = 110 Hz)
+    var fifth = ctx.createOscillator();
+    fifth.type = 'sawtooth';
+    fifth.frequency.value = 110;
+    var fifthFilter = ctx.createBiquadFilter();
+    fifthFilter.type = 'lowpass';
+    fifthFilter.frequency.value = 180;
+    var fifthGain = ctx.createGain();
+    fifthGain.gain.value = 0.5;
+    fifth.connect(fifthFilter);
+    fifthFilter.connect(fifthGain);
+    fifthGain.connect(droneGain);
+    fifth.start();
+
+    // Slow melodic voice — plays random notes from Dorian scale
+    var melodyNotes = [146.83, 164.81, 174.61, 196.00, 220.00, 233.08, 261.63, 293.66]; // D3-D4 Dorian
+    var melodyOsc = ctx.createOscillator();
+    melodyOsc.type = 'sine';
+    melodyOsc.frequency.value = melodyNotes[0];
+    var melodyGain = ctx.createGain();
+    melodyGain.gain.value = 0;
+    var melodyReverb = ctx.createBiquadFilter();
+    melodyReverb.type = 'lowpass';
+    melodyReverb.frequency.value = 600;
+    melodyOsc.connect(melodyReverb);
+    melodyReverb.connect(melodyGain);
+    melodyGain.connect(droneGain);
+    melodyOsc.start();
+
+    // Play a note every 4-8 seconds
+    function playNote() {
+      if (isMuted()) { setTimeout(playNote, 2000); return; }
+      var note = melodyNotes[Math.floor(Math.random() * melodyNotes.length)];
+      var t = ctx.currentTime;
+      melodyOsc.frequency.setTargetAtTime(note, t, 0.3);
+      melodyGain.gain.setValueAtTime(0, t);
+      melodyGain.gain.linearRampToValueAtTime(0.3, t + 1.5);
+      melodyGain.gain.linearRampToValueAtTime(0, t + 4);
+      setTimeout(playNote, 4000 + Math.random() * 4000);
+    }
+    setTimeout(playNote, 2000);
+
+    // Subtle volume swell with day/night
+    setInterval(function() {
+      var vol = isNight() ? 0.08 : 0.04;
+      droneGain.gain.setTargetAtTime(vol, ctx.currentTime, 2);
+    }, 5000);
+  }
+
   function initAudio() {
     if (started) return; started = true;
     ctx = new (window.AudioContext || window.webkitAudioContext)();
     var master = ctx.createGain(); master.gain.value = 0.3; master.connect(ctx.destination);
     startBirds(master); startRiver(master); startFireCrackle(master);
-    startWind(master); startCrickets(master);
+    startWind(master); startCrickets(master); startMedievalDrone(master);
   }
 
   document.addEventListener('click', initAudio, { once: true });
