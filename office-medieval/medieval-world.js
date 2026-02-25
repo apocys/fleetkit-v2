@@ -256,6 +256,100 @@ function initWorld(app) {
     graveyardLight.position.set(-15, 1.5, -10);
     scene.add(graveyardLight);
 
+    // ── GRAVEYARD EXPANSION ──────────────────────────────────────
+    // Crypts
+    loadGLB(loader, scene, 'assets/graveyard/crypt-large.glb',      -18, 0,   -14,   0,            1.0);
+    loadGLB(loader, scene, 'assets/graveyard/crypt-large-door.glb', -18, 0,   -13.5, 0,            1.0);
+    loadGLB(loader, scene, 'assets/graveyard/crypt-large-roof.glb', -18, 1.5, -14,   0,            1.0);
+    loadGLB(loader, scene, 'assets/graveyard/crypt-small.glb',      -13, 0,   -13,   0,            1.0);
+
+    // Coffins
+    loadGLB(loader, scene, 'assets/graveyard/coffin.glb',     -15.5, 0, -12.5, 0.35,  1.0);
+    loadGLB(loader, scene, 'assets/graveyard/coffin-old.glb', -14.5, 0, -12,  -0.2,   1.0);
+
+    // Altar with candles
+    loadGLB(loader, scene, 'assets/graveyard/altar-stone.glb',    -16,   0,   -9,    0, 1.0);
+    loadGLB(loader, scene, 'assets/graveyard/candle-multiple.glb', -16,   0.5, -9,    0, 1.0);
+    loadGLB(loader, scene, 'assets/graveyard/candle.glb',         -18.5, 0,   -13,   0, 1.0);
+    loadGLB(loader, scene, 'assets/graveyard/candle.glb',         -17.5, 0,   -14.5, 0, 1.0);
+
+    // Columns flanking graveyard entrance
+    loadGLB(loader, scene, 'assets/graveyard/column-large.glb', -19, 0, -11, 0, 1.0);
+    loadGLB(loader, scene, 'assets/graveyard/column-large.glb', -12, 0, -11, 0, 1.0);
+
+    // Crosses
+    loadGLB(loader, scene, 'assets/graveyard/cross-column.glb', -15, 0, -13,   0,    1.0);
+    loadGLB(loader, scene, 'assets/graveyard/cross-wood.glb',   -14, 0, -14,   0.12, 1.0);
+    loadGLB(loader, scene, 'assets/graveyard/cross-wood.glb',   -16, 0, -14,  -0.08, 1.0);
+
+    // Extra gravestones scattered
+    loadGLB(loader, scene, 'assets/graveyard/gravestone-bevel.glb',  -17.5, 0, -11,   0.18,  0.85);
+    loadGLB(loader, scene, 'assets/graveyard/gravestone-bevel.glb',  -13.2, 0, -11.5, -0.22, 0.80);
+    loadGLB(loader, scene, 'assets/graveyard/gravestone-broken.glb', -18.0, 0, -12.5,  0.10, 0.78);
+    loadGLB(loader, scene, 'assets/graveyard/gravestone-broken.glb', -12.5, 0, -14,   -0.15, 0.82);
+
+    // Border pillars at fence corners
+    loadGLB(loader, scene, 'assets/graveyard/border-pillar.glb', -20, 0, -8,  0, 1.0);
+    loadGLB(loader, scene, 'assets/graveyard/border-pillar.glb', -10, 0, -8,  0, 1.0);
+    loadGLB(loader, scene, 'assets/graveyard/border-pillar.glb', -20, 0, -16, 0, 1.0);
+    loadGLB(loader, scene, 'assets/graveyard/border-pillar.glb', -10, 0, -16, 0, 1.0);
+
+    // Fallen tree for atmosphere
+    loadGLB(loader, scene, 'assets/graveyard/pine-fall.glb', -20, 0, -12, 0.5, 1.0);
+
+    // Additional iron-fence segments to complete rectangular enclosure
+    // North wall (z = -16)
+    for (let i = 0; i < 5; i++) {
+        loadGLB(loader, scene, 'assets/graveyard/iron-fence.glb', -20 + i * 2, 0, -16, 0, 1);
+    }
+    // South wall already exists (original z = -7), extend west
+    loadGLB(loader, scene, 'assets/graveyard/iron-fence.glb', -19, 0, -7, 0, 1);
+    loadGLB(loader, scene, 'assets/graveyard/iron-fence.glb', -17, 0, -7, 0, 1);
+    // West wall (x = -20)
+    for (let i = 0; i < 4; i++) {
+        loadGLB(loader, scene, 'assets/graveyard/iron-fence.glb', -20, 0, -8 - i * 2, Math.PI / 2, 1);
+    }
+    // East wall (x = -10)
+    for (let i = 0; i < 4; i++) {
+        loadGLB(loader, scene, 'assets/graveyard/iron-fence.glb', -10, 0, -8 - i * 2, Math.PI / 2, 1);
+    }
+
+    // Crypt interior eerie glow
+    const cryptLight = new THREE.PointLight(0x33ff66, 1.5, 5, 2);
+    cryptLight.position.set(-18, 1, -14);
+    scene.add(cryptLight);
+
+    // Candle warm glow on altar
+    const altarLight = new THREE.PointLight(0xffaa44, 1.0, 4, 2);
+    altarLight.position.set(-16, 1, -9);
+    scene.add(altarLight);
+
+    // ── GRAVEYARD NPCs ───────────────────────────────────────────
+    app.graveyardNPCs = [];
+
+    const graveyardNPCDefs = [
+        { file: 'character-ghost.glb',    x: -16, z: -11, speed: 0.4, radius: 4, ghost: true  },
+        { file: 'character-skeleton.glb', x: -14, z: -13, speed: 0.5, radius: 3, ghost: false },
+        { file: 'character-keeper.glb',   x: -12, z: -10, speed: 0.6, radius: 5, ghost: false },
+    ];
+
+    graveyardNPCDefs.forEach(def => {
+        loader.load(`assets/graveyard/${def.file}`, (gltf) => {
+            const m = gltf.scene;
+            m.position.set(def.x, 0, def.z);
+            m.traverse(c => { if (c.isMesh) { c.castShadow = true; c.receiveShadow = true; } });
+            scene.add(m);
+            app.graveyardNPCs.push({
+                mesh: m,
+                homeX: def.x, homeZ: def.z,
+                targetX: def.x, targetZ: def.z,
+                speed: def.speed, radius: def.radius,
+                ghost: def.ghost,
+                wanderTimer: Math.random() * 5,
+            });
+        }, undefined, () => {});
+    });
+
     // ── VILLAGE PROPS ────────────────────────────────────────────
     // Lantern posts along main road
     loadGLB(loader, scene, 'assets/graveyard/lightpost-single.glb', -1.2, 0, 14.0, 0.0, 0.85);
@@ -350,8 +444,37 @@ function initWorld(app) {
             });
         }
 
+        // Graveyard NPC wandering + ghost bob
+        if (this.graveyardNPCs && this.graveyardNPCs.length > 0) {
+            this.graveyardNPCs.forEach(npc => {
+                npc.wanderTimer -= delta;
+                if (npc.wanderTimer <= 0) {
+                    npc.targetX = npc.homeX + (Math.random() - 0.5) * npc.radius * 2;
+                    npc.targetZ = npc.homeZ + (Math.random() - 0.5) * npc.radius * 2;
+                    npc.wanderTimer = 5 + Math.random() * 5;
+                }
+                const dx = npc.targetX - npc.mesh.position.x;
+                const dz = npc.targetZ - npc.mesh.position.z;
+                const dist = Math.sqrt(dx * dx + dz * dz);
+                if (dist > 0.05) {
+                    const step = Math.min(npc.speed * delta, dist);
+                    npc.mesh.position.x += (dx / dist) * step;
+                    npc.mesh.position.z += (dz / dist) * step;
+                    npc.mesh.rotation.y = Math.atan2(dx, dz);
+                }
+                // Ghost float bob
+                if (npc.ghost) {
+                    npc.mesh.position.y = 0.3 + Math.sin(elapsed * 1.8 + npc.homeX) * 0.35 + 0.35;
+                }
+            });
+        }
+
         this.updateLabels();
-        this.renderer.render(this.scene, this.camera);
+        if (this.composer) {
+            this.composer.render();
+        } else {
+            this.renderer.render(this.scene, this.camera);
+        }
     };
 
     console.log('[MedievalWorld] ✅ World design loaded — paths, town square, well, farms, graveyard, river, lanterns');

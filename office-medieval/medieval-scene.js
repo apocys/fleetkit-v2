@@ -1,6 +1,9 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 
 // ═══════════════════════════════════════════════════════════════
 // MedievalCastle3D — Three.js Scene
@@ -111,6 +114,18 @@ class MedievalCastle3D {
         this.renderer.toneMappingExposure = 1.2;
         this.renderer.outputColorSpace = THREE.SRGBColorSpace;
         container.insertBefore(this.renderer.domElement, container.firstChild);
+
+        // Post-processing: bloom for campfire glow + sunset
+        this.composer = new EffectComposer(this.renderer);
+        this.composer.addPass(new RenderPass(this.scene, this.camera));
+        const bloom = new UnrealBloomPass(
+            new THREE.Vector2(window.innerWidth, window.innerHeight),
+            0.3,   // strength (subtle)
+            0.6,   // radius
+            0.85   // threshold (only bright things bloom)
+        );
+        this.composer.addPass(bloom);
+        this.bloomPass = bloom;
 
         // Orbit Controls
         this.controls = new OrbitControls(this.camera, this.renderer.domElement);
@@ -236,6 +251,7 @@ class MedievalCastle3D {
         this.camera.updateProjectionMatrix();
 
         this.renderer.setSize(w, h);
+        if (this.composer) this.composer.setSize(w, h);
     }
 
     // ── Model Loading ───────────────────────────────────────
@@ -360,80 +376,209 @@ class MedievalCastle3D {
     getModelDefinitions() {
         const defs = [];
 
-        // Main Keep (5-story, cathedral scale, scale 1.6)
-        const ks = 1.6;
-        defs.push({ path: 'assets/castle/tower-square-base-color.glb',   x: 0, y: 0,       z: 0, ry: 0, scale: ks, label: 'Keep base' });
-        defs.push({ path: 'assets/castle/tower-square-mid-windows.glb',  x: 0, y: 1 * ks,  z: 0, ry: 0, scale: ks, label: 'Keep mid 1' });
-        defs.push({ path: 'assets/castle/tower-square-mid-windows.glb',  x: 0, y: 2 * ks,  z: 0, ry: 0, scale: ks, label: 'Keep mid 2' });
-        defs.push({ path: 'assets/castle/tower-square-mid.glb',          x: 0, y: 3 * ks,  z: 0, ry: 0, scale: ks, label: 'Keep mid 3' });
-        defs.push({ path: 'assets/castle/tower-square-mid.glb',          x: 0, y: 4 * ks,  z: 0, ry: 0, scale: ks, label: 'Keep mid 4' });
-        defs.push({ path: 'assets/castle/tower-square-top-roof-high.glb',x: 0, y: 5 * ks,  z: 0, ry: 0, scale: ks, label: 'Keep roof' });
-        defs.push({ path: 'assets/castle/flag-banner-long.glb',          x: 0, y: 6 * ks,  z: 0, ry: 0, scale: ks, label: 'Keep flag' });
+        // ─────────────────────────────────────────────────────────────────
+        // MAIN KEEP — 6-story grand cathedral-fortress tower (scale 1.8)
+        // ─────────────────────────────────────────────────────────────────
+        const ks = 1.8;
+        defs.push({ path: 'assets/castle/tower-square-mid-color.glb',          x: 0, y: 0 * ks, z: 0, ry: 0, scale: ks, label: 'Keep base' });
+        defs.push({ path: 'assets/castle/tower-square-mid-color.glb',          x: 0, y: 1 * ks, z: 0, ry: 0, scale: ks, label: 'Keep mid 1' });
+        defs.push({ path: 'assets/castle/tower-square-mid-color.glb',          x: 0, y: 2 * ks, z: 0, ry: 0, scale: ks, label: 'Keep mid 2' });
+        defs.push({ path: 'assets/castle/tower-square-mid-color.glb',          x: 0, y: 3 * ks, z: 0, ry: 0, scale: ks, label: 'Keep mid 3' });
+        defs.push({ path: 'assets/castle/tower-square-mid-open.glb',           x: 0, y: 4 * ks, z: 0, ry: 0, scale: ks, label: 'Keep mid open' });
+        defs.push({ path: 'assets/castle/tower-square-top-roof-high-windows.glb', x: 0, y: 5 * ks, z: 0, ry: 0, scale: ks, label: 'Keep roof' });
+        defs.push({ path: 'assets/castle/flag-wide.glb',                       x: 0, y: 6 * ks, z: 0, ry: 0, scale: ks, label: 'Keep flag' });
+        // Keep entrance details
+        defs.push({ path: 'assets/castle/door.glb',                x:  0,   y: 0, z:  0.9, ry: 0,            scale: 1.8, label: 'Keep door' });
+        defs.push({ path: 'assets/castle/stairs-stone-square.glb', x:  0,   y: 0, z:  2.2, ry: 0,            scale: 1.2, label: 'Keep stairs' });
 
-        // Inner Wall Ring (radius ~6), 8 segments/side, doorways at N/S/E/W center
-        for (let seg = 0; seg < 8; seg++) {
-            const isDoor = seg === 3 || seg === 4;
-            const wx = -3.5 + seg;
-            defs.push({ path: isDoor ? 'assets/castle/wall-doorway.glb' : 'assets/castle/wall.glb',
-                x: wx, y: 0, z: -6, ry: 0, scale: 1, label: 'Inner N wall' });
-            defs.push({ path: isDoor ? 'assets/castle/wall-doorway.glb' : 'assets/castle/wall.glb',
-                x: wx, y: 0, z: 6, ry: 0, scale: 1, label: 'Inner S wall' });
-            const wz = -3.5 + seg;
-            defs.push({ path: isDoor ? 'assets/castle/wall-doorway.glb' : 'assets/castle/wall.glb',
-                x: 6, y: 0, z: wz, ry: Math.PI / 2, scale: 1, label: 'Inner E wall' });
-            defs.push({ path: isDoor ? 'assets/castle/wall-doorway.glb' : 'assets/castle/wall.glb',
-                x: -6, y: 0, z: wz, ry: Math.PI / 2, scale: 1, label: 'Inner W wall' });
-        }
-
-        // Inner Corner Towers (4 corners, 3-story, scale 1.0)
-        const innerCorners = [
-            { x: -6, z: -6, label: 'Inner NW' },
-            { x:  6, z: -6, label: 'Inner NE' },
-            { x: -6, z:  6, label: 'Inner SW' },
-            { x:  6, z:  6, label: 'Inner SE' },
+        // ─────────────────────────────────────────────────────────────────
+        // INNER BAILEY — hexagonal corner towers at (±7, ±7)
+        // ─────────────────────────────────────────────────────────────────
+        const innerHexTowers = [
+            { x: -7, z: -7, label: 'Inner NW hex', ryFlag: 0 },
+            { x:  7, z: -7, label: 'Inner NE hex', ryFlag: Math.PI / 2 },
+            { x: -7, z:  7, label: 'Inner SW hex', ryFlag: -Math.PI / 2 },
+            { x:  7, z:  7, label: 'Inner SE hex', ryFlag: Math.PI },
         ];
-        innerCorners.forEach((tc, i) => {
-            defs.push({ path: 'assets/castle/tower-square-base.glb',        x: tc.x, y: 0, z: tc.z, ry: 0, scale: 1, label: tc.label + ' base' });
-            defs.push({ path: 'assets/castle/tower-square-mid-windows.glb', x: tc.x, y: 1, z: tc.z, ry: 0, scale: 1, label: tc.label + ' mid' });
-            defs.push({ path: 'assets/castle/tower-square-top-roof.glb',    x: tc.x, y: 2, z: tc.z, ry: 0, scale: 1, label: tc.label + ' top' });
-            defs.push({ path: 'assets/castle/flag.glb',                     x: tc.x, y: 3, z: tc.z, ry: i * Math.PI / 2, scale: 1, label: tc.label + ' flag' });
+        innerHexTowers.forEach((tc) => {
+            defs.push({ path: 'assets/castle/tower-hexagon-base.glb', x: tc.x, y: 0, z: tc.z, ry: 0, scale: 1,   label: tc.label + ' base' });
+            defs.push({ path: 'assets/castle/tower-hexagon-mid.glb',  x: tc.x, y: 1, z: tc.z, ry: 0, scale: 1,   label: tc.label + ' mid' });
+            defs.push({ path: 'assets/castle/tower-hexagon-roof.glb', x: tc.x, y: 2, z: tc.z, ry: 0, scale: 1,   label: tc.label + ' roof' });
+            defs.push({ path: 'assets/castle/tower-hexagon-top.glb',  x: tc.x, y: 3, z: tc.z, ry: 0, scale: 1,   label: tc.label + ' top' });
+            defs.push({ path: 'assets/castle/flag-pennant.glb',       x: tc.x, y: 4, z: tc.z, ry: tc.ryFlag, scale: 1, label: tc.label + ' flag' });
         });
 
-        // Outer Wall Ring (radius ~10), 12 segments/side, doorways at N and S center
-        for (let seg = 0; seg < 12; seg++) {
-            const wx = -5.5 + seg;
-            const isDoorS = seg === 5 || seg === 6;
-            defs.push({ path: 'assets/castle/wall.glb', x: wx, y: 0, z: -10, ry: 0, scale: 1, label: 'Outer N wall' });
-            defs.push({ path: isDoorS ? 'assets/castle/wall-doorway.glb' : 'assets/castle/wall.glb',
-                x: wx, y: 0, z: 10, ry: 0, scale: 1, label: 'Outer S wall' });
-            const wz = -5.5 + seg;
-            defs.push({ path: 'assets/castle/wall.glb', x: 10, y: 0, z: wz, ry: Math.PI / 2, scale: 1, label: 'Outer E wall' });
-            defs.push({ path: 'assets/castle/wall.glb', x: -10, y: 0, z: wz, ry: Math.PI / 2, scale: 1, label: 'Outer W wall' });
+        // Inner bailey walls — N side (z=-7), connecting NW(-7) to NE(7) in 2-unit segments
+        // Segments at x = -5, -3, -1, 1, 3, 5  (centre gap = N doorway at x=0)
+        for (let xi = -5; xi <= 5; xi += 2) {
+            const isNDoor = xi === -1 || xi === 1;
+            defs.push({
+                path: isNDoor ? 'assets/castle/wall-narrow-gate.glb' : 'assets/castle/wall-half.glb',
+                x: xi, y: 0, z: -7, ry: 0, scale: 1, label: 'Inner N wall'
+            });
+        }
+        // Inner bailey walls — S side (z=7), south doorway + narrow stairs near it
+        for (let xi = -5; xi <= 5; xi += 2) {
+            const isSDoor = xi === -1 || xi === 1;
+            defs.push({
+                path: isSDoor ? 'assets/castle/wall-narrow-gate.glb' : 'assets/castle/wall-half.glb',
+                x: xi, y: 0, z: 7, ry: 0, scale: 1, label: 'Inner S wall'
+            });
+        }
+        defs.push({ path: 'assets/castle/wall-narrow-stairs.glb', x: 3, y: 0, z: 7, ry: Math.PI, scale: 1, label: 'Inner S stairs' });
+
+        // Inner bailey walls — E side (x=7), z = -5,-3,-1,1,3,5
+        for (let zi = -5; zi <= 5; zi += 2) {
+            const isEDoor = zi === -1 || zi === 1;
+            defs.push({
+                path: isEDoor ? 'assets/castle/wall-narrow-gate.glb' : 'assets/castle/wall-half.glb',
+                x: 7, y: 0, z: zi, ry: Math.PI / 2, scale: 1, label: 'Inner E wall'
+            });
+        }
+        // Inner bailey walls — W side (x=-7)
+        for (let zi = -5; zi <= 5; zi += 2) {
+            const isWDoor = zi === -1 || zi === 1;
+            defs.push({
+                path: isWDoor ? 'assets/castle/wall-narrow-gate.glb' : 'assets/castle/wall-half.glb',
+                x: -7, y: 0, z: zi, ry: Math.PI / 2, scale: 1, label: 'Inner W wall'
+            });
+        }
+        // Inner bailey wall corners (visual connectors)
+        defs.push({ path: 'assets/castle/wall-corner.glb',      x: -7, y: 0, z: -7, ry: 0,             scale: 1, label: 'Inner corner NW' });
+        defs.push({ path: 'assets/castle/wall-corner.glb',      x:  7, y: 0, z: -7, ry: Math.PI / 2,   scale: 1, label: 'Inner corner NE' });
+        defs.push({ path: 'assets/castle/wall-corner.glb',      x: -7, y: 0, z:  7, ry: -Math.PI / 2,  scale: 1, label: 'Inner corner SW' });
+        defs.push({ path: 'assets/castle/wall-corner.glb',      x:  7, y: 0, z:  7, ry: Math.PI,        scale: 1, label: 'Inner corner SE' });
+
+        // ─────────────────────────────────────────────────────────────────
+        // OUTER CURTAIN WALL — radius ±11
+        // ─────────────────────────────────────────────────────────────────
+
+        // -- Outer wall N side (z=-11), x from -9 to 9 in 2-unit segments, pillar every 3rd
+        for (let xi = -9; xi <= 9; xi += 2) {
+            defs.push({ path: 'assets/castle/wall-narrow.glb', x: xi, y: 0, z: -11, ry: 0, scale: 1, label: 'Outer N wall' });
+            if (Math.abs(xi) === 3) {
+                defs.push({ path: 'assets/castle/wall-pillar.glb', x: xi + 1, y: 0, z: -11, ry: 0, scale: 1, label: 'Outer N pillar' });
+            }
+        }
+        // -- Outer wall S side (z=11) — south entrance gate at centre
+        for (let xi = -9; xi <= 9; xi += 2) {
+            const isSGate = xi === -1 || xi === 1;
+            defs.push({
+                path: isSGate ? 'assets/castle/wall-narrow-gate.glb' : 'assets/castle/wall-narrow.glb',
+                x: xi, y: 0, z: 11, ry: 0, scale: 1, label: 'Outer S wall'
+            });
+            if (Math.abs(xi) === 5) {
+                defs.push({ path: 'assets/castle/wall-pillar.glb', x: xi + 1, y: 0, z: 11, ry: 0, scale: 1, label: 'Outer S pillar' });
+            }
+        }
+        // Wall-access stairs near south gate
+        defs.push({ path: 'assets/castle/wall-narrow-stairs-rail.glb', x: -3, y: 0, z: 11, ry: 0,      scale: 1, label: 'Outer S stair W' });
+        defs.push({ path: 'assets/castle/wall-narrow-stairs-rail.glb', x:  3, y: 0, z: 11, ry: Math.PI, scale: 1, label: 'Outer S stair E' });
+
+        // -- Outer wall E side (x=11), z from -9 to 9
+        for (let zi = -9; zi <= 9; zi += 2) {
+            defs.push({ path: 'assets/castle/wall-narrow.glb', x: 11, y: 0, z: zi, ry: Math.PI / 2, scale: 1, label: 'Outer E wall' });
+            if (Math.abs(zi) === 3) {
+                defs.push({ path: 'assets/castle/wall-pillar.glb', x: 11, y: 0, z: zi + 1, ry: Math.PI / 2, scale: 1, label: 'Outer E pillar' });
+            }
+        }
+        // -- Outer wall W side (x=-11), z from -9 to 9
+        for (let zi = -9; zi <= 9; zi += 2) {
+            defs.push({ path: 'assets/castle/wall-narrow.glb', x: -11, y: 0, z: zi, ry: Math.PI / 2, scale: 1, label: 'Outer W wall' });
+            if (Math.abs(zi) === 3) {
+                defs.push({ path: 'assets/castle/wall-pillar.glb', x: -11, y: 0, z: zi + 1, ry: Math.PI / 2, scale: 1, label: 'Outer W pillar' });
+            }
         }
 
-        // Outer Towers (8 towers, 2-story each)
-        const outerTowers = [
-            { x: -10, z: -10 }, { x: 0, z: -10 }, { x: 10, z: -10 },
-            { x: -10, z:   0 },                    { x: 10, z:   0 },
-            { x: -10, z:  10 }, { x: 0, z:  10 }, { x: 10, z:  10 },
+        // -- Outer wall 4 CORNERS — wall-corner-half-tower
+        defs.push({ path: 'assets/castle/wall-corner-half-tower.glb', x: -11, y: 0, z: -11, ry: 0,            scale: 1, label: 'Outer corner NW' });
+        defs.push({ path: 'assets/castle/wall-corner-half-tower.glb', x:  11, y: 0, z: -11, ry: Math.PI / 2,  scale: 1, label: 'Outer corner NE' });
+        defs.push({ path: 'assets/castle/wall-corner-half-tower.glb', x: -11, y: 0, z:  11, ry: -Math.PI / 2, scale: 1, label: 'Outer corner SW' });
+        defs.push({ path: 'assets/castle/wall-corner-half-tower.glb', x:  11, y: 0, z:  11, ry: Math.PI,      scale: 1, label: 'Outer corner SE' });
+
+        // -- 8 outer SQUARE TOWERS (midpoints + corners already covered above, midpoint towers here)
+        const outerSquareTowers = [
+            { x:   0, z: -11, ry: 0,            label: 'Outer N mid tower' },
+            { x:   0, z:  11, ry: 0,            label: 'Outer S mid tower' },
+            { x:  11, z:   0, ry: Math.PI / 2,  label: 'Outer E mid tower' },
+            { x: -11, z:   0, ry: Math.PI / 2,  label: 'Outer W mid tower' },
+            { x: -11, z:  -6, ry: Math.PI / 2,  label: 'Outer NW tower' },
+            { x:  11, z:  -6, ry: Math.PI / 2,  label: 'Outer NE tower' },
+            { x: -11, z:   6, ry: Math.PI / 2,  label: 'Outer SW tower' },
+            { x:  11, z:   6, ry: Math.PI / 2,  label: 'Outer SE tower' },
         ];
-        outerTowers.forEach((ot, i) => {
-            defs.push({ path: 'assets/castle/tower-square-base.glb',        x: ot.x, y: 0, z: ot.z, ry: 0, scale: 1, label: 'Outer tower base' });
-            defs.push({ path: 'assets/castle/tower-square-top-roof.glb',    x: ot.x, y: 1, z: ot.z, ry: 0, scale: 1, label: 'Outer tower top' });
-            defs.push({ path: 'assets/castle/flag.glb',                     x: ot.x, y: 2, z: ot.z, ry: i * Math.PI / 4, scale: 1, label: 'Outer tower flag' });
+        outerSquareTowers.forEach((ot) => {
+            defs.push({ path: 'assets/castle/tower-base.glb',              x: ot.x, y: 0, z: ot.z, ry: ot.ry, scale: 1, label: ot.label + ' base' });
+            defs.push({ path: 'assets/castle/tower-square-mid-color.glb',  x: ot.x, y: 1, z: ot.z, ry: ot.ry, scale: 1, label: ot.label + ' mid' });
+            defs.push({ path: 'assets/castle/tower-top.glb',               x: ot.x, y: 2, z: ot.z, ry: ot.ry, scale: 1, label: ot.label + ' top' });
+            defs.push({ path: 'assets/castle/flag-banner-short.glb',       x: ot.x, y: 3, z: ot.z, ry: ot.ry, scale: 1, label: ot.label + ' flag' });
         });
 
-        // Gate & Drawbridge (south outer entrance)
-        defs.push({ path: 'assets/castle/gate.glb',        x: 0, y: 0, z: 10.5, ry: 0, scale: 1, label: 'Gate' });
-        defs.push({ path: 'assets/castle/bridge-draw.glb', x: 0, y: 0, z: 11.5, ry: 0, scale: 1, label: 'Drawbridge' });
+        // ─────────────────────────────────────────────────────────────────
+        // SOUTH GATE COMPLEX
+        // ─────────────────────────────────────────────────────────────────
+        defs.push({ path: 'assets/castle/metal-gate.glb',            x:  0,   y: 0, z: 11,   ry: 0, scale: 1,   label: 'Main metal gate' });
+        defs.push({ path: 'assets/castle/wall-narrow-corner.glb',    x: -1,   y: 0, z: 11,   ry: 0, scale: 1,   label: 'Gate corner W' });
+        defs.push({ path: 'assets/castle/wall-narrow-corner.glb',    x:  1,   y: 0, z: 11,   ry: Math.PI / 2, scale: 1, label: 'Gate corner E' });
+        defs.push({ path: 'assets/castle/tower-square-arch.glb',     x:  0,   y: 0, z: 11.5, ry: 0, scale: 1,   label: 'Gate arch' });
 
-        // Bridge over river (at z=12)
-        defs.push({ path: 'assets/castle/bridge-straight.glb', x: 0, y: 0, z: 12, ry: 0, scale: 1, label: 'River bridge' });
+        // ─────────────────────────────────────────────────────────────────
+        // BRIDGE — straight over river at z≈13 with pillar supports
+        // ─────────────────────────────────────────────────────────────────
+        defs.push({ path: 'assets/castle/wall-narrow-wood.glb',           x:  0,   y: 0, z: 12.5, ry: 0, scale: 1, label: 'Bridge N section' });
+        defs.push({ path: 'assets/castle/wall-narrow-wood.glb',           x:  0,   y: 0, z: 13.5, ry: 0, scale: 1, label: 'Bridge S section' });
+        defs.push({ path: 'assets/castle/bridge-straight-pillar.glb',     x: -0.8, y: 0, z: 13,   ry: 0, scale: 1, label: 'Bridge pillar W' });
+        defs.push({ path: 'assets/castle/bridge-straight-pillar.glb',     x:  0.8, y: 0, z: 13,   ry: 0, scale: 1, label: 'Bridge pillar E' });
+        defs.push({ path: 'assets/castle/wall-narrow-wood-fence.glb',     x: -0.5, y: 0, z: 13,   ry: 0, scale: 1, label: 'Bridge fence W' });
+        defs.push({ path: 'assets/castle/wall-narrow-wood-fence.glb',     x:  0.5, y: 0, z: 13,   ry: 0, scale: 1, label: 'Bridge fence E' });
 
-        // Stairs to keep entrance
-        defs.push({ path: 'assets/castle/stairs-stone.glb', x: 0, y: 0, z: 2, ry: 0, scale: 1, label: 'Keep stairs' });
+        // ─────────────────────────────────────────────────────────────────
+        // CASTLE DETAIL PIECES — decorative/accent elements
+        // ─────────────────────────────────────────────────────────────────
+        // Slant roofs on inner bailey walls for added silhouette
+        defs.push({ path: 'assets/castle/tower-slant-roof.glb',       x:  0,  y: 0, z: -7.5, ry: 0,           scale: 1, label: 'Inner N roof accent' });
+        defs.push({ path: 'assets/castle/tower-slant-roof.glb',       x:  0,  y: 0, z:  7.5, ry: Math.PI,     scale: 1, label: 'Inner S roof accent' });
+        defs.push({ path: 'assets/castle/tower-square-top-color.glb', x:  7,  y: 1, z:  0,   ry: Math.PI / 2, scale: 1, label: 'Inner E wall top' });
+        defs.push({ path: 'assets/castle/tower-square-top-color.glb', x: -7,  y: 1, z:  0,   ry: Math.PI / 2, scale: 1, label: 'Inner W wall top' });
+        // Wall studs on outer walls
+        defs.push({ path: 'assets/castle/wall-stud.glb',              x: -7,  y: 0, z: -11,  ry: 0,           scale: 1, label: 'Outer N stud W' });
+        defs.push({ path: 'assets/castle/wall-stud.glb',              x:  7,  y: 0, z: -11,  ry: 0,           scale: 1, label: 'Outer N stud E' });
+        defs.push({ path: 'assets/castle/wall-stud.glb',              x: -7,  y: 0, z:  11,  ry: 0,           scale: 1, label: 'Outer S stud W' });
+        defs.push({ path: 'assets/castle/wall-stud.glb',              x:  7,  y: 0, z:  11,  ry: 0,           scale: 1, label: 'Outer S stud E' });
+        // Wall-to-narrow transitions
+        defs.push({ path: 'assets/castle/wall-to-narrow.glb',         x:  7,  y: 0, z: -11,  ry: 0,           scale: 1, label: 'Wall transition N' });
+        defs.push({ path: 'assets/castle/wall-to-narrow.glb',         x: -7,  y: 0, z:  11,  ry: Math.PI,     scale: 1, label: 'Wall transition S' });
+        // Corner half pieces
+        defs.push({ path: 'assets/castle/wall-corner-half.glb',       x:  11, y: 0, z:  -9,  ry: Math.PI / 2, scale: 1, label: 'Outer E corner half N' });
+        defs.push({ path: 'assets/castle/wall-corner-half.glb',       x: -11, y: 0, z:   9,  ry: -Math.PI / 2, scale: 1, label: 'Outer W corner half S' });
+        // Corner slants
+        defs.push({ path: 'assets/castle/wall-corner-slant.glb',      x:  11, y: 0, z:   9,  ry: Math.PI,     scale: 1, label: 'Outer E corner slant S' });
+        defs.push({ path: 'assets/castle/wall-corner-slant.glb',      x: -11, y: 0, z:  -9,  ry: 0,           scale: 1, label: 'Outer W corner slant N' });
+        // Half-modular wall filler segments near keep
+        defs.push({ path: 'assets/castle/wall-half-modular.glb',      x: -2,  y: 0, z:  3,   ry: 0,           scale: 1, label: 'Keep courtyard wall W' });
+        defs.push({ path: 'assets/castle/wall-half-modular.glb',      x:  2,  y: 0, z:  3,   ry: 0,           scale: 1, label: 'Keep courtyard wall E' });
+        // Top-wood hex tower accent (one variant for variety)
+        defs.push({ path: 'assets/castle/tower-hexagon-top-wood.glb', x: -7,  y: 4.2, z: -7, ry: 0,           scale: 1, label: 'Inner NW hex top wood' });
+        // Round roof tops on two outer corner towers for visual variety
+        defs.push({ path: 'assets/castle/tower-square-top-roof-rounded.glb', x: -11, y: 3, z: -11, ry: 0, scale: 1, label: 'Outer NW round roof' });
+        defs.push({ path: 'assets/castle/tower-square-top-roof-rounded.glb', x:  11, y: 3, z:  11, ry: 0, scale: 1, label: 'Outer SE round roof' });
+        // Square arch on outer north wall mid-tower
+        defs.push({ path: 'assets/castle/tower-square-arch.glb',      x:  0,  y: 0, z: -11.5, ry: Math.PI,   scale: 1, label: 'Outer N arch' });
+        // Mid-door tower piece on keep outer face
+        defs.push({ path: 'assets/castle/tower-square-mid-door.glb',  x:  0,  y: 1.8, z: 0.9, ry: 0,         scale: 1.2, label: 'Keep mid door' });
+        // Base-border accent at base of keep
+        defs.push({ path: 'assets/castle/tower-square-base-border.glb', x: 0, y: 0, z: 0,    ry: 0,           scale: ks,  label: 'Keep base border' });
+        // Ground terrain patches around base
+        defs.push({ path: 'assets/castle/ground.glb',                 x:  0,  y: 0, z:  0,   ry: 0,           scale: 3,   label: 'Castle ground' });
+        defs.push({ path: 'assets/castle/ground-hills.glb',           x: -12, y: 0, z: -12,  ry: 0,           scale: 1.5, label: 'Hills NW' });
+        defs.push({ path: 'assets/castle/ground-hills.glb',           x:  13, y: 0, z: -11,  ry: Math.PI / 3, scale: 1.5, label: 'Hills NE' });
+        defs.push({ path: 'assets/castle/ground-hills.glb',           x: -13, y: 0, z:  12,  ry: Math.PI / 5, scale: 1.5, label: 'Hills SW' });
+        defs.push({ path: 'assets/castle/ground-hills.glb',           x:  12, y: 0, z:  13,  ry: Math.PI,     scale: 1.5, label: 'Hills SE' });
+        defs.push({ path: 'assets/castle/ground-hills.glb',           x:   0, y: 0, z: -14,  ry: Math.PI / 7, scale: 1.2, label: 'Hills N' });
 
-        // Trees (80+ at radius 14-40)
+        // ─────────────────────────────────────────────────────────────────
+        // TREES — inner ring + outer forest + dead wood flavour
+        // ─────────────────────────────────────────────────────────────────
         {
             const _rng = (min, max) => min + Math.random() * (max - min);
             // Dense inner ring (radius 14-22, 40 trees)
@@ -452,6 +597,15 @@ class MedievalCastle3D {
                     x: Math.cos(angle) * r, y: 0, z: Math.sin(angle) * r,
                     ry: Math.random() * Math.PI * 2, scale: 1.0 + Math.random() * 0.5, label: 'Tree' });
             }
+            // Dead wood flavour — tree-log and tree-trunk scattered near castle perimeter
+            const deadWoodSpots = [
+                { x: -13, z:  9 }, { x:  14, z: -8 }, { x:   9, z:  13 }, { x: -10, z: -13 },
+                { x:  16, z:  5 }, { x: -15, z: -5 }, { x:   5, z: -15 }, { x:  -6, z:  16 },
+            ];
+            deadWoodSpots.forEach((dw, i) => {
+                defs.push({ path: i % 2 === 0 ? 'assets/castle/tree-log.glb' : 'assets/castle/tree-trunk.glb',
+                    x: dw.x, y: 0, z: dw.z, ry: Math.random() * Math.PI * 2, scale: 1.0 + Math.random() * 0.3, label: 'Dead wood' });
+            });
         }
 
         // Rock clusters (18)
@@ -672,7 +826,12 @@ class MedievalCastle3D {
         this.updateLabels();
 
         // Render
-        this.renderer.render(this.scene, this.camera);
+        // Use composer for bloom post-processing
+        if (this.composer) {
+            this.composer.render();
+        } else {
+            this.renderer.render(this.scene, this.camera);
+        }
     }
 
     animateCharacters(delta, elapsed) {
@@ -820,6 +979,11 @@ class MedievalCastle3D {
             this.torchLights.forEach(t => {
                 t.intensity = isNight ? 4 : isDusk ? 3 : 2;
             });
+        }
+
+        // Bloom intensity: stronger at night (campfire glow)
+        if (this.bloomPass) {
+            this.bloomPass.strength = isNight ? 0.6 : isDusk ? 0.4 : 0.25;
         }
     }
 
