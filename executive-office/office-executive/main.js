@@ -92,6 +92,15 @@
                 async deleteApiKey(provider) {
                     console.log('deleteApiKey called for', provider);
                     return { success: true };
+                },
+                async getTranscript(sessionKey) {
+                    try {
+                        var apiUrl = window.OC_API_URL || (window.location.hostname.includes('spawnkit.ai') ? window.location.origin : 'http://127.0.0.1:8222');
+                        var resp = await fetch(apiUrl + '/api/oc/chat');
+                        if (!resp.ok) return [];
+                        var data = await resp.json();
+                        return Array.isArray(data) ? data : (data.messages || []);
+                    } catch(e) { console.warn('getTranscript error:', e); return []; }
                 }
             };
         }
@@ -932,7 +941,7 @@
                 '<div class="brainstorm-empty-title">Brainstorm Room</div>' +
                 '<div class="brainstorm-empty-desc" style="max-width:500px;margin:0 auto;">Your AI team debates ideas together. The CEO orchestrates, specialists research, verify, and challenge — so you get better answers.</div>' +
                 '</div>' +
-                '<div style="background:var(--bg-primary,#fff);border:1px solid var(--border-subtle);border-radius:14px;padding:20px;margin-bottom:16px;">' +
+                '<div style="background:var(--bg-primary,#fff);border:1px solid var(--border-subtle);border-radius:14px;padding:20px;margin-bottom:16px;width:100%;box-sizing:border-box;">' +
                 '<div style="font-size:13px;font-weight:600;color:var(--text-secondary);margin-bottom:8px;">What should your team work on?</div>' +
                 '<textarea class="brainstorm-input" id="inlineBrainstormInput" rows="3" placeholder="e.g. What is the best stablecoin strategy for 2025?" style="width:100%;box-sizing:border-box;"></textarea>' +
                 '<div style="display:flex;align-items:center;gap:8px;margin-top:8px;">' +
@@ -1021,18 +1030,7 @@
                 html += typeof renderMarkdown === 'function' ? renderMarkdown(result.answer) : '<pre style="white-space:pre-wrap;font-family:inherit;margin:0;">' + esc(result.answer) + '</pre>';
                 html += '</div>';
             }
-            // Mission-specific actions
-            if (result.isMission) {
-                html += '<div style="background:var(--exec-blue-bg, rgba(0,122,255,0.08));border:1px solid var(--exec-blue,#007AFF);border-radius:10px;padding:12px;margin-bottom:12px;text-align:center;">';
-                html += '<div style="font-size:12px;font-weight:600;color:var(--exec-blue,#007AFF);margin-bottom:6px;">🎯 Mission Created in Mission Control</div>';
-                html += '<button class="brainstorm-btn-primary" id="btnViewMissionControl" style="background:var(--exec-blue);color:white;border:none;font-weight:600;padding:8px 20px;">View in Mission Control →</button>';
-                html += '</div>';
-            }
-
             html += '<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">';
-            if (result.isMission) {
-                html += '<button class="brainstorm-btn-secondary" id="btnExecuteMission" style="background:var(--exec-green,#34C759);color:white;border:none;font-weight:600;">🚀 Execute Now</button>';
-            }
             html += '<button class="brainstorm-btn-secondary" id="btnBrainstormFollowUp" style="background:var(--exec-blue);color:white;border:none;font-weight:600;">💬 Follow Up</button>';
             html += '<button class="brainstorm-btn-secondary" id="btnBrainstormSave" style="border-color:var(--exec-blue);color:var(--exec-blue);font-weight:600;">📌 Save</button>';
             html += '<button class="brainstorm-btn-primary" id="btnNewTopic">New Topic</button>';
@@ -1299,29 +1297,6 @@
                 var meetingOverlayEl = document.getElementById('meetingOverlay');
                 if (meetingOverlayEl) meetingOverlayEl.classList.remove('open');
             });
-
-            // ── Mission-specific buttons ──────────────────
-            var viewMCBtn = document.getElementById('btnViewMissionControl');
-            if (viewMCBtn) viewMCBtn.addEventListener('click', function() {
-                // Close boardroom, navigate to Mission Control
-                closeMeetingPanel();
-                if (typeof FleetEvents !== 'undefined') {
-                    FleetEvents.emit('navigate', { panel: 'missions' });
-                }
-            });
-
-            var executeBtn = document.getElementById('btnExecuteMission');
-            if (executeBtn) executeBtn.addEventListener('click', function() {
-                if (!_brainstormCompleted || !_brainstormCompleted.question) return;
-                // Send the original mission text to the main agent for execution
-                closeMeetingPanel();
-                openMailbox('chat');
-                setTimeout(function() {
-                    chatTabInput.value = _brainstormCompleted.question;
-                    sendChatTabMessage();
-                }, 300);
-                showToast('🚀 Mission sent to agent for execution');
-            });
         }
 
         async function openMeetingPanel() {
@@ -1512,84 +1487,35 @@
             }
         }
 
-        /* ── Load Live Messages — with priority + dispatch parsing ─── */
+        /* ── Load Live Messages — Fleet Relay messages from remote offices ─── */
         async function loadLiveMessages() {
-            if (!window.spawnkitAPI || !await window.spawnkitAPI.isAvailable()) {
-                console.debug('🏢 [Executive] No live data — showing empty inbox');
-                LIVE_MESSAGES = [
-                    { sender: 'System', color: '#636366', time: 'Now', text: 'Connect to OpenClaw for live inbox', read: true }
-                ];
-                renderMessages(LIVE_MESSAGES);
-                return;
-            }
-            
             try {
-                var transcript = await window.spawnkitAPI.getTranscript('agent:main:main', 8);
-                LIVE_MESSAGES = transcript.map(function(msg, idx) {
-                    var text = (msg.text || '').substring(0, 200);
-                    var textLower = text.toLowerCase();
-                    
-                    // FIX #3: Parse priority from message content
-                    var priority = 'normal';
-                    if (textLower.match(/\b(urgent|critical|bug|hotfix|broken|crash)\b/)) {
-                        priority = 'urgent';
-                    } else if (textLower.match(/\b(info|update|note|fyi|status)\b/)) {
-                        priority = 'info';
+                var apiUrl = window.OC_API_URL || (window.location.hostname.includes('spawnkit.ai') ? window.location.origin : 'http://127.0.0.1:8222');
+                var resp = await skFetch(apiUrl + '/api/remote/offices');
+                if (resp.ok) {
+                    var data = await resp.json();
+                    var recentMessages = data.recentMessages || [];
+                    if (recentMessages.length > 0) {
+                        LIVE_MESSAGES = recentMessages.map(function(msg, idx) {
+                            return {
+                                sender: msg.from || msg.sender || msg.office || 'Remote',
+                                color: '#007AFF',
+                                time: msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString('en-US', {
+                                    hour: '2-digit', minute: '2-digit', hour12: false
+                                }) : 'Now',
+                                text: (msg.message || msg.text || msg.content || '').substring(0, 300),
+                                read: idx > 1,
+                                priority: msg.priority || 'normal'
+                            };
+                        });
+                        renderMessages(LIVE_MESSAGES);
+                        return;
                     }
-                    
-                    // FIX #3: Parse assignedTo from agent mentions
-                    var assignedTo = null;
-                    var agentMentions = {
-                        '@forge': 'Forge (CTO)', '@atlas': 'Atlas (COO)',
-                        '@hunter': 'Hunter (CRO)', '@echo': 'Echo (CMO)',
-                        '@sentinel': 'Sentinel (QA)',
-                        'forge': 'Forge', 'atlas': 'Atlas',
-                        'hunter': 'Hunter', 'echo': 'Echo', 'sentinel': 'Sentinel'
-                    };
-                    for (var mention in agentMentions) {
-                        if (mention.startsWith('@') && textLower.includes(mention)) {
-                            assignedTo = agentMentions[mention];
-                            break;
-                        }
-                    }
-                    // Only check non-@ mentions if no @ mention found
-                    if (!assignedTo) {
-                        for (var m in agentMentions) {
-                            if (!m.startsWith('@') && textLower.match(new RegExp('\\b' + m + '\\b', 'i'))) {
-                                assignedTo = agentMentions[m];
-                                break;
-                            }
-                        }
-                    }
-                    
-                    // FIX #6: Mark last 2 messages as unread for badge count
-                    var isRecent = idx >= transcript.length - 2;
-                    
-                    return {
-                        sender: msg.role === 'user' ? 'Kira' : 'Sycopa',
-                        color: msg.role === 'user' ? '#FF2D55' : '#007AFF',
-                        time: msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString('en-US', { 
-                            hour: '2-digit', minute: '2-digit', hour12: false 
-                        }) : 'Now',
-                        text: text + (msg.text && msg.text.length > 200 ? '...' : ''),
-                        read: !isRecent,
-                        priority: priority,
-                        assignedTo: assignedTo
-                    };
-                }).reverse().slice(0, 6);
-                
-                if (LIVE_MESSAGES.length === 0) {
-                    LIVE_MESSAGES = [{ sender: 'System', color: '#636366', time: 'Now', text: 'No recent messages', read: true }];
                 }
-                
-                console.debug('🏢 [Executive] Loaded', LIVE_MESSAGES.length, 'live messages');
-            } catch (e) {
-                console.warn('🏢 [Executive] Failed to load transcript:', e);
-                LIVE_MESSAGES = [
-                    { sender: 'System', color: '#636366', time: 'Error', text: 'Failed to load messages', read: true }
-                ];
+            } catch(e) {
+                console.warn('🏢 [Executive] Failed to load fleet relay messages:', e);
             }
-            
+            LIVE_MESSAGES = [{ sender: 'Fleet Relay', color: '#636366', time: 'Now', text: 'No inter-office messages yet', read: true }];
             renderMessages(LIVE_MESSAGES);
         }
 
@@ -1733,192 +1659,6 @@
         });
 
         /* ═══════════════════════════════════════════════
-           Slash Commands — /mission /m /mr
-           ═══════════════════════════════════════════════ */
-
-        /**
-         * Parse slash commands from input text.
-         * Returns { command, body } or null if not a slash command.
-         *   /mission <text>  or  /m <text>  → { command: 'mission', body: text }
-         *   /mr <text>                      → { command: 'mr', body: text }
-         */
-        function parseSlashCommand(text) {
-            if (!text || text[0] !== '/') return null;
-            var match = text.match(/^\/(mission|mr|m)\s+([\s\S]+)/i);
-            if (!match) return null;
-            var cmd = match[1].toLowerCase();
-            // Normalize: /m → mission, /mission → mission, /mr → mr
-            if (cmd === 'm') cmd = 'mission';
-            return { command: cmd, body: match[2].trim() };
-        }
-
-        /**
-         * Extract actionable tasks from a brainstorm answer.
-         * Looks for bullet points, numbered lists, headers with action words.
-         */
-        function extractTasksFromAnswer(answer) {
-            if (!answer) return [];
-            var tasks = [];
-            var lines = answer.split('\n');
-            var inRecommendation = false;
-            for (var i = 0; i < lines.length; i++) {
-                var line = lines[i].trim();
-                // Detect recommendation/action/implementation sections
-                if (/^#{1,3}\s.*(recommend|action|implement|next step|todo|task|plan)/i.test(line)) {
-                    inRecommendation = true;
-                    continue;
-                }
-                if (/^#{1,3}\s/.test(line) && inRecommendation) {
-                    inRecommendation = false;
-                }
-                // Extract bullet/numbered items in recommendation sections, or any actionable line
-                if (inRecommendation || /^[-*•]\s|^\d+[\.\)]\s/.test(line)) {
-                    var taskText = line.replace(/^[-*•]\s+|^\d+[\.\)]\s+/, '').replace(/\*\*/g, '').trim();
-                    if (taskText.length > 5 && taskText.length < 200 && !/^(confidence|note|source|caveat)/i.test(taskText)) {
-                        tasks.push(taskText);
-                    }
-                }
-            }
-            // Deduplicate and limit to 10
-            var seen = {};
-            return tasks.filter(function(t) {
-                var key = t.toLowerCase().substring(0, 40);
-                if (seen[key]) return false;
-                seen[key] = true;
-                return true;
-            }).slice(0, 10);
-        }
-
-        /**
-         * Handle /mission or /m: brainstorm → create mission card → show boardroom
-         */
-        async function handleMissionCommand(body) {
-            showToast('🧠 Analyzing mission — brainstorming first...');
-
-            // Close boardroom if open
-            var meetingOverlayEl = document.getElementById('meetingOverlay');
-            if (meetingOverlayEl) meetingOverlayEl.classList.remove('open');
-
-            try {
-                var apiUrl = window.OC_API_URL || (window.location.hostname.includes('spawnkit.ai') ? window.location.origin : 'http://127.0.0.1:8222');
-                var response = await skFetch(apiUrl + '/api/brainstorm', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ question: body, complexity: 'deep' })
-                });
-                var data = await response.json();
-
-                if (!data.ok || !data.answer) {
-                    showToast('⚠️ Brainstorm failed: ' + (data.error || 'No response'));
-                    return;
-                }
-
-                // Store brainstorm result for boardroom display
-                _brainstormCompleted = {
-                    question: body,
-                    answer: data.answer,
-                    complexity: 'deep',
-                    timestamp: new Date().toISOString(),
-                    isMission: true  // Flag for mission flow
-                };
-                saveBrainstormToHistory(_brainstormCompleted);
-
-                // Extract tasks from the brainstorm answer
-                var tasks = extractTasksFromAnswer(data.answer);
-
-                // Create a mission in Mission Control via FleetState
-                if (typeof FleetState !== 'undefined' && FleetState.addMission) {
-                    var missionId = 'mission-' + Date.now();
-                    var missionName = body.length > 60 ? body.substring(0, 57) + '...' : body;
-                    var todoItems = tasks.map(function(t, idx) {
-                        return { id: idx + 1, text: t, status: 'pending' };
-                    });
-                    FleetState.addMission({
-                        id: missionId,
-                        name: missionName,
-                        status: 'active',
-                        progress: 0,
-                        assignedAgents: [],
-                        todo: todoItems,
-                        createdAt: new Date().toISOString(),
-                        brainstormAnswer: data.answer
-                    });
-                    showToast('✅ Mission created with ' + todoItems.length + ' tasks — opening boardroom...');
-                } else {
-                    showToast('✅ Brainstorm complete — opening boardroom...');
-                }
-
-                // Open boardroom to show results (with Execute button added)
-                setTimeout(function() {
-                    openMeetingPanel();
-                }, 300);
-
-            } catch (err) {
-                showToast('⚠️ Error: ' + err.message);
-            }
-        }
-
-        /**
-         * Handle /mr: brainstorm only, show results in boardroom
-         */
-        async function handleMrCommand(body) {
-            showToast('🧠 Starting brainstorm session...');
-
-            var meetingOverlayEl = document.getElementById('meetingOverlay');
-            if (meetingOverlayEl) meetingOverlayEl.classList.remove('open');
-
-            try {
-                var apiUrl = window.OC_API_URL || (window.location.hostname.includes('spawnkit.ai') ? window.location.origin : 'http://127.0.0.1:8222');
-                var response = await skFetch(apiUrl + '/api/brainstorm', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ question: body, complexity: 'deep' })
-                });
-                var data = await response.json();
-
-                if (!data.ok || !data.answer) {
-                    showToast('⚠️ Brainstorm failed: ' + (data.error || 'No response'));
-                    return;
-                }
-
-                _brainstormCompleted = {
-                    question: body,
-                    answer: data.answer,
-                    complexity: 'deep',
-                    timestamp: new Date().toISOString(),
-                    isMission: false
-                };
-                saveBrainstormToHistory(_brainstormCompleted);
-                showToast('✅ Brainstorm complete!');
-
-                setTimeout(function() {
-                    openMeetingPanel();
-                }, 300);
-
-            } catch (err) {
-                showToast('⚠️ Error: ' + err.message);
-            }
-        }
-
-        /**
-         * Try to handle text as a slash command. Returns true if handled.
-         */
-        function handleSlashCommand(text) {
-            var parsed = parseSlashCommand(text);
-            if (!parsed) return false;
-
-            if (parsed.command === 'mission') {
-                handleMissionCommand(parsed.body);
-                return true;
-            }
-            if (parsed.command === 'mr') {
-                handleMrCommand(parsed.body);
-                return true;
-            }
-            return false;
-        }
-
-        /* ═══════════════════════════════════════════════
            Command Input — Enter to send via postMessage
            ═══════════════════════════════════════════════ */
 
@@ -1926,11 +1666,7 @@
             if (e.key === 'Enter' && commandInput.value.trim()) {
                 var cmd = commandInput.value.trim();
                 commandInput.value = '';
-
-                // Check for slash commands first
-                if (handleSlashCommand(cmd)) return;
-
-                // Default: send as chat message
+                // Open mailbox to chat tab and send as mission
                 openMailbox('chat');
                 chatTabInput.value = cmd;
                 sendChatTabMessage();
@@ -2270,6 +2006,19 @@
             var agent = agentId ? AGENTS[agentId] : null;
             if (!agent) return;
 
+            // Spawn a session via API
+            var agentName = agent.name;
+            var apiUrl = window.OC_API_URL || (window.location.hostname.includes('spawnkit.ai') ? window.location.origin : 'http://127.0.0.1:8222');
+            skFetch(apiUrl + '/api/oc/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: 'Activate agent: ' + agentName })
+            }).then(function(r) { return r.json(); }).then(function(data) {
+                if (data && (data.ok || data.reply)) {
+                    showToast('✅ ' + agentName + ' session started');
+                }
+            }).catch(function(e) { console.warn('[Activate] spawn failed:', e); });
+
             // Add to active set, persist, and refresh rooms
             ACTIVE_AGENT_IDS.add(agentId);
             try { localStorage.setItem('spawnkit-active-agents', JSON.stringify(Array.from(ACTIVE_AGENT_IDS).filter(function(x){return x!=='ceo';}))); } catch(e) {}
@@ -2327,16 +2076,31 @@
             if (confirm)    confirm.addEventListener('click', doActivateAgent);
             if (closeBtn)   closeBtn.addEventListener('click', closeActivateModal);
             if (startConvo) startConvo.addEventListener('click', function() {
+                var agentId = activateModalAgentId;
+                var agent = agentId ? AGENTS[agentId] : null;
                 closeActivateModal();
-                // Open CEO Communications chat panel
-                var commsBtn = document.querySelector('[aria-label*="communications"], [aria-label*="Communications"]');
-                if (commsBtn) {
-                    commsBtn.click();
-                    setTimeout(function() {
-                        var chatTab = document.querySelector('.tab-btn[data-tab="chat"], button[data-tab="chat"]');
-                        if (chatTab) chatTab.click();
-                    }, 100);
-                }
+                // Open the chat panel with this agent's target
+                openMailbox('chat');
+                setTimeout(function() {
+                    // Set the chat target to this agent if available
+                    var select = document.getElementById('chatTargetSelect');
+                    if (select && agent) {
+                        // Try to find a matching target or add it temporarily
+                        var agentTargetId = 'agent-' + agentId;
+                        var exists = Array.from(select.options).some(function(o) { return o.value === agentTargetId; });
+                        if (!exists) {
+                            var opt = document.createElement('option');
+                            opt.value = agentTargetId;
+                            opt.textContent = (agent.name || agentId);
+                            select.appendChild(opt);
+                        }
+                        select.value = agentTargetId;
+                        currentChatTarget = agentTargetId;
+                    }
+                    // Focus the input
+                    var input = document.getElementById('chatTabInput');
+                    if (input) input.focus();
+                }, 200);
             });
         });
 
@@ -2394,38 +2158,14 @@
         }
 
         /* ── Chat Tab Functions ─────────────────────── */
-        var currentChatTarget = 'apomac'; // Default target
-        var availableChatTargets = [];
+        var currentChatTarget = 'ceo'; // Default target: CEO (Sycopa)
+        var availableChatTargets = [
+            { id: 'ceo', name: 'CEO (Sycopa)', emoji: '🎭' },
+            { id: 'apomac', name: 'ApoMac (Remote)', emoji: '🍎' }
+        ];
 
-        async function loadChatTargets() {
-            try {
-                const response = await fetch('https://fleet.spawnkit.ai/api/oc/chat/targets', {
-                    method: 'GET',
-                    headers: {
-                        'Authorization': 'Bearer sk-oc-proxy-spawnkit-2026',
-                        'Content-Type': 'application/json'
-                    }
-                });
-
-                if (!response.ok) {
-                    console.warn('Failed to load chat targets:', response.statusText);
-                    return;
-                }
-
-                const data = await response.json();
-                if (data.ok && data.targets) {
-                    availableChatTargets = data.targets;
-                    updateChatTargetSelector();
-                }
-            } catch (error) {
-                console.warn('Error loading chat targets:', error);
-                // Fallback to default targets
-                availableChatTargets = [
-                    { id: 'apomac', name: 'Sycopa HQ', emoji: '🍎' },
-                    { id: 'sycopa', name: 'Sycopa', emoji: '🎭' }
-                ];
-                updateChatTargetSelector();
-            }
+        function loadChatTargets() {
+            updateChatTargetSelector();
         }
 
         function updateChatTargetSelector() {
@@ -2509,18 +2249,6 @@
             var text = chatTabInput.value.trim();
             if (!text) return;
             chatTabInput.value = '';
-
-            // Intercept slash commands before sending to chat API
-            if (handleSlashCommand(text)) {
-                // Show the command in chat history for context
-                var now = new Date();
-                var timeStr = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
-                chatHistory.push({ role: 'user', text: text, time: timeStr });
-                chatHistory.push({ role: 'ai', text: '🧠 Processing command...', time: timeStr });
-                localStorage.setItem('spawnkit-chat-history', JSON.stringify(chatHistory.filter(m => !m.typing).slice(-50)));
-                renderChatTabMessages();
-                return;
-            }
 
             var now = new Date();
             var timeStr = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
@@ -2726,22 +2454,50 @@
         });
 
         /* ── Activity Tab Functions ────────────────── */
-        function loadActivityData() {
+        async function loadActivityData() {
             var feed = document.getElementById('activityFeedList');
             if (!feed) return;
+            feed.innerHTML = '<div class="activity-item"><span class="activity-icon">⏳</span><div class="activity-content"><div class="activity-text">Loading…</div><div class="activity-time"></div></div></div>';
 
             var activities = [];
+            var apiUrl = window.OC_API_URL || (window.location.hostname.includes('spawnkit.ai') ? window.location.origin : 'http://127.0.0.1:8222');
 
-            // From agents/sessions
+            // Fetch sessions from API
+            try {
+                var sessResp = await skFetch(apiUrl + '/api/oc/sessions');
+                if (sessResp.ok) {
+                    var sessData = await sessResp.json();
+                    var sessions = Array.isArray(sessData) ? sessData : (sessData.sessions || []);
+                    sessions.forEach(function(s) {
+                        if (s.startedAt || s.lastActive || s.createdAt) {
+                            var ts = s.startedAt || s.createdAt || s.lastActive;
+                            var name = s.label || s.displayName || s.key || 'Session';
+                            var icon = s.kind === 'subagent' ? '🤖' : '💻';
+                            var statusText = s.status === 'active' ? 'started' : (s.status === 'ended' ? 'ended' : s.status || 'active');
+                            activities.push({ time: new Date(ts), icon: icon, text: name + ' ' + statusText });
+                        }
+                    });
+                }
+            } catch(e) { console.warn('[Activity] sessions fetch:', e); }
+
+            // Fetch cron run history
+            try {
+                var cronResp = await skFetch(apiUrl + '/api/oc/crons');
+                if (cronResp.ok) {
+                    var cronData = await cronResp.json();
+                    var cronList = Array.isArray(cronData) ? cronData : (cronData.jobs || cronData.crons || []);
+                    cronList.forEach(function(c) {
+                        if (c.state && c.state.lastRunAtMs) {
+                            activities.push({ time: new Date(c.state.lastRunAtMs), icon: '⏰', text: (c.name || 'Cron') + ' triggered' });
+                        }
+                    });
+                }
+            } catch(e) { console.warn('[Activity] crons fetch:', e); }
+
+            // From in-memory agents
             var agents = (window.SpawnKit && SpawnKit.data && SpawnKit.data.agents) ? SpawnKit.data.agents : [];
             agents.forEach(function(a) {
                 if (a.lastSeen) activities.push({ time: new Date(a.lastSeen), icon: '🤖', text: (a.name || 'Agent') + ' — ' + (a.status || 'active') });
-            });
-
-            // From crons
-            var crons = (window.SpawnKit && SpawnKit.data && SpawnKit.data.crons) ? SpawnKit.data.crons : [];
-            crons.forEach(function(c) {
-                if (c.lastRun) activities.push({ time: new Date(c.lastRun), icon: '⏰', text: (c.name || 'Cron') + ' ran' });
             });
 
             activities.sort(function(a, b) { return b.time - a.time; });
@@ -2914,12 +2670,28 @@
             });
             cronBody.innerHTML = html;
 
-            // Toggle click → toast
+            // Toggle click → API call
             cronBody.querySelectorAll('.cron-toggle').forEach(function(btn) {
                 btn.addEventListener('click', function(e) {
                     e.stopPropagation();
-                    btn.classList.toggle('on');
-                    showToast('Connect to OpenClaw CLI to modify cron jobs');
+                    var cronId = btn.dataset.cronId;
+                    var currentState = btn.classList.contains('on');
+                    btn.classList.toggle('on'); // optimistic update
+                    var apiUrl = window.OC_API_URL || (window.location.hostname.includes('spawnkit.ai') ? window.location.origin : 'http://127.0.0.1:8222');
+                    skFetch(apiUrl + '/api/oc/crons', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({action: 'update', jobId: cronId, patch: {enabled: !currentState}})
+                    }).then(function(r) {
+                        if (!r.ok) throw new Error('HTTP ' + r.status);
+                        return r.json();
+                    }).then(function(data) {
+                        if (!data.ok && data.ok !== undefined) throw new Error(data.error || 'Failed');
+                        showToast((currentState ? '⏸ Cron disabled' : '▶️ Cron enabled'));
+                    }).catch(function(err) {
+                        btn.classList.toggle('on'); // revert
+                        showToast('⚠️ Failed to update cron: ' + err.message);
+                    });
                 });
             });
 
@@ -3071,9 +2843,9 @@
             }
 
             // Daily memory files
+            html += '<div class="memory-section">';
+            html += '<div class="memory-section-title">📅 Daily Notes</div>';
             if (mem.daily && mem.daily.length > 0) {
-                html += '<div class="memory-section">';
-                html += '<div class="memory-section-title">📅 Daily Notes (' + mem.daily.length + ')</div>';
                 html += '<div class="memory-daily-list" style="display:flex;flex-direction:column;gap:4px;">';
                 mem.daily.slice(0, 14).forEach(function(d) {
                     html += '<div class="memory-daily-item" style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--bg-tertiary);border-radius:8px;font-size:12px;">';
@@ -3083,8 +2855,10 @@
                     html += '</div>';
                 });
                 html += '</div>';
-                html += '</div>';
+            } else {
+                html += '<div style="padding:10px 12px;background:var(--bg-tertiary);border-radius:8px;font-size:12px;color:var(--text-tertiary);font-style:italic;">📝 Coming soon — daily notes will appear here</div>';
             }
+            html += '</div>';
 
             // Heartbeat state
             if (mem.heartbeat) {
@@ -3301,8 +3075,7 @@
         document.getElementById('launchMissionBtn').addEventListener('click', function() {
             var task = document.getElementById('newMissionInput').value.trim();
             if (!task) { showToast('Please describe the mission'); return; }
-            var model = document.getElementById('newMissionModel').value;
-            var modelMap = { sonnet: 'sonnet', opus: 'opus' };
+            var model = 'sonnet';
             var btn = document.getElementById('launchMissionBtn');
             btn.disabled = true;
             btn.textContent = '🚀 Launching...';
@@ -3314,7 +3087,7 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     question: '🚀 MISSION: ' + task + '\n\nPlease execute this mission thoroughly. Complexity: thorough.',
-                    complexity: model === 'opus' ? 'thorough' : 'deep'
+                    complexity: 'deep'
                 })
             })
             .then(function(r) { return r.json(); })
@@ -3387,8 +3160,7 @@
                 missionsBody.innerHTML = '<div class="cron-empty" style="text-align:center;padding:40px 20px;">' +
                     '<div style="font-size:40px;margin-bottom:12px;">🎯</div>' +
                     '<div style="font-size:14px;font-weight:600;color:var(--text-primary);margin-bottom:6px;">All Clear</div>' +
-                    '<div style="font-size:12px;color:var(--text-tertiary);line-height:1.5;margin-bottom:16px;">No active missions or sub-agents running.</div>' +
-                    '<button onclick="document.getElementById(\'newMissionBtn\').click();" style="padding:8px 20px;border-radius:10px;border:none;background:var(--exec-blue);color:white;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">+ Create a Mission</button>' +
+                    '<div style="font-size:12px;color:var(--text-tertiary);line-height:1.5;">No active missions or sub-agents running.</div>' +
                     '</div>';
                 return;
             }
@@ -3532,31 +3304,58 @@
             });
             html += '</div>';
 
-            // OpenClaw ↔ SpawnKit Mapping (NEW #5)
-            html += '<div class="cron-group"><div class="cron-group-title">🗺️ OpenClaw ↔ SpawnKit Mapping</div>';
-            var mappings = [
-                { openclaw: 'Skills', spawnkit: 'Skills Panel', icon: '⚡' },
-                { openclaw: 'Cron Jobs', spawnkit: 'Calendar / Crons', icon: '📅' },
-                { openclaw: 'Sessions', spawnkit: 'Agents / Rooms', icon: '👥' },
-                { openclaw: 'Memory (MEMORY.md)', spawnkit: 'Memory Panel', icon: '🧠' },
-                { openclaw: 'Tools', spawnkit: 'Skills (extended)', icon: '🔧' },
-                { openclaw: 'Sub-agents', spawnkit: 'Missions / Boardroom', icon: '🎯' },
-                { openclaw: 'Workspace', spawnkit: 'Fleet Directory', icon: '📁' }
+            // Skills section
+            var skillsList = [
+                { name: 'large-build', desc: 'Decompose large projects into parallel sub-agent modules', icon: '🏗️' },
+                { name: 'research', desc: 'Deep web research with synthesis and summary', icon: '🔍' },
+                { name: 'brainstorm', desc: 'Creative ideation and strategic planning sessions', icon: '💡' },
+                { name: 'code-review', desc: 'Automated code review and quality analysis', icon: '🔎' },
+                { name: 'tiktok-pipeline', desc: 'HeyGen avatar video generation pipeline', icon: '🎬' },
+                { name: 'memory-update', desc: 'Update and consolidate fleet memory', icon: '🧠' },
+                { name: 'fleet-relay', desc: 'Inter-office messaging via Fleet Relay', icon: '📡' }
             ];
-            
-            html += '<div style="display:grid;grid-template-columns:auto 24px auto;gap:6px 12px;align-items:center;padding:8px 0;">';
-            html += '<div style="font-size:10px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.5px;">OpenClaw</div>';
-            html += '<div></div>';
-            html += '<div style="font-size:10px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.5px;">SpawnKit</div>';
-            mappings.forEach(function(m) {
-                html += '<div style="font-size:13px;padding:4px 0;">' + m.icon + ' ' + esc(m.openclaw) + '</div>';
-                html += '<div style="font-size:12px;color:var(--exec-blue);text-align:center;">→</div>';
-                html += '<div style="font-size:13px;padding:4px 0;color:var(--text-secondary);">' + esc(m.spawnkit) + '</div>';
+            // Try to load from API
+            try {
+                var apiUrl2 = window.OC_API_URL || (window.location.hostname.includes('spawnkit.ai') ? window.location.origin : 'http://127.0.0.1:8222');
+                skFetch(apiUrl2 + '/api/oc/agents').then(function(r) {
+                    if (r.ok) return r.json();
+                }).then(function(data) {
+                    if (data && data.skills && Array.isArray(data.skills) && data.skills.length > 0) {
+                        // Dynamically update if API returns skills
+                    }
+                }).catch(function() {});
+            } catch(e) {}
+            html += '<div class="cron-group"><div class="cron-group-title">⚡ Available Skills</div>';
+            html += '<div style="display:flex;flex-direction:column;gap:6px;">';
+            skillsList.forEach(function(sk) {
+                html += '<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--bg-tertiary);border-radius:10px;">';
+                html += '<div style="font-size:22px;min-width:28px;text-align:center;">' + sk.icon + '</div>';
+                html += '<div><div style="font-size:13px;font-weight:600;color:var(--text-primary);">' + esc(sk.name) + '</div>';
+                html += '<div style="font-size:11px;color:var(--text-secondary);margin-top:2px;">' + esc(sk.desc) + '</div></div>';
+                html += '</div>';
             });
+            html += '</div></div>';
+
+            // Village Profile section
+            html += '<div class="cron-group"><div class="cron-group-title">🏡 Village Profile</div>';
+            html += '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--bg-tertiary);border-radius:10px;">';
+            html += '<div>';
+            html += '<div style="font-size:13px;font-weight:600;color:var(--text-primary);">Creator Profile &amp; Village Settings</div>';
+            html += '<div style="font-size:11px;color:var(--text-secondary);margin-top:2px;">Manage village name, share link &amp; identity</div>';
             html += '</div>';
-            html += '</div>';
+            html += '<button id="openCreatorProfileBtn" style="padding:8px 14px;border-radius:8px;border:none;background:var(--exec-blue);color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;">Open Profile</button>';
+            html += '</div></div>';
 
             settingsBody.innerHTML = html;
+
+            // Wire creator profile button
+            var cpBtn = document.getElementById('openCreatorProfileBtn');
+            if (cpBtn && typeof window.openCreatorProfile === 'function') {
+                cpBtn.addEventListener('click', function() {
+                    closeSettingsPanel();
+                    window.openCreatorProfile();
+                });
+            }
 
             // Wire up API key save buttons
             document.querySelectorAll('.apikey-save-btn').forEach(function(btn) {
@@ -3604,108 +3403,80 @@
             renderRemote();
         }
 
-        function renderRemote() {
+        async function renderRemote() {
             var body = document.getElementById('remoteBody');
             if (!body) return;
-            
-            var isConnected = window.FleetClient && window.FleetClient.isConnected();
-            var offices = isConnected ? window.FleetClient.getOffices() : {};
-            var fleetMailbox = isConnected ? window.FleetClient.getMailbox() : [];
-            
+
             var html = '<div style="margin-bottom:16px">';
-            html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">';
-            html += '<span style="font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:#8E8E93;font-weight:600">Connected Offices</span>';
-            html += '<span style="font-size:11px;color:' + (isConnected ? '#34C759' : '#FF3B30') + ';font-weight:500">' + (isConnected ? '● Connected' : '○ Disconnected') + '</span>';
+            html += '<div style="font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:#8E8E93;font-weight:600;margin-bottom:12px">Fleet Network</div>';
+
+            // This IS Sycopa HQ — show as home office with green status
+            html += '<div class="remote-office-card" style="border:1.5px solid #34C75940;background:var(--bg-tertiary);">';
+            html += '<div class="remote-office-header">';
+            html += '<span class="remote-office-emoji">🎭</span>';
+            html += '<div>';
+            html += '<div class="remote-office-name">Sycopa HQ <span style="font-size:10px;font-weight:500;background:#34C75920;color:#34C759;border-radius:4px;padding:1px 6px;margin-left:6px;">This Office</span></div>';
+            html += '<div class="remote-office-status online" style="color:#34C759;">● Online — Sycopa (CEO)</div>';
+            html += '</div></div>';
+            html += '<div style="font-size:12px;color:#8E8E93;padding:6px 0 0">fleet.spawnkit.ai • Hetzner node</div>';
             html += '</div>';
-            
-            var officeKeys = Object.keys(offices);
-            if (officeKeys.length === 0) {
-                // Demo fallback
-                html += '<div class="remote-office-card">';
-                html += '<div class="remote-office-header">';
-                html += '<span class="remote-office-emoji">🎭</span>';
-                html += '<div><div class="remote-office-name">Sycopa HQ</div>';
-                html += '<div class="remote-office-status offline">Waiting for connection...</div></div>';
-                html += '</div>';
-                html += '<div style="font-size:12px;color:#8E8E93;padding:8px 0">Fleet relay: fleet.spawnkit.ai</div>';
-                html += '</div>';
-            } else {
-                officeKeys.forEach(function(id) {
-                    var office = offices[id];
-                    var statusClass = (office.status === 'online') ? 'online' : 'offline';
-                    var statusText = (office.status === 'online') ? 'Online' : (office.status === 'stale' ? 'Stale' : 'Offline');
-                    
-                    html += '<div class="remote-office-card">';
-                    html += '<div class="remote-office-header">';
-                    html += '<span class="remote-office-emoji">' + esc(office.officeEmoji || office.emoji || '🏢') + '</span>';
-                    html += '<div><div class="remote-office-name">' + esc(office.officeName || office.name || id) + '</div>';
-                    html += '<div class="remote-office-status ' + statusClass + '">' + statusText + '</div></div>';
-                    html += '</div>';
-                    
-                    // Show agents
-                    if (office.agents && office.agents.length > 0) {
-                        html += '<div style="margin:8px 0">';
-                        office.agents.forEach(function(agent) {
-                            html += '<div class="remote-agent">';
-                            html += '<div class="remote-agent-status ' + (agent.status || 'idle') + '"></div>';
-                            html += '<span>' + esc(agent.emoji || '🤖') + '</span>';
-                            html += '<span style="font-weight:500">' + esc(agent.name) + '</span>';
-                            html += '<span style="color:#8E8E93;font-size:12px">— ' + esc(agent.currentTask || 'Standby') + '</span>';
+
+            // Fetch remote offices from API
+            try {
+                var apiUrl = window.OC_API_URL || (window.location.hostname.includes('spawnkit.ai') ? window.location.origin : 'http://127.0.0.1:8222');
+                var resp = await skFetch(apiUrl + '/api/remote/offices');
+                if (resp.ok) {
+                    var data = await resp.json();
+                    var remoteOffices = data.offices || [];
+                    if (remoteOffices.length > 0) {
+                        remoteOffices.forEach(function(office) {
+                            var statusClass = (office.status === 'online') ? 'online' : 'offline';
+                            var statusText = (office.status === 'online') ? '● Online' : '○ Offline';
+                            var statusColor = (office.status === 'online') ? '#34C759' : '#8E8E93';
+                            html += '<div class="remote-office-card" style="margin-top:8px;">';
+                            html += '<div class="remote-office-header">';
+                            html += '<span class="remote-office-emoji">' + esc(office.emoji || '🏢') + '</span>';
+                            html += '<div><div class="remote-office-name">' + esc(office.name || office.id || 'Remote Office') + '</div>';
+                            html += '<div class="remote-office-status ' + statusClass + '" style="color:' + statusColor + ';">' + statusText + '</div></div>';
+                            html += '</div>';
+                            if (office.agents && office.agents.length > 0) {
+                                html += '<div style="font-size:12px;color:#8E8E93;margin-top:6px;">' + office.agents.length + ' agent(s)</div>';
+                            }
+                            if (office.lastSeen) {
+                                html += '<div style="font-size:11px;color:var(--text-tertiary);margin-top:4px;">Last seen: ' + new Date(office.lastSeen).toLocaleTimeString() + '</div>';
+                            }
                             html += '</div>';
                         });
-                        html += '</div>';
-                        html += '<div style="font-size:12px;color:#8E8E93">' + office.agents.length + ' agents • ' + (office.activeMissions || 0) + ' missions • ' + (office.totalTokens || '0') + ' tokens</div>';
                     }
-                    html += '</div>';
-                });
-            }
-            html += '</div>';
-            
-            // Inter-office messages section
-            html += '<div style="margin-bottom:16px">';
-            html += '<div style="font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:#8E8E93;font-weight:600;margin-bottom:12px">Inter-Office Messages</div>';
-            
-            if (fleetMailbox.length === 0) {
-                html += '<div style="padding:20px;text-align:center;color:#8E8E93;font-size:13px">📭 No inter-office messages yet</div>';
-            } else {
-                fleetMailbox.slice(-10).forEach(function(msg) {
-                    html += '<div class="remote-message">';
-                    html += '<div class="remote-message-from">' + esc(msg.from || 'Unknown') + ' → ' + esc(msg.to || 'You') + '</div>';
-                    html += '<div class="remote-message-text">' + esc(msg.text || '') + '</div>';
-                    if (msg.timestamp) {
-                        var d = new Date(msg.timestamp);
-                        html += '<div class="remote-message-time">' + d.toLocaleTimeString() + '</div>';
-                    }
-                    html += '</div>';
-                });
-            }
-            html += '</div>';
-            
-            // Compose
-            html += '<div class="remote-compose">';
-            html += '<input type="text" id="remoteMessageInput" placeholder="Send message to remote office..." onkeydown="if(event.key===\'Enter\')sendRemoteMessage()">';
-            html += '<button onclick="sendRemoteMessage()">Send</button>';
-            html += '</div>';
-            
-            body.innerHTML = html;
-        }
 
-        function sendRemoteMessage() {
-            var input = document.getElementById('remoteMessageInput');
-            if (!input || !input.value.trim()) return;
-            var text = input.value.trim();
-            
-            if (window.FleetClient && window.FleetClient.isConnected()) {
-                var offices = window.FleetClient.getOffices();
-                var firstOffice = Object.keys(offices)[0];
-                if (firstOffice) {
-                    FleetClient.sendMessage(firstOffice, text, 'medium');
-                    input.value = '';
-                    showToast('📬 Message sent to ' + (offices[firstOffice].officeName || firstOffice));
+                    // Show recent inter-office messages
+                    var recentMessages = data.recentMessages || [];
+                    html += '</div>';
+                    html += '<div style="margin-bottom:16px">';
+                    html += '<div style="font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:#8E8E93;font-weight:600;margin-bottom:12px">Inter-Office Messages</div>';
+                    if (recentMessages.length === 0) {
+                        html += '<div style="padding:20px;text-align:center;color:#8E8E93;font-size:13px">📭 No inter-office messages yet<br><span style="font-size:11px;margin-top:4px;display:block;">Relay messages via Mission Control</span></div>';
+                    } else {
+                        recentMessages.slice(0, 10).forEach(function(msg) {
+                            html += '<div class="remote-message">';
+                            html += '<div class="remote-message-from">' + esc(msg.from || 'Unknown') + ' → ' + esc(msg.to || 'HQ') + '</div>';
+                            html += '<div class="remote-message-text">' + esc((msg.message || msg.text || '').substring(0, 200)) + '</div>';
+                            if (msg.timestamp) {
+                                html += '<div class="remote-message-time">' + new Date(msg.timestamp).toLocaleTimeString() + '</div>';
+                            }
+                            html += '</div>';
+                        });
+                    }
+                    html += '</div>';
+                    body.innerHTML = html;
+                    return;
                 }
-            } else {
-                showToast('Not connected to fleet relay');
-            }
+            } catch(e) { console.warn('[Remote] fetch failed:', e); }
+
+            // Fallback: no API
+            html += '</div>';
+            html += '<div style="padding:16px;text-align:center;color:#8E8E93;font-size:13px;">📡 Fetching fleet status…</div>';
+            body.innerHTML = html;
         }
 
         // Helper: escape HTML (if not already defined)
@@ -4036,3 +3807,347 @@
             document.body.innerHTML = '<div style="padding:40px;text-align:center;font-family:system-ui"><h2>⚠️ SpawnKit failed to load</h2><p style="color:#666">Please refresh the page. Error: ' + errorMsg + '</p></div>';
         }
     })();
+
+/* ═══════════════════════════════════════════════════════════════
+   FEATURE 2: Agent Marketplace
+   ═══════════════════════════════════════════════════════════════ */
+(function() {
+    'use strict';
+
+    var AGENT_TEMPLATES = [
+        { id: 'writer', name: 'Content Writer', emoji: '✍️', role: 'CMO', desc: 'Blog posts, social media, copywriting. Powered by Claude.', skills: ['writing', 'summarize', 'sag'], tier: 'Free' },
+        { id: 'coder', name: 'Code Engineer', emoji: '💻', role: 'CTO', desc: 'Full-stack development, debugging, code review.', skills: ['coding-agent', 'github'], tier: 'Free' },
+        { id: 'analyst', name: 'Data Analyst', emoji: '📊', role: 'COO', desc: 'Research, reports, competitive analysis, market data.', skills: ['web_search', 'summarize'], tier: 'Free' },
+        { id: 'designer', name: 'Creative Director', emoji: '🎨', role: 'CDO', desc: 'Image generation, brand design, visual concepts.', skills: ['nano-banana-pro', 'openai-image-gen'], tier: 'Pro' },
+        { id: 'security', name: 'Security Officer', emoji: '🛡️', role: 'CISO', desc: 'Vulnerability scanning, compliance, threat modeling.', skills: ['healthcheck', 'sentinel'], tier: 'Pro' },
+        { id: 'scheduler', name: 'Operations Manager', emoji: '📅', role: 'COO', desc: 'Task scheduling, calendar management, reminders.', skills: ['cron', 'weather', 'gog'], tier: 'Free' },
+        { id: 'researcher', name: 'Research Analyst', emoji: '🔍', role: 'Analyst', desc: 'Deep web research, fact-checking, citation gathering.', skills: ['web_search', 'web_fetch', 'summarize'], tier: 'Free' },
+        { id: 'media', name: 'Media Producer', emoji: '🎬', role: 'Producer', desc: 'Video scripts, TikTok content, voice synthesis.', skills: ['tts', 'video-frames', 'openai-whisper-api'], tier: 'Pro' }
+    ];
+
+    var activatedAgents = {};
+    try { activatedAgents = JSON.parse(localStorage.getItem('spawnkit-marketplace-activated') || '{}'); } catch(e) {}
+
+    function escMk(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+    function renderMarketplace() {
+        var body = document.getElementById('marketplaceBody');
+        if (!body) return;
+        var html = '<div class="mk-grid">';
+        AGENT_TEMPLATES.forEach(function(t) {
+            var isActivated = !!activatedAgents[t.id];
+            html += '<div class="mk-card">';
+            html += '<div class="mk-card-top">';
+            html += '<div class="mk-card-emoji">' + t.emoji + '</div>';
+            html += '<div class="mk-card-info">';
+            html += '<div class="mk-card-name">' + escMk(t.name) + '</div>';
+            html += '<div class="mk-card-role">' + escMk(t.role) + '</div>';
+            html += '</div>';
+            html += '<span class="mk-tier-badge mk-tier-' + t.tier.toLowerCase() + '">' + escMk(t.tier) + '</span>';
+            html += '</div>';
+            html += '<div class="mk-card-desc">' + escMk(t.desc) + '</div>';
+            html += '<div class="mk-skills-row">';
+            t.skills.forEach(function(sk) {
+                html += '<span class="mk-skill-tag">' + escMk(sk) + '</span>';
+            });
+            html += '</div>';
+            html += '<button class="mk-activate-btn' + (isActivated ? ' activated' : '') + '" data-agent-id="' + escMk(t.id) + '">';
+            html += isActivated ? '✅ Activated' : 'Activate';
+            html += '</button>';
+            html += '</div>';
+        });
+        html += '</div>';
+        body.innerHTML = html;
+
+        body.querySelectorAll('.mk-activate-btn').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var id = btn.getAttribute('data-agent-id');
+                var tmpl = AGENT_TEMPLATES.find(function(t) { return t.id === id; });
+                if (!tmpl) return;
+                activatedAgents[id] = true;
+                try { localStorage.setItem('spawnkit-marketplace-activated', JSON.stringify(activatedAgents)); } catch(e) {}
+                btn.textContent = '✅ Activated';
+                btn.classList.add('activated');
+                // Show toast
+                var toast = document.getElementById('execToast');
+                if (toast) {
+                    toast.textContent = tmpl.emoji + ' ' + tmpl.name + ' agent activated!';
+                    toast.classList.add('visible');
+                    setTimeout(function() { toast.classList.remove('visible'); }, 2800);
+                }
+            });
+        });
+    }
+
+    function openMarketplace() {
+        var overlay = document.getElementById('marketplaceOverlay');
+        if (!overlay) return;
+        // Close other overlays first
+        ['skillsOverlay', 'creatorProfileOverlay'].forEach(function(id) {
+            var el = document.getElementById(id);
+            if (el) el.classList.remove('open');
+        });
+        overlay.classList.add('open');
+        document.body.style.overflow = 'hidden';
+        renderMarketplace();
+    }
+    function closeMarketplace() {
+        var overlay = document.getElementById('marketplaceOverlay');
+        if (overlay) overlay.classList.remove('open');
+        document.body.style.overflow = '';
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        var btn = document.getElementById('marketplaceBtn');
+        if (btn) btn.addEventListener('click', openMarketplace);
+        var closeBtn = document.getElementById('marketplaceClose');
+        if (closeBtn) closeBtn.addEventListener('click', closeMarketplace);
+        var backdrop = document.getElementById('marketplaceBackdrop');
+        if (backdrop) backdrop.addEventListener('click', closeMarketplace);
+    });
+})();
+
+/* ═══════════════════════════════════════════════════════════════
+   FEATURE 3: Skills / MCP Catalog
+   ═══════════════════════════════════════════════════════════════ */
+(function() {
+    'use strict';
+
+    var SKILL_CATALOG = [
+        { name: 'Web Search', icon: '🔍', desc: 'Search the web via Brave API', category: 'Research', status: 'active' },
+        { name: 'Weather', icon: '🌤️', desc: 'Current weather and forecasts', category: 'Data', status: 'active' },
+        { name: 'GitHub', icon: '🐙', desc: 'Issues, PRs, CI runs via gh CLI', category: 'Dev', status: 'active' },
+        { name: 'Coding Agent', icon: '💻', desc: 'Run Claude Code or Codex for programming', category: 'Dev', status: 'active' },
+        { name: 'Image Gen', icon: '🖼️', desc: 'Generate images via OpenAI or Gemini', category: 'Creative', status: 'active' },
+        { name: 'TTS', icon: '🔊', desc: 'Text-to-speech audio generation', category: 'Creative', status: 'active' },
+        { name: 'Whisper', icon: '🎤', desc: 'Audio transcription via OpenAI Whisper', category: 'Creative', status: 'active' },
+        { name: 'Health Check', icon: '🛡️', desc: 'Security audit and hardening', category: 'Security', status: 'active' },
+        { name: 'Video Frames', icon: '🎬', desc: 'Extract frames from videos', category: 'Creative', status: 'active' },
+        { name: 'Browser', icon: '🌐', desc: 'Web browser automation', category: 'Automation', status: 'active' },
+        { name: 'Cron Jobs', icon: '⏰', desc: 'Scheduled task management', category: 'Automation', status: 'active' },
+        { name: 'Fleet Relay', icon: '📡', desc: 'Inter-office messaging', category: 'Communication', status: 'active' }
+    ];
+
+    var CATEGORIES = ['All', 'Research', 'Data', 'Dev', 'Creative', 'Security', 'Automation', 'Communication'];
+    var skActiveCat = 'All';
+    var skSearchQuery = '';
+
+    function escSk(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+    function renderSkillsCatTabs() {
+        var tabs = document.getElementById('skillsCatTabs');
+        if (!tabs) return;
+        var html = '';
+        CATEGORIES.forEach(function(cat) {
+            html += '<button class="sk-cat-tab' + (cat === skActiveCat ? ' active' : '') + '" data-cat="' + escSk(cat) + '">' + escSk(cat) + '</button>';
+        });
+        tabs.innerHTML = html;
+        tabs.querySelectorAll('.sk-cat-tab').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                skActiveCat = btn.getAttribute('data-cat');
+                renderSkillsBody();
+                tabs.querySelectorAll('.sk-cat-tab').forEach(function(b) { b.classList.remove('active'); });
+                btn.classList.add('active');
+            });
+        });
+    }
+
+    function renderSkillsBody() {
+        var body = document.getElementById('skillsBody');
+        if (!body) return;
+        var filtered = SKILL_CATALOG.filter(function(sk) {
+            var catMatch = skActiveCat === 'All' || sk.category === skActiveCat;
+            var searchMatch = !skSearchQuery ||
+                sk.name.toLowerCase().includes(skSearchQuery.toLowerCase()) ||
+                sk.desc.toLowerCase().includes(skSearchQuery.toLowerCase()) ||
+                sk.category.toLowerCase().includes(skSearchQuery.toLowerCase());
+            return catMatch && searchMatch;
+        });
+        if (filtered.length === 0) {
+            body.innerHTML = '<div class="sk-empty">No skills found matching "' + escSk(skSearchQuery) + '"</div>';
+            return;
+        }
+        var html = '';
+        filtered.forEach(function(sk) {
+            html += '<div class="sk-item">';
+            html += '<div class="sk-item-icon">' + sk.icon + '</div>';
+            html += '<div class="sk-item-info">';
+            html += '<div class="sk-item-name">' + escSk(sk.name) + '</div>';
+            html += '<div class="sk-item-desc">' + escSk(sk.desc) + '</div>';
+            html += '</div>';
+            html += '<span class="sk-item-cat">' + escSk(sk.category) + '</span>';
+            html += '<div class="sk-item-status"><div class="sk-status-dot"></div>Active</div>';
+            html += '</div>';
+        });
+        body.innerHTML = html;
+    }
+
+    function renderSkills() {
+        renderSkillsCatTabs();
+        renderSkillsBody();
+    }
+
+    function openSkills() {
+        var overlay = document.getElementById('skillsOverlay');
+        if (!overlay) return;
+        ['marketplaceOverlay', 'creatorProfileOverlay'].forEach(function(id) {
+            var el = document.getElementById(id);
+            if (el) el.classList.remove('open');
+        });
+        overlay.classList.add('open');
+        document.body.style.overflow = 'hidden';
+        skActiveCat = 'All';
+        skSearchQuery = '';
+        renderSkills();
+        var searchEl = document.getElementById('skillsSearch');
+        if (searchEl) { searchEl.value = ''; searchEl.focus(); }
+    }
+    function closeSkills() {
+        var overlay = document.getElementById('skillsOverlay');
+        if (overlay) overlay.classList.remove('open');
+        document.body.style.overflow = '';
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        var btn = document.getElementById('skillsBtn');
+        if (btn) btn.addEventListener('click', openSkills);
+        var closeBtn = document.getElementById('skillsClose');
+        if (closeBtn) closeBtn.addEventListener('click', closeSkills);
+        var backdrop = document.getElementById('skillsBackdrop');
+        if (backdrop) backdrop.addEventListener('click', closeSkills);
+        var searchEl = document.getElementById('skillsSearch');
+        if (searchEl) {
+            searchEl.addEventListener('input', function() {
+                skSearchQuery = searchEl.value.trim();
+                renderSkillsBody();
+            });
+        }
+    });
+})();
+
+/* ═══════════════════════════════════════════════════════════════
+   FEATURE 5: Creator Profile
+   ═══════════════════════════════════════════════════════════════ */
+(function() {
+    'use strict';
+
+    function escCp(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+    function getVillageName() {
+        return localStorage.getItem('spawnkit-village-name') || 'My Village';
+    }
+    function setVillageName(name) {
+        localStorage.setItem('spawnkit-village-name', name);
+    }
+    function getOwnerName() {
+        try {
+            var cfg = JSON.parse(localStorage.getItem('spawnkit-config') || '{}');
+            return cfg.userName || cfg.ownerName || cfg.name || 'Village Owner';
+        } catch(e) { return 'Village Owner'; }
+    }
+    function getCreatedDate() {
+        var ts = localStorage.getItem('spawnkit-created');
+        if (!ts) {
+            ts = new Date().toISOString();
+            localStorage.setItem('spawnkit-created', ts);
+        }
+        try {
+            return new Date(ts).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+        } catch(e) { return ts.substring(0, 10); }
+    }
+
+    function renderCreatorProfile() {
+        var body = document.getElementById('creatorProfileBody');
+        if (!body) return;
+        var villageName = getVillageName();
+        var ownerName = getOwnerName();
+        var createdDate = getCreatedDate();
+        var initial = villageName.charAt(0).toUpperCase() || '🏡';
+
+        var html = '';
+        html += '<div class="cp-avatar-row">';
+        html += '<div class="cp-avatar-circle">' + escCp(initial) + '</div>';
+        html += '<div>';
+        html += '<div class="cp-village-name">' + escCp(villageName) + '</div>';
+        html += '<div class="cp-village-sub">SpawnKit Village</div>';
+        html += '</div></div>';
+
+        html += '<div class="cp-row"><span class="cp-row-label">Village Name</span>';
+        html += '<input class="cp-edit-input" id="cpVillageNameInput" type="text" value="' + escCp(villageName) + '" placeholder="My Village" /></div>';
+
+        html += '<div class="cp-row"><span class="cp-row-label">Owner</span>';
+        html += '<span class="cp-row-value">' + escCp(ownerName) + '</span></div>';
+
+        html += '<div class="cp-row"><span class="cp-row-label">Theme</span>';
+        html += '<span class="cp-row-value">🏢 Executive</span></div>';
+
+        html += '<div class="cp-row"><span class="cp-row-label">Created</span>';
+        html += '<span class="cp-row-value">' + escCp(createdDate) + '</span></div>';
+
+        html += '<button class="cp-share-btn" id="cpShareBtn">🔗 Share Village</button>';
+        body.innerHTML = html;
+
+        var nameInput = document.getElementById('cpVillageNameInput');
+        if (nameInput) {
+            nameInput.addEventListener('change', function() {
+                var newName = nameInput.value.trim() || 'My Village';
+                setVillageName(newName);
+                var toast = document.getElementById('execToast');
+                if (toast) {
+                    toast.textContent = '✅ Village name saved!';
+                    toast.classList.add('visible');
+                    setTimeout(function() { toast.classList.remove('visible'); }, 2000);
+                }
+                renderCreatorProfile(); // Re-render to update avatar
+            });
+        }
+
+        var shareBtn = document.getElementById('cpShareBtn');
+        if (shareBtn) {
+            shareBtn.addEventListener('click', function() {
+                var shareUrl = window.location.origin + '/?village=' + encodeURIComponent(getVillageName());
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(shareUrl).then(function() {
+                        var toast = document.getElementById('execToast');
+                        if (toast) {
+                            toast.textContent = '📋 Village URL copied to clipboard!';
+                            toast.classList.add('visible');
+                            setTimeout(function() { toast.classList.remove('visible'); }, 2500);
+                        }
+                    }).catch(function() {
+                        prompt('Copy this village URL:', shareUrl);
+                    });
+                } else {
+                    prompt('Copy this village URL:', shareUrl);
+                }
+            });
+        }
+    }
+
+    function openCreatorProfile() {
+        var overlay = document.getElementById('creatorProfileOverlay');
+        if (!overlay) return;
+        ['marketplaceOverlay', 'skillsOverlay'].forEach(function(id) {
+            var el = document.getElementById(id);
+            if (el) el.classList.remove('open');
+        });
+        overlay.classList.add('open');
+        document.body.style.overflow = 'hidden';
+        renderCreatorProfile();
+    }
+    function closeCreatorProfile() {
+        var overlay = document.getElementById('creatorProfileOverlay');
+        if (overlay) overlay.classList.remove('open');
+        document.body.style.overflow = '';
+    }
+
+    // Expose globally so settings panel can open it if desired
+    window.openCreatorProfile = openCreatorProfile;
+
+    document.addEventListener('DOMContentLoaded', function() {
+        var closeBtn = document.getElementById('creatorProfileClose');
+        if (closeBtn) closeBtn.addEventListener('click', closeCreatorProfile);
+        var backdrop = document.getElementById('creatorProfileBackdrop');
+        if (backdrop) backdrop.addEventListener('click', closeCreatorProfile);
+    });
+})();
