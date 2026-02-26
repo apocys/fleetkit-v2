@@ -2,27 +2,17 @@ import * as THREE from 'three';
 // medieval-characters-v2.js — Character behavior enhancements v2
 // Zones, speech bubbles, animal scale fix, cinematic intro
 
-// 3D emoticon image paths (Luxo-style)
-const EMOTE_IMG = {
-    bell:       'assets/emoticons/bell.png',
-    doge:       'assets/emoticons/doge.png',
-    drake:      'assets/emoticons/drake.png',
-    telegram:   'assets/emoticons/telegram.png',
-    tamagotchi: 'assets/emoticons/tamagotchi.png',
-    skateboard: 'assets/emoticons/skateboard.png',
-};
-
 const ZONES = [
-    { name: 'tavern',    x: -5,  z: 24,  r: 4, emoji: '🍺', img: EMOTE_IMG.doge,       phrase: 'A flagon of mead!' },
-    { name: 'library',   x: 5,   z: 22,  r: 4, emoji: '📖', img: EMOTE_IMG.tamagotchi,  phrase: 'Knowledge is power...' },
-    { name: 'forge',     x: 12,  z: 20,  r: 4, emoji: '🔨', img: EMOTE_IMG.skateboard,  phrase: 'The steel sings!' },
-    { name: 'market',    x: 7,   z: 27,  r: 4, emoji: '💰', img: EMOTE_IMG.bell,        phrase: 'Fresh wares!' },
-    { name: 'chapel',    x: -9,  z: 27,  r: 4, emoji: '🙏', img: EMOTE_IMG.telegram,    phrase: 'May the light guide us.' },
-    { name: 'castle',    x: 0,   z: 0,   r: 8, emoji: '🏰', img: EMOTE_IMG.drake,       phrase: 'For the realm!' },
-    { name: 'mission',   x: -12, z: 20,  r: 4, emoji: '⚔️', img: null,                   phrase: 'To battle, knights!' },
-    { name: 'graveyard', x: -15, z: -10, r: 5, emoji: '💀', img: null,                   phrase: '...silence...' },
-    { name: 'farm',      x: -16, z: 10,  r: 5, emoji: '🌾', img: null,                   phrase: 'Good harvest today!' },
-    { name: 'river',     x: 0,   z: 14,  r: 3, emoji: '🎣', img: null,                   phrase: 'The fish are biting!' },
+    { name: 'tavern',    x: -5,  z: 24,  r: 4, emoji: '🍺', phrase: 'A flagon of mead!' },
+    { name: 'library',   x: 5,   z: 22,  r: 4, emoji: '📖', phrase: 'Knowledge is power...' },
+    { name: 'forge',     x: 12,  z: 20,  r: 4, emoji: '🔨', phrase: 'The steel sings!' },
+    { name: 'market',    x: 7,   z: 27,  r: 4, emoji: '💰', phrase: 'Fresh wares!' },
+    { name: 'chapel',    x: -9,  z: 27,  r: 4, emoji: '🙏', phrase: 'May the light guide us.' },
+    { name: 'castle',    x: 0,   z: 0,   r: 8, emoji: '🏰', phrase: 'For the realm!' },
+    { name: 'mission',   x: -12, z: 20,  r: 4, emoji: '⚔️', phrase: 'To battle, knights!' },
+    { name: 'graveyard', x: -15, z: -10, r: 5, emoji: '💀', phrase: '...silence...' },
+    { name: 'farm',      x: -16, z: 10,  r: 5, emoji: '🌾', phrase: 'Good harvest today!' },
+    { name: 'river',     x: 0,   z: 14,  r: 3, emoji: '🎣', phrase: 'The fish are biting!' },
 ];
 
 const ANIMAL_SCALES = { sheep: 1.5, horse: 1.8, chicken: 1.0 };
@@ -100,18 +90,10 @@ function updateCharacterZones(app) {
             (document.getElementById('labels-container') || document.body).appendChild(emojiEl);
             labelEl._emojiEl = emojiEl;
         }
-        // Use 3D image emoticon if zone has one, otherwise text emoji
-        const zoneImg = zone ? zone.img : null;
-        if (zoneImg && emojiEl._lastImg !== zoneImg) {
-            emojiEl.innerHTML = `<img src="${zoneImg}" style="width:28px;height:28px;image-rendering:auto;vertical-align:middle;" />`;
-            emojiEl._lastImg = zoneImg;
-        } else if (!zoneImg) {
-            emojiEl.innerHTML = `<span style="font-size:16px;">${emoji}</span>`;
-            emojiEl._lastImg = null;
-        }
+        emojiEl.textContent = emoji;
         // Position above the label
         emojiEl.style.left = labelEl.style.left;
-        emojiEl.style.top = (parseFloat(labelEl.style.top || 0) - 28) + 'px';
+        emojiEl.style.top = (parseFloat(labelEl.style.top || 0) - 20) + 'px';
 
         // Speech bubble on zone change
         if (zoneName !== prevZone) {
