@@ -156,7 +156,7 @@
 
     // Refresh
     if (typeof window.mcRefresh === 'function') window.mcRefresh();
-    renderHistory(_currentSessions);
+    renderHistory();
 
     // Auto-select the new mission
     selectMission(mission.id, mission.name);
@@ -173,7 +173,7 @@
     if (_searchActive && existingSearch) {
       existingSearch.parentNode.removeChild(existingSearch);
       _searchActive = false;
-      renderHistory(_currentSessions);
+      renderHistory();
       return;
     }
 
@@ -195,7 +195,7 @@
       if (e.key === 'Escape') {
         bar.parentNode.removeChild(bar);
         _searchActive = false;
-        renderHistory(_currentSessions);
+        renderHistory();
       }
     });
   }
@@ -215,78 +215,59 @@
     if (window.SkillForge) window.SkillForge.open();
   }
 
-  // ── Mission filter: only subagent sessions (spawned via /mission or sessions_spawn) ──
-
-  function isMissionSession(session) {
-    var kind = String(session.kind || '').toLowerCase();
-    // Only subagent sessions are real missions — everything else (main, cron, whatsapp groups) is excluded
-    return kind === 'subagent';
-  }
-
   // ── History List ───────────────────────────────────────────────────────────
+  // Missions are LOCAL chat conversations stored in localStorage.
+  // API sessions (sub-agents, crons, whatsapp) are NOT missions — they live in Orchestration tab.
+  // "Current Session" = the main ongoing chat. Other missions are created via + New Mission or /mission.
 
-  function renderHistory(sessions) {
+  function renderHistory() {
     var historyList = el('mcHistoryList');
     if (!historyList) return;
 
-    // Clear existing history items + labels (but keep search bar / form if present)
+    // Clear existing items (keep search bar / form)
     var toRemove = historyList.querySelectorAll('.mc-sl-history-item, .mc-sl-section-label, .mc-sl-empty-state');
     for (var r = 0; r < toRemove.length; r++) {
       toRemove[r].parentNode.removeChild(toRemove[r]);
     }
 
-    // Build combined list: missions from localStorage + mission sessions from API
     var state = getState();
-    var localMissions = Array.isArray(state.missions) ? state.missions : [];
+    var missions = Array.isArray(state.missions) ? state.missions : [];
 
-    // Filter API sessions to missions only
-    var missionSessions = [];
-    if (Array.isArray(sessions)) {
-      for (var s = 0; s < sessions.length; s++) {
-        if (isMissionSession(sessions[s])) {
-          missionSessions.push(sessions[s]);
-        }
-      }
+    // Always ensure "Current Session" exists at top
+    var hasCurrent = missions.some(function(m) { return m.id === 'current'; });
+    if (!hasCurrent) {
+      missions.unshift({ id: 'current', name: 'Current Session', createdAt: Date.now(), status: 'active' });
+      state.missions = missions;
+      saveState(state);
     }
+
+    // Sort: active first, then by date (newest first)
+    missions.sort(function(a, b) {
+      if (a.id === 'current') return -1;
+      if (b.id === 'current') return 1;
+      if (a.status === 'active' && b.status !== 'active') return -1;
+      if (b.status === 'active' && a.status !== 'active') return 1;
+      return (b.createdAt || 0) - (a.createdAt || 0);
+    });
 
     // Label
     var label = document.createElement('div');
     label.className = 'mc-sl-section-label';
-    label.textContent = 'Mission History';
+    label.textContent = 'Missions';
     historyList.appendChild(label);
 
-    var totalItems = 0;
-
-    // Render localStorage missions first (user-created from MC)
-    for (var m = 0; m < localMissions.length; m++) {
-      var mission = localMissions[m];
-      var subtitle = mission.status === 'active' ? '🟢' : '✓';
-      historyList.appendChild(buildHistoryItem(mission.id, subtitle + ' ' + mission.name, mission.createdAt));
-      totalItems++;
+    // Render each mission
+    for (var m = 0; m < missions.length; m++) {
+      var mission = missions[m];
+      var displayName = mission.name || 'Untitled';
+      historyList.appendChild(buildHistoryItem(mission.id, displayName, mission.createdAt));
     }
 
-    // Render API mission sessions (deduplicate by id vs local missions)
-    var localIds = {};
-    for (var mm = 0; mm < localMissions.length; mm++) localIds[localMissions[mm].id] = true;
-
-    for (var j = 0; j < missionSessions.length; j++) {
-      var sess = missionSessions[j];
-      var sid = sess.id || sess.sessionId || sess.key || ('sess-' + j);
-      if (localIds[sid]) continue;
-
-      var sname = sess.label || sess.name || sess.title || ('Mission ' + (j + 1));
-      var statusIcon = (sess.status === 'active' || sess.status === 'running') ? '🟢' : '✓';
-      historyList.appendChild(buildHistoryItem(sid, statusIcon + ' ' + sname, sess.lastActive || sess.createdAt));
-      totalItems++;
-    }
-
-    // Empty state
-    if (totalItems === 0) {
-      var empty = document.createElement('div');
-      empty.className = 'mc-sl-empty-state';
-      empty.style.cssText = 'padding:20px 12px;text-align:center;color:#AEAEB2;font-size:13px;line-height:1.5;';
-      empty.innerHTML = '🎯<br>No missions yet.<br><span style="font-size:11px;">Use <strong>+ New Mission</strong> or send<br><code style="background:rgba(0,122,255,0.06);padding:2px 6px;border-radius:4px;font-size:11px;">/mission</code> in chat.</span>';
-      historyList.appendChild(empty);
+    // Auto-select "current" if nothing selected
+    if (!_activeMissionId) {
+      _activeMissionId = 'current';
+      var items = historyList.querySelectorAll('.mc-sl-history-item');
+      if (items.length > 0) items[0].className += ' active';
     }
   }
 
@@ -368,7 +349,7 @@
     if (!container) return;
 
     renderActions(container);
-    renderHistory(_currentSessions);
+    renderHistory();
     renderFooter();
   }
 
