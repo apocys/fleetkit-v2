@@ -148,10 +148,35 @@
     elBody.innerHTML = '<div class="mc-error">' + escMc(msg) + '</div>';
   }
 
+  /* ── Per-Mission Chat Storage ─────────────────────────────────── */
+  var CHAT_STORE_KEY = 'mc-chats';
+
+  function getMissionMessages(missionId) {
+    try {
+      var store = JSON.parse(localStorage.getItem(CHAT_STORE_KEY) || '{}');
+      return store[missionId || 'current'] || [];
+    } catch (e) { return []; }
+  }
+
+  function saveMissionMessage(missionId, role, content) {
+    try {
+      var store = JSON.parse(localStorage.getItem(CHAT_STORE_KEY) || '{}');
+      var id = missionId || 'current';
+      if (!store[id]) store[id] = [];
+      store[id].push({ role: role, content: content, ts: Date.now() });
+      // Keep max 200 messages per mission
+      if (store[id].length > 200) store[id] = store[id].slice(-200);
+      localStorage.setItem(CHAT_STORE_KEY, JSON.stringify(store));
+    } catch (e) { console.warn('[MC] Save failed:', e); }
+  }
+
   /* ── Chat Tab ───────────────────────────────────────────────────── */
   function renderMessages(messages) {
     if (!messages || !messages.length) {
-      elBody.innerHTML = '<div class="mc-empty">No messages yet.</div>';
+      elBody.innerHTML = '<div class="mc-empty" style="padding:48px 24px;">' +
+        '<div style="font-size:24px;margin-bottom:8px;">💬</div>' +
+        'Start a conversation.<br>' +
+        '<span style="font-size:12px;color:var(--mc-text-dim);">Type a message below or use /mission for a guided flow.</span></div>';
       return;
     }
     var html = '';
@@ -159,13 +184,12 @@
       var m = messages[i];
       var role = String(m.role || 'assistant').toUpperCase();
       var content = m.content || '';
-      // content may be array (OpenAI-style) or string
       if (Array.isArray(content)) {
         content = content.map(function (c) { return c.text || c.content || ''; }).join('\n');
       }
       var roleClass = role === 'USER' ? 'mc-msg--user' : 'mc-msg--assistant';
       html += '<div class="mc-msg ' + roleClass + '">' +
-        '<div class="mc-msg-role">' + escMc(role) + '</div>' +
+        '<div class="mc-msg-role mc-role-' + role.toLowerCase() + '">' + escMc(role) + '</div>' +
         '<div class="mc-msg-content">' + mdToHtml(content) + '</div>' +
         '</div>';
     }
@@ -174,35 +198,31 @@
   }
 
   function loadChat() {
-    showLoading();
-    // Use /api/oc/chat which returns { messages: [...] }
-    skF(API_URL + '/api/oc/chat')
-      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
-      .then(function (data) {
-        var msgs = data && data.messages ? data.messages : (Array.isArray(data) ? data : []);
-        if (msgs.length > 0) {
-          renderMessages(msgs);
-        } else {
-          // fallback: try sessions for transcript data
-          return skF(API_URL + '/api/oc/sessions')
-            .then(function (r) { return r.json(); })
-            .then(function (sd) {
-              var sessions = sd.sessions || sd || [];
-              var main = null;
-              for (var i = 0; i < sessions.length; i++) {
-                if (sessions[i].key === 'agent:main:main' || sessions[i].type === 'main' || i === 0) {
-                  main = sessions[i];
-                  break;
-                }
-              }
-              var msgs2 = (main && (main.messages || main.transcript)) || [];
-              renderMessages(msgs2);
-            });
-        }
-      })
-      .catch(function (err) {
-        showError('Could not load transcript: ' + err.message);
-      });
+    var missionId = currentMission ? currentMission.id : 'current';
+
+    // First: load local messages for this mission
+    var localMsgs = getMissionMessages(missionId);
+
+    if (missionId === 'current' && localMsgs.length === 0) {
+      // For "Current Session", also try to load from API (main session transcript)
+      showLoading();
+      skF(API_URL + '/api/oc/chat')
+        .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+        .then(function (data) {
+          var msgs = data && data.messages ? data.messages : (Array.isArray(data) ? data : []);
+          if (msgs.length > 0) {
+            renderMessages(msgs);
+          } else {
+            renderMessages([]);
+          }
+        })
+        .catch(function () {
+          renderMessages([]);
+        });
+    } else {
+      // Per-mission: show local messages
+      renderMessages(localMsgs);
+    }
   }
 
   /* ── Orchestration Tab ──────────────────────────────────────────── */
@@ -443,47 +463,154 @@
     elTextarea.value = '';
     elTextarea.style.height = 'auto';
 
+    var missionId = currentMission ? currentMission.id : 'current';
+
+    // Check if this is a /mission command — create new mission
+    var isMissionCmd = /^\/m(ission)?\s+/i.test(text);
+    if (isMissionCmd) {
+      var missionText = text.replace(/^\/m(ission)?\s+/i, '').trim();
+      var newMission = {
+        id: 'mission-' + Date.now() + '-' + Math.floor(Math.random() * 10000),
+        name: missionText.substring(0, 50) + (missionText.length > 50 ? '…' : ''),
+        createdAt: Date.now(),
+        status: 'active'
+      };
+      // Save to localStorage missions list
+      try {
+        var state = JSON.parse(localStorage.getItem('fleetkit_state') || '{}');
+        if (!Array.isArray(state.missions)) state.missions = [];
+        state.missions.unshift(newMission);
+        localStorage.setItem('fleetkit_state', JSON.stringify(state));
+      } catch (e) {}
+      // Switch to new mission
+      missionId = newMission.id;
+      currentMission = { id: newMission.id, name: newMission.name };
+      if (elTitle) elTitle.innerHTML = escMc(newMission.name) + ' <span class="mc-chevron">⌄</span>';
+      // Refresh sidebar
+      if (window.McSidebarLeft) window.McSidebarLeft.render([]);
+      // Clear chat for new mission
+      elBody.innerHTML = '';
+      // Prepend /mission prefix for the agent
+      text = '🚀 MISSION: ' + missionText;
+    }
+
+    // Save user message locally
+    saveMissionMessage(missionId, 'user', text);
     appendMessage('user', text);
 
-    // loading bubble
-    var loadingEl = document.createElement('div');
-    loadingEl.className = 'mc-msg mc-msg--assistant mc-msg--loading';
-    loadingEl.innerHTML = '<div class="mc-msg-role">ASSISTANT</div>' +
-      '<div class="mc-msg-content"><span class="mc-spinner"></span></div>';
-    elBody.appendChild(loadingEl);
+    // Create streaming response container
+    var responseEl = document.createElement('div');
+    responseEl.className = 'mc-msg mc-msg--assistant';
+    responseEl.innerHTML = '<div class="mc-msg-role mc-role-assistant">ASSISTANT</div>' +
+      '<div class="mc-msg-content"><span class="mc-spinner"></span> Thinking…</div>';
+    elBody.appendChild(responseEl);
     scrollToBottom(elBody);
+    var contentEl = responseEl.querySelector('.mc-msg-content');
 
-    skF(API_URL + '/api/oc/chat', {
+    // Try streaming first (fetch + ReadableStream), fallback to regular POST
+    var token = localStorage.getItem('spawnkit-token') || '';
+    var headers = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = 'Bearer ' + token;
+
+    fetch(API_URL + '/api/oc/chat', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: text })
-    })
-      .then(function (r) { return r.json(); })
-      .then(function (data) {
-        if (loadingEl.parentNode) loadingEl.parentNode.removeChild(loadingEl);
-        var reply = data.reply || data.message || data.content || '';
-        if (!reply) reply = data.ok ? '✅ Message sent to agent.' : '⚠️ No response received.';
-        appendMessage('assistant', reply);
-        document.dispatchEvent(new CustomEvent('mc:message-sent', { detail: { message: text, reply: reply } }));
-      })
-      .catch(function (err) {
-        if (loadingEl.parentNode) loadingEl.parentNode.removeChild(loadingEl);
-        appendMessage('assistant', '⚠️ Error: ' + err.message);
-      })
-      .then(function () {
-        isSending = false;
-        if (elSend) elSend.disabled = false;
-      });
+      headers: headers,
+      body: JSON.stringify({ message: text, stream: true })
+    }).then(function (resp) {
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+
+      var ct = resp.headers.get('content-type') || '';
+
+      // Check if server supports streaming (text/event-stream or ndjson)
+      if (ct.indexOf('text/event-stream') !== -1 || ct.indexOf('ndjson') !== -1) {
+        // SSE / ndjson streaming
+        var reader = resp.body.getReader();
+        var decoder = new TextDecoder();
+        var fullText = '';
+
+        function readChunk() {
+          reader.read().then(function (result) {
+            if (result.done) {
+              contentEl.innerHTML = mdToHtml(fullText);
+              saveMissionMessage(missionId, 'assistant', fullText);
+              scrollToBottom(elBody);
+              isSending = false;
+              if (elSend) elSend.disabled = false;
+              return;
+            }
+            var chunk = decoder.decode(result.value, { stream: true });
+            // Parse SSE or ndjson lines
+            var lines = chunk.split('\n');
+            for (var i = 0; i < lines.length; i++) {
+              var line = lines[i].trim();
+              if (!line || line === 'data: [DONE]') continue;
+              if (line.indexOf('data: ') === 0) line = line.substring(6);
+              try {
+                var d = JSON.parse(line);
+                var delta = d.delta || d.content || d.text || d.chunk || '';
+                if (delta) fullText += delta;
+              } catch (e) {
+                // Plain text chunk
+                if (line.length > 0 && line.indexOf('{') === -1) fullText += line;
+              }
+            }
+            // Live update with word-by-word rendering
+            contentEl.innerHTML = mdToHtml(fullText) + '<span class="mc-cursor">▊</span>';
+            scrollToBottom(elBody);
+            readChunk();
+          });
+        }
+        readChunk();
+      } else {
+        // Regular JSON response — simulate word-by-word streaming
+        resp.json().then(function (data) {
+          var reply = data.reply || data.message || data.content || '';
+          if (!reply) reply = data.ok ? '✅ Message sent to agent.' : '⚠️ No response received.';
+
+          // Save full response
+          saveMissionMessage(missionId, 'assistant', reply);
+
+          // Simulate word-by-word streaming for UX
+          var words = reply.split(/(\s+)/);
+          var rendered = '';
+          var idx = 0;
+          var streamInterval = setInterval(function () {
+            if (idx >= words.length) {
+              clearInterval(streamInterval);
+              contentEl.innerHTML = mdToHtml(reply);
+              scrollToBottom(elBody);
+              isSending = false;
+              if (elSend) elSend.disabled = false;
+              return;
+            }
+            // Add 3-5 words per tick for natural speed
+            var batch = Math.min(idx + 3 + Math.floor(Math.random() * 3), words.length);
+            while (idx < batch) {
+              rendered += words[idx];
+              idx++;
+            }
+            contentEl.innerHTML = mdToHtml(rendered) + '<span class="mc-cursor">▊</span>';
+            scrollToBottom(elBody);
+          }, 30);
+        });
+      }
+    }).catch(function (err) {
+      contentEl.innerHTML = '⚠️ ' + escMc(err.message);
+      saveMissionMessage(missionId, 'assistant', '⚠️ Error: ' + err.message);
+      isSending = false;
+      if (elSend) elSend.disabled = false;
+    });
   }
 
   /* ── Mission select event ───────────────────────────────────────── */
   document.addEventListener('mc:select-mission', function (e) {
     currentMission = e.detail || null;
     if (elTitle && currentMission) {
-      elTitle.textContent = currentMission.title || currentMission.name || 'Mission Control';
+      var name = currentMission.title || currentMission.name || 'Mission Control';
+      elTitle.innerHTML = escMc(name) + ' <span class="mc-chevron">⌄</span>';
     }
-    if (currentTab === 'chat') loadChat();
-    else if (currentTab === 'orchestration') loadOrchestration();
+    // Always switch to chat when selecting a mission
+    setTab('chat');
   });
 
   /* ── Global API ─────────────────────────────────────────────────── */

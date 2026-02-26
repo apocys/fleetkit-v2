@@ -1042,3 +1042,11 @@
 .mc-tree-indent { color: var(--mc-text-dim); font-family: monospace; }
 .mc-token-count { font-size: 11px; color: var(--mc-text-muted); }
 .mc-agent-row { /* compat alias */ }
+
+/* Streaming cursor */
+.mc-cursor {
+  display: inline-block; color: var(--mc-accent-blue);
+  animation: mc-blink 0.8s step-end infinite;
+  font-weight: 300; font-size: 14px; vertical-align: baseline;
+}
+@keyframes mc-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
