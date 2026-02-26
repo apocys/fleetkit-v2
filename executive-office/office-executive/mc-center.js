@@ -219,43 +219,87 @@
 
   function renderAgentTree(sessions) {
     if (!sessions || !sessions.length) {
-      return '<div class="mc-empty">No agents running.</div>';
-    }
-    // separate mains and subagents
-    var mains = [];
-    var subs = {};
-    for (var i = 0; i < sessions.length; i++) {
-      var s = sessions[i];
-      if (s.type === 'subagent' && s.parentId) {
-        if (!subs[s.parentId]) subs[s.parentId] = [];
-        subs[s.parentId].push(s);
-      } else {
-        mains.push(s);
-      }
+      return '<div class="mc-empty" style="padding:24px;text-align:center;color:var(--mc-text-muted);">No agents running.</div>';
     }
 
-    function renderAgent(s, depth) {
-      var indent = depth ? '<span class="mc-tree-indent">└─ </span>' : '';
-      var tokens = s.tokens ? ' — <span class="mc-token-count">' + fmtTokens(s.tokens) + '</span>' : '';
-      var name = s.label || s.name || s.id || 'unknown';
-      var html = '<div class="mc-agent-row mc-agent-depth-' + depth + '" data-session-id="' + escMc(s.id) + '">' +
-        indent +
-        '<span class="mc-agent-icon">' + agentIcon(s) + '</span> ' +
-        '<span class="mc-agent-name">' + escMc(name) + '</span> ' +
-        statusBadge(s.status) + tokens +
-        '</div>';
-      if (subs[s.id]) {
-        for (var j = 0; j < subs[s.id].length; j++) {
-          html += renderAgent(subs[s.id][j], depth + 1);
-        }
+    // Parse OpenClaw session keys: agent:main:main, agent:main:subagent:uuid
+    var mainSession = null;
+    var subAgents = [];
+    var otherAgents = [];
+
+    for (var i = 0; i < sessions.length; i++) {
+      var s = sessions[i];
+      var key = s.key || '';
+      if (key === 'agent:main:main') {
+        mainSession = s;
+      } else if (key.indexOf('subagent') !== -1) {
+        subAgents.push(s);
+      } else if (key.indexOf('agent:') === 0) {
+        otherAgents.push(s);
+      }
+      // Skip crons, whatsapp groups, etc.
+    }
+
+    // Sort sub-agents by last active (newest first)
+    subAgents.sort(function(a, b) { return (b.updatedAt || 0) - (a.updatedAt || 0); });
+
+    function fmtTok(n) { return n ? n.toLocaleString() : '0'; }
+
+    function renderRow(s, isSub) {
+      var name = s.label || s.displayName || s.key || 'unknown';
+      // Clean up name: remove "telegram:g-agent-main-" prefix
+      name = name.replace(/^telegram:g-/, '').replace(/^agent-main-/, '');
+      var status = s.status || (s.abortedLastRun ? 'aborted' : 'idle');
+      var tokens = s.totalTokens || 0;
+      var model = s.model || '';
+      var channel = s.lastChannel || s.channel || '';
+
+      var html = '<div class="mc-agent-item' + (isSub ? ' mc-agent-sub' : '') + '" data-session-key="' + escMc(s.key || '') + '">';
+      html += '<span class="mc-agent-emoji">' + (isSub ? '🔧' : '🎭') + '</span>';
+      html += '<span class="mc-agent-name">' + escMc(name) + '</span>';
+      html += statusBadge(status);
+      if (tokens > 0) html += '<span class="mc-agent-tokens">' + fmtTok(tokens) + ' tok</span>';
+      html += '</div>';
+
+      // Detail row
+      if (model || channel) {
+        html += '<div style="margin-left:' + (isSub ? '52px' : '32px') + ';font-size:11px;color:var(--mc-text-muted);margin-bottom:4px;">';
+        if (model) html += escMc(model.split('/').pop());
+        if (model && channel) html += ' · ';
+        if (channel) html += escMc(channel);
+        if (s.updatedAt) html += ' · ' + timeAgo(s.updatedAt);
+        html += '</div>';
       }
       return html;
     }
 
     var out = '<div class="mc-agent-tree">';
-    for (var k = 0; k < mains.length; k++) {
-      out += renderAgent(mains[k], 0);
+
+    // Main session
+    if (mainSession) {
+      out += renderRow(mainSession, false);
     }
+
+    // Sub-agents (limit to 20 most recent)
+    if (subAgents.length > 0) {
+      out += '<div style="margin:12px 0 6px 0;font-size:11px;font-weight:600;text-transform:uppercase;color:var(--mc-text-muted);letter-spacing:0.5px;">Sub-Agents (' + subAgents.length + ')</div>';
+      var limit = Math.min(subAgents.length, 20);
+      for (var j = 0; j < limit; j++) {
+        out += renderRow(subAgents[j], true);
+      }
+      if (subAgents.length > 20) {
+        out += '<div style="padding:8px 32px;font-size:12px;color:var(--mc-text-muted);">+ ' + (subAgents.length - 20) + ' more</div>';
+      }
+    }
+
+    // Other named agents
+    if (otherAgents.length > 0) {
+      out += '<div style="margin:12px 0 6px 0;font-size:11px;font-weight:600;text-transform:uppercase;color:var(--mc-text-muted);letter-spacing:0.5px;">Other Agents</div>';
+      for (var k = 0; k < otherAgents.length; k++) {
+        out += renderRow(otherAgents[k], false);
+      }
+    }
+
     out += '</div>';
     return out;
   }
@@ -416,13 +460,14 @@
     })
       .then(function (r) { return r.json(); })
       .then(function (data) {
-        elBody.removeChild(loadingEl);
-        var reply = data.message || data.content || data.reply || '';
+        if (loadingEl.parentNode) loadingEl.parentNode.removeChild(loadingEl);
+        var reply = data.reply || data.message || data.content || '';
+        if (!reply) reply = data.ok ? '✅ Message sent to agent.' : '⚠️ No response received.';
         appendMessage('assistant', reply);
         document.dispatchEvent(new CustomEvent('mc:message-sent', { detail: { message: text, reply: reply } }));
       })
       .catch(function (err) {
-        elBody.removeChild(loadingEl);
+        if (loadingEl.parentNode) loadingEl.parentNode.removeChild(loadingEl);
         appendMessage('assistant', '⚠️ Error: ' + err.message);
       })
       .then(function () {
