@@ -62,7 +62,11 @@
         '<div class="md-agent-name">' + escapeHtml(a.name) + '</div>' +
         '<div class="md-agent-role">' + escapeHtml(a.role) + '</div>' +
       '</div>';
-    }).join('');
+    }).join('') +
+    // Minimal circle + button — inline with agent grid
+    '<button class="md-agent-add" id="mdAddAgentCircle" tabindex="0" aria-label="Add Agent" title="Add Agent">' +
+      '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>' +
+    '</button>';
   }
 
   function buildAgentBarHtml() {
@@ -91,10 +95,7 @@
           '</div>' +
         '</div>' +
         '<div class="md-topbar-right">' +
-          '<button class="md-topbar-btn md-topbar-add" id="mdAddAgent" title="Add Agent">' +
-            '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>' +
-            '<span>Add Agent</span>' +
-          '</button>' +
+          <!-- Add Agent circle button is inline with agent fleet grid -->
           '<div class="md-topbar-user" id="mdUserMenu">' +
             '<div class="md-topbar-avatar" id="mdUserAvatar">' + _avatarLetter + '</div>' +
             '<div class="md-topbar-user-info">' +
@@ -530,9 +531,10 @@
         });
       });
 
-      // Add Agent → open activate/marketplace
-      if (addAgentBtn) {
-        addAgentBtn.addEventListener('click', function() {
+      // Add Agent circle (inline with fleet grid)
+      var addCircle = document.getElementById('mdAddAgentCircle');
+      if (addCircle) {
+        addCircle.addEventListener('click', function() {
           if (window.SkillMarketplace) { window.SkillMarketplace.open(); return; }
           var addBtn = document.getElementById('addAgentBtn');
           if (addBtn) addBtn.click();

@@ -788,3 +788,40 @@
   .md-topbar-btn { padding: 7px 10px; }
   .md-topbar-chevron { display: none; }
 }
+
+/* ── Add Agent Circle Button (inline with fleet grid) ──────── */
+.md-agent-add {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  border: 2px dashed rgba(0, 0, 0, 0.15);
+  background: transparent;
+  color: var(--text-tertiary, #AEAEB2);
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  flex-shrink: 0;
+  outline: none;
+  position: relative;
+  top: 0;
+}
+.md-agent-add:hover {
+  border-color: #007AFF;
+  border-style: solid;
+  color: #007AFF;
+  background: rgba(0, 122, 255, 0.06);
+  transform: scale(1.08);
+  box-shadow: 0 0 0 4px rgba(0, 122, 255, 0.1);
+}
+.md-agent-add:active {
+  transform: scale(0.95);
+}
+.md-agent-add svg {
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.md-agent-add:hover svg {
+  transform: rotate(90deg) scale(1.1);
+}
