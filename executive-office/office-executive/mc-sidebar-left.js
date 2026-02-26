@@ -287,9 +287,33 @@
       item.appendChild(timeEl);
     }
 
-    item.addEventListener('click', function () {
+    item.addEventListener('click', function (e) {
+      if (e.target.classList.contains('mc-sl-item-close')) return; // don't select on close click
       selectMission(id, name);
     });
+
+    // Close button with confirmation
+    var closeBtn = document.createElement('button');
+    closeBtn.className = 'mc-sl-item-close';
+    closeBtn.title = 'Remove mission';
+    closeBtn.innerHTML = '&times;';
+    closeBtn.style.cssText = 'margin-left:auto;background:none;border:none;color:#AEAEB2;font-size:14px;cursor:pointer;padding:0 2px;opacity:0;transition:opacity 0.15s;flex-shrink:0;';
+    closeBtn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      if (!confirm('Remove "' + truncate(name, 40) + '" from history?')) return;
+      var state = getState();
+      if (state.missions) {
+        state.missions = state.missions.filter(function(m) { return m.id !== id; });
+        saveState(state);
+      }
+      if (_activeMissionId === id) _activeMissionId = null;
+      renderHistory();
+    });
+    item.style.cssText = (item.style.cssText || '') + 'display:flex;align-items:center;gap:4px;';
+    item.addEventListener('mouseenter', function() { closeBtn.style.opacity = '1'; });
+    item.addEventListener('mouseleave', function() { closeBtn.style.opacity = '0'; });
+    item.appendChild(closeBtn);
+
     return item;
   }
 
@@ -337,6 +361,11 @@
       '<div class="mc-sl-footer-icons">' +
         '<button class="mc-sl-footer-icon" title="Settings" onclick="if(window.openSettings)window.openSettings()">&#9881;</button>' +
         '<button class="mc-sl-footer-icon" title="Back to Office" onclick="if(window.closeMissionControl)window.closeMissionControl()">&#10005;</button>' +
+        '<button class="mc-sl-footer-icon" title="Logout" onclick="if(confirm(\'Log out of SpawnKit?\')){\
+localStorage.removeItem(\'spawnkit-token\');\
+localStorage.removeItem(\'spawnkit-instance-url\');\
+localStorage.removeItem(\'spawnkit-demo-mode\');\
+window.location.reload();}">&#x23FB;</button>' +
       '</div>';
   }
 

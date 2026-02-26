@@ -97,7 +97,7 @@
       '<div class="md-team" id="missionDeskTeam">' + buildTeamHtml() + '</div>' +
       '<div class="md-section-label">Quick Actions</div>' +
       '<div class="md-actions" id="missionDeskActions">' +
-        '<button class="md-action" data-action="missions"><span class="md-action-icon">🎯</span><span class="md-action-label">Missions</span></button>' +
+        '<button class="md-action" data-action="mission-control"><span class="md-action-icon">🎯</span><span class="md-action-label">Mission Control</span></button>' +
         '<button class="md-action" data-action="boardroom"><span class="md-action-icon">🧠</span><span class="md-action-label">Boardroom</span></button>' +
         '<button class="md-action" data-action="skills"><span class="md-action-icon">🔨</span><span class="md-action-label">Skill Forge</span></button>' +
         '<button class="md-action" data-action="explore"><span class="md-action-icon">🚀</span><span class="md-action-label">Explore</span></button>' +
@@ -252,7 +252,12 @@
   /* ── Panel system ───────────────────────────────────────────────── */
 
   function openPanel(name) {
-    if (name === 'missions') {
+    if (name === 'mission-control') {
+      var mcOverlay = document.getElementById('missionControlOverlay');
+      if (mcOverlay) { mcOverlay.classList.add('open'); return; }
+      var mcBtn = document.getElementById('mcBtn') || document.querySelector('[aria-label="Mission Control"]');
+      if (mcBtn) mcBtn.click();
+    } else if (name === 'missions') {
       if (typeof openMissionsPanel === 'function') { openMissionsPanel(); return; }
       var missionsBtn = document.getElementById('missionsBtn');
       if (missionsBtn) missionsBtn.click();
