@@ -176,44 +176,81 @@
                 var totalActive = activeTasks.length;
                 var totalDone = doneTasks.length;
 
-                html += '<div class="mc-section-title">🎯 Active Tasks (' + totalActive + ')</div>';
+                // ── Progression Panel (clean checklist style) ──
+                // Blue circle checkmark for done, hollow circle for active
+                var checkDone = '<svg width="18" height="18" viewBox="0 0 18 18" style="flex-shrink:0;"><circle cx="9" cy="9" r="8" fill="#007AFF"/><path d="M5.5 9.5L7.5 11.5L12.5 6.5" stroke="white" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+                var checkActive = '<svg width="18" height="18" viewBox="0 0 18 18" style="flex-shrink:0;"><circle cx="9" cy="9" r="8" fill="none" stroke="#FF9500" stroke-width="1.5"/><circle cx="9" cy="9" r="3" fill="#FF9500"/></svg>';
+                var checkTodo = '<svg width="18" height="18" viewBox="0 0 18 18" style="flex-shrink:0;"><circle cx="9" cy="9" r="8" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="1.5"/></svg>';
 
-                if (totalActive === 0) {
-                    html += '<div style="padding:12px;text-align:center;color:var(--text-tertiary);font-size:12px;">All clear — no active tasks 🎉</div>';
-                }
-
-                activeTasks.forEach(function(t, idx) {
-                    var hasSubtasks = t.subtasks && t.subtasks.length > 0;
-                    html += '<div class="mc-task-card" data-task-idx="' + idx + '" style="padding:8px 10px;margin-bottom:4px;border-radius:8px;background:rgba(255,149,0,0.06);border-left:3px solid #FF9500;cursor:pointer;transition:background 0.15s;">';
-                    html += '<div style="display:flex;align-items:center;gap:6px;">';
-                    html += '<span>' + (hasSubtasks ? '▸' : '☐') + '</span>';
-                    html += '<span style="flex:1;font-size:12px;font-weight:500;">' + escMc(t.text) + '</span>';
-                    html += '<span style="font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;background:#FF950022;color:#FF9500;">ACTIVE</span>';
-                    html += '</div>';
-                    if (hasSubtasks) {
-                        html += '<div class="mc-subtasks" style="display:none;margin-top:6px;padding-top:6px;border-top:1px solid rgba(255,149,0,0.15);">';
-                        t.subtasks.forEach(function(st) {
-                            html += '<div style="display:flex;align-items:center;gap:6px;margin:3px 0 0 18px;font-size:11px;' + (st.done ? 'text-decoration:line-through;color:var(--text-tertiary);' : '') + '">';
-                            html += '<span>' + (st.done ? '☑' : '☐') + '</span>';
-                            html += '<span>' + escMc(st.text) + '</span>';
-                            html += '</div>';
-                        });
-                        html += '</div>';
-                    }
-                    if (t.agent) {
-                        html += '<div style="font-size:10px;color:var(--text-tertiary);margin-top:3px;">Agent: ' + escMc(t.agent) + (t.startedAt ? ' · ' + new Date(t.startedAt).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : '') + '</div>';
-                    }
-                    html += '</div>';
+                // Group tasks by agent
+                var byAgent = {};
+                activeTasks.forEach(function(t) {
+                    var key = t.agent || 'main';
+                    if (!byAgent[key]) byAgent[key] = { active: [], done: [] };
+                    byAgent[key].active.push(t);
+                });
+                doneTasks.forEach(function(t) {
+                    var key = t.agent || 'main';
+                    if (!byAgent[key]) byAgent[key] = { active: [], done: [] };
+                    byAgent[key].done.push(t);
                 });
 
-                // Done tasks with strikethrough
-                if (totalDone > 0) {
-                    html += '<div class="mc-section-title" style="margin-top:12px;">✅ Completed (' + totalDone + ')</div>';
+                // If no agents, create a default group
+                if (Object.keys(byAgent).length === 0) {
+                    byAgent['main'] = { active: [], done: [] };
+                }
+
+                Object.keys(byAgent).forEach(function(agentKey) {
+                    var group = byAgent[agentKey];
+                    var allItems = group.active.concat(group.done);
+                    if (allItems.length === 0) return;
+
+                    var agentName = agentKey === 'ceo' ? 'Sycopa' : agentKey.charAt(0).toUpperCase() + agentKey.slice(1);
+
+                    // Collapsible section per agent
+                    html += '<div class="mc-progression" style="background:rgba(255,255,255,0.03);border-radius:12px;padding:12px 14px;margin-bottom:8px;">';
+                    html += '<div class="mc-prog-header" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;margin-bottom:8px;">';
+                    html += '<span style="font-size:13px;font-weight:600;color:var(--text-primary);">Progression — ' + escMc(agentName) + '</span>';
+                    html += '<span class="mc-prog-chevron" style="font-size:12px;color:var(--text-tertiary);transition:transform 0.2s;">▾</span>';
+                    html += '</div>';
+                    html += '<div class="mc-prog-items">';
+
+                    // Active tasks
+                    group.active.forEach(function(t) {
+                        html += '<div style="display:flex;align-items:flex-start;gap:8px;padding:5px 0;">';
+                        html += checkActive;
+                        html += '<span style="font-size:13px;color:var(--text-primary);line-height:18px;">' + escMc(t.text) + '</span>';
+                        html += '</div>';
+                        // Subtasks
+                        if (t.subtasks && t.subtasks.length > 0) {
+                            t.subtasks.forEach(function(st) {
+                                html += '<div style="display:flex;align-items:flex-start;gap:8px;padding:3px 0 3px 26px;">';
+                                html += (st.done ? checkDone : checkTodo);
+                                html += '<span style="font-size:12px;line-height:18px;' + (st.done ? 'text-decoration:line-through;color:var(--text-tertiary);' : 'color:var(--text-secondary);') + '">' + escMc(st.text) + '</span>';
+                                html += '</div>';
+                            });
+                        }
+                    });
+
+                    // Done tasks
+                    group.done.forEach(function(t) {
+                        html += '<div style="display:flex;align-items:flex-start;gap:8px;padding:5px 0;">';
+                        html += checkDone;
+                        html += '<span style="font-size:13px;text-decoration:line-through;color:var(--text-tertiary);line-height:18px;">' + escMc(t.text) + '</span>';
+                        html += '</div>';
+                    });
+
+                    html += '</div></div>'; // close items + progression
+                });
+
+                // Legacy "Completed" section for tasks not assigned to any agent
+                if (totalDone > 0 && !Object.keys(byAgent).some(function(k) { return byAgent[k].done.length > 0; })) {
+                    html += '<div class="mc-progression" style="background:rgba(255,255,255,0.03);border-radius:12px;padding:12px 14px;margin-bottom:8px;">';
+                    html += '<div style="font-size:13px;font-weight:600;color:var(--text-primary);margin-bottom:8px;">Completed</div>';
                     doneTasks.slice(0, 8).forEach(function(t) {
-                        html += '<div style="padding:6px 10px;margin-bottom:3px;border-radius:8px;background:rgba(48,209,88,0.06);">';
-                        html += '<div style="display:flex;align-items:center;gap:6px;">';
-                        html += '<span style="color:#30D158;">☑</span>';
-                        html += '<span style="flex:1;font-size:11px;text-decoration:line-through;color:var(--text-tertiary);">' + escMc(t.text) + '</span>';
+                        html += '<div style="display:flex;align-items:flex-start;gap:8px;padding:5px 0;">';
+                        html += checkDone;
+                        html += '<span style="font-size:13px;text-decoration:line-through;color:var(--text-tertiary);line-height:18px;">' + escMc(t.text) + '</span>';
                         html += '</div>';
                         if (t.completedAt) {
                             html += '<div style="font-size:9px;color:var(--text-quaternary,#bbb);margin-left:18px;">' + new Date(t.completedAt).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) + '</div>';
@@ -300,6 +337,22 @@
                         subs.style.display = 'none';
                         if (arrow) arrow.textContent = '▸';
                         card.style.background = 'rgba(255,149,0,0.06)';
+                    }
+                });
+            });
+
+            // Wire progression panel collapse/expand
+            mcLeft.querySelectorAll('.mc-prog-header').forEach(function(header) {
+                header.addEventListener('click', function() {
+                    var items = header.parentElement.querySelector('.mc-prog-items');
+                    var chevron = header.querySelector('.mc-prog-chevron');
+                    if (!items) return;
+                    if (items.style.display === 'none') {
+                        items.style.display = 'block';
+                        if (chevron) chevron.textContent = '▾';
+                    } else {
+                        items.style.display = 'none';
+                        if (chevron) chevron.textContent = '▸';
                     }
                 });
             });
