@@ -386,10 +386,9 @@ class MedievalCastle3D {
         // ─────────────────────────────────────────────────────────────────
         // MAIN KEEP — 8-story tower at scale 1.0 (pieces tile perfectly)
         // ─────────────────────────────────────────────────────────────────
-        const ks = 1.0;
         // Keep tower — scale 1.05 vertically to fill micro-gaps between pieces
         // GLB pieces are ~1.01 units tall. Integer stacking + slight Y-scale overlap.
-        var ks = 1; // tower piece scale
+        const ks = 1; // tower piece scale
         var tsy = 1.05; // Y-scale stretch to fill gaps
         defs.push({ path: 'assets/castle/tower-square-base-color.glb',          x: 0, y: 0, z: 0, ry: 0, scale: ks, scaleY: tsy, label: 'Keep base' });
         defs.push({ path: 'assets/castle/tower-square-mid-windows.glb',         x: 0, y: 1, z: 0, ry: 0, scale: ks, scaleY: tsy, label: 'Keep mid 1' });
