@@ -18,9 +18,11 @@
         var relayToken = stored.relayToken || params.get('token') || '';
         
         window.OC_RELAY_URL = relayUrl;
-        if (relayToken) window.OC_RELAY_TOKEN = relayToken;
+        // Bridge auth: spawnkit-token (from auth.js/deploy-wizard) takes priority
+        var authToken = localStorage.getItem('spawnkit-token') || relayToken;
+        if (authToken) window.OC_RELAY_TOKEN = authToken;
         
-        console.debug('🔌 SpawnKit Local: relay=' + relayUrl + ' token=' + (relayToken ? '***' : 'none'));
+        console.debug('🔌 SpawnKit Local: relay=' + relayUrl + ' token=' + (authToken ? '***' : 'none'));
       })();
 
 // ═══ Live Agent Behaviors + Onboarding ═══
