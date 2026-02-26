@@ -1,6 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <style>
+      /* Option A: Hide everything until auth resolves. Prevents overlay chaos. */
+      body.sk-auth-pending { visibility: hidden; }
+      body.sk-auth-pending .dw-overlay,
+      body.sk-auth-pending #sk-auth-overlay,
+      body.sk-auth-pending .sk-ob-overlay { visibility: visible; }
+    </style>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SpawnKit — Executive Office</title>
@@ -34,7 +41,7 @@
     })();
     </script>
 </head>
-<body>
+<body class="sk-auth-pending">
 
     <!-- ═══ Onboarding Wizard ═══ -->
     <dialog id="onboardingWizard" aria-modal="true" aria-label="Welcome to SpawnKit">

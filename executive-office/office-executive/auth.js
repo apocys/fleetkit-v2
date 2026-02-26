@@ -153,6 +153,12 @@
     window.__skDemoMode = true;
   }
 
+  // Remove auth-pending gate when auth resolves (prevents overlay chaos)
+  window.addEventListener('skAuthResolved', function() {
+    document.body.classList.remove('sk-auth-pending');
+    console.log('[Auth] Body visible — auth resolved');
+  }, { once: true });
+
   window.skAuthReady = function(callback) {
     var token = localStorage.getItem(STORAGE_KEY);
     if (token) {
