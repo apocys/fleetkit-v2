@@ -125,6 +125,7 @@
             if (typeof window.__skAuthResolve === 'function') {
               window.__skAuthResolve();
             }
+            window.dispatchEvent(new Event('skAuthResolved'));
           } else {
             errEl.textContent = 'Invalid access code';
             input.classList.remove('sk-shake');
@@ -167,6 +168,7 @@
               if (Array.isArray(data)) {
                 console.log('[Auth] ✅ Verified — ' + data.length + ' sessions');
                 callback();
+                window.dispatchEvent(new Event('skAuthResolved'));
               } else {
                 console.error('[Auth] Invalid response, not an array');
                 throw new Error('invalid');
@@ -191,6 +193,7 @@
       // Demo mode: no token needed, boot straight in
       console.log('[Auth] Demo mode active — skipping auth overlay');
       callback();
+      window.dispatchEvent(new Event('skAuthResolved'));
     } else {
       console.log('[Auth] No token found, showing overlay');
       window.__skAuthResolve = callback;

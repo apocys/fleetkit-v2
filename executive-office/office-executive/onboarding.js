@@ -684,6 +684,8 @@ window.__skOnboardingV2 = true;
 
   // ── Init ───────────────────────────────────────────────────────────────────
   function init() {
+    // Skip if already onboarded
+    if (localStorage.getItem('spawnkit-onboarded') === 'true') return;
     buildOverlay();
     initBeat1();
     initBeat2();
@@ -691,11 +693,23 @@ window.__skOnboardingV2 = true;
     initBeat4();
   }
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
-  } else {
-    // Small delay so the office renders first (visible behind overlay)
-    setTimeout(init, 120);
+  // Wait for auth gate to resolve before showing onboarding.
+  // This prevents stacking with deploy-wizard overlay.
+  // Listen for custom event dispatched after auth resolves.
+  window.addEventListener('skAuthResolved', function() {
+    if (localStorage.getItem('spawnkit-onboarded') !== 'true') {
+      setTimeout(init, 300); // Small delay for smooth transition
+    }
+  });
+
+  // Fallback: if auth already resolved (e.g. returning user with token), 
+  // init normally after short delay
+  if (localStorage.getItem('spawnkit-onboarded') !== 'true' && localStorage.getItem('spawnkit-token')) {
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', function() { setTimeout(init, 500); });
+    } else {
+      setTimeout(init, 500);
+    }
   }
 
 })();

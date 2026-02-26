@@ -114,6 +114,8 @@
         window.__skAuthResolve();
         window.__skAuthResolve = null;
       }
+      // Signal onboarding can start now
+      window.dispatchEvent(new Event('skAuthResolved'));
     });
     d.appendChild(btn);
   }

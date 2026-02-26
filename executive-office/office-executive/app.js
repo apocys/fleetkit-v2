@@ -654,7 +654,8 @@
       var skipOnboarding = params.has('skipOnboarding');
       var alreadyOnboarded = localStorage.getItem('spawnkit-onboarded');
 
-      if (!alreadyOnboarded && !skipOnboarding && !window.__skOnboardingV2) {
-        openWizard();
-      }
+      // DISABLED: Old wizard replaced by deploy-wizard.js + onboarding.js (v2)
+      // Those scripts handle the first-visit flow with proper sequencing.
+      // Keeping code alive for settings "Reset onboarding" button only.
+      // if (!alreadyOnboarded && !skipOnboarding) openWizard();
     })();
