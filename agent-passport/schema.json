@@ -1,0 +1,156 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AgentPassport",
+  "description": "Portable identity card for AI agents — auto-injected into any agent context by SpawnKit.",
+  "version": "1.0.0",
+  "type": "object",
+  "required": ["name", "goals"],
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "User's preferred name (how agents should address them).",
+      "examples": ["Kira"]
+    },
+    "goals": {
+      "type": "array",
+      "description": "Active goals and priorities — what the user is working toward right now.",
+      "items": {
+        "type": "object",
+        "required": ["goal"],
+        "properties": {
+          "goal": { "type": "string" },
+          "priority": { "type": "string", "enum": ["high", "medium", "low"] },
+          "deadline": { "type": "string", "format": "date", "description": "Optional target date." }
+        }
+      },
+      "minItems": 1,
+      "maxItems": 10,
+      "examples": [[
+        { "goal": "Launch SpawnKit v1 demo", "priority": "high", "deadline": "2026-02-22" },
+        { "goal": "Wire real OpenClaw data into dashboard", "priority": "high" }
+      ]]
+    },
+    "working_style": {
+      "type": "object",
+      "description": "How the user prefers to work — communication style, decision speed, feedback preferences.",
+      "properties": {
+        "communication": {
+          "type": "string",
+          "description": "Preferred communication tone.",
+          "enum": ["direct", "diplomatic", "casual", "formal"],
+          "default": "direct"
+        },
+        "detail_level": {
+          "type": "string",
+          "description": "How much detail they want in responses.",
+          "enum": ["concise", "balanced", "thorough"],
+          "default": "concise"
+        },
+        "decision_speed": {
+          "type": "string",
+          "description": "How fast they make decisions.",
+          "enum": ["fast", "deliberate", "depends"],
+          "default": "fast"
+        },
+        "feedback_style": {
+          "type": "string",
+          "description": "How they prefer to give/receive feedback.",
+          "enum": ["blunt", "constructive", "encouraging"],
+          "default": "blunt"
+        },
+        "timezone": {
+          "type": "string",
+          "description": "IANA timezone.",
+          "examples": ["Europe/Paris"]
+        },
+        "active_hours": {
+          "type": "string",
+          "description": "Typical working hours in local time.",
+          "examples": ["09:00-23:00"]
+        }
+      }
+    },
+    "active_projects": {
+      "type": "array",
+      "description": "Current projects the user is involved in — gives agents context for relevance.",
+      "items": {
+        "type": "object",
+        "required": ["name"],
+        "properties": {
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "role": { "type": "string", "description": "User's role in this project." },
+          "stack": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Tech stack / tools used."
+          },
+          "repo": { "type": "string", "description": "GitHub repo URL if applicable." }
+        }
+      },
+      "maxItems": 10,
+      "examples": [[
+        {
+          "name": "SpawnKit",
+          "description": "AI team orchestration platform built on OpenClaw",
+          "role": "Founder",
+          "stack": ["vanilla JS", "Electron", "OpenClaw", "Node.js"],
+          "repo": "https://github.com/apocys/fleetkit-v2"
+        }
+      ]]
+    },
+    "do_list": {
+      "type": "array",
+      "description": "Things agents SHOULD do — positive instructions and preferences.",
+      "items": { "type": "string" },
+      "maxItems": 20,
+      "examples": [[
+        "Be action-oriented — suggest concrete next steps",
+        "Use bullet points for strategic decisions",
+        "Challenge my ideas — don't just agree",
+        "Use technical financial terminology without simplification",
+        "Proactively flag risks and blockers"
+      ]]
+    },
+    "dont_list": {
+      "type": "array",
+      "description": "Things agents should NEVER do — red lines and anti-patterns.",
+      "items": { "type": "string" },
+      "maxItems": 20,
+      "examples": [[
+        "Don't be generic — tailor everything to my specific context",
+        "Don't oversimplify technical concepts",
+        "Don't ask permission for obvious tasks — just do them",
+        "Don't send walls of text when a one-liner will do",
+        "Don't repeat information I already know"
+      ]]
+    },
+    "expertise": {
+      "type": "array",
+      "description": "User's domain expertise — helps agents calibrate their explanations.",
+      "items": { "type": "string" },
+      "maxItems": 15,
+      "examples": [[
+        "Stablecoin structuring",
+        "Tokenized securities",
+        "FIX protocol",
+        "DeFi infrastructure",
+        "Regulatory compliance (CH, ADGM, DMCC)"
+      ]]
+    },
+    "meta": {
+      "type": "object",
+      "description": "Passport metadata.",
+      "properties": {
+        "created": { "type": "string", "format": "date-time" },
+        "updated": { "type": "string", "format": "date-time" },
+        "version": { "type": "string" },
+        "source": {
+          "type": "string",
+          "description": "How this passport was generated.",
+          "enum": ["manual", "onboarding-chat", "imported", "extracted"]
+        }
+      }
+    }
+  }
+}

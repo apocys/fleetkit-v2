@@ -1,0 +1,3657 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Village des Agents</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body {
+    width: 100%; height: 100%; overflow: hidden; background: #000000;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+  canvas { display: block; cursor: grab; }
+  canvas.grabbing { cursor: grabbing; }
+
+  /* ── Top Bar ──────────────────────────────────────── */
+  #topbar {
+    position: fixed; top: 0; left: 0; right: 0; height: 48px;
+    background: rgba(28, 28, 30, 0.72);
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    display: flex; align-items: center; justify-content: center;
+    color: #f5f5f7; font-size: 17px; font-weight: 600;
+    z-index: 100; border-bottom: 1px solid rgba(255,255,255,0.08);
+    letter-spacing: -0.01em;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+  }
+  #topbar .sep { margin: 0 10px; opacity: 0.3; }
+
+  /* ── Agent Labels ─────────────────────────────────── */
+  .agent-label {
+    position: fixed; pointer-events: auto; z-index: 50;
+    transform: translate(-50%, -100%);
+    border-radius: 980px;
+    cursor: pointer;
+    transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+    font-family: 'Inter', -apple-system, sans-serif;
+    letter-spacing: -0.005em;
+    /* Default: minimal dot-only mode */
+    background: transparent; border: none;
+    padding: 2px 6px;
+    font-size: 0; color: transparent;
+    white-space: nowrap;
+    opacity: 0.6;
+  }
+  .agent-label:hover {
+    background: rgba(28, 28, 30, 0.65); backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.1);
+    padding: 4px 12px 5px;
+    font-size: 11px; font-weight: 600; color: #f5f5f7;
+    opacity: 1;
+    transform: translate(-50%, -100%) translateY(-1px);
+  }
+  .agent-label.selected {
+    background: rgba(28, 28, 30, 0.78); backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(52, 199, 89, 0.35);
+    padding: 4px 12px 5px;
+    font-size: 11px; font-weight: 600; color: #f5f5f7;
+    opacity: 1;
+  }
+  .agent-label .dot {
+    display: inline-block; width: 7px; height: 7px; border-radius: 50%;
+    margin-right: 5px; vertical-align: middle;
+    /* Dot always visible */
+    font-size: 0; color: transparent;
+  }
+  .agent-label:hover .dot,
+  .agent-label.selected .dot {
+    margin-right: 5px;
+  }
+
+  /* ── Info Panel (legacy, hidden) ──────────────────── */
+  #infopanel {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: rgba(28, 28, 30, 0.92); backdrop-filter: blur(20px);
+    color: #f5f5f7; padding: 14px 20px 16px;
+    z-index: 100; border-top: 1px solid rgba(255,255,255,0.08);
+    display: none;
+  }
+  #infopanel .name { font-size: 17px; font-weight: 700; letter-spacing: -0.01em; }
+  #infopanel .role { font-size: 12px; opacity: 0.6; margin-top: 2px; }
+  #infopanel .status { font-size: 14px; margin-top: 8px; }
+  #infopanel .close {
+    position: absolute; top: 10px; right: 14px; cursor: pointer;
+    color: rgba(255,255,255,0.4); font-size: 20px; line-height: 1;
+  }
+  #infopanel .close:hover { color: #fff; }
+
+  /* ── Zoom Controls ────────────────────────────────── */
+  #controls {
+    position: fixed; bottom: 20px; right: 14px; z-index: 100;
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  #controls button {
+    width: 36px; height: 36px; border: none; border-radius: 980px;
+    background: rgba(28, 28, 30, 0.78); color: #f5f5f7; font-size: 17px;
+    cursor: pointer; backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.1);
+    display: flex; align-items: center; justify-content: center;
+    transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
+    font-family: 'Inter', -apple-system, sans-serif;
+  }
+  #controls button:hover {
+    background: rgba(52, 199, 89, 0.18);
+    border-color: rgba(52, 199, 89, 0.35);
+    transform: translateY(-1px);
+  }
+
+  /* ── Loading Screen ───────────────────────────────── */
+  #loading {
+    position: fixed; inset: 0; z-index: 200;
+    background: #000000; display: flex; align-items: center; justify-content: center;
+    color: #34C759; font-size: 15px; flex-direction: column; gap: 12px;
+    font-family: 'Inter', -apple-system, sans-serif;
+    font-weight: 500; letter-spacing: -0.005em;
+  }
+  #loading .bar { width: 200px; height: 4px; background: rgba(255,255,255,0.08); border-radius: 2px; overflow: hidden; }
+  #loading .fill { height: 100%; background: #34C759; border-radius: 2px; transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+
+  /* ═══════════════════════════════════════════════════════════════
+     iOS Brand Design System — Village Theme
+     Forest green accent on Apple dark surfaces
+     ═══════════════════════════════════════════════════════════════ */
+
+  :root {
+    /* ── Typography ── */
+    --v-font: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, sans-serif;
+    --v-font-display: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+
+    /* ── Dark Mode Colors (iOS) ── */
+    --v-bg-deep: #000000;
+    --v-bg-panel: #1c1c1e;
+    --v-bg-card: #2c2c2e;
+    --v-bg-input: #1c1c1e;
+
+    /* ── Product Accent: Forest Green ── */
+    --v-accent: #34C759;
+    --v-accent-hover: #3dd663;
+    --v-accent-active: #2db84e;
+    --v-accent-glow: rgba(52, 199, 89, 0.2);
+    --v-accent-muted: rgba(52, 199, 89, 0.12);
+
+    /* ── Text Hierarchy ── */
+    --v-text: #f5f5f7;
+    --v-text-secondary: #86868b;
+    --v-text-muted: #636366;
+
+    /* ── Borders ── */
+    --v-border: #38383a;
+    --v-border-med: #48484a;
+
+    /* ── Semantic ── */
+    --v-warm: #ffd60a;
+    --v-success: #30D158;
+    --v-error: #ff453a;
+
+    /* ── Spacing & Radius (Apple) ── */
+    --v-radius: 12px;
+    --v-radius-lg: 16px;
+    --v-radius-pill: 980px;
+
+    /* ── Animation ── */
+    --v-ease: cubic-bezier(0.4, 0, 0.2, 1);
+    --v-ease-spring: cubic-bezier(0.25, 1, 0.5, 1);
+
+    /* ── Shadows (Dark Mode) ── */
+    --v-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+    --v-shadow-md: 0 4px 16px rgba(0, 0, 0, 0.3);
+    --v-shadow-lg: 0 8px 40px rgba(0, 0, 0, 0.4);
+  }
+
+  /* ── Status Bar (bottom) — Apple Frosted Glass ───── */
+  #village-statusbar {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    height: 52px; z-index: 120;
+    background: rgba(28, 28, 30, 0.72);
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex; align-items: center; gap: 12px;
+    padding: 0 16px;
+    font-family: var(--v-font);
+  }
+  .vsb-info {
+    display: flex; align-items: center; gap: 10px; flex-shrink: 0;
+  }
+  .vsb-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: #34C759;
+    box-shadow: 0 0 6px rgba(52, 199, 89, 0.5);
+    animation: vsbPulse 2.5s ease-in-out infinite;
+    flex-shrink: 0;
+  }
+  @keyframes vsbPulse {
+    0%, 100% { opacity: 1; box-shadow: 0 0 6px rgba(52, 199, 89, 0.5); }
+    50% { opacity: 0.5; box-shadow: 0 0 3px rgba(52, 199, 89, 0.25); }
+  }
+  .vsb-title {
+    font-size: 13px; font-weight: 600; color: var(--v-text);
+    white-space: nowrap; letter-spacing: -0.01em;
+  }
+  .vsb-meta {
+    font-size: 11px; color: var(--v-text-muted);
+    white-space: nowrap;
+  }
+  .vsb-sep {
+    width: 1px; height: 20px;
+    background: var(--v-border); flex-shrink: 0;
+  }
+  .vsb-actions {
+    display: flex; align-items: center; gap: 6px; flex-shrink: 0;
+  }
+  .vsb-btn {
+    height: 32px; padding: 0 14px;
+    border: 1.5px solid var(--v-border);
+    border-radius: var(--v-radius-pill);
+    background: transparent;
+    color: var(--v-text-secondary); font-size: 12px; font-weight: 500;
+    cursor: pointer; display: flex; align-items: center; gap: 5px;
+    transition: all 150ms var(--v-ease);
+    font-family: var(--v-font); white-space: nowrap;
+    letter-spacing: -0.005em;
+  }
+  .vsb-btn:hover {
+    background: var(--v-accent-muted);
+    border-color: var(--v-accent);
+    color: var(--v-accent);
+    transform: translateY(-1px);
+  }
+  .vsb-btn .icon { font-size: 14px; }
+  .vsb-cmd {
+    flex: 1; position: relative; min-width: 120px;
+  }
+  .vsb-cmd input {
+    width: 100%; height: 36px;
+    padding: 0 14px 0 32px;
+    background: var(--v-bg-input);
+    border: 1.5px solid var(--v-border);
+    border-radius: 8px; color: var(--v-text);
+    font-family: var(--v-font); font-size: 13px;
+    outline: none;
+    transition: border-color 200ms var(--v-ease), box-shadow 200ms var(--v-ease);
+    letter-spacing: -0.005em;
+  }
+  .vsb-cmd input::placeholder { color: var(--v-text-muted); }
+  .vsb-cmd input:focus {
+    border-color: var(--v-accent);
+    box-shadow: 0 0 0 3px var(--v-accent-glow);
+  }
+  .vsb-cmd .cmd-icon {
+    position: absolute; left: 10px; top: 50%;
+    transform: translateY(-50%); color: var(--v-text-muted);
+    font-size: 13px; pointer-events: none;
+  }
+
+  /* ── Zoom Controls (repositioned above status bar) ── */
+  #controls {
+    bottom: 64px !important;
+  }
+
+  /* ── Hide old infopanel (replaced by detail panel) ── */
+  #infopanel { display: none !important; }
+
+  /* ═══════════════════════════════════════════════════
+     Agent Detail Panel — iOS Sheet
+     ═══════════════════════════════════════════════════ */
+  .v-detail-overlay {
+    position: fixed; inset: 0; z-index: 200;
+    pointer-events: none;
+    transition: opacity 300ms var(--v-ease);
+  }
+  .v-detail-overlay.open {
+    pointer-events: none; /* overlay never blocks canvas */
+  }
+  .v-detail-overlay.open .v-detail-backdrop { opacity: 0; pointer-events: none; } /* no backdrop dim */
+  .v-detail-overlay.open .v-detail-panel { transform: translateX(0); pointer-events: auto; animation: vDetailPop 400ms cubic-bezier(0.25, 1, 0.5, 1); }
+  @keyframes vDetailPop {
+    0% { transform: translateX(100%); box-shadow: none; }
+    60% { transform: translateX(-6px); }
+    100% { transform: translateX(0); }
+  }
+  .v-detail-backdrop {
+    position: absolute; inset: 0;
+    background: rgba(0, 0, 0, 0.5); opacity: 0;
+    transition: opacity 350ms var(--v-ease);
+  }
+  .v-detail-panel {
+    position: absolute; top: 0; right: 0;
+    width: 380px; max-width: 90vw; height: 100%;
+    background: var(--v-bg-panel);
+    border-left: 1px solid var(--v-border);
+    display: flex; flex-direction: column;
+    transform: translateX(100%);
+    transition: transform 400ms var(--v-ease-spring);
+    box-shadow: var(--v-shadow-lg);
+    border-top-left-radius: var(--v-radius-lg);
+    border-bottom-left-radius: var(--v-radius-lg);
+  }
+  .v-detail-hero {
+    display: flex; align-items: center; gap: 14px;
+    padding: 20px 20px 16px;
+    border-bottom: 1px solid var(--v-border);
+  }
+  .v-detail-avatar {
+    width: 52px; height: 52px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 26px; flex-shrink: 0; position: relative;
+  }
+  .v-detail-status-dot {
+    position: absolute; bottom: 1px; right: 1px;
+    width: 12px; height: 12px; border-radius: 50%;
+    border: 2.5px solid var(--v-bg-panel);
+    background: #34C759;
+  }
+  .v-detail-info { flex: 1; min-width: 0; }
+  .v-detail-name {
+    font-size: 17px; font-weight: 700; color: var(--v-text);
+    letter-spacing: -0.015em;
+    font-family: var(--v-font-display);
+  }
+  .v-detail-role {
+    font-size: 12px; color: var(--v-text-muted); font-weight: 500;
+  }
+  .v-detail-task {
+    font-size: 11px; color: var(--v-accent); margin-top: 3px;
+    font-weight: 500; white-space: nowrap; overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .v-detail-close {
+    width: 30px; height: 30px;
+    display: flex; align-items: center; justify-content: center;
+    border: none; background: var(--v-bg-card); color: var(--v-text-secondary);
+    border-radius: 50%; cursor: pointer; font-size: 15px;
+    transition: all 150ms var(--v-ease); font-family: inherit; flex-shrink: 0;
+  }
+  .v-detail-close:hover { background: var(--v-accent-muted); color: var(--v-accent); }
+  .v-detail-body {
+    flex: 1; overflow-y: auto; padding: 0;
+    scrollbar-width: thin;
+    scrollbar-color: var(--v-text-muted) transparent;
+  }
+  .v-detail-body::-webkit-scrollbar { width: 4px; }
+  .v-detail-body::-webkit-scrollbar-thumb { background: var(--v-text-muted); border-radius: 2px; }
+  .v-detail-section {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--v-border);
+  }
+  .v-detail-section:last-child { border-bottom: none; }
+  .v-section-title {
+    font-size: 11px; font-weight: 600; color: var(--v-text-muted);
+    text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px;
+    font-family: var(--v-font);
+  }
+  .v-metrics {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+  }
+  .v-metric {
+    padding: 12px; background: var(--v-bg-card);
+    border-radius: var(--v-radius); border: 1px solid var(--v-border);
+  }
+  .v-metric-val { font-size: 15px; font-weight: 700; color: var(--v-text); letter-spacing: -0.01em; }
+  .v-metric-lbl { font-size: 10px; color: var(--v-text-muted); margin-top: 3px; }
+  .v-skill-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .v-skill-chip {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 5px 12px; background: var(--v-accent-muted);
+    border-radius: var(--v-radius-pill); font-size: 11px; font-weight: 500;
+    color: var(--v-accent);
+    transition: background 150ms var(--v-ease);
+  }
+  .v-skill-chip:hover { background: rgba(52, 199, 89, 0.2); }
+  .v-soul-text {
+    font-size: 13px; color: var(--v-text-secondary);
+    line-height: 1.5; white-space: pre-wrap;
+    max-height: 180px; overflow-y: auto;
+    letter-spacing: -0.005em;
+  }
+  .v-todo-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px 0; font-size: 13px;
+  }
+  .v-todo-icon { width: 16px; text-align: center; flex-shrink: 0; }
+  .v-todo-text { flex: 1; color: var(--v-text); line-height: 1.35; letter-spacing: -0.005em; }
+  .v-todo-done .v-todo-text {
+    color: var(--v-text-muted); text-decoration: line-through;
+  }
+
+  /* ═══════════════════════════════════════════════════
+     CEO Chat Panel — iOS Sheet
+     ═══════════════════════════════════════════════════ */
+  .v-chat-overlay {
+    position: fixed; inset: 0; z-index: 250;
+    pointer-events: none; opacity: 0;
+    transition: opacity 300ms var(--v-ease);
+  }
+  .v-chat-overlay.open { pointer-events: none; opacity: 1; }
+  .v-chat-overlay.open .v-chat-panel { pointer-events: auto; }
+  .v-chat-overlay.open .v-chat-backdrop { pointer-events: auto; }
+  .v-chat-overlay.open .v-chat-backdrop { opacity: 1; }
+  .v-chat-overlay.open .v-chat-panel { transform: translateY(0); }
+  .v-chat-backdrop {
+    position: absolute; inset: 0;
+    background: rgba(0,0,0,0.5); opacity: 0;
+    transition: opacity 350ms var(--v-ease);
+  }
+  .v-chat-panel {
+    position: absolute; bottom: 0; right: 0;
+    width: 440px; max-width: 100vw; height: 65vh;
+    background: var(--v-bg-panel);
+    border-top-left-radius: var(--v-radius-lg);
+    border-top-right-radius: var(--v-radius-lg);
+    border-left: 1px solid var(--v-border);
+    border-top: 1px solid var(--v-border);
+    display: flex; flex-direction: column;
+    transform: translateY(100%);
+    transition: transform 400ms var(--v-ease-spring);
+    box-shadow: var(--v-shadow-lg);
+  }
+  .v-chat-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 20px; border-bottom: 1px solid var(--v-border);
+    flex-shrink: 0;
+  }
+  .v-chat-title {
+    font-size: 15px; font-weight: 700; color: var(--v-text);
+    display: flex; align-items: center; gap: 8px;
+    letter-spacing: -0.015em;
+    font-family: var(--v-font-display);
+  }
+  .v-chat-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: #34C759;
+    box-shadow: 0 0 6px rgba(52, 199, 89, 0.5);
+    animation: vsbPulse 2.5s ease-in-out infinite;
+  }
+  .v-chat-close {
+    width: 28px; height: 28px;
+    display: flex; align-items: center; justify-content: center;
+    border: none; background: var(--v-bg-card); color: var(--v-text-secondary);
+    border-radius: 50%; cursor: pointer; font-size: 13px;
+    transition: all 150ms var(--v-ease); font-family: inherit;
+  }
+  .v-chat-close:hover { background: var(--v-accent-muted); color: var(--v-accent); }
+  .v-chat-messages {
+    flex: 1; overflow-y: auto; padding: 14px 18px;
+    display: flex; flex-direction: column; gap: 10px;
+    scrollbar-width: thin; scrollbar-color: var(--v-text-muted) transparent;
+  }
+  .v-chat-messages::-webkit-scrollbar { width: 4px; }
+  .v-chat-messages::-webkit-scrollbar-thumb { background: var(--v-text-muted); border-radius: 2px; }
+  .v-chat-msg {
+    max-width: 80%; padding: 10px 14px;
+    border-radius: 16px; font-size: 13px; line-height: 1.47;
+    animation: vChatIn 250ms var(--v-ease-spring);
+    letter-spacing: -0.005em;
+  }
+  @keyframes vChatIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .v-chat-msg--user {
+    align-self: flex-end;
+    background: var(--v-accent); color: #fff;
+    border-bottom-right-radius: 6px;
+  }
+  .v-chat-msg--system {
+    align-self: flex-start;
+    background: var(--v-bg-card); color: var(--v-text);
+    border-bottom-left-radius: 6px;
+  }
+  .v-chat-msg-time { font-size: 9px; opacity: 0.5; margin-top: 4px; }
+  .v-chat-msg--user .v-chat-msg-time { text-align: right; }
+  .v-chat-empty {
+    flex: 1; display: flex; align-items: center; justify-content: center;
+    color: var(--v-text-muted); font-size: 13px; text-align: center; padding: 30px;
+    letter-spacing: -0.005em;
+  }
+  .v-chat-input-bar {
+    display: flex; align-items: center; gap: 8px;
+    padding: 12px 18px; border-top: 1px solid var(--v-border);
+    flex-shrink: 0;
+  }
+  .v-chat-route {
+    padding: 5px 8px; border-radius: 8px;
+    border: 1.5px solid var(--v-border);
+    background: var(--v-bg-input); color: var(--v-text-secondary);
+    font-size: 11px; font-family: var(--v-font);
+    cursor: pointer; flex-shrink: 0;
+    transition: border-color 150ms var(--v-ease);
+  }
+  .v-chat-route:focus {
+    border-color: var(--v-accent);
+    outline: none;
+  }
+  .v-chat-input {
+    flex: 1; height: 38px; padding: 0 14px;
+    background: var(--v-bg-input); border: 1.5px solid var(--v-border);
+    border-radius: var(--v-radius-pill); color: var(--v-text);
+    font-family: var(--v-font); font-size: 13px; outline: none;
+    transition: border-color 200ms var(--v-ease), box-shadow 200ms var(--v-ease);
+    letter-spacing: -0.005em;
+  }
+  .v-chat-input:focus {
+    border-color: var(--v-accent);
+    box-shadow: 0 0 0 3px var(--v-accent-glow);
+  }
+  .v-chat-input::placeholder { color: var(--v-text-muted); }
+  .v-chat-send {
+    width: 38px; height: 38px;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--v-accent); color: #fff;
+    border: none; border-radius: 50%; cursor: pointer;
+    font-size: 15px; transition: all 150ms var(--v-ease); flex-shrink: 0;
+    font-weight: 600;
+  }
+  .v-chat-send:hover { background: var(--v-accent-hover); transform: scale(1.05); }
+  .v-chat-send:active { background: var(--v-accent-active); transform: scale(0.95); }
+
+  /* ═══════════════════════════════════════════════════
+     Generic Side Panel — iOS Sheet
+     ═══════════════════════════════════════════════════ */
+  .v-side-overlay {
+    position: fixed; inset: 0; z-index: 200;
+    pointer-events: none; opacity: 0;
+    transition: opacity 300ms var(--v-ease);
+  }
+  .v-side-overlay.open { pointer-events: none; opacity: 1; }
+  .v-side-overlay.open .v-side-panel { pointer-events: auto; }
+  .v-side-overlay.open .v-side-backdrop { pointer-events: auto; }
+  .v-side-overlay.open .v-side-backdrop { opacity: 1; }
+  .v-side-overlay.open .v-side-panel { transform: translateX(0); }
+  .v-side-backdrop {
+    position: absolute; inset: 0;
+    background: rgba(0,0,0,0.5); opacity: 0;
+    transition: opacity 350ms var(--v-ease);
+  }
+  .v-side-panel {
+    position: absolute; top: 0; right: 0;
+    width: 400px; max-width: 90vw; height: 100%;
+    background: var(--v-bg-panel);
+    border-left: 1px solid var(--v-border);
+    display: flex; flex-direction: column;
+    transform: translateX(100%);
+    transition: transform 400ms var(--v-ease-spring);
+    box-shadow: var(--v-shadow-lg);
+    border-top-left-radius: var(--v-radius-lg);
+    border-bottom-left-radius: var(--v-radius-lg);
+  }
+  .v-side-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 20px; border-bottom: 1px solid var(--v-border);
+    flex-shrink: 0;
+  }
+  .v-side-title {
+    font-size: 17px; font-weight: 700; color: var(--v-text);
+    display: flex; align-items: center; gap: 8px;
+    letter-spacing: -0.015em;
+    font-family: var(--v-font-display);
+  }
+  .v-side-close {
+    width: 30px; height: 30px;
+    display: flex; align-items: center; justify-content: center;
+    border: none; background: var(--v-bg-card); color: var(--v-text-secondary);
+    border-radius: 50%; cursor: pointer; font-size: 15px;
+    transition: all 150ms var(--v-ease); font-family: inherit;
+  }
+  .v-side-close:hover { background: var(--v-accent-muted); color: var(--v-accent); }
+  .v-side-body {
+    flex: 1; overflow-y: auto; padding: 0;
+    scrollbar-width: thin; scrollbar-color: var(--v-text-muted) transparent;
+  }
+  .v-side-body::-webkit-scrollbar { width: 4px; }
+  .v-side-body::-webkit-scrollbar-thumb { background: var(--v-text-muted); border-radius: 2px; }
+  .v-side-group {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--v-border);
+  }
+  .v-side-group:last-child { border-bottom: none; }
+  .v-side-group-title {
+    font-size: 11px; font-weight: 600; color: var(--v-text-muted);
+    text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px;
+    font-family: var(--v-font);
+  }
+  .v-side-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 12px 14px; background: var(--v-bg-card);
+    border-radius: var(--v-radius); margin-bottom: 6px;
+    border: 1px solid var(--v-border);
+    transition: all 150ms var(--v-ease);
+  }
+  .v-side-item:last-child { margin-bottom: 0; }
+  .v-side-item:hover { background: rgba(44, 44, 46, 0.8); border-color: var(--v-border-med); }
+  .v-side-item-icon { font-size: 18px; flex-shrink: 0; }
+  .v-side-item-info { flex: 1; min-width: 0; }
+  .v-side-item-name { font-size: 13px; font-weight: 600; color: var(--v-text); letter-spacing: -0.005em; }
+  .v-side-item-sub { font-size: 11px; color: var(--v-text-muted); margin-top: 2px; }
+  .v-side-item-accent { font-size: 11px; color: var(--v-accent); margin-top: 2px; }
+  .v-side-badge {
+    display: inline-flex; align-items: center; padding: 3px 8px;
+    border-radius: var(--v-radius-pill); font-size: 10px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.04em; flex-shrink: 0;
+  }
+  .v-side-badge--active { background: rgba(48,209,88,0.15); color: #30D158; }
+  .v-side-badge--paused { background: rgba(255,214,10,0.15); color: #B89B00; }
+  .v-side-badge--error { background: rgba(255,69,58,0.15); color: #FF453A; }
+  .v-side-badge--done { background: var(--v-accent-muted); color: var(--v-accent); }
+  .v-side-empty {
+    padding: 40px 20px; text-align: center;
+    color: var(--v-text-muted); font-size: 13px;
+    letter-spacing: -0.005em;
+  }
+  .v-side-toggle {
+    width: 34px; height: 20px;
+    background: #636366; border-radius: 10px;
+    border: none; cursor: pointer; position: relative;
+    transition: background 250ms var(--v-ease); flex-shrink: 0;
+  }
+  .v-side-toggle::after {
+    content: ''; position: absolute; top: 2px; left: 2px;
+    width: 16px; height: 16px; background: #fff;
+    border-radius: 50%; transition: transform 250ms var(--v-ease-spring);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  }
+  .v-side-toggle.on { background: #34C759; }
+  .v-side-toggle.on::after { transform: translateX(14px); }
+
+  /* Memory-specific */
+  .v-memory-md {
+    font-size: 13px; color: var(--v-text-secondary); line-height: 1.6;
+    letter-spacing: -0.005em;
+  }
+  .v-memory-md h1, .v-memory-md h2, .v-memory-md h3 {
+    color: var(--v-text); margin: 8px 0 4px; font-size: 14px;
+    font-weight: 600; letter-spacing: -0.01em;
+  }
+  .v-memory-md code {
+    background: var(--v-bg-card); padding: 2px 6px; border-radius: 6px;
+    font-size: 11px; font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+  }
+  .v-memory-md strong { color: var(--v-text); }
+  .v-memory-golden {
+    background: rgba(255, 214, 10, 0.08); border: 1px solid rgba(255, 214, 10, 0.15);
+    border-radius: var(--v-radius); padding: 12px 14px; margin-bottom: 8px;
+  }
+  .v-memory-daily {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 0; font-size: 13px;
+    border-bottom: 1px solid var(--v-border);
+  }
+  .v-memory-daily:last-child { border-bottom: none; }
+  .v-memory-daily-date { color: var(--v-text); font-weight: 600; letter-spacing: -0.005em; }
+  .v-memory-daily-size { color: var(--v-text-muted); font-size: 11px; }
+
+  /* ── Toast — Apple Style ────────────────────────── */
+  .v-toast {
+    position: fixed; bottom: 70px; left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--v-bg-card); color: var(--v-text);
+    padding: 12px 24px; border-radius: var(--v-radius-pill);
+    font-size: 14px; font-weight: 500;
+    border: 1px solid var(--v-border);
+    box-shadow: var(--v-shadow-lg);
+    opacity: 0; pointer-events: none;
+    transition: all 300ms var(--v-ease-spring);
+    z-index: 300;
+    letter-spacing: -0.005em;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+  .v-toast.show {
+    opacity: 1; transform: translateX(-50%) translateY(0);
+  }
+
+  /* ── Responsive ─────────────────────────────────── */
+  @media (max-width: 600px) {
+    #village-statusbar {
+      flex-wrap: wrap; height: auto;
+      padding: 8px 10px; gap: 6px;
+    }
+    .vsb-btn .label { display: none; }
+    .vsb-btn { padding: 0 10px; }
+    .vsb-cmd { min-width: 80px; }
+    .v-detail-panel, .v-side-panel { width: 100vw; border-radius: 0; }
+    .v-chat-panel { width: 100vw; }
+  }
+</style>
+</head>
+<body>
+<div id="loading"><div>Loading village...</div><div class="bar"><div class="fill" id="loadfill"></div></div></div>
+<div id="topbar">🏘️<span class="sep">|</span>Village des Agents</div>
+<div id="labels"></div>
+<div id="infopanel">
+  <div class="close" onclick="closePanel()">✕</div>
+  <div class="name" id="pn"></div>
+  <div class="role" id="pr"></div>
+  <div class="status" id="ps"></div>
+</div>
+<div id="controls">
+  <button onclick="doZoom(1.25)">+</button>
+  <button onclick="doZoom(0.8)">−</button>
+  <button onclick="resetView()">⌂</button>
+  <button id="audioMuteBtn" onclick="toggleMute()" title="Toggle sound">🔇</button>
+</div>
+<canvas id="c"></canvas>
+
+<!-- ═══ Village Status Bar ═══ -->
+<div id="village-statusbar">
+  <div class="vsb-info">
+    <div class="vsb-dot"></div>
+    <span class="vsb-title">Village des Agents</span>
+    <span class="vsb-meta" id="vsbAgentCount">6 Agents</span>
+    <span class="vsb-meta" id="vsbUptime">0h00m</span>
+    <span class="vsb-meta" id="vsbClock">--:--</span>
+  </div>
+  <div class="vsb-sep"></div>
+  <div class="vsb-actions">
+    <button class="vsb-btn" id="vsbMissions"><span class="icon">🎯</span><span class="label">Missions</span></button>
+    <button class="vsb-btn" id="vsbCrons"><span class="icon">📅</span><span class="label">Crons</span></button>
+    <button class="vsb-btn" id="vsbMemory"><span class="icon">🧠</span><span class="label">Memory</span></button>
+    <button class="vsb-btn" id="vsbChat"><span class="icon">💬</span><span class="label">Chat</span></button>
+    <button class="vsb-btn" id="vsbSettings"><span class="icon">⚙️</span><span class="label">Settings</span></button>
+  </div>
+  <div class="vsb-sep"></div>
+  <div class="vsb-cmd">
+    <span class="cmd-icon">⌘</span>
+    <input type="text" id="vsbCmdInput" placeholder="Send a mission..." autocomplete="off" spellcheck="false" />
+  </div>
+</div>
+
+<!-- ═══ Agent Detail Panel ═══ -->
+<div class="v-detail-overlay" id="vDetailOverlay">
+  <div class="v-detail-backdrop" id="vDetailBackdrop"></div>
+  <div class="v-detail-panel">
+    <div class="v-detail-hero">
+      <div class="v-detail-avatar" id="vDetailAvatar">
+        <div class="v-detail-status-dot" id="vDetailStatusDot"></div>
+      </div>
+      <div class="v-detail-info">
+        <div class="v-detail-name" id="vDetailName">Agent</div>
+        <div class="v-detail-role" id="vDetailRole">Role</div>
+        <div class="v-detail-task" id="vDetailTask">—</div>
+      </div>
+      <button class="v-detail-close" id="vDetailClose">×</button>
+    </div>
+    <div class="v-detail-body" id="vDetailBody"></div>
+  </div>
+</div>
+
+<!-- ═══ CEO Chat Panel ═══ -->
+<div class="v-chat-overlay" id="vChatOverlay">
+  <div class="v-chat-backdrop" id="vChatBackdrop"></div>
+  <div class="v-chat-panel">
+    <div class="v-chat-header">
+      <div class="v-chat-title">
+        <span class="v-chat-dot"></span>
+        Village Chat
+      </div>
+      <button class="v-chat-close" id="vChatClose">×</button>
+    </div>
+    <div class="v-chat-messages" id="vChatMessages">
+      <div class="v-chat-empty" id="vChatEmpty">No messages yet. Send a mission to the village chief.</div>
+    </div>
+    <div class="v-chat-input-bar">
+      <select class="v-chat-route" id="vChatRoute" title="Route to...">
+        <option value="ceo">📬 CEO</option>
+        <option value="atlas">📊 Atlas</option>
+        <option value="forge">🔨 Forge</option>
+        <option value="hunter">💰 Hunter</option>
+        <option value="echo">📢 Echo</option>
+        <option value="sentinel">🛡️ Sentinel</option>
+      </select>
+      <input class="v-chat-input" id="vChatInput" type="text" placeholder="Send a mission..." autocomplete="off" spellcheck="false" />
+      <button class="v-chat-send" id="vChatSend">↑</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ Missions Panel ═══ -->
+<div class="v-side-overlay" id="vMissionsOverlay">
+  <div class="v-side-backdrop" id="vMissionsBackdrop"></div>
+  <div class="v-side-panel">
+    <div class="v-side-header">
+      <div class="v-side-title"><span>🎯</span> Active Missions</div>
+      <button class="v-side-close" id="vMissionsClose">×</button>
+    </div>
+    <div class="v-side-body" id="vMissionsBody">
+      <div class="v-side-empty">Loading missions…</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ Crons Panel ═══ -->
+<div class="v-side-overlay" id="vCronOverlay">
+  <div class="v-side-backdrop" id="vCronBackdrop"></div>
+  <div class="v-side-panel">
+    <div class="v-side-header">
+      <div class="v-side-title"><span>📅</span> Scheduled Jobs</div>
+      <button class="v-side-close" id="vCronClose">×</button>
+    </div>
+    <div class="v-side-body" id="vCronBody">
+      <div class="v-side-empty">Loading cron jobs…</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ Memory Panel ═══ -->
+<div class="v-side-overlay" id="vMemoryOverlay">
+  <div class="v-side-backdrop" id="vMemoryBackdrop"></div>
+  <div class="v-side-panel" style="width:460px;">
+    <div class="v-side-header">
+      <div class="v-side-title"><span>🧠</span> Fleet Memory</div>
+      <button class="v-side-close" id="vMemoryClose">×</button>
+    </div>
+    <div class="v-side-body" id="vMemoryBody">
+      <div class="v-side-empty">Loading memory…</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ Settings Panel ═══ -->
+<div class="v-side-overlay" id="vSettingsOverlay">
+  <div class="v-side-backdrop" id="vSettingsBackdrop"></div>
+  <div class="v-side-panel" style="max-width:460px;">
+    <div class="v-side-header">
+      <div class="v-side-title"><span>⚙️</span> Settings</div>
+      <button class="v-side-close" id="vSettingsClose">×</button>
+    </div>
+    <div class="v-side-body" id="vSettingsBody">
+      <div class="v-side-empty">Loading settings…</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ Toast ═══ -->
+<div class="v-toast" id="vToast"></div>
+
+<script>
+// ================================================================
+// ISOMETRIC VILLAGE — Canvas 2D, Kenney Nature Kit + Mini Characters
+// ================================================================
+const cvs = document.getElementById('c');
+const ctx = cvs.getContext('2d');
+
+// Tile geometry constants (source image pixels)
+const SRC = 512;          // source image size (square)
+const DW = 130;           // diamond width in source
+const DH = 65;            // diamond height in source  
+const DCX = 256;          // diamond center X in source
+const DTY = 283;          // diamond top Y in source
+
+let scale = 1.0;
+const MIN_S = 0.3, MAX_S = 3.0;
+
+// Viewport
+let vpX = 0, vpY = 0;
+let drag = false, dsx = 0, dsy = 0, dvx = 0, dvy = 0;
+
+const MAP = 40;
+window._debugFacing = new URLSearchParams(window.location.search).has('debug');
+let selectedAgentName = null;
+
+// ================================================================
+// ISO MATH
+// ================================================================
+function iso(c, r) {
+  const tw = DW * scale;
+  const th = DH * scale;
+  return {
+    x: (c - r) * tw / 2,
+    y: (c + r) * th / 2
+  };
+}
+
+function toScreen(x, y) {
+  return { x: x + vpX + cvs.width / 2, y: y + vpY + cvs.height / 3.5 };
+}
+
+function draw(img, c, r) {
+  if (!img || !img.complete || !img.naturalWidth) return;
+  const { x, y } = iso(c, r);
+  const s = toScreen(x, y);
+  const imgScale = scale;
+  const iw = SRC * imgScale;
+  const ih = SRC * imgScale;
+  ctx.drawImage(img,
+    s.x - DCX * imgScale,
+    s.y - DTY * imgScale,
+    iw, ih
+  );
+}
+
+function screenToTile(sx, sy) {
+  const rx = sx - vpX - cvs.width / 2;
+  const ry = sy - vpY - cvs.height / 3.5;
+  const tw = DW * scale;
+  const th = DH * scale;
+  const a = 2 * rx / tw;
+  const b = 2 * ry / th;
+  return { col: Math.floor((a + b) / 2), row: Math.floor((b - a) / 2) };
+}
+
+// ================================================================
+// AGENTS
+// ================================================================
+// Agents spread across 40×40 map — tents along the 4 roads from central plaza (row 19-20, col 19-20)
+// North road: Sentinel watchtower area  ~r=8, c=19
+// West road: ApoMac ~r=19,c=10 | Hunter ~r=24,c=10
+// East road: Forge ~r=19,c=30 | Echo ~r=24,c=30
+// South road: Atlas ~r=30, c=19
+const agents = [
+  { name: 'ApoMac',   role: 'CEO',      emoji: '🍎', color: '#007AFF', row: 19, col: 11 },
+  { name: 'Forge',    role: 'CTO',      emoji: '🔨', color: '#FF9F0A', row: 19, col: 29 },
+  { name: 'Hunter',   role: 'CRO',      emoji: '🎯', color: '#FF453A', row: 24, col: 11 },
+  { name: 'Echo',     role: 'CMO',      emoji: '📢', color: '#0A84FF', row: 24, col: 29 },
+  { name: 'Sentinel', role: 'Security', emoji: '🛡️', color: '#30D158', row: 8,  col: 19 },
+  { name: 'Atlas',    role: 'COO',      emoji: '📊', color: '#BF5AF2', row: 31, col: 20 },
+];
+agents.forEach(a => a.status = 'Active');
+
+// Agent → Kenney character mapping
+const AGENT_CHAR = {
+  'ApoMac':   'character-male-a',
+  'Forge':    'character-male-c',
+  'Hunter':   'character-male-d',
+  'Atlas':    'character-female-a',
+  'Echo':     'character-female-c',
+  'Sentinel': 'character-male-e'
+};
+
+// ================================================================
+// MAP DATA — 40×40 village layout
+// Plaza center: row 19-20, col 19-20
+// ================================================================
+const ground = [];
+const objects = [];
+
+// Tile occupant grid — strict tile-based collision
+// null = free, 'obj' = object tile, or character reference
+const tileOccupant = [];
+for (let r = 0; r < MAP; r++) {
+  ground[r] = new Array(MAP).fill(0);
+  objects[r] = new Array(MAP).fill(null);
+  tileOccupant[r] = new Array(MAP).fill(null);
+}
+
+// Check if a specific tile (integer coords) is free for movement
+function isTileFree(tc, tr, excludeChar) {
+  if (tc < 0 || tc >= MAP || tr < 0 || tr >= MAP) return false;
+  if (ground[tr][tc] !== 1) return false;
+  if (tileOccupant[tr][tc] && tileOccupant[tr][tc] !== excludeChar) return false;
+  return true;
+}
+
+// Legacy float-position check for campfire destination (still used by decideNextAction)
+function isTileClear(c, r, excludeChar) {
+  const tc = Math.round(c), tr = Math.round(r);
+  return isTileFree(tc, tr, excludeChar);
+}
+
+// Find adjacent free tile near a destination tile (for meeting stops)
+function findAdjacentEmpty(destC, destR, excludeChar) {
+  // destC, destR are float coords (tile + 0.5)
+  const dtc = Math.round(destC), dtr = Math.round(destR);
+  const offsets = [[1,0],[0,1],[-1,0],[0,-1],[2,0],[0,2],[-2,0],[0,-2],[1,1],[-1,1],[1,-1],[-1,-1]];
+  for (const [dc, dr] of offsets) {
+    const nc = dtc + dc, nr = dtr + dr;
+    if (isTileFree(nc, nr, excludeChar)) return {c: nc, r: nr};
+  }
+  return {c: destC, r: destR};
+}
+
+let _seed = 42;
+function rng() { _seed = (_seed * 16807) % 2147483647; return _seed / 2147483647; }
+
+function P(r, c) { if (r >= 0 && r < MAP && c >= 0 && c < MAP) ground[r][c] = 1; }
+function O(r, c, name) {
+  if (r >= 0 && r < MAP && c >= 0 && c < MAP && !objects[r][c]) {
+    objects[r][c] = name;
+    tileOccupant[r][c] = 'obj';
+  }
+}
+function OF(r, c, name) {
+  if (r >= 0 && r < MAP && c >= 0 && c < MAP) {
+    objects[r][c] = name;
+    tileOccupant[r][c] = 'obj';
+  }
+}
+
+const trees = [
+  'tree_default_NE','tree_default_dark_NE','tree_oak_NE','tree_oak_dark_NE',
+  'tree_detailed_NE','tree_detailed_dark_NE','tree_thin_NE','tree_thin_dark_NE',
+  'tree_pineRoundA_NE','tree_pineRoundB_NE'
+];
+const fallTrees = [
+  'tree_default_fall_NE','tree_oak_fall_NE','tree_detailed_fall_NE',
+  'tree_thin_fall_NE','tree_small_fall_NE'
+];
+const flowers = [
+  'flower_redA_NE','flower_redB_NE','flower_redC_NE',
+  'flower_yellowA_NE','flower_yellowB_NE','flower_yellowC_NE',
+  'flower_purpleA_NE','flower_purpleB_NE','flower_purpleC_NE'
+];
+const crops = ['crop_pumpkin_NE','crop_carrot_NE','crop_melon_NE','crop_turnip_NE'];
+
+function rndTree() { return rng() < 0.35 ? fallTrees[Math.floor(rng()*fallTrees.length)] : trees[Math.floor(rng()*trees.length)]; }
+
+// ── Dense forest border (3-4 tiles deep on all edges) ─────────────
+// Rows 0-3 (north border)
+for (let r = 0; r <= 1; r++)
+  for (let c = 0; c < MAP; c++)
+    O(r, c, rndTree());
+for (let r = 2; r <= 3; r++)
+  for (let c = 0; c < MAP; c++)
+    if (rng() < 0.80) O(r, c, rndTree());
+
+// Rows 36-39 (south border)
+for (let r = 38; r <= 39; r++)
+  for (let c = 0; c < MAP; c++)
+    O(r, c, rndTree());
+for (let r = 36; r <= 37; r++)
+  for (let c = 0; c < MAP; c++)
+    if (rng() < 0.80) O(r, c, rndTree());
+
+// Left edge (cols 0-3)
+for (let r = 4; r <= 35; r++) {
+  O(r, 0, rndTree()); O(r, 1, rndTree());
+  if (rng() < 0.75) O(r, 2, rndTree());
+  if (rng() < 0.55) O(r, 3, rndTree());
+}
+// Right edge (cols 36-39)
+for (let r = 4; r <= 35; r++) {
+  O(r, 39, rndTree()); O(r, 38, rndTree());
+  if (rng() < 0.75) O(r, 37, rndTree());
+  if (rng() < 0.55) O(r, 36, rndTree());
+}
+
+// ── Central Plaza (6×6) centered at row 17-22, col 17-22 ──────────
+// Map center = row 19.5, col 19.5 → plaza 17..22
+for (let pr = 17; pr <= 22; pr++)
+  for (let pc = 17; pc <= 22; pc++)
+    P(pr, pc);
+
+// ── 4 Main Roads from plaza ───────────────────────────────────────
+// North road: plaza row 17 → row 5 (toward Sentinel watchtower)
+for (let r = 5; r <= 17; r++) { P(r, 19); P(r, 20); }
+// South road: plaza row 22 → row 34
+for (let r = 22; r <= 35; r++) { P(r, 19); P(r, 20); }
+// West road: plaza col 17 → col 5
+for (let c = 5; c <= 17; c++) { P(19, c); P(20, c); }
+// East road: plaza col 22 → col 34
+for (let c = 22; c <= 34; c++) { P(19, c); P(20, c); }
+
+// ── ApoMac area: West road branch at r=19 → c=11 ─────────────────
+// Tent at r=19, c=11 → path spur: c=11-14 at r=19-20
+for (let c = 11; c <= 14; c++) { P(19, c); P(20, c); }
+// Small clearing for tent
+P(18, 11); P(18, 12); P(21, 11); P(21, 12);
+
+// ── Hunter area: West road branch at r=24 → c=11 ─────────────────
+// Cross-street at r=24, c=5-14
+for (let c = 5; c <= 14; c++) { P(24, c); P(25, c); }
+// Tent clearing
+P(23, 11); P(23, 12); P(26, 11); P(26, 12);
+
+// ── Forge area: East road branch at r=19 → c=29 ──────────────────
+for (let c = 25; c <= 29; c++) { P(19, c); P(20, c); }
+P(18, 29); P(18, 30); P(21, 29); P(21, 30);
+
+// ── Echo area: East road branch at r=24 → c=29 ───────────────────
+for (let c = 25; c <= 34; c++) { P(24, c); P(25, c); }
+P(23, 29); P(23, 30); P(26, 29); P(26, 30);
+
+// ── Sentinel watchtower area: North road end, r=5-8, c=18-21 ─────
+for (let pr = 5; pr <= 8; pr++)
+  for (let pc = 18; pc <= 21; pc++)
+    P(pr, pc);
+
+// ── Atlas area: South road at r=31, c=18-22 ──────────────────────
+for (let pr = 31; pr <= 33; pr++)
+  for (let pc = 18; pc <= 22; pc++)
+    P(pr, pc);
+
+// ── Farm/garden area (southwest): r=27-34, c=5-14 ────────────────
+for (let pr = 27; pr <= 34; pr++)
+  for (let pc = 5; pc <= 13; pc++)
+    P(pr, pc);
+
+// ── Pond/clearing (southeast): r=28-34, c=26-34 ──────────────────
+// Not a path — just decorative; leave grass, place rocks/flowers there
+
+// ── Interior scattered trees (not border) ─────────────────────────
+// Northwest quadrant: r=5-16, c=5-14 (between plaza and west/north roads)
+const interiorTreeSpots = [
+  [6,5],[6,6],[6,7],[6,8],[7,5],[7,6],[7,8],
+  [8,5],[8,6],[9,5],[9,6],[10,5],[10,6],[11,5],[11,6],
+  [12,5],[12,6],[13,5],[13,6],[14,5],[14,6],[15,5],[15,6],
+  [16,5],[16,6],[16,7],[16,8],[16,9],
+  // Northeast quadrant
+  [6,31],[6,32],[6,33],[7,31],[7,32],[7,33],[7,34],
+  [8,33],[8,34],[9,33],[9,34],[10,33],[10,34],
+  [11,33],[11,34],[12,33],[12,34],[13,33],[13,34],
+  [14,33],[14,34],[15,33],[15,34],[16,33],[16,34],
+  // Southwest interior
+  [18,5],[18,6],[18,7],[19,5],[20,5],[21,5],[21,6],[22,5],
+  [22,6],[22,7],[23,5],[23,6],[23,7],[23,8],
+  // Southeast interior  
+  [18,33],[18,34],[21,33],[21,34],[22,33],[22,34],
+  // Interior mid-map scattered
+  [12,10],[12,11],[12,12],[14,9],[14,10],[15,9],
+  [12,28],[12,29],[14,30],[14,31],[15,30],
+  [28,16],[28,17],[29,16],[30,15],[30,16],
+  [28,22],[28,23],[29,23],[30,23],[30,24],
+];
+interiorTreeSpots.forEach(([r,c]) => {
+  if (!objects[r][c] && ground[r][c] !== 1) {
+    if (rng() < 0.70) O(r, c, rndTree());
+  }
+});
+
+// ── Place agent tents ─────────────────────────────────────────────
+agents.forEach(a => O(a.row, a.col, 'tent_detailedOpen_NE'));
+
+// ── Campfire at plaza center ──────────────────────────────────────
+O(19, 19, 'campfire_stones_NE');
+O(20, 20, 'campfire_logs_NE');
+
+// ── Signs at plaza entrances ──────────────────────────────────────
+O(17, 17, 'sign_NE'); O(17, 22, 'sign_NE');
+O(22, 17, 'sign_NE'); O(22, 22, 'sign_NE');
+
+// ── Log seats around plaza ────────────────────────────────────────
+O(18, 17, 'log_NE'); O(18, 22, 'log_NE');
+O(21, 17, 'log_NE'); O(21, 22, 'log_NE');
+O(17, 19, 'log_NE'); O(17, 20, 'log_NE');
+
+// ── Sentinel Watchtower (north) ───────────────────────────────────
+O(5, 19, 'log_stackLarge_NE');
+O(5, 20, 'log_stackLarge_NE');
+O(6, 18, 'stump_round_NE');
+O(6, 21, 'stump_old_NE');
+
+// ── Farm area (southwest) fences and crops ────────────────────────
+// Fence around farm perimeter
+for (let c = 5; c <= 13; c++) { O(27, c, 'fence_simple_NE'); O(34, c, 'fence_simple_NE'); }
+for (let r = 27; r <= 34; r++) { O(r, 5, 'fence_simple_NE'); O(r, 13, 'fence_simple_NE'); }
+// Crops inside (rows 28-33, cols 6-12)
+const cropRow = [28, 29, 30, 31, 32, 33];
+const cropCols = [6, 7, 8, 9, 10, 11, 12];
+cropRow.forEach((r, ri) => {
+  cropCols.forEach((c, ci) => {
+    if ((ri + ci) % 2 === 0) O(r, c, crops[Math.floor(rng() * crops.length)]);
+    else if (rng() < 0.25) O(r, c, flowers[Math.floor(rng() * flowers.length)]);
+  });
+});
+
+// ── Pond/clearing (southeast): rocks + flowers suggest water ─────
+const pondArea = [
+  [29,27],[29,28],[29,29],[29,30],[29,31],
+  [30,27],[30,28],[30,31],[30,32],
+  [31,27],[31,32],[31,33],
+  [32,28],[32,32],[32,33],
+  [33,29],[33,30],[33,31],
+];
+pondArea.forEach(([r,c]) => {
+  if (!objects[r][c]) {
+    const roll = rng();
+    if (roll < 0.4) O(r, c, 'rock_smallA_NE');
+    else if (roll < 0.7) O(r, c, flowers[Math.floor(rng()*flowers.length)]);
+    else O(r, c, 'stone_smallB_NE');
+  }
+});
+
+// ── Decorative elements along roads ──────────────────────────────
+// Along north road
+[7,9,11,13,15].forEach(r => {
+  if (!objects[r][18]) O(r, 18, flowers[Math.floor(rng()*flowers.length)]);
+  if (!objects[r][21]) O(r, 21, flowers[Math.floor(rng()*flowers.length)]);
+});
+// Along south road
+[23,26,28,30,32].forEach(r => {
+  if (!objects[r][18]) O(r, 18, flowers[Math.floor(rng()*flowers.length)]);
+  if (!objects[r][21]) O(r, 21, flowers[Math.floor(rng()*flowers.length)]);
+});
+// Along west road
+[7,9,11,13,15].forEach(c => {
+  if (!objects[18][c]) O(18, c, flowers[Math.floor(rng()*flowers.length)]);
+  if (!objects[21][c]) O(21, c, flowers[Math.floor(rng()*flowers.length)]);
+});
+// Along east road
+[23,26,28,30,32].forEach(c => {
+  if (!objects[18][c]) O(18, c, flowers[Math.floor(rng()*flowers.length)]);
+  if (!objects[21][c]) O(21, c, flowers[Math.floor(rng()*flowers.length)]);
+});
+
+// ── Sparse deco in interior grass (NOT on paths, NOT near borders) ─
+// Only scattered intentional spots, NOT a fill loop
+const sparseDecoSpots = [
+  // Near ApoMac area
+  [17,9],[17,10],[22,9],[22,10],
+  // Near Forge area
+  [17,30],[17,31],[22,30],[22,31],
+  // Near Hunter area
+  [23,8],[23,9],[26,8],[26,9],
+  // Near Echo area
+  [23,31],[23,32],[26,31],[26,32],
+  // Around Sentinel
+  [7,17],[7,22],[9,17],[9,22],
+  // Around Atlas
+  [32,17],[32,22],[33,17],[33,22],
+  // Interior mid-map
+  [15,15],[15,16],[15,23],[15,24],
+  [24,15],[24,16],[24,23],[24,24],
+];
+const sparseDeco = [
+  'rock_smallA_NE','rock_smallB_NE','stone_smallA_NE',
+  'plant_bushSmall_NE','plant_bush_NE',
+  ...flowers
+];
+sparseDecoSpots.forEach(([r,c]) => {
+  if (!objects[r][c] && ground[r][c] !== 1 && r >= 4 && r <= 35 && c >= 4 && c <= 35) {
+    O(r, c, sparseDeco[Math.floor(rng() * sparseDeco.length)]);
+  }
+});
+
+// ================================================================
+// IMAGE LOADING
+// ================================================================
+const SBASE = './lib/sprites/kenney-nature-kit/Isometric/';
+const CHAR_BASE = './lib/sprites/kenney-mini-chars-upright/';
+
+const imgs = {};
+let totalImgs = 0, loadedImgs = 0;
+
+function ld(key, path) {
+  if (imgs[key]) return imgs[key];
+  totalImgs++;
+  const img = new Image();
+  img.onload = () => loadedImgs++;
+  img.onerror = () => { loadedImgs++; console.warn('Missing:', path); };
+  img.src = path;
+  imgs[key] = img;
+  return img;
+}
+
+// Ground tiles
+ld('ground', SBASE + 'ground_grass_NE.png');
+ld('path', SBASE + 'ground_pathTile_NE.png');
+
+// Collect all unique object names and load them
+const objNames = new Set();
+for (let r = 0; r < MAP; r++)
+  for (let c = 0; c < MAP; c++)
+    if (objects[r][c]) objNames.add(objects[r][c]);
+
+objNames.forEach(n => ld('obj:' + n, SBASE + n + '.png'));
+
+// ================================================================
+// KENNEY MINI CHARACTER SPRITES
+// 6 characters × 2 anims × 4 directions × 8 frames = 384 sprites
+// Path: {char}/{anim}_{char}/{dir}/frame_{NNN}.png
+// ================================================================
+const CHAR_NAMES = [
+  'character-male-a', 'character-male-c', 'character-male-d',
+  'character-female-a', 'character-female-c', 'character-male-e'
+];
+// NPC models reuse existing char sprites — no extra loading needed
+const ANIMS = ['idle', 'walk'];
+const DIRS = ['NE', 'NW', 'SE', 'SW'];
+const FRAME_COUNT = 8;
+
+CHAR_NAMES.forEach(ch => {
+  ANIMS.forEach(anim => {
+    DIRS.forEach(dir => {
+      for (let f = 0; f < FRAME_COUNT; f++) {
+        const key = `char:${ch}:${anim}:${dir}:${f}`;
+        const path = `${CHAR_BASE}${ch}/${anim}_${ch}/${dir}/frame_${String(f).padStart(3,'0')}.png`;
+        ld(key, path);
+      }
+    });
+  });
+});
+
+// ================================================================
+// SPRITE TINT CACHE (warm sepia for Nature Kit cohesion)
+// ================================================================
+const _tintCache = {};
+function getTinted(img, key) {
+  if (_tintCache[key]) return _tintCache[key];
+  if (!img || !img.complete || !img.naturalWidth) return null;
+  const w = img.naturalWidth, h = img.naturalHeight;
+  const tc = document.createElement('canvas');
+  tc.width = w; tc.height = h;
+  const tctx = tc.getContext('2d');
+  tctx.drawImage(img, 0, 0);
+  // Lift shadows: brighten dark areas without washing out lit areas
+  // Uses 'lighter' composite to add light, then source-atop to tint
+  const id = tctx.getImageData(0, 0, w, h);
+  const px = id.data;
+  for (let i = 0; i < px.length; i += 4) {
+    if (px[i+3] === 0) continue; // skip transparent
+    const brightness = (px[i] + px[i+1] + px[i+2]) / 3;
+    if (brightness < 100) {
+      // Lift dark pixels by ~60 to reduce harsh shadows
+      const lift = Math.round(60 * (1 - brightness / 100));
+      px[i]   = Math.min(255, px[i] + lift);
+      px[i+1] = Math.min(255, px[i+1] + lift);
+      px[i+2] = Math.min(255, px[i+2] + lift);
+    }
+  }
+  tctx.putImageData(id, 0, 0);
+  // Subtle warm tint
+  tctx.globalCompositeOperation = 'source-atop';
+  tctx.fillStyle = 'rgba(100, 90, 40, 0.05)';
+  tctx.fillRect(0, 0, w, h);
+  tctx.globalCompositeOperation = 'source-over';
+  _tintCache[key] = tc;
+  return tc;
+}
+
+// ================================================================
+// SMART AGENT BEHAVIOR
+// ================================================================
+
+// Behavior states
+const STATE = {
+  WORKING: 'working',      // Idle at home tent, working
+  WALKING_TO_POI: 'walk_poi',  // Walking to a point of interest
+  AT_CAMPFIRE: 'at_campfire',  // Socializing at campfire
+  WALKING_TO_AGENT: 'walk_agent', // Walking to visit another agent
+  MEETING: 'meeting',      // Chatting with another agent
+  RETURNING: 'returning',  // Walking back home
+};
+
+// Speech bubble pools
+const WORK_BUBBLES = {
+  'ApoMac': ['💡 Vision planning...','📋 Revenue target...','🍎 Ship it!','💭 Think different','🎯 Board meeting','📊 Q3 review'],
+  'Forge':  ['⌨️ Refactoring...','🔍 PR review','🚀 Deploying...','🐛 Bug squashed!','🔧 CI pipeline','💻 Coding...'],
+  'Hunter': ['🎯 New lead found','📞 Cold outreach','📈 Pipeline +1','🤝 Closing deal...','💰 Revenue!','📧 Follow-up'],
+  'Atlas':  ['⚙️ Systems nominal','✅ Ops check','📊 SLA: 99.9%','🔄 Scaling up','📋 Process audit','🗂️ Sprint plan'],
+  'Echo':   ['🎨 Campaign live!','📈 CTR +12%','✍️ Content draft','🎭 Brand refresh','📱 Social push','🎬 Video edit'],
+  'Sentinel':['🛡️ Audit clean','🔍 Scanning...','🔒 Vuln patched','✅ All clear','🔐 Auth review','📡 Monitoring']
+};
+
+const SOCIAL_BUBBLES = [
+  '☕ Coffee break!', '🌤️ Great weather!', '🎵 Humming...', '😊 Good vibes',
+  '🍕 Lunch soon?', '🏕️ Love this spot', '🔥 Warm fire', '💬 Team bonding',
+  '🌅 Nice evening', '✨ Productive day!'
+];
+
+const COLLAB_BUBBLES = {
+  'ApoMac': ["Let's align", 'Great progress!', 'Approved ✅', 'Think bigger'],
+  'Forge':  ["Let's sync", 'PR approved!', 'Ship tonight', 'Good code 👍'],
+  'Hunter': ['Got a lead!', 'Pipeline update', 'Close this Q', 'Numbers up 📈'],
+  'Atlas':  ['Status update', 'On track ✅', 'Let me check', 'Process done'],
+  'Echo':   ['Campaign idea!', 'Collab post?', 'Brand check', 'Going viral!'],
+  'Sentinel':['Security brief', 'All clear 🛡️', 'Audit done', 'Patched it']
+};
+
+const EMOTION_EMOJIS = ['💡', '🔥', '✅', '🎯', '📊', '🛡️', '⚡', '🚀', '💪', '🏆'];
+
+// Campfire zone (tiles near the campfire objects) — central plaza center (40×40 map)
+const CAMPFIRE_ZONE = {c: 19.5, r: 19.5};
+
+// BFS pathfinding on the ground grid — 4-directional only
+// Returns array of integer tile coords {c, r} (without +0.5)
+function findPath(startC, startR, endC, endR) {
+  // Accept integer tile coords (or float — rounds to nearest int)
+  const sc = Math.round(startC), sr = Math.round(startR);
+  const ec = Math.round(endC), er = Math.round(endR);
+
+  const clamp = (v) => Math.max(0, Math.min(MAP - 1, v));
+  const cs = {c: clamp(sc), r: clamp(sr)};
+  const ce = {c: clamp(ec), r: clamp(er)};
+
+  // If start/end not on path, find nearest path tile
+  function nearestPath(c, r) {
+    if (c >= 0 && c < MAP && r >= 0 && r < MAP && ground[r][c] === 1) return {c, r};
+    let best = null, bestD = Infinity;
+    for (let dr = -5; dr <= 5; dr++) for (let dc = -5; dc <= 5; dc++) {
+      const nc = c+dc, nr = r+dr;
+      if (nc >= 0 && nc < MAP && nr >= 0 && nr < MAP && ground[nr][nc] === 1) {
+        const d = dc*dc+dr*dr;
+        if (d < bestD) { bestD = d; best = {c:nc, r:nr}; }
+      }
+    }
+    return best || {c, r};
+  }
+
+  const start = nearestPath(cs.c, cs.r);
+  const end   = nearestPath(ce.c, ce.r);
+
+  if (start.c === end.c && start.r === end.r) return [{c: end.c, r: end.r}];
+
+  // BFS — 4-directional only (no diagonals per spec)
+  const visited = new Uint8Array(MAP * MAP);
+  visited[start.r * MAP + start.c] = 1;
+  const queue = [{c: start.c, r: start.r, path: []}];
+  const dirs4 = [[0,1],[0,-1],[1,0],[-1,0]];
+
+  while (queue.length > 0) {
+    const cur = queue.shift();
+    for (const [dc, dr] of dirs4) {
+      const nc = cur.c + dc, nr = cur.r + dr;
+      if (nc < 0 || nc >= MAP || nr < 0 || nr >= MAP) continue;
+      const idx = nr * MAP + nc;
+      if (visited[idx]) continue;
+      if (ground[nr][nc] !== 1) continue;
+      visited[idx] = 1;
+      const newPath = [...cur.path, {c: nc, r: nr}];
+      if (nc === end.c && nr === end.r) return newPath;
+      queue.push({c: nc, r: nr, path: newPath});
+    }
+  }
+  // No path found — return direct endpoint
+  return [{c: end.c, r: end.r}];
+}
+
+// ================================================================
+// CHARACTERS
+// ================================================================
+const ROLE_BUBBLES = WORK_BUBBLES; // alias for compatibility
+
+// Find the best "in front of tent" position (adjacent path tile without object)
+function findHomeTile(a) {
+  // Prefer the tile just to the right (+col) or in front (+row) of the tent
+  const candidates = [
+    {r: a.row, c: a.col + 1},    // right
+    {r: a.row + 1, c: a.col},    // below
+    {r: a.row + 1, c: a.col + 1},// below-right
+    {r: a.row - 1, c: a.col},    // above
+    {r: a.row, c: a.col - 1},    // left
+  ];
+  for (const p of candidates) {
+    if (p.r >= 0 && p.r < MAP && p.c >= 0 && p.c < MAP &&
+        ground[p.r][p.c] === 1 && !objects[p.r][p.c]) {
+      return {c: p.c, r: p.r};
+    }
+  }
+  return {c: a.col, r: a.row};
+}
+
+const chars = agents.map((a, i) => {
+  const home = findHomeTile(a);
+  const htc = home.c;
+  const htr = home.r;
+  // Mark home tile as occupied
+  if (htc >= 0 && htc < MAP && htr >= 0 && htr < MAP) tileOccupant[htr][htc] = 'pending';
+  const ch = {
+  agent: a,
+  charName: AGENT_CHAR[a.name],
+  c: home.c, r: home.r,
+  homeC: home.c, homeR: home.r,
+  // Tile-based movement state
+  tileC: htc, tileR: htr,           // current tile (integer)
+  targetTileC: null, targetTileR: null, // destination tile (integer, null when idle)
+  moveProgress: 0,                   // 0.0..1.0 lerp between tiles
+  moveSpeed: 650,                    // ms per tile (~1.5 tiles/sec, relaxed pace)
+  _moveMsElapsed: 0,                 // accumulated ms for current tile step
+  // Movement
+  path: [],           // BFS path waypoints [{c,r} integers]
+  pathIdx: 0,         // current waypoint index
+  moving: false,
+  facing: 'SE',       // front-facing by default
+  frame: 0,
+  ft: 0,              // frame timer
+  // Behavior
+  state: STATE.WORKING,
+  stateTimer: 3000 + Math.random() * 6000,
+  meetTarget: null,
+  meetTimer: 0,
+  // Idle routine state
+  idleRoutine: null,
+  idleRoutineTimer: 0,
+  idleRoutineCd: 2000 + Math.random() * 4000,
+  smallWanderTarget: null,
+  // Speech
+  bubble: null,
+  bubbleCd: 1000 + Math.random() * 3000,
+  // Emotion
+  emotionEmoji: null,
+  emotionTimer: 0,
+  // Decommission
+  decommissioning: false,
+  decommissionAlpha: 1,
+  decommissionScale: 1,
+  };
+  return ch;
+});
+// Mark char tiles as occupied (replace 'pending' with actual char ref)
+chars.forEach(ch => {
+  if (ch.tileC >= 0 && ch.tileC < MAP && ch.tileR >= 0 && ch.tileR < MAP) {
+    tileOccupant[ch.tileR][ch.tileC] = ch;
+  }
+});;
+
+// ================================================================
+// BACKGROUND NPCs — wander on paths, not in agent panel
+// ================================================================
+const NPC_CHAR_MODELS = [
+  'character-male-a', 'character-female-a', 'character-male-c',
+  'character-female-c', 'character-male-d', 'character-male-e'
+];
+const NPC_DEFS = [
+  { name: 'Villager', emoji: '👤', charIdx: 0 },
+  { name: 'Farmer',   emoji: '👨‍🌾', charIdx: 1 },
+  { name: 'Scout',    emoji: '🏃', charIdx: 2 },
+  { name: 'Traveler', emoji: '🧭', charIdx: 3 },
+  { name: 'Elder',    emoji: '🧓', charIdx: 4 },
+];
+
+// Collect all path tiles for NPC wandering
+function getPathTiles() {
+  const tiles = [];
+  for (let r = 0; r < MAP; r++)
+    for (let c = 0; c < MAP; c++)
+      if (ground[r][c] === 1 && !objects[r][c]) tiles.push({c: c+0.5, r: r+0.5});
+  return tiles;
+}
+
+// Stagger NPC spawns — build after map is set up
+let pathTiles = [];
+const npcs = [];
+
+function initNPCs() {
+  pathTiles = getPathTiles();
+  if (pathTiles.length === 0) return;
+  NPC_DEFS.forEach((def, i) => {
+    // Pick a free path tile to start on (not already occupied)
+    let start = null;
+    const shuffled = pathTiles.slice().sort(() => Math.random() - 0.5);
+    for (const pt of shuffled) {
+      const tc = Math.round(pt.c), tr = Math.round(pt.r);
+      if (tc >= 0 && tc < MAP && tr >= 0 && tr < MAP && !tileOccupant[tr][tc]) {
+        start = pt; break;
+      }
+    }
+    if (!start) start = pathTiles[i % pathTiles.length];
+    const tc = Math.round(start.c), tr = Math.round(start.r);
+    const npc = {
+      name: def.name,
+      charName: NPC_CHAR_MODELS[def.charIdx % NPC_CHAR_MODELS.length],
+      c: tc, r: tr,
+      tileC: tc, tileR: tr,
+      targetTileC: null, targetTileR: null,
+      moveProgress: 0, _moveMsElapsed: 0,
+      moveSpeed: 750,  // slightly slower than agents
+      facing: ['NE','SE','SW','NW'][i % 4],
+      frame: Math.floor(Math.random() * FRAME_COUNT),
+      ft: 0,
+      moving: false,
+      path: [],
+      pathIdx: 0,
+      wanderTimer: 500 + Math.random() * 2000,
+      bubble: null,
+      bubbleCd: 4000 + Math.random() * 8000,
+      isNPC: true,
+      scale: 0.9,
+    };
+    // Mark tile occupied
+    if (tc >= 0 && tc < MAP && tr >= 0 && tr < MAP) tileOccupant[tr][tc] = npc;
+    npcs.push(npc);
+  });
+}
+
+const NPC_WANDER_BUBBLES = [
+  '🌿 Nice day!', '👋 Hello!', '🍎 Market soon?', '🌾 Good harvest!',
+  '🐦 Birds singing!', '🌤️ Lovely weather', '🍄 Found mushrooms!', '💧 Fresh water'
+];
+
+function updateNPCs(dt) {
+  npcs.forEach(ch => {
+    if (ch.bubbleCd > 0) ch.bubbleCd -= dt;
+    if (ch.bubble) { ch.bubble.life -= dt; if (ch.bubble.life <= 0) ch.bubble = null; }
+
+    if (ch.moving) {
+      if (ch.targetTileC !== null) {
+        // Lerp toward next tile
+        ch._moveMsElapsed += dt;
+        ch.moveProgress = Math.min(1.0, ch._moveMsElapsed / ch.moveSpeed);
+        const t = ch.moveProgress;
+        ch.c = ch.tileC + (ch.targetTileC - ch.tileC) * t;
+        ch.r = ch.tileR + (ch.targetTileR - ch.tileR) * t;
+        ch.ft += dt;
+        if (ch.ft > 120) { ch.frame = (ch.frame + 1) % FRAME_COUNT; ch.ft -= 120; }
+
+        if (ch.moveProgress >= 1.0) {
+          // Release old tile, occupy new
+          if (ch.tileC >= 0 && ch.tileC < MAP && ch.tileR >= 0 && ch.tileR < MAP)
+            if (tileOccupant[ch.tileR][ch.tileC] === ch) tileOccupant[ch.tileR][ch.tileC] = null;
+          ch.tileC = ch.targetTileC; ch.tileR = ch.targetTileR;
+          if (ch.tileC >= 0 && ch.tileC < MAP && ch.tileR >= 0 && ch.tileR < MAP) tileOccupant[ch.tileR][ch.tileC] = ch;
+          ch.c = ch.tileC; ch.r = ch.tileR;
+          ch.targetTileC = null; ch.targetTileR = null;
+          ch.moveProgress = 0; ch._moveMsElapsed = 0;
+          ch.pathIdx++;
+          if (ch.pathIdx >= ch.path.length) {
+            ch.moving = false; ch.path = [];
+            ch.wanderTimer = 1000 + Math.random() * 3000;
+          }
+        }
+      } else {
+        if (ch.pathIdx < ch.path.length) {
+          const next = ch.path[ch.pathIdx];
+          if (isTileFree(next.c, next.r, ch)) {
+            tileOccupant[next.r][next.c] = ch;
+            ch.targetTileC = next.c; ch.targetTileR = next.r;
+            ch.moveProgress = 0; ch._moveMsElapsed = 0;
+            const dc = next.c - ch.tileC, dr2 = next.r - ch.tileR;
+            if (dc !== 0 || dr2 !== 0) ch.facing = facingFromDelta(dc, dr2);
+          } else {
+            // Blocked — abort and re-wander soon
+            ch.moving = false; ch.path = [];
+            ch.wanderTimer = 300 + Math.random() * 800;
+          }
+        } else {
+          ch.moving = false; ch.path = [];
+        }
+      }
+    } else {
+      ch.ft += dt;
+      if (ch.ft > 220) { ch.frame = (ch.frame + 1) % FRAME_COUNT; ch.ft -= 220; }
+      ch.wanderTimer -= dt;
+      if (ch.wanderTimer <= 0) {
+        if (pathTiles.length > 0) {
+          const dest = pathTiles[Math.floor(Math.random() * pathTiles.length)];
+          const dtc = Math.round(dest.c), dtr = Math.round(dest.r);
+          ch.path = findPath(ch.tileC, ch.tileR, dtc, dtr);
+          ch.pathIdx = 0;
+          ch.moving = ch.path.length > 0;
+        }
+        ch.wanderTimer = 800 + Math.random() * 3000;
+      }
+      if (ch.bubbleCd <= 0 && !ch.bubble && Math.random() < 0.005) {
+        const txt = NPC_WANDER_BUBBLES[Math.floor(Math.random() * NPC_WANDER_BUBBLES.length)];
+        ch.bubble = { text: txt, life: 2500, maxLife: 2500 };
+        ch.bubbleCd = 8000 + Math.random() * 8000;
+      }
+    }
+  });
+}
+
+// ================================================================
+// Decide next action for an agent (tile-based)
+function decideNextAction(ch) {
+  const roll = Math.random();
+
+  if (ch.state === STATE.WORKING) {
+    if (roll < 0.35) {
+      // Go to campfire — pick a nearby plaza tile
+      ch.state = STATE.WALKING_TO_POI;
+      const pzTiles = [[18,19],[18,20],[21,19],[21,20],[19,18],[20,18],[19,21],[20,21]];
+      let dest = null;
+      for (let t of pzTiles) {
+        if (isTileFree(t[1], t[0], ch)) { dest = {c: t[1], r: t[0]}; break; }
+      }
+      if (!dest) dest = {c: 19, r: 19};
+      ch.path = findPath(ch.tileC, ch.tileR, dest.c, dest.r);
+      ch.pathIdx = 0;
+      ch.moving = ch.path.length > 0;
+      ch.stateTimer = 0;
+    } else if (roll < 0.65) {
+      // Visit another agent
+      const others = chars.filter(o => o !== ch && !o.decommissioning);
+      if (others.length === 0) { ch.stateTimer = 5000 + Math.random() * 5000; return; }
+      ch.meetTarget = others[Math.floor(Math.random() * others.length)];
+      ch.state = STATE.WALKING_TO_AGENT;
+      const tgt = ch.meetTarget;
+      const adj = findAdjacentEmpty(tgt.c, tgt.r, ch);
+      ch.path = findPath(ch.tileC, ch.tileR, adj.c, adj.r);
+      ch.pathIdx = 0;
+      ch.moving = ch.path.length > 0;
+      ch.stateTimer = 0;
+    } else {
+      ch.stateTimer = 5000 + Math.random() * 10000;
+    }
+  } else if (ch.state === STATE.AT_CAMPFIRE) {
+    ch.state = STATE.RETURNING;
+    ch.path = findPath(ch.tileC, ch.tileR, ch.homeC, ch.homeR);
+    ch.pathIdx = 0;
+    ch.moving = ch.path.length > 0;
+    ch.stateTimer = 0;
+  } else if (ch.state === STATE.MEETING) {
+    ch.state = STATE.RETURNING;
+    ch.path = findPath(ch.tileC, ch.tileR, ch.homeC, ch.homeR);
+    ch.pathIdx = 0;
+    ch.moving = ch.path.length > 0;
+    ch.stateTimer = 0;
+  }
+}
+
+// Determine facing direction from movement delta
+// In isometric: screen_x = (col-row), screen_y = (col+row)
+// So +col = SE on screen (right+down), +row = SW on screen (left+down)
+// The dominant axis determines the facing direction.
+function getFacing(dx, dy) {
+  // dx = delta col, dy = delta row
+  // Require minimum movement to change facing — prevents flicker from tiny deltas
+  if (Math.abs(dx) < 0.0005 && Math.abs(dy) < 0.0005) return null; // no change
+  if (Math.abs(dx) >= Math.abs(dy)) {
+    return dx >= 0 ? 'SE' : 'NW';
+  } else {
+    return dy >= 0 ? 'SW' : 'NE';
+  }
+}
+
+// ── Tile-based movement helpers ───────────────────────────────────
+// Release old tile, occupy new tile
+function charReleaseTile(ch) {
+  if (ch.tileC >= 0 && ch.tileC < MAP && ch.tileR >= 0 && ch.tileR < MAP) {
+    if (tileOccupant[ch.tileR][ch.tileC] === ch) tileOccupant[ch.tileR][ch.tileC] = null;
+  }
+}
+function charOccupyTile(ch, tc, tr) {
+  if (tc >= 0 && tc < MAP && tr >= 0 && tr < MAP) tileOccupant[tr][tc] = ch;
+  ch.tileC = tc; ch.tileR = tr;
+}
+
+// Facing from tile delta (4-directional)
+function facingFromDelta(dc, dr) {
+  if (dc > 0) return 'SE';   // East (+col)
+  if (dc < 0) return 'NW';   // West (-col)
+  if (dr > 0) return 'SW';   // South (+row)
+  return 'NE';                // North (-row)
+}
+
+function updateChars(dt) {
+  chars.forEach(ch => {
+    // Handle decommission animation
+    if (ch.decommissioning) {
+      ch.decommissionAlpha -= dt / 800;
+      ch.decommissionScale -= dt / 1200;
+      if (ch.decommissionAlpha <= 0) {
+        ch.decommissionAlpha = 0;
+        ch.decommissionScale = 0;
+        const el = labelEls[ch.agent.name];
+        if (el) el.style.display = 'none';
+      }
+      return;
+    }
+
+    // Timers
+    if (ch.bubbleCd > 0) ch.bubbleCd -= dt;
+    if (ch.bubble) { ch.bubble.life -= dt; if (ch.bubble.life <= 0) ch.bubble = null; }
+    if (ch.emotionTimer > 0) { ch.emotionTimer -= dt; if (ch.emotionTimer <= 0) ch.emotionEmoji = null; }
+
+    // ── TILE-BASED MOVEMENT ──────────────────────────────────────
+    if (ch.moving) {
+      if (ch.targetTileC !== null) {
+        // Currently walking toward next tile — lerp visual position
+        ch._moveMsElapsed += dt;
+        ch.moveProgress = Math.min(1.0, ch._moveMsElapsed / ch.moveSpeed);
+        const t = ch.moveProgress;
+        ch.c = ch.tileC + (ch.targetTileC - ch.tileC) * t;
+        ch.r = ch.tileR + (ch.targetTileR - ch.tileR) * t;
+
+        // Animate walk
+        ch.ft += dt;
+        if (ch.ft > 100) { ch.frame = (ch.frame + 1) % FRAME_COUNT; ch.ft -= 100; }
+
+        if (ch.moveProgress >= 1.0) {
+          // Tile step complete: release old tile, occupy new tile
+          const oldTileC = ch.tileC, oldTileR = ch.tileR;
+          charReleaseTile(ch);
+          charOccupyTile(ch, ch.targetTileC, ch.targetTileR);
+          ch.c = ch.tileC;
+          ch.r = ch.tileR;
+          ch.targetTileC = null;
+          ch.targetTileR = null;
+          ch.moveProgress = 0;
+          ch._moveMsElapsed = 0;
+          ch.pathIdx++;
+
+          // Check if path done
+          if (ch.pathIdx >= ch.path.length) {
+            ch.moving = false;
+            ch.path = [];
+            ch.frame = 0;
+            // Arrived — transition state
+            if (ch.state === STATE.WALKING_TO_POI) {
+              ch.state = STATE.AT_CAMPFIRE;
+              ch.stateTimer = 5000 + Math.random() * 8000;
+              showBubble(ch, 'social');
+            } else if (ch.state === STATE.WALKING_TO_AGENT) {
+              ch.state = STATE.MEETING;
+              ch.stateTimer = 4000 + Math.random() * 6000;
+              ch._meetBubbleTimer = 0;
+              ch._meetBobble = 0;
+              if (ch.meetTarget && !ch.meetTarget.decommissioning) {
+                const dx2 = ch.meetTarget.tileC - ch.tileC;
+                const dy2 = ch.meetTarget.tileR - ch.tileR;
+                if (dx2 !== 0 || dy2 !== 0) {
+                  ch.facing = facingFromDelta(dx2, dy2);
+                  ch.meetTarget.facing = facingFromDelta(-dx2, -dy2);
+                }
+              }
+              showBubble(ch, 'collab');
+            } else if (ch.state === STATE.RETURNING) {
+              ch.state = STATE.WORKING;
+              ch.stateTimer = 5000 + Math.random() * 10000;
+              ch.meetTarget = null;
+              showBubble(ch, 'work');
+            }
+          }
+          // Otherwise next tile step will be picked up in next frame (targetTileC is null)
+        }
+      } else {
+        // Ready to step to next tile in path
+        if (ch.pathIdx < ch.path.length) {
+          const nextTile = ch.path[ch.pathIdx];
+          const ntc = nextTile.c, ntr = nextTile.r;
+          // Check if destination tile is free
+          if (isTileFree(ntc, ntr, ch)) {
+            // Reserve destination tile immediately to prevent conflicts
+            if (tileOccupant[ntr][ntc] !== ch) tileOccupant[ntr][ntc] = ch;
+            ch.targetTileC = ntc;
+            ch.targetTileR = ntr;
+            ch.moveProgress = 0;
+            ch._moveMsElapsed = 0;
+            // Update facing when starting to move to new tile
+            const dc = ntc - ch.tileC, dr2 = ntr - ch.tileR;
+            if (dc !== 0 || dr2 !== 0) ch.facing = facingFromDelta(dc, dr2);
+          } else {
+            // Tile blocked — wait a bit then repath or abort
+            if (!ch._waitTimer) ch._waitTimer = 0;
+            ch._waitTimer += dt;
+            if (ch._waitTimer > 600) {
+              ch._waitTimer = 0;
+              // Try re-pathing
+              const dest = ch.path[ch.path.length - 1];
+              const newPath = findPath(ch.tileC, ch.tileR, dest.c, dest.r);
+              if (newPath.length > 0) {
+                ch.path = newPath; ch.pathIdx = 0;
+              } else {
+                // Give up, return home
+                ch.moving = false; ch.path = [];
+                ch.state = STATE.RETURNING;
+                ch.path = findPath(ch.tileC, ch.tileR, ch.homeC, ch.homeR);
+                ch.pathIdx = 0;
+                ch.moving = ch.path.length > 0;
+              }
+            }
+            // Idle animation while waiting
+            ch.ft += dt;
+            if (ch.ft > 200) { ch.frame = (ch.frame + 1) % FRAME_COUNT; ch.ft -= 200; }
+          }
+        } else {
+          // Path exhausted with no target — stop
+          ch.moving = false; ch.path = [];
+        }
+      }
+    } else {
+      // Idle animation
+      ch.ft += dt;
+      if (ch.ft > 200) { ch.frame = (ch.frame + 1) % FRAME_COUNT; ch.ft -= 200; }
+
+      // State timer
+      ch.stateTimer -= dt;
+      if (ch.stateTimer <= 0) decideNextAction(ch);
+
+      // ── Idle Routines (WORKING state only) ──────────────────
+      if (ch.state === STATE.WORKING) {
+        if (ch.idleRoutineCd > 0) ch.idleRoutineCd -= dt;
+
+        if (!ch.idleRoutine && ch.idleRoutineCd <= 0) {
+          const roll = Math.random();
+          if (roll < 0.30) {
+            ch.idleRoutine = 'lookaround';
+            ch.idleRoutineTimer = 8000 + Math.random() * 4000;
+            ch._lookDirs = ['SE','SW','NW','NE'];
+            const si = ['SE','SW','NW','NE'].indexOf(ch.facing);
+            ch._lookIdx = si >= 0 ? si : 0;
+            ch._lookStep = 2200 + Math.random() * 800;
+          } else if (roll < 0.55) {
+            ch.idleRoutine = 'thinking';
+            ch.idleRoutineTimer = 1500 + Math.random() * 1000;
+            ch._thinkPhase = 'face_tent';
+            ch._origFacing = ch.facing;
+            ch.facing = 'NE';
+          } else if (roll < 0.78) {
+            // Small wander: step to an adjacent free path tile
+            const dirs4 = [[1,0],[-1,0],[0,1],[0,-1]];
+            const shuffled = dirs4.sort(() => Math.random() - 0.5);
+            for (const [dc, dr2] of shuffled) {
+              const nc = ch.tileC + dc, nr = ch.tileR + dr2;
+              if (isTileFree(nc, nr, ch)) {
+                ch.idleRoutine = 'smallwander';
+                ch.idleRoutineTimer = 2000 + Math.random() * 1500;
+                ch.smallWanderTarget = {c: nc, r: nr};
+                break;
+              }
+            }
+            if (!ch.idleRoutine) ch.idleRoutineCd = 1000 + Math.random() * 2000;
+          } else {
+            ch.idleRoutineCd = 500 + Math.random() * 1000;
+            if (ch.bubbleCd <= 0 && !ch.bubble) showBubble(ch, 'work');
+          }
+        }
+
+        if (ch.idleRoutine) {
+          ch.idleRoutineTimer -= dt;
+
+          if (ch.idleRoutine === 'lookaround') {
+            ch._lookStep -= dt;
+            if (ch._lookStep <= 0) {
+              ch._lookIdx = (ch._lookIdx + 1) % ch._lookDirs.length;
+              ch.facing = ch._lookDirs[ch._lookIdx];
+              ch._lookStep = 2200 + Math.random() * 800;
+            }
+            if (ch.idleRoutineTimer <= 0) {
+              ch.facing = 'SE'; ch.idleRoutine = null; ch.idleRoutineCd = 4000 + Math.random() * 6000;
+            }
+          } else if (ch.idleRoutine === 'thinking') {
+            if (ch._thinkPhase === 'face_tent' && ch.idleRoutineTimer < 700) {
+              ch._thinkPhase = 'face_back';
+              ch.facing = ch._origFacing || 'SE';
+              if (ch.bubbleCd <= 0 && !ch.bubble) showBubble(ch, 'work');
+            }
+            if (ch.idleRoutineTimer <= 0) { ch.idleRoutine = null; ch.idleRoutineCd = 3000 + Math.random() * 6000; }
+          } else if (ch.idleRoutine === 'smallwander') {
+            const t = ch.smallWanderTarget;
+            if (t && ch.idleRoutineTimer > 0) {
+              if (ch.tileC === t.c && ch.tileR === t.r) {
+                // Arrived — return home tile
+                const homeTc = Math.round(ch.homeC), homeTr = Math.round(ch.homeR);
+                if (isTileFree(homeTc, homeTr, ch)) {
+                  ch.path = [{c: homeTc, r: homeTr}]; ch.pathIdx = 0; ch.moving = true;
+                  ch.targetTileC = null; ch.targetTileR = null;
+                }
+                ch.idleRoutine = null; ch.smallWanderTarget = null; ch.idleRoutineCd = 3000 + Math.random() * 6000;
+              } else {
+                // Single tile step to wander target
+                const dc = t.c - ch.tileC, dr2 = t.r - ch.tileR;
+                // Use direct step (1 tile)
+                const stc = ch.tileC + Math.sign(dc), str = ch.tileR + Math.sign(dr2 && !dc ? dr2 : 0);
+                // Prefer col movement first
+                const nc = dc !== 0 ? ch.tileC + Math.sign(dc) : ch.tileC;
+                const nr = dc === 0 && dr2 !== 0 ? ch.tileR + Math.sign(dr2) : ch.tileR;
+                if (isTileFree(nc, nr, ch)) {
+                  tileOccupant[nr][nc] = ch;
+                  ch.targetTileC = nc; ch.targetTileR = nr;
+                  ch.moveProgress = 0; ch._moveMsElapsed = 0; ch.moving = true;
+                  ch.path = [{c: nc, r: nr}]; ch.pathIdx = 0;
+                  ch.facing = facingFromDelta(nc - ch.tileC, nr - ch.tileR);
+                } else {
+                  ch.idleRoutine = null; ch.smallWanderTarget = null; ch.idleRoutineCd = 2000 + Math.random() * 3000;
+                }
+              }
+            } else {
+              ch.idleRoutine = null; ch.smallWanderTarget = null; ch.idleRoutineCd = 3000 + Math.random() * 6000;
+            }
+          }
+        }
+      }
+
+      // Bubbles
+      if (ch.state === STATE.WORKING && ch.bubbleCd <= 0 && !ch.bubble && Math.random() < 0.015) showBubble(ch, 'work');
+      if (ch.state === STATE.AT_CAMPFIRE && ch.bubbleCd <= 0 && !ch.bubble && Math.random() < 0.012) showBubble(ch, 'social');
+
+      // Meeting logic
+      if (ch.state === STATE.MEETING && ch.meetTarget && !ch.meetTarget.decommissioning) {
+        const tgt = ch.meetTarget;
+        const dx = tgt.tileC - ch.tileC, dy2 = tgt.tileR - ch.tileR;
+        if (dx !== 0 || dy2 !== 0) ch.facing = facingFromDelta(dx, dy2);
+        if (typeof ch._meetBubbleTimer === 'undefined') ch._meetBubbleTimer = 0;
+        ch._meetBubbleTimer -= dt;
+        if (ch._meetBubbleTimer <= 0 && ch.bubbleCd <= 0 && !ch.bubble) {
+          showBubble(ch, 'collab');
+          ch._meetBubbleTimer = 2500 + Math.random() * 2000;
+        }
+        if (typeof ch._meetBobble === 'undefined') ch._meetBobble = Math.random() * Math.PI * 2;
+        ch._meetBobble += dt * 0.003;
+      }
+
+      // Random emotion emoji
+      if (!ch.emotionEmoji && Math.random() < 0.002) {
+        ch.emotionEmoji = EMOTION_EMOJIS[Math.floor(Math.random() * EMOTION_EMOJIS.length)];
+        ch.emotionTimer = 2000 + Math.random() * 2000;
+      }
+    }
+  });
+}
+
+function showBubble(ch, type) {
+  if (ch.bubbleCd > 0) return;
+  let text;
+  if (type === 'social') {
+    text = SOCIAL_BUBBLES[Math.floor(Math.random() * SOCIAL_BUBBLES.length)];
+  } else if (type === 'collab') {
+    const aName = ch.agent ? ch.agent.name : '';
+    const pool = COLLAB_BUBBLES[aName] || ['Hey!'];
+    text = pool[Math.floor(Math.random() * pool.length)];
+  } else {
+    const aName = ch.agent ? ch.agent.name : '';
+    const pool = WORK_BUBBLES[aName] || ['Working...'];
+    text = pool[Math.floor(Math.random() * pool.length)];
+  }
+  ch.bubble = { text, life: 3500, maxLife: 3500 };
+  ch.bubbleCd = 6000 + Math.random() * 4000;
+}
+
+// ================================================================
+// CHARACTER RENDERING
+// Sprite data: 256×256 PNG, content centered ~X=128, feet ~Y=172-188
+// ================================================================
+
+// Character content metrics (approximate from bbox analysis)
+// Metrics updated for v5 sprites (25° camera elevation)
+const CHAR_METRICS = {
+  'character-male-a':   { feetY: 197, headY: 90, centerX: 127, contentH: 107 },
+  'character-male-c':   { feetY: 197, headY: 74, centerX: 128, contentH: 123 },
+  'character-male-d':   { feetY: 197, headY: 85, centerX: 128, contentH: 112 },
+  'character-female-a': { feetY: 209, headY: 78, centerX: 128, contentH: 131 },
+  'character-female-c': { feetY: 197, headY: 78, centerX: 128, contentH: 119 },
+  'character-male-e':   { feetY: 197, headY: 90, centerX: 128, contentH: 107 },
+};
+
+// Sprite direction remap — confirmed by Kira via sprite-test.html:
+// Folders are mirrored left↔right. SE↔SW and NE↔NW need swapping.
+const SPRITE_DIR_REMAP = { 'SE': 'SW', 'SW': 'SE', 'NW': 'NE', 'NE': 'NW' };
+
+function drawChar(ch) {
+  // Handle decommission animation
+  if (ch.decommissioning) {
+    if (ch.decommissionAlpha <= 0) return;
+    ctx.save();
+    ctx.globalAlpha = ch.decommissionAlpha;
+  }
+
+  const anim = ch.moving ? 'walk' : 'idle';
+  const dir = SPRITE_DIR_REMAP[ch.facing] || ch.facing;
+  const key = `char:${ch.charName}:${anim}:${dir}:${ch.frame}`;
+  const rawImg = imgs[key];
+  if (!rawImg || !rawImg.complete || !rawImg.naturalWidth) {
+    if (ch.decommissioning) ctx.restore();
+    return;
+  }
+  
+  const sprite = getTinted(rawImg, key) || rawImg;
+  const metrics = CHAR_METRICS[ch.charName] || CHAR_METRICS['character-male-a'];
+
+  const { x, y } = iso(ch.c, ch.r);
+  const s = toScreen(x, y);
+
+  // Scale character: NPCs are 0.9x, agents 1.0x; also apply decommission shrink
+  const charSizeMultiplier = (ch.isNPC ? 0.9 : 1.0) * (ch.decommissionScale || 1.0);
+  // Scale character to fit nicely in ~1 tile (v5 sprites have contentH ~107-131px)
+  const targetH = DH * scale * 1.2 * charSizeMultiplier;
+  const imgScale = targetH / metrics.contentH;
+  const dw = 256 * imgScale;
+  const dh = 256 * imgScale;
+
+  // Position: feet grounded at tile center
+  const feetScreenY = s.y + DH * scale * 0.65;
+  const drawX = s.x - metrics.centerX * imgScale;
+  // Apply subtle bobble during meetings
+  const bobbleY = (ch.state === STATE.MEETING && typeof ch._meetBobble !== 'undefined')
+    ? Math.sin(ch._meetBobble) * 2 * scale
+    : 0;
+  const drawY = feetScreenY - metrics.feetY * imgScale + bobbleY;
+
+  // Elliptical shadow snug under feet — per-character offset for best alignment
+  const shadowOffsets = {
+    'character-female-a': 6,   // Atlas — taller sprite, needs more lift
+    'character-female-c': 4,
+    'character-male-a': 4,
+    'character-male-c': 4,
+    'character-male-d': 4,
+    'character-male-e': 4,
+  };
+  const shadowY = feetScreenY - (shadowOffsets[ch.charName] || 4) * scale;
+  ctx.save();
+  const shW = 14 * scale;
+  const shH = 5 * scale;
+  const sg = ctx.createRadialGradient(s.x, shadowY, 0, s.x, shadowY, shW);
+  sg.addColorStop(0, 'rgba(10, 25, 10, 0.22)');
+  sg.addColorStop(0.6, 'rgba(10, 25, 10, 0.06)');
+  sg.addColorStop(1, 'rgba(10, 25, 10, 0)');
+  ctx.beginPath();
+  ctx.ellipse(s.x, shadowY, shW, shH, 0, 0, Math.PI * 2);
+  ctx.fillStyle = sg;
+  ctx.fill();
+  ctx.restore();
+
+  // Selection highlight — pulsing glow ring under selected agent (agents only, not NPCs)
+  if (selectedAgentName && ch.agent && ch.agent.name === selectedAgentName) {
+    ctx.save();
+    const pulse = 0.6 + 0.4 * Math.sin(Date.now() * 0.004);
+    const glowW = shW * 1.8;
+    const glowH = shH * 1.8;
+    ctx.beginPath();
+    ctx.ellipse(s.x, shadowY, glowW, glowH, 0, 0, Math.PI * 2);
+    const agentCol = ch.agent.color || '#34C759';
+    const gg = ctx.createRadialGradient(s.x, shadowY, 0, s.x, shadowY, glowW);
+    gg.addColorStop(0, agentCol + Math.round(90 * pulse).toString(16).padStart(2,'0'));
+    gg.addColorStop(0.6, agentCol + Math.round(40 * pulse).toString(16).padStart(2,'0'));
+    gg.addColorStop(1, agentCol + '00');
+    ctx.fillStyle = gg;
+    ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(s.x, shadowY, shW * 1.3, shH * 1.3, 0, 0, Math.PI * 2);
+    ctx.strokeStyle = agentCol;
+    ctx.lineWidth = 2 * scale * pulse;
+    ctx.globalAlpha = 0.8 * pulse;
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+    ctx.restore();
+  }
+
+  // Draw character sprite
+  ctx.drawImage(sprite, drawX, drawY, dw, dh);
+  
+  // DEBUG: facing direction — enable with ?debug=1 in URL
+  if (window._debugFacing) {
+    ctx.save();
+    ctx.font = `bold ${Math.max(8, 10 * scale)}px monospace`;
+    ctx.textAlign = 'center';
+    ctx.fillStyle = ch.moving ? '#ff0' : '#0ff';
+    ctx.fillText(ch.facing + (ch.moving ? '→' : '•'), s.x, feetScreenY + 12 * scale);
+    ctx.restore();
+  }
+
+  // Emotion emoji (floating above head)
+  if (ch.emotionEmoji && ch.emotionTimer > 0) {
+    const headScreenY = drawY + metrics.headY * imgScale;
+    const eAlpha = ch.emotionTimer < 500 ? ch.emotionTimer / 500 : 1;
+    const eFloat = Math.sin(Date.now() * 0.004) * 3 * scale;
+    ctx.save();
+    ctx.globalAlpha = eAlpha * 0.9;
+    ctx.font = `${Math.max(10, 14 * scale)}px sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.fillText(ch.emotionEmoji, s.x, headScreenY - 8 * scale + eFloat);
+    ctx.restore();
+  }
+  
+  // Speech bubble
+  if (ch.bubble) {
+    const headScreenY = drawY + metrics.headY * imgScale;
+    const fadeIn = ch.bubble.life > ch.bubble.maxLife - 500 ? (ch.bubble.maxLife - ch.bubble.life) / 500 : 1;
+    const fadeOut = ch.bubble.life < 500 ? ch.bubble.life / 500 : 1;
+    const alpha = fadeIn * fadeOut;
+    
+    ctx.save();
+    ctx.globalAlpha = alpha * 0.92;
+    const bx = s.x;
+    const by = headScreenY - 10 * scale;
+    const fontSize = Math.max(8, 9 * scale);
+    ctx.font = `${fontSize}px -apple-system, sans-serif`;
+    const tw = ctx.measureText(ch.bubble.text).width;
+    const pw = tw + 12 * scale, ph = 16 * scale;
+    const bRad = 5 * scale;
+    
+    // Bubble background with slight gradient
+    ctx.fillStyle = 'rgba(0,0,0,0.75)';
+    ctx.beginPath();
+    ctx.moveTo(bx - pw/2 + bRad, by - ph);
+    ctx.lineTo(bx + pw/2 - bRad, by - ph);
+    ctx.quadraticCurveTo(bx + pw/2, by - ph, bx + pw/2, by - ph + bRad);
+    ctx.lineTo(bx + pw/2, by - bRad);
+    ctx.quadraticCurveTo(bx + pw/2, by, bx + pw/2 - bRad, by);
+    ctx.lineTo(bx + 3 * scale, by);
+    ctx.lineTo(bx, by + 4 * scale);
+    ctx.lineTo(bx - 3 * scale, by);
+    ctx.lineTo(bx - pw/2 + bRad, by);
+    ctx.quadraticCurveTo(bx - pw/2, by, bx - pw/2, by - bRad);
+    ctx.lineTo(bx - pw/2, by - ph + bRad);
+    ctx.quadraticCurveTo(bx - pw/2, by - ph, bx - pw/2 + bRad, by - ph);
+    ctx.fill();
+    
+    // Subtle border
+    ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+    ctx.lineWidth = 0.5;
+    ctx.stroke();
+    
+    // Text
+    ctx.fillStyle = '#eef0ee';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(ch.bubble.text, bx, by - ph/2);
+    ctx.restore();
+
+    // Sound: pop when bubble first appears (only agents, not silent)
+    if (ch.bubble.life > ch.bubble.maxLife - 100 && !ch.bubble._popped) {
+      ch.bubble._popped = true;
+      if (!ch.isNPC) audioPlayBubblePop();
+    }
+  }
+
+  if (ch.decommissioning) ctx.restore();
+}
+
+// ================================================================
+// DECOMMISSION
+// ================================================================
+function spawnDecommissionPuff(ch) {
+  // Spawn 💨 emoji particles and smoke puffs
+  const { x, y } = iso(ch.c, ch.r);
+  const s = toScreen(x, y);
+  for (let i = 0; i < 12; i++) {
+    const angle = (Math.PI * 2 * i / 12) + (Math.random() - 0.5) * 0.5;
+    const spd = 0.5 + Math.random() * 1.5;
+    particles.push({
+      x: s.x + (Math.random()-0.5)*10*scale,
+      y: s.y - 20*scale,
+      vx: Math.cos(angle) * spd,
+      vy: Math.sin(angle) * spd - 1.5,
+      life: 1, decay: 0.012 + Math.random() * 0.008,
+      size: 3 + Math.random() * 3,
+      type: 'puff',
+      color: '#b0c8b0'
+    });
+  }
+  // Emoji puff
+  particles.push({
+    x: s.x, y: s.y - 30*scale,
+    vx: 0, vy: -1.2,
+    life: 1, decay: 0.008,
+    size: 18, type: 'emoji', emoji: '💨'
+  });
+}
+
+window.decommission = function(agentName) {
+  const ch = chars.find(c => c.agent.name === agentName);
+  if (!ch || ch.decommissioning) return;
+  ch.decommissioning = true;
+  ch.decommissionAlpha = 1;
+  ch.decommissionScale = 1;
+  spawnDecommissionPuff(ch);
+  // Hide selection if this agent was selected
+  if (selectedAgentName === agentName) {
+    selectedAgentName = null;
+    if (typeof closeVillageDetail === 'function') closeVillageDetail();
+  }
+  // Release the tile immediately
+  if (ch.tileC >= 0 && ch.tileC < MAP && ch.tileR >= 0 && ch.tileR < MAP) {
+    if (tileOccupant[ch.tileR][ch.tileC] === ch) tileOccupant[ch.tileR][ch.tileC] = null;
+  }
+  // After animation completes, remove from chars array
+  setTimeout(() => {
+    const idx = chars.indexOf(ch);
+    if (idx !== -1) chars.splice(idx, 1);
+    const el = labelEls[agentName];
+    if (el) el.remove();
+    delete labelEls[agentName];
+  }, 900);
+};
+
+// ================================================================
+// PARTICLES — Campfire embers + floating ambient (fireflies/pollen)
+// ================================================================
+const particles = [];
+
+function spawnCampfireParticle() {
+  [[19, 19], [20, 20]].forEach(([pc, pr]) => {
+    if (Math.random() < 0.3) {
+      const { x, y } = iso(pc + 0.5, pr + 0.5);
+      const s = toScreen(x, y);
+      particles.push({
+        x: s.x + (Math.random() - 0.5) * 10 * scale,
+        y: s.y,
+        vx: (Math.random() - 0.5) * 0.3,
+        vy: -0.5 - Math.random() * 0.8,
+        life: 1, decay: 0.005 + Math.random() * 0.008,
+        size: 1.5 + Math.random() * 2.5,
+        type: 'fire',
+        color: Math.random() < 0.6 ? '#ff8a3a' : (Math.random() < 0.5 ? '#ffcc44' : '#ff5533')
+      });
+    }
+  });
+}
+
+function spawnAmbientParticle() {
+  const rc = 2 + Math.random() * (MAP - 4);
+  const rr = 2 + Math.random() * (MAP - 4);
+  const { x, y } = iso(rc, rr);
+  const s = toScreen(x, y);
+  particles.push({
+    x: s.x, y: s.y,
+    vx: (Math.random() - 0.5) * 0.15,
+    vy: -0.1 + (Math.random() - 0.5) * 0.1,
+    life: 1, decay: 0.002 + Math.random() * 0.003,
+    size: 1 + Math.random() * 1.5,
+    type: 'ambient',
+    phase: Math.random() * Math.PI * 2,
+    color: Math.random() < 0.5 ? '#e8d888' : '#aad488'
+  });
+}
+
+function updateAndDrawParticles(tick) {
+  if (tick % 3 === 0) spawnCampfireParticle();
+  if (tick % 12 === 0) spawnAmbientParticle();
+  
+  ctx.save();
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+    p.x += p.vx; p.y += p.vy; p.life -= p.decay;
+    if (p.life <= 0) { particles.splice(i, 1); continue; }
+    
+    if (p.type === 'fire') {
+      ctx.globalAlpha = p.life * 0.8;
+      ctx.fillStyle = p.color;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size * scale * p.life, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalAlpha = p.life * 0.15;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size * scale * 3, 0, Math.PI * 2);
+      ctx.fill();
+    } else if (p.type === 'puff') {
+      ctx.globalAlpha = p.life * 0.5;
+      ctx.fillStyle = p.color || '#b0c8b0';
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size * scale * (2 - p.life), 0, Math.PI * 2);
+      ctx.fill();
+    } else if (p.type === 'emoji') {
+      ctx.globalAlpha = p.life;
+      ctx.font = `${Math.round(p.size * scale)}px sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(p.emoji, p.x, p.y);
+    } else {
+      const drift = Math.sin(tick * 0.02 + p.phase) * 0.3;
+      p.x += drift;
+      ctx.globalAlpha = p.life * 0.35;
+      ctx.fillStyle = p.color;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size * scale, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+  ctx.restore();
+  
+  // Campfire glow
+  [[19, 19], [20, 20]].forEach(([pc, pr]) => {
+    const { x, y } = iso(pc + 0.5, pr + 0.5);
+    const s = toScreen(x, y);
+    ctx.save();
+    const pulse = 0.06 + 0.02 * Math.sin(tick * 0.08);
+    ctx.globalAlpha = pulse;
+    const glow = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, DW * scale * 1.5);
+    glow.addColorStop(0, 'rgba(255, 140, 50, 0.3)');
+    glow.addColorStop(0.5, 'rgba(255, 100, 30, 0.1)');
+    glow.addColorStop(1, 'rgba(255, 80, 20, 0)');
+    ctx.fillStyle = glow;
+    ctx.fillRect(s.x - DW * scale * 2, s.y - DH * scale * 2, DW * scale * 4, DH * scale * 4);
+    ctx.restore();
+  });
+}
+
+// ================================================================
+// AUDIO SYSTEM — Web Audio API, procedural sounds, starts muted
+// ================================================================
+let audioCtx = null;
+let audioMuted = true;  // Start muted
+let _ambientNode = null, _campfireNode = null, _campfireGain = null;
+let _ambientGain = null;
+let _audioInited = false;
+let _lastFootstep = 0;
+
+function getAudioCtx() {
+  if (!audioCtx) {
+    try {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    } catch(e) { return null; }
+  }
+  return audioCtx;
+}
+
+// Brown noise buffer generator
+function makeBrownNoiseBuffer(ctx, duration) {
+  const sr = ctx.sampleRate;
+  const len = Math.floor(sr * duration);
+  const buf = ctx.createBuffer(1, len, sr);
+  const data = buf.getChannelData(0);
+  let lastOut = 0;
+  for (let i = 0; i < len; i++) {
+    const white = Math.random() * 2 - 1;
+    data[i] = (lastOut + 0.02 * white) / 1.02;
+    lastOut = data[i];
+    data[i] *= 3.5;
+  }
+  return buf;
+}
+
+// White noise buffer generator
+function makeWhiteNoiseBuffer(ctx, duration) {
+  const sr = ctx.sampleRate;
+  const len = Math.floor(sr * duration);
+  const buf = ctx.createBuffer(1, len, sr);
+  const data = buf.getChannelData(0);
+  for (let i = 0; i < len; i++) data[i] = Math.random() * 2 - 1;
+  return buf;
+}
+
+function initAudio() {
+  if (_audioInited) return;
+  const ctx = getAudioCtx();
+  if (!ctx) return;
+  _audioInited = true;
+
+  // ── Ambient forest loop (filtered brown noise + bird chirps) ─────
+  try {
+    const ambGain = ctx.createGain();
+    ambGain.gain.value = audioMuted ? 0 : 0.04;
+    _ambientGain = ambGain;
+
+    const brownBuf = makeBrownNoiseBuffer(ctx, 4.0);
+    const ambSrc = ctx.createBufferSource();
+    ambSrc.buffer = brownBuf;
+    ambSrc.loop = true;
+
+    const ambFilter = ctx.createBiquadFilter();
+    ambFilter.type = 'bandpass';
+    ambFilter.frequency.value = 800;
+    ambFilter.Q.value = 0.3;
+
+    ambSrc.connect(ambFilter);
+    ambFilter.connect(ambGain);
+    ambGain.connect(ctx.destination);
+    ambSrc.start();
+    _ambientNode = ambSrc;
+
+    // Bird chirps — scheduled sine sweep
+    function schedBird() {
+      if (audioMuted) { setTimeout(schedBird, 3000 + Math.random() * 5000); return; }
+      const c = getAudioCtx();
+      if (!c) return;
+      const g = c.createGain();
+      g.gain.setValueAtTime(0.03, c.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.4);
+      g.connect(c.destination);
+      const o = c.createOscillator();
+      o.type = 'sine';
+      const baseFreq = 1800 + Math.random() * 1200;
+      o.frequency.setValueAtTime(baseFreq, c.currentTime);
+      o.frequency.linearRampToValueAtTime(baseFreq * 1.6, c.currentTime + 0.12);
+      o.frequency.linearRampToValueAtTime(baseFreq * 0.9, c.currentTime + 0.3);
+      o.connect(g);
+      o.start();
+      o.stop(c.currentTime + 0.45);
+      // Second chirp
+      const o2 = c.createOscillator();
+      o2.type = 'sine';
+      o2.frequency.setValueAtTime(baseFreq * 1.3, c.currentTime + 0.15);
+      o2.frequency.linearRampToValueAtTime(baseFreq * 1.9, c.currentTime + 0.27);
+      const g2 = c.createGain();
+      g2.gain.setValueAtTime(0, c.currentTime + 0.14);
+      g2.gain.linearRampToValueAtTime(0.025, c.currentTime + 0.18);
+      g2.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.45);
+      g2.connect(c.destination);
+      o2.connect(g2);
+      o2.start(c.currentTime + 0.14);
+      o2.stop(c.currentTime + 0.48);
+      setTimeout(schedBird, 4000 + Math.random() * 8000);
+    }
+    setTimeout(schedBird, 2000 + Math.random() * 4000);
+  } catch(e) {}
+
+  // ── Campfire crackle (brown noise + random pops) ──────────────────
+  try {
+    const cfGain = ctx.createGain();
+    cfGain.gain.value = audioMuted ? 0 : 0.0;  // 0 initially, updated by proximity
+    _campfireGain = cfGain;
+
+    const cfBuf = makeBrownNoiseBuffer(ctx, 3.0);
+    const cfSrc = ctx.createBufferSource();
+    cfSrc.buffer = cfBuf;
+    cfSrc.loop = true;
+
+    const cfFilt = ctx.createBiquadFilter();
+    cfFilt.type = 'lowpass';
+    cfFilt.frequency.value = 600;
+
+    cfSrc.connect(cfFilt);
+    cfFilt.connect(cfGain);
+    cfGain.connect(ctx.destination);
+    cfSrc.start();
+    _campfireNode = cfSrc;
+
+    // Random crackle pops
+    function schedCrackle() {
+      if (!audioMuted && _campfireGain && _campfireGain.gain.value > 0.01) {
+        try {
+          const c = getAudioCtx();
+          const popBuf = makeWhiteNoiseBuffer(c, 0.04);
+          const popSrc = c.createBufferSource();
+          popSrc.buffer = popBuf;
+          const popGain = c.createGain();
+          popGain.gain.setValueAtTime(0.06 * (_campfireGain.gain.value / 0.08), c.currentTime);
+          popGain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.04);
+          const popFilt = c.createBiquadFilter();
+          popFilt.type = 'highpass';
+          popFilt.frequency.value = 2000;
+          popSrc.connect(popFilt);
+          popFilt.connect(popGain);
+          popGain.connect(c.destination);
+          popSrc.start();
+          popSrc.stop(c.currentTime + 0.05);
+        } catch(e) {}
+      }
+      setTimeout(schedCrackle, 200 + Math.random() * 600);
+    }
+    schedCrackle();
+  } catch(e) {}
+}
+
+// Footstep sound (short filtered noise burst)
+function audioPlayFootstep() {
+  if (audioMuted) return;
+  const now = Date.now();
+  if (now - _lastFootstep < 280) return; // throttle
+  _lastFootstep = now;
+  const c = getAudioCtx();
+  if (!c) return;
+  try {
+    const buf = makeWhiteNoiseBuffer(c, 0.06);
+    const src = c.createBufferSource();
+    src.buffer = buf;
+    const filt = c.createBiquadFilter();
+    filt.type = 'bandpass';
+    filt.frequency.value = 200 + Math.random() * 200;
+    filt.Q.value = 0.5;
+    const gain = c.createGain();
+    gain.gain.setValueAtTime(0.04, c.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.06);
+    src.connect(filt);
+    filt.connect(gain);
+    gain.connect(c.destination);
+    src.start();
+    src.stop(c.currentTime + 0.07);
+  } catch(e) {}
+}
+
+// Bubble pop sound (sine tone, quick decay)
+function audioPlayBubblePop() {
+  if (audioMuted) return;
+  const c = getAudioCtx();
+  if (!c) return;
+  try {
+    const osc = c.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(900, c.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(400, c.currentTime + 0.12);
+    const gain = c.createGain();
+    gain.gain.setValueAtTime(0.08, c.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.15);
+    osc.connect(gain);
+    gain.connect(c.destination);
+    osc.start();
+    osc.stop(c.currentTime + 0.16);
+  } catch(e) {}
+}
+
+// Update campfire volume based on camera proximity to campfire
+function updateAudioSpatial() {
+  if (audioMuted || !_campfireGain) return;
+  // Campfire at iso col=19.5, row=19.5 → screen position
+  const { x, y } = iso(19.5, 19.5);
+  const s = toScreen(x, y);
+  const cx = cvs.width / 2, cy = cvs.height / 2;
+  const dist = Math.sqrt((s.x - cx) * (s.x - cx) + (s.y - cy) * (s.y - cy));
+  const maxDist = 300 * scale;
+  const vol = Math.max(0, Math.min(0.08, 0.08 * (1 - dist / maxDist)));
+  _campfireGain.gain.setTargetAtTime(vol, audioCtx.currentTime, 0.3);
+}
+
+// Footstep trigger for walking chars
+function audioTickFootsteps(dt) {
+  if (audioMuted) return;
+  const anyWalking = chars.some(ch => ch.moving && !ch.decommissioning) || npcs.some(ch => ch.moving);
+  if (anyWalking) {
+    // schedule footstep based on time
+    if (Date.now() - _lastFootstep > 300) audioPlayFootstep();
+  }
+}
+
+// Mute button toggle
+function toggleMute() {
+  audioMuted = !audioMuted;
+  const btn = document.getElementById('audioMuteBtn');
+  if (btn) btn.textContent = audioMuted ? '🔇' : '🔊';
+  if (!_audioInited && !audioMuted) {
+    initAudio();
+  }
+  if (_ambientGain) {
+    _ambientGain.gain.setTargetAtTime(audioMuted ? 0 : 0.04, audioCtx.currentTime, 0.5);
+  }
+  if (_campfireGain) {
+    _campfireGain.gain.setTargetAtTime(audioMuted ? 0 : 0.0, audioCtx.currentTime, 0.5);
+  }
+}
+
+// ================================================================
+// RENDERING
+// ================================================================
+let _tick = 0;
+function render() {
+  _tick++;
+  ctx.clearRect(0, 0, cvs.width, cvs.height);
+
+  const bg = ctx.createRadialGradient(
+    cvs.width / 2, cvs.height / 2, 0,
+    cvs.width / 2, cvs.height / 2, cvs.width * 0.7
+  );
+  bg.addColorStop(0, '#1e3a1e');
+  bg.addColorStop(1, '#0a150a');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, cvs.width, cvs.height);
+
+  // Pass 1: Draw ground tiles and flat paths (never occlude anything)
+  for (let r = 0; r < MAP; r++) {
+    for (let c = 0; c < MAP; c++) {
+      draw(imgs['ground'], c, r);
+      if (ground[r][c] === 1) {
+        draw(imgs['path'], c, r);
+      }
+    }
+  }
+
+  // Pass 2: Depth-sorted draw of objects + characters together
+  // Build a list of all drawable entities with their iso depth (c + r)
+  const drawables = [];
+  for (let r = 0; r < MAP; r++) {
+    for (let c = 0; c < MAP; c++) {
+      const obj = objects[r][c];
+      if (obj) {
+        drawables.push({ type: 'obj', c, r, depth: c + r, obj });
+      }
+    }
+  }
+  chars.forEach(ch => {
+    if (!ch.decommissioning || ch.decommissionAlpha > 0)
+      drawables.push({ type: 'char', c: ch.c, r: ch.r, depth: ch.c + ch.r, ch });
+  });
+  npcs.forEach(ch => {
+    drawables.push({ type: 'npc', c: ch.c, r: ch.r, depth: ch.c + ch.r, ch });
+  });
+  // Sort by depth (back to front); for same depth, objects before characters
+  drawables.sort((a, b) => a.depth - b.depth || (a.type === 'obj' ? -1 : 1));
+  drawables.forEach(d => {
+    if (d.type === 'obj') {
+      draw(imgs['obj:' + d.obj], d.c, d.r);
+    } else {
+      drawChar(d.ch);
+    }
+  });
+
+  // Particles on top
+  updateAndDrawParticles(_tick);
+
+  updateLabels();
+}
+
+// ================================================================
+// LABELS (CSS overlays)
+// ================================================================
+const labelsCont = document.getElementById('labels');
+const labelEls = {};
+agents.forEach(a => {
+  const el = document.createElement('div');
+  el.className = 'agent-label';
+  el.innerHTML = `<span class="dot" style="background:${a.color}"></span>${a.emoji} ${a.name}`;
+  el.addEventListener('click', function(e) {
+    e.stopPropagation();
+    selectedAgentName = (selectedAgentName === a.name) ? null : a.name;
+    // Panel disabled — toggle selection only
+  });
+  labelsCont.appendChild(el);
+  labelEls[a.name] = el;
+});
+
+function updateLabels() {
+  chars.forEach(ch => {
+    const a = ch.agent;
+    const { x, y } = iso(ch.c, ch.r);
+    const s = toScreen(x, y);
+    const el = labelEls[a.name];
+    const metrics = CHAR_METRICS[ch.charName];
+    
+    // Position label above character head
+    const targetH = DH * scale * 1.15;
+    const imgScale = targetH / metrics.contentH;
+    const headY = s.y + DH * scale * 0.15 - metrics.feetY * imgScale + metrics.headY * imgScale;
+    const ly = headY - 14 * scale;
+    
+    el.style.left = s.x + 'px';
+    el.style.top = ly + 'px';
+    el.style.display = (s.x > -200 && s.x < cvs.width + 200 && ly > -80 && ly < cvs.height + 80) ? '' : 'none';
+    // Show full label only for selected agent
+    el.classList.toggle('selected', selectedAgentName === a.name);
+  });
+}
+
+// ================================================================
+// INFO PANEL
+// ================================================================
+function showPanel(a) {
+  document.getElementById('pn').textContent = `${a.emoji} ${a.name}`;
+  document.getElementById('pr').textContent = a.role;
+  const ch = chars.find(c => c.agent === a);
+  const stateLabel = {
+    'working': '💻 Working at tent',
+    'walk_poi': '🚶 Heading to campfire',
+    'at_campfire': '☕ At the campfire',
+    'walk_agent': '🚶 Visiting a colleague',
+    'meeting': '🤝 In a meeting',
+    'returning': '🏠 Returning home',
+  };
+  const stText = stateLabel[ch?.state] || 'Active';
+  document.getElementById('ps').innerHTML = `<span style="color:${a.color}">●</span> ${stText}`;
+  document.getElementById('infopanel').style.display = 'block';
+}
+function closePanel() { document.getElementById('infopanel').style.display = 'none'; }
+
+// ================================================================
+// INPUT
+// ================================================================
+cvs.addEventListener('mousedown', e => {
+  drag = true; dsx = e.clientX; dsy = e.clientY; dvx = vpX; dvy = vpY;
+  cvs.classList.add('grabbing');
+});
+window.addEventListener('mousemove', e => {
+  if (!drag) return;
+  vpX = dvx + (e.clientX - dsx);
+  vpY = dvy + (e.clientY - dsy);
+});
+window.addEventListener('mouseup', () => { drag = false; cvs.classList.remove('grabbing'); });
+
+cvs.addEventListener('click', e => {
+  if (Math.abs(e.clientX - dsx) > 4 || Math.abs(e.clientY - dsy) > 4) return;
+  const t = screenToTile(e.clientX, e.clientY);
+  // Check proximity to character's current screen position (pixel-accurate)
+  let hit = null;
+  let bestDist = Infinity;
+  chars.forEach(ch => {
+    if (ch.decommissioning) return;
+    const { x, y } = iso(ch.c, ch.r);
+    const s = toScreen(x, y);
+    // Check if click is within ~40px of character center on screen
+    const sdx = Math.abs(e.clientX - s.x);
+    const sdy = Math.abs(e.clientY - (s.y - 10 * scale)); // offset up since char center is above feet
+    const sd = Math.sqrt(sdx*sdx + sdy*sdy);
+    if (sd < 45 * scale && sd < bestDist) {
+      bestDist = sd;
+      hit = ch.agent;
+    }
+  });
+  if (hit) {
+    selectedAgentName = (selectedAgentName === hit.name) ? null : hit.name;
+    // Panel disabled — selection highlight only
+  } else {
+    selectedAgentName = null;
+  }
+});
+
+cvs.addEventListener('wheel', e => {
+  e.preventDefault();
+  const f = e.deltaY > 0 ? 0.9 : 1.11;
+  const ns = Math.max(MIN_S, Math.min(MAX_S, scale * f));
+  const rx = e.clientX - vpX - cvs.width / 2;
+  const ry = e.clientY - vpY - cvs.height / 3.5;
+  const ratio = ns / scale;
+  vpX -= rx * (ratio - 1);
+  vpY -= ry * (ratio - 1);
+  scale = ns;
+}, { passive: false });
+
+let td = 0;
+cvs.addEventListener('touchstart', e => {
+  e.preventDefault();
+  if (e.touches.length === 1) {
+    drag = true; dsx = e.touches[0].clientX; dsy = e.touches[0].clientY; dvx = vpX; dvy = vpY;
+  } else if (e.touches.length === 2) {
+    td = Math.hypot(e.touches[1].clientX - e.touches[0].clientX, e.touches[1].clientY - e.touches[0].clientY);
+  }
+}, { passive: false });
+cvs.addEventListener('touchmove', e => {
+  e.preventDefault();
+  if (e.touches.length === 1 && drag) {
+    vpX = dvx + (e.touches[0].clientX - dsx);
+    vpY = dvy + (e.touches[0].clientY - dsy);
+  } else if (e.touches.length === 2) {
+    const d = Math.hypot(e.touches[1].clientX - e.touches[0].clientX, e.touches[1].clientY - e.touches[0].clientY);
+    scale = Math.max(MIN_S, Math.min(MAX_S, scale * (d / td)));
+    td = d;
+  }
+}, { passive: false });
+cvs.addEventListener('touchend', () => { drag = false; });
+
+function doZoom(f) { scale = Math.max(MIN_S, Math.min(MAX_S, scale * f)); }
+function resetView() {
+  // Scale to fit 40×40 map — show roughly 18 tiles wide
+  scale = Math.max(MIN_S, Math.min(MAX_S, cvs.width / (18 * DW)));
+  const ctr = iso(MAP / 2, MAP / 2);
+  vpX = -ctr.x;
+  vpY = -ctr.y - cvs.height * 0.05;
+}
+
+// ================================================================
+// RESIZE
+// ================================================================
+function resize() { cvs.width = innerWidth; cvs.height = innerHeight; }
+addEventListener('resize', resize);
+resize();
+
+// ================================================================
+// MAIN LOOP
+// ================================================================
+let lt = 0;
+function loop(t) {
+  const dt = lt ? Math.min(t - lt, 50) : 16;
+  lt = t;
+  updateChars(dt);
+  updateNPCs(dt);
+  updateAudioSpatial();
+  audioTickFootsteps(dt);
+  render();
+  requestAnimationFrame(loop);
+}
+
+// ================================================================
+// THEME BRIDGE + DATA BRIDGE
+// ================================================================
+try { parent.postMessage({ type: 'theme:ready' }, '*'); } catch(e) {}
+
+// postMessage bridge — listen for SpawnKit data updates
+addEventListener('message', e => {
+  if (!e.data || typeof e.data !== 'object') return;
+  const isSameOrigin = (e.origin === window.location.origin || e.origin === 'null');
+  if (!isSameOrigin) return;
+
+  switch (e.data.type) {
+    case 'theme:data':
+    case 'spawnkit:data':
+      if (e.data.agents || (e.data.payload && e.data.payload.agents)) {
+        const agentList = e.data.agents || e.data.payload.agents;
+        agentList.forEach(d => {
+          const a = agents.find(x => x.name === d.name);
+          if (a) {
+            if (d.status) a.status = d.status;
+            if (d.currentTask) a.task = d.currentTask;
+          }
+        });
+        // Update agent count in status bar
+        const countEl = document.getElementById('vsbAgentCount');
+        if (countEl && agentList.length) {
+          countEl.textContent = agentList.length + ' Agent' + (agentList.length !== 1 ? 's' : '');
+        }
+      }
+      break;
+    case 'spawnkit:agents':
+      if (e.data.agents) {
+        e.data.agents.forEach(d => {
+          const a = agents.find(x => x.name === d.name);
+          if (a && d.status) a.status = d.status;
+        });
+      }
+      break;
+    case 'spawnkit:ping':
+      if (window.parent !== window) {
+        window.parent.postMessage({ type: 'village:pong', theme: 'simcity', timestamp: Date.now() }, '*');
+      }
+      break;
+  }
+});
+
+// ================================================================
+// INIT — wait for images, then start
+// ================================================================
+function checkReady() {
+  const pct = totalImgs ? (loadedImgs / totalImgs * 100) : 0;
+  document.getElementById('loadfill').style.width = pct + '%';
+  if (loadedImgs >= totalImgs) {
+    document.getElementById('loading').style.display = 'none';
+    resetView();
+    requestAnimationFrame(loop);
+    initVillagePanels(); // Initialize panel system after village loads
+  } else {
+    requestAnimationFrame(checkReady);
+  }
+}
+requestAnimationFrame(checkReady);
+</script>
+
+<!-- ═══ Data Bridge ═══ -->
+<script>
+  window.OC_RELAY_URL = 'https://fleet.spawnkit.ai';
+  window.OC_RELAY_TOKEN = 'sk-oc-proxy-spawnkit-2026';
+</script>
+<script src="./src/data-bridge.js"></script>
+
+<!-- ═══ Village Panel System ═══ -->
+<script>
+(function() {
+  'use strict';
+
+  // ── SpawnKit API Reference ─────────────────────────
+  var API = (typeof window.spawnkitAPI !== 'undefined') ? window.spawnkitAPI : null;
+
+  // ── Agent Data Map ─────────────────────────────────
+  var AGENTS_MAP = {};
+  var agentsList = [
+    { id: 'ceo',      name: 'ApoMac',   role: 'CEO',         emoji: '🍎', color: '#007AFF' },
+    { id: 'forge',    name: 'Forge',     role: 'CTO',         emoji: '🔨', color: '#FF9F0A' },
+    { id: 'hunter',   name: 'Hunter',    role: 'CRO',         emoji: '🎯', color: '#FF453A' },
+    { id: 'echo',     name: 'Echo',      role: 'CMO',         emoji: '📢', color: '#0A84FF' },
+    { id: 'sentinel', name: 'Sentinel',  role: 'Security',    emoji: '🛡️', color: '#30D158' },
+    { id: 'atlas',    name: 'Atlas',     role: 'COO',         emoji: '📊', color: '#BF5AF2' },
+  ];
+  agentsList.forEach(function(a) { AGENTS_MAP[a.name] = a; AGENTS_MAP[a.id] = a; });
+
+  var DEFAULT_SKILLS = {
+    ceo:      ['🎯 Orchestration', '📊 Strategy', '🔮 Vision', '👥 Leadership'],
+    atlas:    ['⚙️ Operations', '📋 Process', '📝 Docs', '🔄 Workflows'],
+    forge:    ['🛠️ Engineering', '🔒 Security', '🏗️ Architecture', '⚡ Perf'],
+    hunter:   ['💰 Revenue', '📈 Growth', '🎯 Sales', '🔍 Research'],
+    echo:     ['🎨 Brand', '📱 Content', '🎬 Video', '✍️ Copy'],
+    sentinel: ['🛡️ Audit', '✅ QA', '⚠️ Risk', '🔍 Review']
+  };
+
+  // ── Live Data Caches ───────────────────────────────
+  var liveAgentData = {};
+  var liveCronData = null;
+  var liveMemoryData = null;
+  var chatHistory = [];
+
+  // ── Pre-fetch ──────────────────────────────────────
+  function prefetchData() {
+    if (!API) return;
+    try { liveCronData = API.getCrons(); } catch(e) {}
+    try { liveMemoryData = API.getMemory(); } catch(e) {}
+  }
+
+  async function loadLiveAgentData() {
+    var ids = ['ceo', 'atlas', 'forge', 'hunter', 'echo', 'sentinel'];
+    if (!window.spawnkitAPI) {
+      ids.forEach(function(id) {
+        liveAgentData[id] = { currentTask: 'Connect to OpenClaw for live data', todos: [], skills: [] };
+      });
+      return;
+    }
+    try {
+      var isAvail = await window.spawnkitAPI.isAvailable();
+      if (!isAvail) return;
+      var todoP = ids.map(function(id) { return window.spawnkitAPI.getAgentTodos(id); });
+      var skillP = ids.map(function(id) { return window.spawnkitAPI.getAgentSkills(id); });
+      var allTodos = await Promise.all(todoP);
+      var allSkills = await Promise.all(skillP);
+      ids.forEach(function(id, i) {
+        var td = allTodos[i] || { todos: [], currentTask: 'Standby' };
+        var sk = allSkills[i] || [];
+        liveAgentData[id] = {
+          currentTask: td.currentTask || 'Standby',
+          todos: td.todos || [],
+          skills: sk.map(function(s, idx) {
+            return { name: s.name || s.dirName || 'Skill', description: s.description || '' };
+          })
+        };
+      });
+    } catch(e) {
+      console.warn('🏘️ [Village] Failed to load agent data:', e);
+    }
+  }
+
+  // ── Toast ──────────────────────────────────────────
+  function showToast(msg) {
+    var t = document.getElementById('vToast');
+    if (!t) return;
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(t._timer);
+    t._timer = setTimeout(function() { t.classList.remove('show'); }, 2500);
+  }
+
+  // ── Close All Panels ───────────────────────────────
+  function closeAllPanels() {
+    closeVillageDetail();
+    closeVillageChat();
+    closeMissionsPanel();
+    closeCronPanel();
+    closeMemoryPanel();
+    closeSettingsPanel();
+  }
+  // Expose globally
+  window.closeAllVillagePanels = closeAllPanels;
+
+  // ══════════════════════════════════════════════════
+  //  AGENT DETAIL PANEL
+  // ══════════════════════════════════════════════════
+  var detailOverlay = document.getElementById('vDetailOverlay');
+  var detailBackdrop = document.getElementById('vDetailBackdrop');
+  var detailCloseBtn = document.getElementById('vDetailClose');
+
+  window.openVillageDetail = async function(agentObj) {
+    closeAllPanels();
+    var info = AGENTS_MAP[agentObj.name] || { id: 'ceo', name: agentObj.name, role: agentObj.role, emoji: agentObj.emoji, color: agentObj.color };
+    var agentId = info.id;
+
+    // Avatar
+    var avatarEl = document.getElementById('vDetailAvatar');
+    avatarEl.style.background = info.color;
+    avatarEl.innerHTML = '<span style="font-size:26px">' + info.emoji + '</span><div class="v-detail-status-dot" id="vDetailStatusDot"></div>';
+    var statusColor = (agentObj.status === 'Active' || agentObj.status === 'active' || agentObj.status === 'working') ? '#30D158' :
+                      (agentObj.status === 'busy' || agentObj.status === 'building') ? '#FFD60A' : '#8E8E93';
+    document.getElementById('vDetailStatusDot').style.background = statusColor;
+
+    document.getElementById('vDetailName').textContent = info.emoji + ' ' + info.name;
+    document.getElementById('vDetailRole').textContent = info.role;
+
+    // Find character state
+    var ch = null;
+    if (typeof chars !== 'undefined') {
+      ch = chars.find(function(c) { return c.agent === agentObj; });
+    }
+    var stateLabels = {
+      'working': '💻 Working at tent', 'walk_poi': '🚶 Heading to campfire',
+      'at_campfire': '☕ At the campfire', 'walk_agent': '🚶 Visiting a colleague',
+      'meeting': '🤝 In a meeting', 'returning': '🏠 Returning home'
+    };
+    var taskText = (ch && stateLabels[ch.state]) ? stateLabels[ch.state] : 'Active';
+    document.getElementById('vDetailTask').textContent = taskText;
+
+    // Build body
+    var body = '';
+
+    // Metrics
+    body += '<div class="v-detail-section"><div class="v-section-title">Metrics</div>';
+    body += '<div class="v-metrics">';
+    body += '<div class="v-metric"><div class="v-metric-val">' + (statusColor === '#30D158' ? '🟢' : '💤') + '</div><div class="v-metric-lbl">Status</div></div>';
+    body += '<div class="v-metric"><div class="v-metric-val">—</div><div class="v-metric-lbl">Tokens</div></div>';
+    body += '<div class="v-metric"><div class="v-metric-val">—</div><div class="v-metric-lbl">API Calls</div></div>';
+    body += '<div class="v-metric"><div class="v-metric-val">—</div><div class="v-metric-lbl">Last Active</div></div>';
+    body += '</div></div>';
+
+    // Live metrics
+    if (API) {
+      (async function() {
+        try {
+          var m = await API.getMetrics();
+          if (m && m.agentBreakdown && m.agentBreakdown[agentId]) {
+            var ab = m.agentBreakdown[agentId];
+            var vals = document.querySelectorAll('#vDetailBody .v-metric-val');
+            if (vals.length >= 4) {
+              if (ab.tokens) vals[1].textContent = ab.tokens.toLocaleString();
+              if (ab.apiCalls) vals[2].textContent = ab.apiCalls.toString();
+              if (ab.lastActive) vals[3].textContent = ab.lastActive;
+            }
+          }
+        } catch(e) {}
+      })();
+    }
+
+    // TODO / Current Task
+    var td = liveAgentData[agentId];
+    if (td) {
+      body += '<div class="v-detail-section"><div class="v-section-title">Current Task</div>';
+      body += '<div style="font-size:13px;font-weight:500;color:var(--v-text)">' + (td.currentTask || taskText) + '</div>';
+      body += '</div>';
+      if (td.todos && td.todos.length) {
+        body += '<div class="v-detail-section"><div class="v-section-title">TODO List</div>';
+        td.todos.forEach(function(todo) {
+          body += '<div class="v-todo-item' + (todo.status === 'done' ? ' v-todo-done' : '') + '">';
+          body += '<span class="v-todo-icon">' + (todo.icon || '•') + '</span>';
+          body += '<span class="v-todo-text">' + (todo.text || '') + '</span></div>';
+        });
+        body += '</div>';
+      }
+    }
+
+    // Skills
+    var skills = (td && td.skills && td.skills.length) ? td.skills : null;
+    var fallbackSkills = DEFAULT_SKILLS[agentId] || [];
+    body += '<div class="v-detail-section"><div class="v-section-title">Skills</div>';
+    body += '<div class="v-skill-chips">';
+    if (skills && skills.length) {
+      skills.forEach(function(s) { body += '<span class="v-skill-chip">' + (s.name || s) + '</span>'; });
+    } else if (fallbackSkills.length) {
+      fallbackSkills.forEach(function(s) { body += '<span class="v-skill-chip">' + s + '</span>'; });
+    } else {
+      body += '<span style="color:var(--v-text-muted);font-size:11px">No skills defined</span>';
+    }
+    body += '</div></div>';
+
+    // SOUL excerpt
+    if (API) {
+      try {
+        var agentInfo = await API.getAgentInfo(agentId);
+        if (agentInfo && agentInfo.soul) {
+          var excerpt = agentInfo.soul.substring(0, 400);
+          body += '<div class="v-detail-section"><div class="v-section-title">Soul (Personality)</div>';
+          body += '<div class="v-soul-text">' + excerpt.replace(/</g,'&lt;').replace(/>/g,'&gt;') + (agentInfo.soul.length > 400 ? '…' : '') + '</div></div>';
+        }
+      } catch(e) {}
+    }
+
+    document.getElementById('vDetailBody').innerHTML = body;
+    detailOverlay.classList.add('open');
+    // NOTE: do NOT set body overflow hidden — causes "screen freeze" perception
+  };
+
+  window.closeVillageDetail = function() {
+    detailOverlay.classList.remove('open');
+    // NOTE: do NOT restore body overflow here
+  };
+
+  detailBackdrop.addEventListener('click', closeVillageDetail);
+  detailCloseBtn.addEventListener('click', closeVillageDetail);
+
+  // ══════════════════════════════════════════════════
+  //  CEO CHAT PANEL
+  // ══════════════════════════════════════════════════
+  var chatOverlay = document.getElementById('vChatOverlay');
+  var chatBackdrop = document.getElementById('vChatBackdrop');
+  var chatCloseBtn = document.getElementById('vChatClose');
+  var chatMsgsEl = document.getElementById('vChatMessages');
+  var chatInput = document.getElementById('vChatInput');
+  var chatSendBtn = document.getElementById('vChatSend');
+  var chatEmptyEl = document.getElementById('vChatEmpty');
+
+  function openVillageChat() {
+    closeAllPanels();
+    chatOverlay.classList.add('open');
+    chatInput.focus();
+
+    loadChatTranscript();
+  }
+  window.closeVillageChat = function() {
+    chatOverlay.classList.remove('open');
+
+  };
+
+  function loadChatTranscript() {
+    if (!API) return;
+    try {
+      var transcript = API.getTranscript('agent:main:main');
+      if (transcript && transcript.length > 0) {
+        chatHistory = transcript.slice(-50).map(function(m) {
+          return {
+            role: m.role === 'user' ? 'user' : 'system',
+            text: m.text || m.content || '',
+            time: m.timestamp ? new Date(m.timestamp).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}) : ''
+          };
+        });
+        renderChat();
+      }
+    } catch(e) {}
+  }
+
+  function renderChat() {
+    if (chatHistory.length === 0) { chatEmptyEl.style.display = ''; return; }
+    chatEmptyEl.style.display = 'none';
+    chatMsgsEl.innerHTML = '';
+    chatHistory.forEach(function(m) {
+      var div = document.createElement('div');
+      div.className = 'v-chat-msg v-chat-msg--' + m.role;
+      var preview = m.text.length > 300 ? m.text.substring(0, 300) + '…' : m.text;
+      div.innerHTML = '<div>' + preview.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</div>' +
+        (m.time ? '<div class="v-chat-msg-time">' + m.time + '</div>' : '');
+      chatMsgsEl.appendChild(div);
+    });
+    chatMsgsEl.scrollTop = chatMsgsEl.scrollHeight;
+  }
+
+  async function sendChat() {
+    var text = chatInput.value.trim();
+    if (!text) return;
+    chatInput.value = '';
+    var now = new Date();
+    var timeStr = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+    chatHistory.push({ role: 'user', text: text, time: timeStr });
+    renderChat();
+
+    var route = document.getElementById('vChatRoute').value || 'ceo';
+    if (API && typeof API.sendMission === 'function') {
+      try {
+        var result = await API.sendMission(text, route);
+        if (result && result.success) {
+          chatHistory.push({ role: 'system', text: '✅ Dispatched to ' + route, time: timeStr });
+        } else {
+          chatHistory.push({ role: 'system', text: '⚠️ ' + (result.error || 'Failed'), time: timeStr });
+        }
+      } catch(e) {
+        chatHistory.push({ role: 'system', text: '⚠️ ' + e.message, time: timeStr });
+      }
+    } else {
+      chatHistory.push({ role: 'system', text: '📡 API not connected — queued', time: timeStr });
+    }
+    renderChat();
+  }
+
+  chatBackdrop.addEventListener('click', closeVillageChat);
+  chatCloseBtn.addEventListener('click', closeVillageChat);
+  chatSendBtn.addEventListener('click', sendChat);
+  chatInput.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') { e.preventDefault(); sendChat(); }
+  });
+
+  // Auto-refresh chat
+  setInterval(function() {
+    if (chatOverlay.classList.contains('open')) loadChatTranscript();
+  }, 10000);
+
+  // ══════════════════════════════════════════════════
+  //  MISSIONS PANEL
+  // ══════════════════════════════════════════════════
+  var missionsOverlay = document.getElementById('vMissionsOverlay');
+  var missionsBody = document.getElementById('vMissionsBody');
+
+  function openMissionsPanel() {
+    closeAllPanels();
+    missionsOverlay.classList.add('open');
+
+    renderMissions();
+  }
+  window.closeMissionsPanel = function() {
+    missionsOverlay.classList.remove('open');
+
+  };
+
+  async function renderMissions() {
+    if (!API) {
+      missionsBody.innerHTML = '<div class="v-side-empty">Connect to OpenClaw for live missions.</div>';
+      return;
+    }
+    try {
+      var sessions = await API.getSessions();
+      var subs = sessions.subagents || [];
+      var running = subs.filter(function(s) { return s.status === 'running'; });
+      var completed = subs.filter(function(s) { return s.status === 'completed'; }).slice(0, 5);
+
+      if (running.length === 0 && completed.length === 0) {
+        missionsBody.innerHTML = '<div class="v-side-empty">No active missions. The village is at peace. 🌿</div>';
+        return;
+      }
+
+      var html = '';
+      if (running.length > 0) {
+        html += '<div class="v-side-group"><div class="v-side-group-title">🔴 Active (' + running.length + ')</div>';
+        running.forEach(function(sa) {
+          var dur = sa.durationMs ? Math.floor(sa.durationMs / 60000) : 0;
+          var prog = sa.progress || 0.5;
+          html += '<div class="v-side-item">';
+          html += '<span class="v-side-item-icon">🚀</span>';
+          html += '<div class="v-side-item-info">';
+          html += '<div class="v-side-item-name">' + (sa.name || sa.label || sa.id) + '</div>';
+          html += '<div class="v-side-item-sub">Parent: ' + (sa.parentAgent || 'main') + ' • ' + dur + 'm</div>';
+          html += '<div style="margin-top:3px;height:3px;background:var(--v-bg-deep);border-radius:2px;overflow:hidden"><div style="width:' + Math.round(prog*100) + '%;height:100%;background:var(--v-accent);border-radius:2px"></div></div>';
+          html += '</div>';
+          html += '<span class="v-side-badge v-side-badge--active">' + Math.round(prog*100) + '%</span>';
+          html += '</div>';
+        });
+        html += '</div>';
+      }
+      if (completed.length > 0) {
+        html += '<div class="v-side-group"><div class="v-side-group-title">✅ Completed</div>';
+        completed.forEach(function(sa) {
+          html += '<div class="v-side-item" style="opacity:0.7">';
+          html += '<span class="v-side-item-icon">✅</span>';
+          html += '<div class="v-side-item-info"><div class="v-side-item-name">' + (sa.name || sa.label || sa.id) + '</div></div>';
+          html += '<span class="v-side-badge v-side-badge--done">Done</span>';
+          html += '</div>';
+        });
+        html += '</div>';
+      }
+      missionsBody.innerHTML = html;
+    } catch(e) {
+      missionsBody.innerHTML = '<div class="v-side-empty">Error: ' + e.message + '</div>';
+    }
+  }
+
+  document.getElementById('vMissionsBackdrop').addEventListener('click', closeMissionsPanel);
+  document.getElementById('vMissionsClose').addEventListener('click', closeMissionsPanel);
+
+  setInterval(function() { if (missionsOverlay.classList.contains('open')) renderMissions(); }, 15000);
+
+  // ══════════════════════════════════════════════════
+  //  CRON PANEL
+  // ══════════════════════════════════════════════════
+  var cronOverlay = document.getElementById('vCronOverlay');
+  var cronBody = document.getElementById('vCronBody');
+
+  function openCronPanel() {
+    closeAllPanels();
+    cronOverlay.classList.add('open');
+
+    renderCrons();
+  }
+  window.closeCronPanel = function() {
+    cronOverlay.classList.remove('open');
+
+  };
+
+  function humanCron(s) {
+    if (!s) return '—';
+    var m = { '*/30 * * * *': 'Every 30 min', '0 * * * *': 'Hourly',
+              '0 9 * * *': 'Daily 9:00', '0 9 * * 1': 'Mon 9:00',
+              '*/5 * * * *': 'Every 5 min', '0 */2 * * *': 'Every 2h',
+              '0 8 * * 1-5': 'Weekdays 8:00' };
+    return m[s] || s;
+  }
+
+  function renderCrons() {
+    var crons = liveCronData;
+    if (API && !crons) { try { crons = API.getCrons(); } catch(e) {} }
+
+    if (!crons || !Array.isArray(crons) || crons.length === 0) {
+      cronBody.innerHTML = '<div class="v-side-empty">No cron jobs found.' +
+        (API ? '' : '<br><br><em>Connect to OpenClaw for live crons.</em>') + '</div>';
+      return;
+    }
+
+    var groups = {};
+    crons.forEach(function(c) {
+      var o = c.owner || 'System';
+      if (!groups[o]) groups[o] = [];
+      groups[o].push(c);
+    });
+
+    var html = '';
+    Object.keys(groups).forEach(function(owner) {
+      html += '<div class="v-side-group"><div class="v-side-group-title">' + owner + '</div>';
+      groups[owner].forEach(function(c) {
+        var icon = c.status === 'active' ? '⏰' : c.status === 'error' ? '❌' : '⏸️';
+        var badgeCls = c.status === 'active' ? 'active' : c.status === 'error' ? 'error' : 'paused';
+        var next = c.nextRun ? new Date(c.nextRun).toLocaleString('fr-FR', {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '—';
+        html += '<div class="v-side-item">';
+        html += '<span class="v-side-item-icon">' + icon + '</span>';
+        html += '<div class="v-side-item-info">';
+        html += '<div class="v-side-item-name">' + (c.name || c.id || 'Unnamed') + '</div>';
+        html += '<div class="v-side-item-sub">' + humanCron(c.schedule) + '</div>';
+        html += '<div class="v-side-item-accent">Next: ' + next + '</div>';
+        html += '</div>';
+        html += '<span class="v-side-badge v-side-badge--' + badgeCls + '">' + (c.status || '?') + '</span>';
+        html += '<button class="v-side-toggle ' + (c.status === 'active' ? 'on' : '') + '"></button>';
+        html += '</div>';
+      });
+      html += '</div>';
+    });
+    cronBody.innerHTML = html;
+
+    cronBody.querySelectorAll('.v-side-toggle').forEach(function(btn) {
+      btn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        btn.classList.toggle('on');
+        showToast('Connect to OpenClaw CLI to modify cron jobs');
+      });
+    });
+  }
+
+  document.getElementById('vCronBackdrop').addEventListener('click', closeCronPanel);
+  document.getElementById('vCronClose').addEventListener('click', closeCronPanel);
+
+  // ══════════════════════════════════════════════════
+  //  MEMORY PANEL
+  // ══════════════════════════════════════════════════
+  var memoryOverlay = document.getElementById('vMemoryOverlay');
+  var memoryBody = document.getElementById('vMemoryBody');
+
+  function openMemoryPanel() {
+    closeAllPanels();
+    memoryOverlay.classList.add('open');
+
+    renderMemory();
+  }
+  window.closeMemoryPanel = function() {
+    memoryOverlay.classList.remove('open');
+
+  };
+
+  function renderMarkdown(md) {
+    if (!md) return '<em>Empty</em>';
+    return md
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/^### (.+)$/gm,'<h3>$1</h3>')
+      .replace(/^## (.+)$/gm,'<h2>$1</h2>')
+      .replace(/^# (.+)$/gm,'<h1>$1</h1>')
+      .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+      .replace(/`(.+?)`/g,'<code>$1</code>')
+      .replace(/^- (.+)$/gm,'<li>$1</li>')
+      .replace(/\n{2,}/g,'<br><br>')
+      .replace(/\n/g,'<br>');
+  }
+
+  function renderMemory() {
+    var mem = liveMemoryData;
+    if (API && !mem) { try { mem = API.getMemory(); } catch(e) {} }
+
+    if (!mem) {
+      memoryBody.innerHTML = '<div class="v-side-empty">No memory available.' +
+        (API ? '' : '<br><br><em>Connect to OpenClaw for fleet memory.</em>') + '</div>';
+      return;
+    }
+
+    var html = '';
+
+    // Golden rules
+    if (mem.longTerm && mem.longTerm.content) {
+      var content = mem.longTerm.content;
+      var goldenMatch = content.match(/## 🔴[^\n]*\n[\s\S]*?(?=\n## |$)/g);
+      if (goldenMatch && goldenMatch.length > 0) {
+        html += '<div class="v-side-group"><div class="v-side-group-title">Golden Rules</div>';
+        goldenMatch.forEach(function(rule) {
+          html += '<div class="v-memory-golden"><div class="v-memory-md">' + renderMarkdown(rule.trim()) + '</div></div>';
+        });
+        html += '</div>';
+      }
+
+      html += '<div class="v-side-group"><div class="v-side-group-title">MEMORY.md <span style="font-weight:400;color:var(--v-text-muted);text-transform:none;letter-spacing:0">(' + (mem.longTerm.size ? (mem.longTerm.size / 1024).toFixed(1) + ' KB' : '—') + ')</span></div>';
+      html += '<div class="v-memory-md">' + renderMarkdown(content.substring(0, 3000)) + '</div>';
+      if (content.length > 3000) {
+        html += '<div style="color:var(--v-text-muted);font-size:10px;margin-top:6px">…truncated (' + content.length + ' chars)</div>';
+      }
+      html += '</div>';
+    }
+
+    if (mem.daily && mem.daily.length > 0) {
+      html += '<div class="v-side-group"><div class="v-side-group-title">Daily Notes</div>';
+      mem.daily.slice(0, 14).forEach(function(d) {
+        html += '<div class="v-memory-daily">';
+        html += '<span class="v-memory-daily-date">' + (d.date || d.name || '—') + '</span>';
+        html += '<span style="flex:1;color:var(--v-text-secondary);font-size:11px;padding:0 8px">' + (d.preview || 'Daily log') + '</span>';
+        html += '<span class="v-memory-daily-size">' + (d.size ? (d.size / 1024).toFixed(1) + ' KB' : '') + '</span>';
+        html += '</div>';
+      });
+      html += '</div>';
+    }
+
+    if (mem.heartbeat) {
+      html += '<div class="v-side-group"><div class="v-side-group-title">Heartbeat State</div>';
+      html += '<div class="v-memory-md"><pre style="font-size:10px;background:var(--v-bg-card);padding:8px;border-radius:8px;overflow-x:auto;color:var(--v-text-secondary)">' + JSON.stringify(mem.heartbeat, null, 2).replace(/</g,'&lt;') + '</pre></div>';
+      html += '</div>';
+    }
+
+    html += '<div class="v-side-group"><div style="text-align:center;color:var(--v-text-muted);font-size:11px">🔒 Only the village chief can edit memory</div></div>';
+
+    memoryBody.innerHTML = html;
+  }
+
+  document.getElementById('vMemoryBackdrop').addEventListener('click', closeMemoryPanel);
+  document.getElementById('vMemoryClose').addEventListener('click', closeMemoryPanel);
+
+  // ══════════════════════════════════════════════════
+  //  SETTINGS PANEL
+  // ══════════════════════════════════════════════════
+  var settingsOverlay = document.getElementById('vSettingsOverlay');
+  var settingsBody = document.getElementById('vSettingsBody');
+
+  function openSettingsPanel() {
+    closeAllPanels();
+    settingsOverlay.classList.add('open');
+
+    renderSettings();
+  }
+  window.closeSettingsPanel = function() {
+    settingsOverlay.classList.remove('open');
+
+  };
+
+  async function renderSettings() {
+    var html = '';
+
+    // API Keys
+    html += '<div class="v-side-group"><div class="v-side-group-title">🔑 API Keys</div>';
+    var providers = ['anthropic', 'openai', 'elevenlabs', 'google'];
+    var labels = { anthropic: 'Anthropic', openai: 'OpenAI', elevenlabs: 'ElevenLabs', google: 'Google' };
+    var prefixes = { anthropic: 'sk-ant-', openai: 'sk-', elevenlabs: '', google: '' };
+
+    var currentKeys = {};
+    if (API) { try { currentKeys = await API.getApiKeys(); } catch(e) {} }
+
+    providers.forEach(function(prov) {
+      var info = currentKeys[prov] || {};
+      var masked = info.hasKey ? info.masked : 'Not set';
+      html += '<div class="v-side-item" style="flex-wrap:wrap;gap:8px">';
+      html += '<div class="v-side-item-info" style="flex:1;min-width:140px">';
+      html += '<div class="v-side-item-name">' + labels[prov] + '</div>';
+      html += '<div class="v-side-item-sub" style="font-family:monospace;font-size:10px">' + masked + '</div>';
+      html += '</div>';
+      html += '<div style="display:flex;gap:4px;align-items:center">';
+      html += '<input type="password" id="vkey-' + prov + '" placeholder="' + (prefixes[prov] || '') + '..." style="width:140px;padding:3px 7px;border-radius:5px;border:1px solid var(--v-border-med);font-size:10px;font-family:monospace;background:var(--v-bg-input);color:var(--v-text)" />';
+      html += '<button class="vkey-save" data-prov="' + prov + '" style="padding:3px 8px;border-radius:5px;border:none;background:var(--v-accent);color:#fff;font-size:10px;cursor:pointer;font-weight:500">Save</button>';
+      if (info.hasKey) {
+        html += '<button class="vkey-del" data-prov="' + prov + '" style="padding:3px 6px;border-radius:5px;border:1px solid #FF453A;background:transparent;color:#FF453A;font-size:10px;cursor:pointer">🗑️</button>';
+      }
+      html += '</div></div>';
+    });
+    html += '</div>';
+
+    // Mapping
+    html += '<div class="v-side-group"><div class="v-side-group-title">🗺️ OpenClaw ↔ SpawnKit Mapping</div>';
+    var mappings = [
+      { oc: 'Skills', sk: 'Skills Panel', icon: '⚡' },
+      { oc: 'Cron Jobs', sk: 'Calendar / Crons', icon: '📅' },
+      { oc: 'Sessions', sk: 'Agents / Rooms', icon: '👥' },
+      { oc: 'Memory', sk: 'Memory Panel', icon: '🧠' },
+      { oc: 'Sub-agents', sk: 'Missions', icon: '🎯' },
+    ];
+    html += '<div style="display:grid;grid-template-columns:auto 20px auto;gap:4px 10px;align-items:center;padding:6px 0">';
+    html += '<div style="font-size:9px;font-weight:600;color:var(--v-text-muted);text-transform:uppercase;letter-spacing:0.5px">OpenClaw</div><div></div>';
+    html += '<div style="font-size:9px;font-weight:600;color:var(--v-text-muted);text-transform:uppercase;letter-spacing:0.5px">SpawnKit</div>';
+    mappings.forEach(function(m) {
+      html += '<div style="font-size:12px;padding:3px 0">' + m.icon + ' ' + m.oc + '</div>';
+      html += '<div style="font-size:11px;color:var(--v-accent);text-align:center">→</div>';
+      html += '<div style="font-size:12px;padding:3px 0;color:var(--v-text-secondary)">' + m.sk + '</div>';
+    });
+    html += '</div></div>';
+
+    settingsBody.innerHTML = html;
+
+    // Wire up save/delete
+    document.querySelectorAll('.vkey-save').forEach(function(btn) {
+      btn.addEventListener('click', async function() {
+        var prov = btn.dataset.prov;
+        var input = document.getElementById('vkey-' + prov);
+        var key = input ? input.value.trim() : '';
+        if (!key) { showToast('Enter an API key'); return; }
+        if (API) {
+          var r = await API.saveApiKey(prov, key);
+          if (r && r.success) { showToast('✅ ' + labels[prov] + ' saved'); input.value = ''; renderSettings(); }
+          else { showToast('⚠️ ' + (r.error || 'Failed')); }
+        }
+      });
+    });
+    document.querySelectorAll('.vkey-del').forEach(function(btn) {
+      btn.addEventListener('click', async function() {
+        var prov = btn.dataset.prov;
+        if (API) {
+          var r = await API.deleteApiKey(prov);
+          if (r && r.success) { showToast('🗑️ ' + labels[prov] + ' deleted'); renderSettings(); }
+        }
+      });
+    });
+  }
+
+  document.getElementById('vSettingsBackdrop').addEventListener('click', closeSettingsPanel);
+  document.getElementById('vSettingsClose').addEventListener('click', closeSettingsPanel);
+
+  // ══════════════════════════════════════════════════
+  //  STATUS BAR BUTTONS + CLOCK + UPTIME
+  // ══════════════════════════════════════════════════
+  document.getElementById('vsbMissions').addEventListener('click', openMissionsPanel);
+  document.getElementById('vsbCrons').addEventListener('click', openCronPanel);
+  document.getElementById('vsbMemory').addEventListener('click', openMemoryPanel);
+  document.getElementById('vsbChat').addEventListener('click', openVillageChat);
+  document.getElementById('vsbSettings').addEventListener('click', openSettingsPanel);
+
+  // Command input → open chat + send
+  var cmdInput = document.getElementById('vsbCmdInput');
+  cmdInput.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && cmdInput.value.trim()) {
+      var cmd = cmdInput.value.trim();
+      cmdInput.value = '';
+      openVillageChat();
+      chatInput.value = cmd;
+      sendChat();
+    }
+  });
+
+  // Clock
+  function updateClock() {
+    var now = new Date();
+    var h = now.getHours().toString().padStart(2, '0');
+    var m = now.getMinutes().toString().padStart(2, '0');
+    var el = document.getElementById('vsbClock');
+    if (el) el.textContent = h + ':' + m;
+  }
+  updateClock();
+  setInterval(updateClock, 30000);
+
+  // Uptime
+  var _startTime = Date.now();
+  function updateUptime() {
+    var elapsed = Date.now() - _startTime;
+    var h = Math.floor(elapsed / 3600000);
+    var m = Math.floor((elapsed % 3600000) / 60000);
+    var el = document.getElementById('vsbUptime');
+    if (el) el.textContent = h + 'h' + m.toString().padStart(2, '0') + 'm';
+  }
+  updateUptime();
+  setInterval(updateUptime, 60000);
+
+  // ══════════════════════════════════════════════════
+  //  ESCAPE KEY — Close topmost panel
+  // ══════════════════════════════════════════════════
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      if (chatOverlay.classList.contains('open')) closeVillageChat();
+      else if (detailOverlay.classList.contains('open')) closeVillageDetail();
+      else if (missionsOverlay.classList.contains('open')) closeMissionsPanel();
+      else if (cronOverlay.classList.contains('open')) closeCronPanel();
+      else if (memoryOverlay.classList.contains('open')) closeMemoryPanel();
+      else if (settingsOverlay.classList.contains('open')) closeSettingsPanel();
+    }
+  });
+
+  // ══════════════════════════════════════════════════
+  //  LIVE ACTIVITY SIMULATION
+  // ══════════════════════════════════════════════════
+  var ACTIVITY_VERBS = {
+    ceo: ['Orchestrating','Reviewing','Planning','Delegating'],
+    atlas: ['Coordinating','Documenting','Syncing','Scheduling'],
+    forge: ['Building','Deploying','Optimizing','Refactoring'],
+    hunter: ['Prospecting','Analyzing','Pitching','Converting'],
+    echo: ['Crafting','Writing','Designing','Publishing'],
+    sentinel: ['Scanning','Auditing','Reviewing','Monitoring']
+  };
+  var ACTIVITY_OBJECTS = {
+    ceo: ['fleet ops','quality pipeline','sprint goals','roadmap'],
+    atlas: ['workflows','deployment pipeline','cron schedules','fleet status'],
+    forge: ['security middleware','API endpoints','live bridge','infra'],
+    hunter: ['lead pipeline','pricing tiers','market segments','funnel'],
+    echo: ['content scripts','brand story','video pipeline','social'],
+    sentinel: ['codebase','security posture','compliance','artifacts']
+  };
+
+  // ── Announce readiness ─────────────────────────────
+  if (window.parent !== window) {
+    window.parent.postMessage({ type: 'village:ready', theme: 'simcity', timestamp: Date.now() }, '*');
+  }
+  window.__VILLAGE_THEME = 'simcity';
+
+  // ── SpawnKit integration ───────────────────────────
+  if (window.SpawnKit) {
+    SpawnKit.on('data:refresh', function(data) {
+      if (data.agents) {
+        data.agents.forEach(function(d) {
+          var a = (typeof agents !== 'undefined') ? agents.find(function(x) { return x.name === d.name; }) : null;
+          if (a && d.status) a.status = d.status;
+        });
+        var countEl = document.getElementById('vsbAgentCount');
+        if (countEl) countEl.textContent = data.agents.length + ' Agents';
+      }
+    });
+    if (SpawnKit.mode === 'live') SpawnKit.refresh();
+  }
+
+  // ══════════════════════════════════════════════════
+  //  INIT (called after village images load)
+  // ══════════════════════════════════════════════════
+  window.initVillagePanels = function() {
+    prefetchData();
+    setInterval(prefetchData, 30000);
+    loadLiveAgentData();
+    // Init NPCs after map is ready
+    if (typeof initNPCs === 'function') initNPCs();
+  };
+
+})();
+</script>
+</body>
+</html>

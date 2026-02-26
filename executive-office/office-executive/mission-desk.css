@@ -1,0 +1,529 @@
+/* ============================================================
+   Mission Desk UI — SpawnKit Executive Office
+   Two states: .md-state-idle (default) | .md-state-chat
+   All class names prefixed with .md- to avoid collisions
+   ============================================================ */
+
+/* ── 0. Utility ───────────────────────────────────────────── */
+.md-hidden { display: none !important; }
+.md-root { display: contents; }
+.md-transitioning * { pointer-events: none !important; }
+
+/* ── 1. Mission Desk Container ────────────────────────────── */
+#missionDesk {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 0 24px;
+  background: transparent;
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+  transition: opacity 300ms var(--ease-smooth),
+              transform 300ms var(--ease-smooth),
+              pointer-events 300ms;
+}
+
+/* ── 2. Hero Section ──────────────────────────────────────── */
+.md-hero {
+  text-align: center;
+  margin-bottom: 28px;
+  animation: mdSlideUp 400ms var(--ease-spring) both;
+}
+
+.md-hero h1 {
+  font-family: var(--font-family);
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.5px;
+  margin: 0 0 8px;
+}
+
+.md-hero p {
+  font-family: var(--font-family);
+  font-size: 15px;
+  color: var(--text-tertiary);
+  margin: 0;
+}
+
+/* ── 3. Hero Input Bar ────────────────────────────────────── */
+.md-input-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 680px;
+  width: 100%;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-medium);
+  border-radius: 16px;
+  padding: 14px 20px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+  transition: all 200ms var(--ease-smooth);
+}
+
+.md-input-bar:focus-within {
+  border-color: var(--exec-blue);
+  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.12);
+}
+
+.md-input-bar input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-family: var(--font-family);
+  font-size: 15px;
+  color: var(--text-primary);
+}
+
+.md-input-bar input::placeholder {
+  color: var(--text-tertiary);
+}
+
+.md-send-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--exec-blue);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 16px;
+  flex-shrink: 0;
+  opacity: 0;
+  transition: opacity 200ms var(--ease-smooth),
+              transform 200ms var(--ease-spring);
+}
+
+.md-send-btn.visible,
+.md-send-btn.md-send-btn--visible {
+  opacity: 1;
+}
+
+.md-send-btn:hover {
+  transform: scale(1.08);
+}
+
+/* ── 4. Suggestion Chips ──────────────────────────────────── */
+.md-suggestions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 16px;
+}
+
+.md-chip {
+  padding: 8px 16px;
+  border-radius: 20px;
+  border: 1px solid var(--border-medium);
+  background: var(--bg-secondary);
+  font-family: var(--font-family);
+  font-size: 13px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 200ms var(--ease-smooth);
+}
+
+.md-chip:hover {
+  border-color: var(--exec-blue);
+  color: var(--exec-blue);
+  transform: translateY(-1px);
+}
+
+/* ── Section Labels ───────────────────────────────────────── */
+.md-section-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-tertiary, #636366);
+  text-align: center;
+  margin-top: 28px;
+  margin-bottom: 12px;
+}
+
+/* ── 5. Team Row ──────────────────────────────────────────── */
+.md-team {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  margin-top: 32px;
+}
+
+.md-agent {
+  text-align: center;
+  cursor: pointer;
+  width: 72px;
+}
+
+.md-agent-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  overflow: hidden;
+  position: relative;
+  border: 2px solid var(--border-subtle);
+  margin: 0 auto;
+  transition: all 200ms var(--ease-smooth);
+}
+
+.md-agent-avatar svg {
+  width: 100%;
+  height: 100%;
+}
+
+.md-agent-avatar:hover {
+  border-color: var(--exec-blue);
+  transform: scale(1.08);
+  box-shadow: 0 4px 12px rgba(0, 122, 255, 0.15);
+}
+
+.md-agent-status {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 2px solid var(--bg-primary);
+}
+
+.md-agent-status--active { background: #30D158; }
+.md-agent-status--idle   { background: #636366; }
+
+.md-agent-name {
+  display: block;
+  font-family: var(--font-family);
+  font-size: 11px;
+  font-weight: 600;
+  margin-top: 6px;
+  color: var(--text-primary);
+}
+
+.md-agent-role {
+  display: block;
+  font-family: var(--font-family);
+  font-size: 10px;
+  color: var(--text-tertiary);
+}
+
+/* ── 6. Quick Actions ─────────────────────────────────────── */
+.md-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 24px;
+  flex-wrap: wrap;
+}
+
+.md-action {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border-radius: 12px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-secondary);
+  cursor: pointer;
+  font-family: var(--font-family);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  transition: all 200ms var(--ease-smooth);
+}
+
+.md-action:hover {
+  border-color: var(--border-medium);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.md-action-icon { font-size: 16px; }
+
+/* ── Connect Anywhere (Channels) ─────────────────────────── */
+.md-channels {
+  display: flex; gap: 10px; justify-content: center;
+  flex-wrap: wrap; margin-top: 4px;
+}
+.md-channel {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 14px; border-radius: 10px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-secondary);
+  font-size: 12px; min-width: 120px;
+}
+.md-channel-icon { font-size: 16px; }
+.md-channel-name { font-weight: 500; color: var(--text-primary); }
+.md-channel-status {
+  font-size: 10px; font-weight: 600; margin-left: auto;
+  padding: 2px 6px; border-radius: 6px;
+}
+.md-channel-on {
+  color: #30D158; background: rgba(48,209,88,0.1);
+}
+.md-channel-off {
+  color: var(--text-tertiary, #636366); background: var(--bg-tertiary, #F5F5F7);
+}
+
+/* ── 7. Chat Expanded ─────────────────────────────────────── */
+#chatExpanded {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: var(--bg-primary);
+  display: flex;
+  flex-direction: column;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 300ms var(--ease-smooth);
+}
+
+/* ── 8. Chat Header ───────────────────────────────────────── */
+.md-chat-header {
+  height: 56px;
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  gap: 12px;
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--bg-secondary);
+  backdrop-filter: blur(20px);
+  flex-shrink: 0;
+}
+
+.md-back-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid var(--border-subtle);
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background 150ms;
+}
+
+.md-back-btn:hover { background: var(--bg-tertiary); }
+
+.md-chat-title {
+  font-family: var(--font-family);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* ── 9. Chat Thread ───────────────────────────────────────── */
+.md-chat-thread {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.md-msg {
+  max-width: 80%;
+  animation: mdMsgIn 300ms var(--ease-spring) both;
+}
+
+.md-msg--user { align-self: flex-end; }
+
+.md-msg--user .md-msg-content {
+  background: var(--exec-blue);
+  color: #fff;
+  border-radius: 16px 16px 4px 16px;
+  padding: 10px 16px;
+  font-family: var(--font-family);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.md-msg--ai {
+  align-self: flex-start;
+  display: flex;
+  gap: 10px;
+}
+
+.md-msg--ai .md-msg-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.md-msg--ai .md-msg-content {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px 16px 16px 16px;
+  padding: 10px 16px;
+  font-family: var(--font-family);
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text-primary);
+}
+
+.md-msg--typing .md-msg-content { min-width: 60px; }
+
+/* ── 10. Chat Input Bar ───────────────────────────────────── */
+.md-chat-input-bar {
+  padding: 12px 20px;
+  border-top: 1px solid var(--border-subtle);
+  background: var(--bg-secondary);
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.md-chat-input-bar input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-family: var(--font-family);
+  font-size: 15px;
+  color: var(--text-primary);
+}
+
+.md-chat-input-bar input::placeholder { color: var(--text-tertiary); }
+
+/* ── 11. Collapsed Agent Bar in Chat ─────────────────────── */
+.md-agent-bar {
+  display: flex;
+  gap: 6px;
+  padding: 8px 20px;
+  background: var(--bg-secondary);
+  border-top: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+}
+
+.md-agent-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  overflow: hidden;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: all 200ms var(--ease-smooth);
+}
+
+.md-agent-icon:hover { border-color: var(--exec-blue); }
+
+/* ── 12. Panel (half-sheet) ───────────────────────────────── */
+.md-panel-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.3);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 200ms var(--ease-smooth);
+  z-index: 199;
+}
+
+.md-panel-backdrop.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.md-panel {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 200;
+  max-height: 70vh;
+  background: var(--bg-secondary);
+  border-radius: 20px 20px 0 0;
+  box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.12);
+  transform: translateY(100%);
+  transition: transform 300ms var(--ease-smooth);
+}
+
+.md-panel.open { transform: translateY(0); }
+
+.md-panel-handle {
+  width: 36px;
+  height: 4px;
+  background: var(--exec-gray-200, #D1D1D6);
+  border-radius: 2px;
+  margin: 8px auto;
+}
+
+.md-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.md-panel-body {
+  padding: 16px 20px;
+  overflow-y: auto;
+  max-height: calc(70vh - 60px);
+}
+
+/* ── 13. Animations ───────────────────────────────────────── */
+@keyframes mdMsgIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes mdFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes mdSlideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes mdPulse {
+  0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+  40%           { transform: scale(1);   opacity: 1; }
+}
+
+/* ── 14. State Transitions ────────────────────────────────── */
+.md-state-chat #missionDesk {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-20px);
+}
+
+.md-state-chat #chatExpanded {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.md-state-idle #missionDesk {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+.md-state-idle #chatExpanded {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ── 15. Responsive ───────────────────────────────────────── */
+@media (max-width: 768px) {
+  .md-hero h1       { font-size: 24px; }
+  .md-team          { gap: 12px; }
+  .md-agent         { width: 60px; }
+  .md-agent-avatar  { width: 40px; height: 40px; }
+  .md-actions       { gap: 8px; }
+  .md-action        { padding: 8px 14px; font-size: 12px; }
+}

@@ -1,0 +1,2741 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SpawnKit — Medieval Castle 3D</title>
+    <script>
+        window.OC_RELAY_URL = window.OC_RELAY_URL || 'http://127.0.0.1:18790';
+        var API_URL = window.OC_API_URL || (window.location.hostname.includes('spawnkit.ai') ? window.location.origin : 'http://127.0.0.1:8222');
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=MedievalSharp&family=Cinzel:wght@400;500;600;700&family=Crimson+Text:wght@400;600&display=swap" rel="stylesheet">
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.162.0/build/three.module.js",
+            "three/addons/": "https://unpkg.com/three@0.162.0/examples/jsm/"
+        }
+    }
+    </script>
+    <style>
+        /* ═══════════════════════════════════════════════════════════════
+           SpawnKit Medieval Castle v4.0 — Three.js 3D Diorama
+           Real Kenney .glb models, isometric camera, animated characters
+           ═══════════════════════════════════════════════════════════════ */
+
+        :root {
+            --castle-dark-navy: #1a1a2e;
+            --castle-navy: #16213e;
+            --castle-blue: #0f3460;
+            --castle-red: #e94560;
+            --castle-gold: #c9a959;
+            --castle-brown: #8b7355;
+            --castle-parchment: #f4e4bc;
+            --castle-stone-light: #a8a299;
+            --castle-stone-dark: #5c5750;
+            --castle-black: #0d0d0d;
+            --castle-silver: #c0c0c0;
+            --bg-primary: var(--castle-dark-navy);
+            --bg-secondary: var(--castle-navy);
+            --bg-tertiary: var(--castle-blue);
+            --bg-parchment: var(--castle-parchment);
+            --bg-scroll: linear-gradient(145deg, #f4e4bc 0%, #e8d5a3 100%);
+            --text-primary: var(--castle-parchment);
+            --text-secondary: var(--castle-stone-light);
+            --text-accent: var(--castle-gold);
+            --text-dark: var(--castle-navy);
+            --text-red: var(--castle-red);
+            --border-stone: rgba(168, 162, 153, 0.3);
+            --border-gold: rgba(201, 169, 89, 0.5);
+            --status-active: #4ade80;
+            --status-busy: #fbbf24;
+            --status-idle: #64748b;
+            --status-error: var(--castle-red);
+            --font-medieval: 'MedievalSharp', fantasy;
+            --font-serif: 'Cinzel', serif;
+            --font-body: 'Crimson Text', serif;
+            --font-mono: 'Courier New', monospace;
+            --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px;
+            --space-5: 20px; --space-6: 24px; --space-8: 32px;
+            --radius-sm: 4px; --radius-md: 8px; --radius-lg: 12px;
+            --shadow-deep: 0 8px 32px rgba(0,0,0,0.6);
+        }
+
+        /* ═══ MISSION CONTROL CSS ═══ */
+        .mc-overlay {
+            position: fixed; inset: 0; z-index: 1000;
+            background: linear-gradient(145deg, var(--castle-dark-navy) 0%, var(--castle-navy) 50%, var(--castle-blue) 100%);
+            backdrop-filter: blur(20px);
+            display: none; flex-direction: column;
+            opacity: 0; transform: translateY(20px);
+            transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+        .mc-overlay.visible { opacity: 1; transform: translateY(0); }
+        
+        .mc-header {
+            display: flex; align-items: center; gap: 16px; padding: 16px 24px;
+            background: rgba(13, 13, 26, 0.8); border-bottom: 2px solid var(--border-gold);
+        }
+        .mc-back {
+            display: flex; align-items: center; gap: 8px; padding: 6px 12px;
+            background: var(--castle-gold); color: var(--castle-navy);
+            border: none; border-radius: 8px; font-family: var(--font-serif);
+            font-weight: 600; cursor: pointer; transition: all 0.15s;
+        }
+        .mc-back:hover { background: #d4b76a; }
+        .mc-title {
+            font-family: var(--font-medieval); font-size: 20px;
+            color: var(--castle-gold); display: flex; align-items: center; gap: 8px;
+        }
+        .mc-title-badge {
+            font-family: var(--font-serif); font-size: 11px;
+            background: rgba(201, 169, 89, 0.2); color: var(--castle-gold);
+            padding: 2px 8px; border-radius: 6px; text-transform: uppercase;
+        }
+        
+        .mc-body {
+            flex: 1; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px;
+            padding: 16px 24px; overflow: hidden;
+        }
+        .mc-col {
+            background: rgba(0, 0, 0, 0.3); border: 1px solid var(--border-stone);
+            border-radius: 12px; padding: 16px; overflow-y: auto;
+            backdrop-filter: blur(10px);
+        }
+        .mc-col::-webkit-scrollbar { width: 4px; }
+        .mc-col::-webkit-scrollbar-thumb { background: var(--border-gold); border-radius: 2px; }
+        
+        .mc-section-title {
+            font-size: 10px; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 0.8px; color: var(--castle-stone-light);
+            margin-bottom: 8px; display: flex; align-items: center; gap: 6px;
+        }
+        
+        /* Mission cards with medieval style */
+        .mc-mission {
+            padding: 12px; border-radius: 12px; margin-bottom: 8px;
+            background: var(--bg-scroll); backdrop-filter: blur(8px);
+            border: 1px solid var(--border-gold); cursor: pointer; transition: all 0.15s;
+        }
+        .mc-mission:hover { border-color: var(--castle-gold); box-shadow: 0 2px 8px rgba(201, 169, 89, 0.3); }
+        .mc-mission-name { font-size: 14px; font-weight: 600; color: var(--text-dark); margin-bottom: 4px; }
+        .mc-mission-meta { font-size: 11px; color: var(--castle-brown); display: flex; gap: 8px; align-items: center; margin-bottom: 6px; }
+        .mc-progress { height: 4px; border-radius: 2px; background: var(--border-stone); overflow: hidden; }
+        .mc-progress-fill { height: 100%; border-radius: 2px; background: var(--castle-gold); transition: width 0.3s; }
+        .mc-mission-tasks { margin-top: 8px; display: none; }
+        .mc-mission.expanded .mc-mission-tasks { display: block; }
+        .mc-task-row {
+            display: flex; align-items: center; gap: 8px; padding: 5px 0;
+            border-bottom: 1px solid rgba(0,0,0,0.1); font-size: 12px;
+        }
+        .mc-task-row:last-child { border-bottom: none; }
+        .mc-task-name { flex: 1; color: var(--text-dark); }
+        .mc-task-assignee { font-size: 10px; color: var(--castle-navy); padding: 1px 6px; border-radius: 4px; background: rgba(201, 169, 89, 0.3); }
+        .mc-task-status { font-size: 10px; font-weight: 600; padding: 1px 6px; border-radius: 4px; }
+        .mc-task-status--done { background: rgba(74, 222, 128, 0.2); color: var(--status-active); }
+        .mc-task-status--active { background: rgba(15, 52, 96, 0.3); color: var(--castle-blue); }
+        .mc-task-status--review { background: rgba(233, 69, 96, 0.2); color: var(--castle-red); }
+        .mc-task-status--pending { background: var(--border-stone); color: var(--castle-stone-dark); }
+        
+        /* TODO.md with parchment look */
+        .mc-todo-raw {
+            padding: 10px 12px; border-radius: 10px; margin-top: 8px;
+            background: var(--bg-scroll); border: 1px solid var(--border-gold);
+            font-size: 12px; color: var(--text-dark); line-height: 1.6;
+            max-height: 200px; overflow-y: auto; font-family: var(--font-body);
+        }
+        .mc-todo-toggle {
+            font-size: 11px; font-weight: 600; color: var(--castle-gold);
+            cursor: pointer; margin-top: 8px; display: inline-block;
+        }
+        
+        /* Activity feed with medieval icons */
+        .mc-feed-item {
+            display: flex; gap: 10px; padding: 10px 0;
+            border-bottom: 1px solid var(--border-stone);
+        }
+        .mc-feed-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+        .mc-feed-body { flex: 1; min-width: 0; }
+        .mc-feed-text { font-size: 13px; color: var(--text-primary); line-height: 1.4; }
+        .mc-feed-time { font-size: 10px; color: var(--castle-stone-light); margin-top: 2px; }
+        .mc-feed-detail { font-size: 11px; color: var(--text-secondary); margin-top: 4px; display: none; padding: 6px 8px; border-radius: 6px; background: rgba(0,0,0,0.2); }
+        .mc-feed-item.expanded .mc-feed-detail { display: block; }
+        
+        .mc-feed-toggle {
+            display: flex; gap: 0; margin-bottom: 12px; border-radius: 8px; overflow: hidden;
+            border: 1px solid var(--border-gold);
+        }
+        .mc-feed-toggle-btn {
+            flex: 1; padding: 6px 12px; border: none; background: transparent;
+            font-size: 11px; font-weight: 600; cursor: pointer; font-family: var(--font-serif);
+            color: var(--castle-stone-light); transition: all 0.15s;
+        }
+        .mc-feed-toggle-btn.active { background: var(--castle-gold); color: var(--castle-navy); }
+        
+        .mc-raw-transcript {
+            font-family: var(--font-mono); font-size: 11px;
+            line-height: 1.5; color: var(--text-secondary);
+            white-space: pre-wrap; word-break: break-word;
+            padding: 12px; border-radius: 10px; background: rgba(0,0,0,0.2);
+            max-height: 100%; overflow-y: auto; display: none;
+        }
+        
+        /* Fleet pastilles with medieval styling */
+        .mc-fleet-grid {
+            display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-bottom: 12px;
+        }
+        .mc-fleet-pill {
+            display: flex; flex-direction: column; align-items: center; gap: 4px;
+            padding: 8px 4px; border-radius: 10px; background: var(--bg-scroll);
+            border: 1px solid var(--border-gold); cursor: pointer; transition: all 0.15s;
+        }
+        .mc-fleet-pill:hover { border-color: var(--castle-gold); box-shadow: 0 0 12px rgba(201, 169, 89, 0.4); }
+        .mc-fleet-pill-dot { width: 8px; height: 8px; border-radius: 50%; }
+        .mc-fleet-pill-name { font-size: 10px; font-weight: 600; color: var(--text-dark); }
+        
+        /* Sub-agent list */
+        .mc-sub-item {
+            display: flex; align-items: center; gap: 8px; padding: 6px 0;
+            border-bottom: 1px solid var(--border-stone);
+        }
+        .mc-sub-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+        .mc-sub-name { font-size: 12px; font-weight: 500; color: var(--text-primary); flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .mc-sub-meta { font-size: 10px; color: var(--castle-stone-light); white-space: nowrap; }
+        
+        /* Bottom status bar */
+        .mc-statusbar {
+            display: flex; align-items: center; gap: 16px; padding: 8px 24px;
+            background: rgba(13, 13, 26, 0.9); backdrop-filter: blur(20px);
+            border-top: 1px solid var(--border-gold); font-size: 11px; color: var(--castle-stone-light);
+            flex-shrink: 0;
+        }
+        .mc-statusbar-item { display: flex; align-items: center; gap: 4px; }
+        .mc-statusbar-dot { width: 6px; height: 6px; border-radius: 50%; }
+
+        /* Status pulse animation */
+        @keyframes statusPulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.6; transform: scale(1.2); }
+        }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            .mc-body { grid-template-columns: 1fr; }
+            .mc-col:nth-child(3) { display: none; }
+        }
+
+        /* ═══ AGENT DETAIL PANEL CSS ═══ */
+        .agent-detail-overlay {
+            position: fixed; inset: 0; z-index: 900;
+            background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(8px);
+            display: none; align-items: center; justify-content: center;
+            opacity: 0; transition: all 0.3s ease;
+        }
+        .agent-detail-overlay.visible { opacity: 1; }
+        .agent-detail-panel {
+            background: var(--bg-scroll); border: 2px solid var(--castle-gold);
+            border-radius: 16px; padding: 24px; max-width: 500px; width: 90%;
+            transform: scale(0.9); transition: transform 0.3s ease;
+            box-shadow: var(--shadow-deep);
+        }
+        .agent-detail-overlay.visible .agent-detail-panel { transform: scale(1); }
+        .agent-detail-header {
+            display: flex; align-items: center; gap: 12px; margin-bottom: 20px;
+            padding-bottom: 12px; border-bottom: 1px solid var(--border-gold);
+        }
+        .agent-detail-avatar {
+            width: 48px; height: 48px; border-radius: 12px;
+            background: var(--castle-gold); display: flex; align-items: center; justify-content: center;
+            font-size: 24px; color: var(--castle-navy);
+        }
+        .agent-detail-info h3 {
+            font-family: var(--font-medieval); font-size: 18px;
+            color: var(--castle-navy); margin-bottom: 4px;
+        }
+        .agent-detail-info p {
+            font-size: 14px; color: var(--castle-brown); margin: 0;
+        }
+        .agent-detail-close {
+            margin-left: auto; background: var(--castle-red); color: white;
+            border: none; border-radius: 8px; width: 32px; height: 32px;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; font-size: 16px;
+        }
+        .agent-detail-tabs {
+            display: flex; gap: 4px; margin-bottom: 16px;
+            background: rgba(201, 169, 89, 0.1); border-radius: 8px; padding: 4px;
+        }
+        .agent-detail-tab {
+            flex: 1; padding: 8px 12px; border: none; background: transparent;
+            font-family: var(--font-serif); font-size: 12px; font-weight: 600;
+            color: var(--castle-brown); border-radius: 6px; cursor: pointer;
+            transition: all 0.15s;
+        }
+        .agent-detail-tab.active {
+            background: var(--castle-gold); color: var(--castle-navy);
+        }
+        .agent-detail-content {
+            min-height: 200px; color: var(--castle-navy);
+        }
+        .agent-metrics-grid {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+        }
+        .agent-metric-card {
+            background: rgba(255, 255, 255, 0.5); border: 1px solid var(--border-gold);
+            border-radius: 8px; padding: 12px; text-align: center;
+        }
+        .agent-metric-value {
+            font-family: var(--font-serif); font-size: 20px; font-weight: 600;
+            color: var(--castle-red); display: block; margin-bottom: 4px;
+        }
+        .agent-metric-label {
+            font-size: 11px; color: var(--castle-brown);
+            text-transform: uppercase; letter-spacing: 0.5px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: var(--castle-dark-navy);
+            color: var(--text-primary);
+            font-family: var(--font-body);
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        /* ── Main Grid Layout ──────────────────────────────── */
+        .castle-layout {
+            display: grid;
+            grid-template-columns: 300px 1fr 320px;
+            grid-template-rows: 70px 1fr;
+            grid-template-areas:
+                "header header header"
+                "sidebar main rightpanel";
+            height: 100vh;
+        }
+
+        /* ── Header ────────────────────────────────────────── */
+        .castle-header {
+            grid-area: header;
+            background: linear-gradient(135deg, #0d0d1a 0%, var(--castle-navy) 50%, #0d0d1a 100%);
+            border-bottom: 2px solid var(--border-gold);
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 var(--space-6);
+            z-index: 10;
+        }
+        .castle-banner { display: flex; align-items: center; gap: var(--space-4); }
+        .castle-crest { font-size: 32px; filter: drop-shadow(0 0 8px rgba(201,169,89,0.6)); }
+        .castle-name { font-family: var(--font-medieval); font-size: 22px; color: var(--castle-gold); letter-spacing: 2px; }
+        .castle-subtitle { font-family: var(--font-serif); font-size: 11px; color: var(--castle-stone-light); text-transform: uppercase; letter-spacing: 3px; }
+        .castle-status-bar { display: flex; gap: var(--space-6); align-items: center; }
+        .status-indicator { display: flex; align-items: center; gap: var(--space-2); font-size: 13px; font-family: var(--font-serif); }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; }
+        .status-dot.active { background: var(--status-active); box-shadow: 0 0 6px var(--status-active); }
+        .status-dot.busy { background: var(--status-busy); box-shadow: 0 0 6px var(--status-busy); }
+
+        /* ── Left Sidebar ──────────────────────────────────── */
+        .castle-sidebar {
+            grid-area: sidebar;
+            background: var(--bg-secondary);
+            border-right: 2px solid var(--border-stone);
+            display: flex; flex-direction: column; overflow: hidden;
+        }
+        .sidebar-header {
+            padding: var(--space-5) var(--space-4);
+            border-bottom: 1px solid var(--border-stone);
+            background: linear-gradient(135deg, var(--castle-stone-dark), var(--castle-navy));
+        }
+        .sidebar-title { font-family: var(--font-medieval); font-size: 18px; color: var(--castle-gold); text-align: center; }
+        .agents-scroll { flex: 1; overflow-y: auto; padding: var(--space-3); }
+
+        .agent-card {
+            background: linear-gradient(135deg, rgba(22,33,62,0.9), rgba(15,52,96,0.4));
+            border: 1px solid var(--border-stone);
+            border-radius: var(--radius-lg);
+            padding: var(--space-3);
+            margin-bottom: var(--space-2);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .agent-card:hover { border-color: var(--castle-gold); transform: translateX(3px); box-shadow: 0 2px 8px rgba(201,169,89,0.15); }
+        .agent-card.selected { border-color: var(--castle-red); box-shadow: 0 0 12px rgba(233,69,96,0.3); background: linear-gradient(135deg, rgba(233,69,96,0.1), rgba(15,52,96,0.4)); }
+        .agent-header { display: flex; align-items: center; gap: var(--space-3); }
+        .agent-avatar {
+            width: 40px; height: 40px; border-radius: var(--radius-md);
+            display: flex; align-items: center; justify-content: center;
+            overflow: hidden; background: var(--castle-stone-dark);
+        }
+        .agent-avatar img { width: 100%; height: 100%; object-fit: cover; image-rendering: pixelated; }
+        .agent-name { font-family: var(--font-serif); font-size: 14px; color: var(--text-primary); font-weight: 600; }
+        .agent-role { font-size: 11px; color: var(--text-secondary); font-style: italic; }
+        .agent-status { margin-left: auto; display: flex; align-items: center; gap: 4px; }
+        .agent-metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-2); margin-top: var(--space-2); padding-top: var(--space-2); border-top: 1px solid rgba(168,162,153,0.15); }
+        .metric-item { text-align: center; }
+        .metric-label { font-size: 9px; color: var(--text-secondary); text-transform: uppercase; display: block; }
+        .metric-value { font-family: var(--font-serif); font-size: 13px; color: var(--castle-gold); font-weight: 600; }
+
+        /* ── Main Scene (Three.js Canvas) ──────────────────── */
+        .castle-main {
+            grid-area: main;
+            position: relative;
+            overflow: hidden;
+            background: #0a0a1a;
+        }
+        .castle-main canvas {
+            display: block;
+            width: 100% !important;
+            height: 100% !important;
+        }
+
+        /* ── Scene Controls ─────────────────────────────────── */
+        .scene-controls {
+            position: absolute;
+            top: var(--space-3); left: var(--space-3);
+            z-index: 30;
+            display: flex; gap: var(--space-2);
+        }
+        .control-btn {
+            width: 32px; height: 32px;
+            border: 1px solid var(--border-gold);
+            border-radius: var(--radius-sm);
+            background: rgba(201,169,89,0.9);
+            color: var(--castle-navy);
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; font-size: 14px;
+            transition: all 0.2s;
+        }
+        .control-btn:hover { background: var(--castle-parchment); transform: translateY(-1px); }
+
+        /* ── Character Name Labels (HTML overlay) ──────────── */
+        .character-label {
+            position: absolute;
+            pointer-events: none;
+            font-family: var(--font-serif);
+            font-size: 11px;
+            color: var(--castle-gold);
+            text-shadow: 0 0 6px rgba(0,0,0,0.95), 0 1px 3px black, 0 0 12px rgba(0,0,0,0.8);
+            white-space: nowrap;
+            transform: translate(-50%, -100%);
+            padding: 2px 8px;
+            background: rgba(0,0,0,0.55);
+            border: 1px solid rgba(201,169,89,0.4);
+            border-radius: 4px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            z-index: 20;
+            font-weight: 600;
+        }
+        .character-label.visible { opacity: 1; }
+        .character-label.selected {
+            opacity: 1;
+            color: var(--castle-red);
+            border-color: rgba(233,69,96,0.6);
+            background: rgba(0,0,0,0.7);
+        }
+
+        /* ── Loading Screen ────────────────────────────────── */
+        .loading-screen {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, #0d0d1a, var(--castle-navy));
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            z-index: 100;
+            transition: opacity 0.8s ease;
+        }
+        .loading-screen.hidden { opacity: 0; pointer-events: none; }
+        .loading-title {
+            font-family: var(--font-medieval);
+            font-size: 28px;
+            color: var(--castle-gold);
+            margin-bottom: 24px;
+            text-shadow: 0 0 20px rgba(201,169,89,0.4);
+        }
+        .loading-bar-container {
+            width: 300px;
+            height: 8px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 4px;
+            overflow: hidden;
+            border: 1px solid var(--border-gold);
+        }
+        .loading-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--castle-gold), var(--castle-red));
+            border-radius: 4px;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        .loading-text {
+            font-family: var(--font-serif);
+            font-size: 12px;
+            color: var(--castle-stone-light);
+            margin-top: 12px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        /* ── Right Panel ───────────────────────────────────── */
+        .castle-rightpanel {
+            grid-area: rightpanel;
+            background: var(--bg-secondary);
+            border-left: 2px solid var(--border-stone);
+            display: flex; flex-direction: column; overflow: hidden;
+        }
+        .rightpanel-header {
+            padding: var(--space-5) var(--space-4);
+            border-bottom: 1px solid var(--border-stone);
+            background: linear-gradient(135deg, var(--castle-stone-dark), var(--castle-navy));
+        }
+        .rightpanel-title { font-family: var(--font-medieval); font-size: 18px; color: var(--castle-gold); text-align: center; }
+        .activity-scroll { flex: 1; overflow-y: auto; padding: var(--space-3); }
+
+        .activity-item {
+            background: var(--bg-scroll);
+            border: 1px solid var(--border-gold);
+            border-radius: var(--radius-lg);
+            padding: var(--space-3);
+            margin-bottom: var(--space-3);
+            color: var(--text-dark);
+            transition: transform 0.2s ease;
+        }
+        .activity-item:first-child { border-color: var(--castle-gold); box-shadow: 0 1px 6px rgba(201,169,89,0.15); }
+        .activity-time { font-size: 11px; color: var(--castle-brown); margin-bottom: 2px; }
+        .activity-message { font-size: 13px; line-height: 1.5; color: var(--castle-navy); }
+        .activity-agent { font-weight: 600; color: var(--castle-red); }
+
+        /* ── Stats Panel ───────────────────────────────────── */
+        .stats-panel {
+            background: var(--bg-scroll);
+            border: 2px solid var(--castle-gold);
+            border-radius: var(--radius-lg);
+            padding: var(--space-4);
+            margin: var(--space-3);
+        }
+        .stats-title { font-family: var(--font-medieval); font-size: 16px; color: var(--castle-navy); text-align: center; margin-bottom: var(--space-3); }
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3); }
+        .stat-item { text-align: center; }
+        .stat-value { font-family: var(--font-serif); font-size: 20px; font-weight: 600; color: var(--castle-red); display: block; }
+        .stat-label { font-size: 12px; color: var(--castle-brown); text-transform: uppercase; letter-spacing: 0.5px; }
+
+        /* ── Demo Badge ────────────────────────────────────── */
+        .demo-badge {
+            position: fixed; top: 6px; right: 6px;
+            background: var(--castle-red); color: white;
+            padding: 2px 8px; border-radius: var(--radius-sm);
+            font-family: var(--font-serif); font-size: 11px; font-weight: 600;
+            text-transform: uppercase; z-index: 1000;
+        }
+
+        /* ── Scrollbar ─────────────────────────────────────── */
+        .agents-scroll::-webkit-scrollbar, .activity-scroll::-webkit-scrollbar { width: 8px; }
+        .agents-scroll::-webkit-scrollbar-track, .activity-scroll::-webkit-scrollbar-track { background: var(--castle-stone-dark); }
+        .agents-scroll::-webkit-scrollbar-thumb, .activity-scroll::-webkit-scrollbar-thumb { background: var(--castle-gold); border-radius: 4px; }
+
+        /* ── Responsive ────────────────────────────────────── */
+        @media (max-width: 1200px) { .castle-layout { grid-template-columns: 260px 1fr 280px; } }
+        @media (max-width: 1024px) {
+            .castle-layout { grid-template-columns: 1fr; grid-template-rows: 70px 1fr; grid-template-areas: "header" "main"; }
+            .castle-sidebar, .castle-rightpanel { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <script>
+        if (!window.location.hostname.includes('spawnkit.ai')) {
+            window.OC_RELAY_URL = 'http://localhost:18790';
+        }
+        window.OC_RELAY_TOKEN = 'sk-oc-proxy-spawnkit-2026';
+    </script>
+
+    <div class="castle-layout">
+        <header class="castle-header">
+            <div class="castle-banner">
+                <div class="castle-crest">🏰</div>
+                <div>
+                    <h1 class="castle-name">Royal Command</h1>
+                    <div class="castle-subtitle">Medieval AI Fleet</div>
+                </div>
+            </div>
+            <div class="castle-status-bar">
+                <div class="status-indicator"><div class="status-dot active"></div><span>Castle Online</span></div>
+                <div class="status-indicator"><div class="status-dot busy"></div><span id="active-agents">8 Knights Active</span></div>
+            </div>
+        </header>
+
+        <aside class="castle-sidebar">
+            <div class="sidebar-header"><h2 class="sidebar-title">⚔️ Royal Court</h2></div>
+            <div class="agents-scroll" id="agents-list"></div>
+        </aside>
+
+        <main class="castle-main" id="scene-container">
+            <!-- Loading Screen -->
+            <div class="loading-screen" id="loading-screen">
+                <div class="loading-title">⚔️ Summoning the Castle</div>
+                <div class="loading-bar-container">
+                    <div class="loading-bar" id="loading-bar"></div>
+                </div>
+                <div class="loading-text" id="loading-text">Preparing siege...</div>
+            </div>
+
+            <!-- Character label overlays -->
+            <div id="labels-container"></div>
+
+            <!-- Controls -->
+            <div class="scene-controls">
+                <button class="control-btn" id="btn-toggle-sound" title="Toggle Sound">🔊</button>
+                <button class="control-btn" id="btn-fullscreen" title="Fullscreen">⛶</button>
+                <button class="control-btn" id="btn-reset-camera" title="Reset Camera">🎯</button>
+            </div>
+        </main>
+
+        <aside class="castle-rightpanel">
+            <div class="rightpanel-header"><h2 class="rightpanel-title">📜 Royal Decrees</h2></div>
+            <div class="stats-panel">
+                <h3 class="stats-title">Castle Status</h3>
+                <div class="stats-grid">
+                    <div class="stat-item"><span class="stat-value" id="stat-missions">12</span><span class="stat-label">Quests</span></div>
+                    <div class="stat-item"><span class="stat-value" id="stat-completed">8</span><span class="stat-label">Done</span></div>
+                    <div class="stat-item"><span class="stat-value" id="stat-resources">2.4k</span><span class="stat-label">Gold</span></div>
+                    <div class="stat-item"><span class="stat-value" id="stat-uptime">99.8%</span><span class="stat-label">Uptime</span></div>
+                </div>
+            </div>
+            <div class="activity-scroll" id="activity-log"></div>
+        </aside>
+    </div>
+
+    <div class="demo-badge" id="demo-badge" style="display: none;">Demo Mode</div>
+
+    <script src="../src/data-bridge.js"></script>
+    <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+
+    // ═══════════════════════════════════════════════════════════════
+    // MedievalCastle3D — Three.js Scene
+    // ═══════════════════════════════════════════════════════════════
+
+    class MedievalCastle3D {
+        constructor() {
+            this.agents = new Map();
+            this.selectedAgent = null;
+            this.soundEnabled = true;
+            this.audioContext = null;
+            this.sounds = new Map();
+
+            // Three.js
+            this.scene = null;
+            this.camera = null;
+            this.renderer = null;
+            this.controls = null;
+            this.loader = new GLTFLoader();
+            this.raycaster = new THREE.Raycaster();
+            this.mouse = new THREE.Vector2();
+            this.clock = new THREE.Clock();
+
+            // Characters
+            this.characterModels = new Map(); // agentId → { group, mixer, waypoints, waypointIndex, speed, ... }
+            this.animationMixers = [];
+            this.hoveredAgent = null;
+            this.labelElements = new Map();
+
+            // Loading
+            this.totalModels = 0;
+            this.loadedModels = 0;
+
+            this.init();
+        }
+
+        async init() {
+            this.setupThreeJS();
+            this.setupAudio();
+            this.setupAgents();
+            this.setupEventListeners();
+            this.setupUI();
+            await this.loadAllModels();
+            this.setupDataBridge();
+            this.animate();
+            this.playSound('horn');
+        }
+
+        // ── Three.js Setup ──────────────────────────────────────
+
+        setupThreeJS() {
+            const container = document.getElementById('scene-container');
+            const w = container.clientWidth;
+            const h = container.clientHeight;
+
+            // Scene
+            this.scene = new THREE.Scene();
+
+            // Sky gradient background
+            const skyCanvas = document.createElement('canvas');
+            skyCanvas.width = 2;
+            skyCanvas.height = 512;
+            const ctx = skyCanvas.getContext('2d');
+            const grad = ctx.createLinearGradient(0, 0, 0, 512);
+            grad.addColorStop(0, '#0a1025');
+            grad.addColorStop(0.2, '#1a2545');
+            grad.addColorStop(0.45, '#2a4a7a');
+            grad.addColorStop(0.65, '#5a8ab0');
+            grad.addColorStop(0.8, '#8ab8d0');
+            grad.addColorStop(0.92, '#d4a574');
+            grad.addColorStop(1.0, '#e8c49a');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, 2, 512);
+            const skyTex = new THREE.CanvasTexture(skyCanvas);
+            skyTex.needsUpdate = true;
+            this.scene.background = skyTex;
+
+            // Fog for depth
+            this.scene.fog = new THREE.FogExp2(0x5a7a9a, 0.006);
+
+            // Orthographic camera for isometric view
+            const aspect = w / h;
+            const frustum = 9;
+            this.camera = new THREE.OrthographicCamera(
+                -frustum * aspect, frustum * aspect,
+                frustum, -frustum,
+                0.1, 200
+            );
+            // Isometric angle: ~45° azimuth, ~42° elevation (slightly more top-down)
+            const dist = 40;
+            const azimuth = Math.PI / 4; // 45°
+            const elevation = Math.atan(Math.sin(Math.PI / 4.2)); // ~42°
+            this.camera.position.set(
+                dist * Math.cos(elevation) * Math.sin(azimuth),
+                dist * Math.sin(elevation),
+                dist * Math.cos(elevation) * Math.cos(azimuth)
+            );
+            this.camera.lookAt(0, 2, 0);
+
+            // Renderer
+            this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+            this.renderer.setSize(w, h);
+            this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            this.renderer.shadowMap.enabled = true;
+            this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            this.renderer.toneMappingExposure = 1.2;
+            this.renderer.outputColorSpace = THREE.SRGBColorSpace;
+            container.insertBefore(this.renderer.domElement, container.firstChild);
+
+            // Orbit Controls
+            this.controls = new OrbitControls(this.camera, this.renderer.domElement);
+            this.controls.enableDamping = true;
+            this.controls.dampingFactor = 0.08;
+            this.controls.enablePan = true;
+            this.controls.minZoom = 0.5;
+            this.controls.maxZoom = 3;
+            this.controls.maxPolarAngle = Math.PI / 2.2; // Don't go underground
+            this.controls.minPolarAngle = Math.PI / 8;
+            this.controls.target.set(0, 2, 0);
+            this.controls.update();
+
+            // Lighting
+            this.setupLighting();
+
+            // Ground
+            this.createGround();
+
+            // Resize handler
+            window.addEventListener('resize', () => this.onResize());
+        }
+
+        setupLighting() {
+            // Ambient (warm, soft) — lowered for shadow contrast
+            const ambient = new THREE.AmbientLight(0xfff5e0, 0.3);
+            this.scene.add(ambient);
+
+            // Hemisphere light for sky/ground color bleed
+            const hemi = new THREE.HemisphereLight(0x87ceeb, 0x3a6830, 0.25);
+            this.scene.add(hemi);
+
+            // Sun directional light with shadows — stronger for defined shadows
+            const sun = new THREE.DirectionalLight(0xffe8cc, 1.8);
+            sun.position.set(18, 30, 12); // Slightly higher and further for better shadow angles
+            sun.castShadow = true;
+            sun.shadow.mapSize.width = 4096;
+            sun.shadow.mapSize.height = 4096;
+            sun.shadow.camera.near = 1;
+            sun.shadow.camera.far = 80;
+            sun.shadow.camera.left = -25;
+            sun.shadow.camera.right = 25;
+            sun.shadow.camera.top = 25;
+            sun.shadow.camera.bottom = -25;
+            sun.shadow.bias = -0.001;
+            sun.shadow.normalBias = 0.02;
+            this.scene.add(sun);
+
+            // Torch point lights near gate
+            const torchColor = 0xff9933;
+            const torch1 = new THREE.PointLight(torchColor, 2, 8, 2);
+            torch1.position.set(-2, 2.5, 5.5);
+            this.scene.add(torch1);
+
+            const torch2 = new THREE.PointLight(torchColor, 2, 8, 2);
+            torch2.position.set(2, 2.5, 5.5);
+            this.scene.add(torch2);
+
+            // Keep interior warm light
+            const keepLight = new THREE.PointLight(0xffaa55, 1.5, 12, 2);
+            keepLight.position.set(0, 4, 0);
+            this.scene.add(keepLight);
+
+            this.torchLights = [torch1, torch2, keepLight];
+        }
+
+        createGround() {
+            // Large green grass plane
+            const groundGeo = new THREE.PlaneGeometry(40, 40, 20, 20);
+            const groundMat = new THREE.MeshStandardMaterial({
+                color: 0x4a7a2e,
+                roughness: 0.95,
+                metalness: 0.02,
+                // Subtle color variation for more realistic grass
+                transparent: false,
+                opacity: 1.0,
+            });
+            const ground = new THREE.Mesh(groundGeo, groundMat);
+            ground.rotation.x = -Math.PI / 2;
+            ground.position.y = -0.01;
+            ground.receiveShadow = true;
+            this.scene.add(ground);
+
+            // Slight terrain variation — subtle bumps via vertex displacement
+            const pos = groundGeo.attributes.position;
+            for (let i = 0; i < pos.count; i++) {
+                const x = pos.getX(i);
+                const y = pos.getY(i);
+                const dist = Math.sqrt(x * x + y * y);
+                // Keep the center flat for castle, gentle hills outside
+                if (dist > 12) {
+                    pos.setZ(i, (Math.sin(x * 0.5) * Math.cos(y * 0.3) * 0.3 + Math.random() * 0.08));
+                }
+            }
+            groundGeo.computeVertexNormals();
+        }
+
+        onResize() {
+            const container = document.getElementById('scene-container');
+            const w = container.clientWidth;
+            const h = container.clientHeight;
+            const aspect = w / h;
+            const frustum = 9;
+
+            this.camera.left = -frustum * aspect;
+            this.camera.right = frustum * aspect;
+            this.camera.top = frustum;
+            this.camera.bottom = -frustum;
+            this.camera.updateProjectionMatrix();
+
+            this.renderer.setSize(w, h);
+        }
+
+        // ── Model Loading ───────────────────────────────────────
+
+        async loadAllModels() {
+            const loadingBar = document.getElementById('loading-bar');
+            const loadingText = document.getElementById('loading-text');
+            const loadingScreen = document.getElementById('loading-screen');
+
+            // Define all models to load
+            const modelDefs = this.getModelDefinitions();
+            this.totalModels = modelDefs.length;
+
+            const updateProgress = (label) => {
+                this.loadedModels++;
+                const pct = Math.round((this.loadedModels / this.totalModels) * 100);
+                loadingBar.style.width = pct + '%';
+                loadingText.textContent = label;
+            };
+
+            // Load models in batches
+            const batchSize = 6;
+            for (let i = 0; i < modelDefs.length; i += batchSize) {
+                const batch = modelDefs.slice(i, i + batchSize);
+                await Promise.all(batch.map(async (def) => {
+                    try {
+                        const gltf = await this.loadModel(def.path);
+                        this.placeModel(gltf, def);
+                        updateProgress(def.label || def.path.split('/').pop());
+                    } catch (e) {
+                        console.warn(`Failed to load ${def.path}:`, e);
+                        updateProgress('(skipped) ' + def.path.split('/').pop());
+                    }
+                }));
+            }
+
+            // Load characters
+            await this.loadCharacters(updateProgress);
+
+            // Hide loading screen
+            setTimeout(() => {
+                loadingScreen.classList.add('hidden');
+                setTimeout(() => loadingScreen.remove(), 1000);
+            }, 500);
+        }
+
+        loadModel(path) {
+            // Cache loaded models to avoid re-downloading same file
+            if (!this._modelCache) this._modelCache = new Map();
+            if (this._modelCache.has(path)) {
+                // Return a deep clone of the cached model
+                const cached = this._modelCache.get(path);
+                return Promise.resolve({
+                    scene: cached.scene.clone(true),
+                    animations: cached.animations,
+                });
+            }
+            return new Promise((resolve, reject) => {
+                this.loader.load(path, (gltf) => {
+                    this._modelCache.set(path, gltf);
+                    resolve({
+                        scene: gltf.scene.clone(true),
+                        animations: gltf.animations,
+                    });
+                }, undefined, reject);
+            });
+        }
+
+        getModelDefinitions() {
+            const defs = [];
+            const P = (path, x, y, z, ry = 0, s = 1, label = '') => {
+                defs.push({ path, x, y, z, ry, scale: s, label });
+                this.totalModels++;
+            };
+
+            // ── Corner Towers (4 corners) ──────────────────────
+            // Each tower: base + mid + top stacked vertically
+            // Kenney models are typically ~1 unit each, we need to figure out exact stack heights
+            
+            // Tower positions (square castle layout)
+            const towerPositions = [
+                { x: -5, z: -5, label: 'NW Tower' },
+                { x:  5, z: -5, label: 'NE Tower' },
+                { x: -5, z:  5, label: 'SW Tower' },
+                { x:  5, z:  5, label: 'SE Tower' },
+            ];
+
+            towerPositions.forEach(tp => {
+                defs.push({ path: 'assets/castle/tower-square-base.glb', x: tp.x, y: 0, z: tp.z, ry: 0, scale: 1, label: tp.label + ' base' });
+                defs.push({ path: 'assets/castle/tower-square-mid-windows.glb', x: tp.x, y: 1, z: tp.z, ry: 0, scale: 1, label: tp.label + ' mid' });
+                defs.push({ path: 'assets/castle/tower-square-top-roof.glb', x: tp.x, y: 2, z: tp.z, ry: 0, scale: 1, label: tp.label + ' top' });
+            });
+
+            // ── Central Keep (taller, larger — focal point) ──────
+            const ks = 1.4; // keep scale — bigger than towers
+            defs.push({ path: 'assets/castle/tower-square-base-color.glb', x: 0, y: 0, z: 0, ry: 0, scale: ks, label: 'Keep base' });
+            defs.push({ path: 'assets/castle/tower-square-mid-windows.glb', x: 0, y: 1 * ks, z: 0, ry: 0, scale: ks, label: 'Keep mid 1' });
+            defs.push({ path: 'assets/castle/tower-square-mid-windows.glb', x: 0, y: 2 * ks, z: 0, ry: 0, scale: ks, label: 'Keep mid 2' });
+            defs.push({ path: 'assets/castle/tower-square-top-roof-high.glb', x: 0, y: 3 * ks, z: 0, ry: 0, scale: ks, label: 'Keep roof' });
+
+            // ── Walls between towers ─────────────────────────────
+            // Wall model is 1 unit wide. Towers at ±5.
+            // North wall (z = -5)
+            for (let x = -4; x <= 4; x += 1) {
+                defs.push({ path: 'assets/castle/wall.glb', x, y: 0, z: -5, ry: 0, scale: 1, label: 'North wall' });
+            }
+            // South wall (z = 5) — with doorway in center
+            for (let x = -4; x <= 4; x += 1) {
+                if (x === 0) {
+                    defs.push({ path: 'assets/castle/wall-doorway.glb', x, y: 0, z: 5, ry: 0, scale: 1, label: 'Gate doorway' });
+                } else {
+                    defs.push({ path: 'assets/castle/wall.glb', x, y: 0, z: 5, ry: 0, scale: 1, label: 'South wall' });
+                }
+            }
+            // East wall (x = 5)
+            for (let z = -4; z <= 4; z += 1) {
+                defs.push({ path: 'assets/castle/wall.glb', x: 5, y: 0, z, ry: Math.PI / 2, scale: 1, label: 'East wall' });
+            }
+            // West wall (x = -5)
+            for (let z = -4; z <= 4; z += 1) {
+                defs.push({ path: 'assets/castle/wall.glb', x: -5, y: 0, z, ry: Math.PI / 2, scale: 1, label: 'West wall' });
+            }
+
+            // ── Gate & Bridge ────────────────────────────────────
+            defs.push({ path: 'assets/castle/gate.glb', x: 0, y: 0, z: 5.5, ry: 0, scale: 1, label: 'Gate' });
+            defs.push({ path: 'assets/castle/bridge-draw.glb', x: 0, y: 0, z: 7, ry: 0, scale: 1, label: 'Drawbridge' });
+
+            // ── Flags ────────────────────────────────────────────
+            defs.push({ path: 'assets/castle/flag-banner-long.glb', x: 0, y: 4 * 1.4, z: 0, ry: 0, scale: 1.4, label: 'Keep flag' });
+            towerPositions.forEach((tp, i) => {
+                defs.push({ path: i % 2 === 0 ? 'assets/castle/flag.glb' : 'assets/castle/flag-pennant.glb', x: tp.x, y: 3, z: tp.z, ry: 0, scale: 1, label: 'Tower flag' });
+            });
+
+            // ── Trees ────────────────────────────────────────────
+            const treePlacements = [
+                { path: 'assets/castle/tree-large.glb', x: -9, z: -8 },
+                { path: 'assets/castle/tree-large.glb', x: -10, z: 2 },
+                { path: 'assets/castle/tree-small.glb', x: -8, z: -3 },
+                { path: 'assets/castle/tree-large.glb', x: 9, z: -7 },
+                { path: 'assets/castle/tree-small.glb', x: 10, z: 4 },
+                { path: 'assets/castle/tree-large.glb', x: 8, z: 9 },
+                { path: 'assets/castle/tree-small.glb', x: -8, z: 9 },
+                { path: 'assets/castle/tree-small.glb', x: 3, z: -9 },
+            ];
+            treePlacements.forEach(t => {
+                defs.push({ path: t.path, x: t.x, y: 0, z: t.z, ry: Math.random() * Math.PI * 2, scale: 1.3, label: 'Tree' });
+            });
+
+            // ── Rocks ────────────────────────────────────────────
+            const rockPlacements = [
+                { path: 'assets/castle/rocks-large.glb', x: -7, z: 7 },
+                { path: 'assets/castle/rocks-small.glb', x: 8, z: 8 },
+                { path: 'assets/castle/rocks-large.glb', x: 9, z: -2 },
+                { path: 'assets/castle/rocks-small.glb', x: -9, z: -6 },
+                { path: 'assets/castle/rocks-small.glb', x: 3, z: 9 },
+            ];
+            rockPlacements.forEach(r => {
+                defs.push({ path: r.path, x: r.x, y: 0, z: r.z, ry: Math.random() * Math.PI * 2, scale: 1, label: 'Rocks' });
+            });
+
+            // ── Siege Equipment ──────────────────────────────────
+            defs.push({ path: 'assets/castle/siege-catapult.glb', x: -4, y: 0, z: 10, ry: Math.PI, scale: 1.2, label: 'Catapult' });
+            defs.push({ path: 'assets/castle/siege-trebuchet.glb', x: 5, y: 0, z: 11, ry: Math.PI + 0.3, scale: 1.2, label: 'Trebuchet' });
+            defs.push({ path: 'assets/castle/siege-ballista.glb', x: 0, y: 0, z: 12, ry: Math.PI, scale: 1.2, label: 'Ballista' });
+
+            // ── Logs & Trunks ────────────────────────────────────
+            defs.push({ path: 'assets/castle/tree-log.glb', x: -7, y: 0, z: 4, ry: 0.8, scale: 1, label: 'Log' });
+            defs.push({ path: 'assets/castle/tree-trunk.glb', x: 7, y: 0, z: -5, ry: 1.2, scale: 1, label: 'Trunk' });
+            defs.push({ path: 'assets/castle/tree-log.glb', x: 2, y: 0, z: 10, ry: -0.5, scale: 1, label: 'Log' });
+
+            // ── Stairs ───────────────────────────────────────────
+            defs.push({ path: 'assets/castle/stairs-stone.glb', x: 0, y: 0, z: 4.5, ry: 0, scale: 1, label: 'Stairs' });
+
+            return defs;
+        }
+
+        placeModel(gltf, def) {
+            const model = gltf.scene;
+            model.position.set(def.x, def.y, def.z);
+            model.rotation.y = def.ry || 0;
+            if (def.scale && def.scale !== 1) {
+                model.scale.setScalar(def.scale);
+            }
+
+            // Enable shadows on all meshes
+            model.traverse((child) => {
+                if (child.isMesh) {
+                    child.castShadow = true;
+                    child.receiveShadow = true;
+                }
+            });
+
+            this.scene.add(model);
+            return model;
+        }
+
+        async loadCharacters(updateProgress) {
+            const agentDefs = [
+                { id: 'ApoMac',   char: 'a', speed: 0.4 },
+                { id: 'Forge',    char: 'b', speed: 0.7 },
+                { id: 'Atlas',    char: 'c', speed: 0.6 },
+                { id: 'Hunter',   char: 'd', speed: 1.0 },
+                { id: 'Echo',     char: 'e', speed: 0.5 },
+                { id: 'Sentinel', char: 'f', speed: 0.8 },
+                { id: 'Mystic',   char: 'g', speed: 0.55 },
+                { id: 'Smith',    char: 'h', speed: 0.65 },
+            ];
+
+            // Define patrol waypoints for each character (inside castle courtyard + around gate)
+            const waypoints = [
+                // ApoMac — King, slow stately patrol through center
+                [{ x: 0, z: 0 }, { x: 1.5, z: 1.5 }, { x: -1, z: 2 }, { x: -1.5, z: -1 }, { x: 1, z: -1.5 }],
+                // Forge — Builder, moves between towers
+                [{ x: -3, z: -3 }, { x: -3, z: 3 }, { x: 3, z: 3 }, { x: 3, z: -3 }],
+                // Atlas — Navigator, scouts walls
+                [{ x: -4, z: 0 }, { x: 0, z: -4 }, { x: 4, z: 0 }, { x: 0, z: 4 }],
+                // Hunter — Scout, fast, goes outside through gate
+                [{ x: 0, z: 4 }, { x: 0, z: 8 }, { x: 3, z: 10 }, { x: -2, z: 9 }, { x: 0, z: 6 }],
+                // Echo — Bard, wanders courtyard
+                [{ x: -2, z: 1 }, { x: 1, z: 3 }, { x: 2, z: 0 }, { x: 1, z: -2 }, { x: -1, z: -1 }],
+                // Sentinel — Guard, patrols the gate area
+                [{ x: -2, z: 5 }, { x: 2, z: 5 }, { x: 2, z: 3 }, { x: -2, z: 3 }],
+                // Mystic — Wizard, slow circle around keep
+                [{ x: -2, z: -2 }, { x: 2, z: -2 }, { x: 2, z: 2 }, { x: -2, z: 2 }],
+                // Smith — Blacksmith, near forge area
+                [{ x: 3, z: -1 }, { x: 4, z: -3 }, { x: 3, z: -4 }, { x: 2, z: -2 }],
+            ];
+
+            for (let i = 0; i < agentDefs.length; i++) {
+                const def = agentDefs[i];
+                try {
+                    const gltf = await this.loadModel(`assets/characters/character-${def.char}.glb`);
+                    const model = gltf.scene;
+                    model.scale.setScalar(1.8);
+
+                    const wp = waypoints[i];
+                    model.position.set(wp[0].x, 0, wp[0].z);
+
+                    model.traverse((child) => {
+                        if (child.isMesh) {
+                            child.castShadow = true;
+                            child.receiveShadow = true;
+                            child.userData.agentId = def.id;
+                        }
+                    });
+
+                    // Create a group for the character (so we can add glow, etc.)
+                    const group = new THREE.Group();
+                    group.add(model);
+                    group.position.copy(model.position);
+                    model.position.set(0, 0, 0);
+                    group.userData.agentId = def.id;
+                    this.scene.add(group);
+
+                    // Setup animation mixer for walk animation
+                    let mixer = null;
+                    if (gltf.animations && gltf.animations.length > 0) {
+                        mixer = new THREE.AnimationMixer(model);
+                        this.animationMixers.push(mixer);
+                        // Find walk animation, fallback to idle
+                        const walkClip = gltf.animations.find(a => a.name === 'walk') 
+                            || gltf.animations.find(a => a.name === 'idle');
+                        if (walkClip) {
+                            const action = mixer.clipAction(walkClip);
+                            action.play();
+                            action.timeScale = 0.6 + def.speed * 0.8;
+                        }
+                    }
+
+                    this.characterModels.set(def.id, {
+                        group,
+                        model,
+                        mixer,
+                        animations: gltf.animations || [],
+                        waypoints: wp,
+                        waypointIndex: 0,
+                        nextWaypointIndex: 1,
+                        speed: def.speed,
+                        progress: 0,
+                        bobPhase: Math.random() * Math.PI * 2,
+                        glowMesh: null,
+                    });
+
+                    // Create HTML label
+                    const label = document.createElement('div');
+                    label.className = 'character-label';
+                    label.textContent = def.id;
+                    document.getElementById('labels-container').appendChild(label);
+                    this.labelElements.set(def.id, label);
+
+                    updateProgress(`Character ${def.id}`);
+                } catch (e) {
+                    console.warn(`Failed to load character ${def.char}:`, e);
+                    updateProgress(`(skipped) character-${def.char}`);
+                }
+            }
+        }
+
+        // ── Animation Loop ──────────────────────────────────────
+
+        animate() {
+            requestAnimationFrame(() => this.animate());
+
+            const delta = this.clock.getDelta();
+            const elapsed = this.clock.getElapsedTime();
+
+            // Update controls
+            this.controls.update();
+
+            // Update animation mixers
+            this.animationMixers.forEach(mixer => mixer.update(delta));
+
+            // Animate characters
+            this.animateCharacters(delta, elapsed);
+
+            // Animate torch flicker
+            this.animateTorches(elapsed);
+
+            // Update label positions
+            this.updateLabels();
+
+            // Render
+            this.renderer.render(this.scene, this.camera);
+        }
+
+        animateCharacters(delta, elapsed) {
+            this.characterModels.forEach((charData, agentId) => {
+                const { group, waypoints, speed } = charData;
+
+                // Move along waypoints
+                const from = waypoints[charData.waypointIndex];
+                const to = waypoints[charData.nextWaypointIndex];
+
+                charData.progress += delta * speed * 0.3;
+
+                if (charData.progress >= 1) {
+                    charData.progress = 0;
+                    charData.waypointIndex = charData.nextWaypointIndex;
+                    charData.nextWaypointIndex = (charData.nextWaypointIndex + 1) % waypoints.length;
+                }
+
+                // Lerp position
+                const t = this.smoothstep(charData.progress);
+                const x = from.x + (to.x - from.x) * t;
+                const z = from.z + (to.z - from.z) * t;
+
+                group.position.set(x, 0, z);
+
+                // Face direction of movement
+                const dx = to.x - from.x;
+                const dz = to.z - from.z;
+                if (Math.abs(dx) > 0.01 || Math.abs(dz) > 0.01) {
+                    const targetAngle = Math.atan2(dx, dz);
+                    // Smooth rotation
+                    let currentAngle = group.rotation.y;
+                    let diff = targetAngle - currentAngle;
+                    // Normalize
+                    while (diff > Math.PI) diff -= Math.PI * 2;
+                    while (diff < -Math.PI) diff += Math.PI * 2;
+                    group.rotation.y += diff * Math.min(delta * 5, 1);
+                }
+
+                // Selected glow effect
+                if (agentId === this.selectedAgent) {
+                    if (!charData.glowMesh) {
+                        this.addGlowToCharacter(charData);
+                    }
+                    if (charData.glowMesh) {
+                        charData.glowMesh.material.opacity = 0.3 + Math.sin(elapsed * 4) * 0.15;
+                    }
+                } else if (charData.glowMesh) {
+                    group.remove(charData.glowMesh);
+                    charData.glowMesh.geometry.dispose();
+                    charData.glowMesh.material.dispose();
+                    charData.glowMesh = null;
+                }
+            });
+        }
+
+        smoothstep(t) {
+            return t * t * (3 - 2 * t);
+        }
+
+        addGlowToCharacter(charData) {
+            const glowGeo = new THREE.CylinderGeometry(0.6, 0.6, 2, 16, 1, true);
+            const glowMat = new THREE.MeshBasicMaterial({
+                color: 0xe94560,
+                transparent: true,
+                opacity: 0.3,
+                side: THREE.DoubleSide,
+                depthWrite: false,
+            });
+            const glowMesh = new THREE.Mesh(glowGeo, glowMat);
+            glowMesh.position.y = 1;
+            charData.group.add(glowMesh);
+            charData.glowMesh = glowMesh;
+        }
+
+        animateTorches(elapsed) {
+            if (!this.torchLights) return;
+            this.torchLights.forEach((light, i) => {
+                const flicker = 1 + Math.sin(elapsed * 8 + i * 2.5) * 0.15 + Math.sin(elapsed * 13 + i) * 0.1;
+                light.intensity = (i < 2 ? 2 : 1.5) * flicker;
+            });
+        }
+
+        updateLabels() {
+            const container = document.getElementById('scene-container');
+            const rect = container.getBoundingClientRect();
+
+            this.characterModels.forEach((charData, agentId) => {
+                const label = this.labelElements.get(agentId);
+                if (!label) return;
+
+                // Project 3D position to screen
+                const pos = new THREE.Vector3();
+                charData.group.getWorldPosition(pos);
+                pos.y += 2.6; // Above character head (scaled for 1.8x chars)
+
+                const projected = pos.clone().project(this.camera);
+                const x = (projected.x * 0.5 + 0.5) * rect.width;
+                const y = (-projected.y * 0.5 + 0.5) * rect.height;
+
+                label.style.left = x + 'px';
+                label.style.top = y + 'px';
+
+                // Show label if hovered or selected
+                if (agentId === this.hoveredAgent) {
+                    label.classList.add('visible');
+                    label.classList.toggle('selected', agentId === this.selectedAgent);
+                } else if (agentId === this.selectedAgent) {
+                    label.classList.add('visible');
+                    label.classList.add('selected');
+                } else {
+                    label.classList.remove('visible');
+                    label.classList.remove('selected');
+                }
+            });
+        }
+
+        // ── Interaction ─────────────────────────────────────────
+
+        setupEventListeners() {
+            const container = document.getElementById('scene-container');
+
+            // Click to select
+            container.addEventListener('click', (e) => this.onSceneClick(e));
+
+            // Hover
+            container.addEventListener('mousemove', (e) => this.onSceneHover(e));
+
+            // UI buttons
+            document.getElementById('btn-toggle-sound').addEventListener('click', () => {
+                this.soundEnabled = !this.soundEnabled;
+                document.getElementById('btn-toggle-sound').textContent = this.soundEnabled ? '🔊' : '🔇';
+            });
+            document.getElementById('btn-fullscreen').addEventListener('click', () => {
+                if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+                else document.exitFullscreen();
+            });
+            document.getElementById('btn-reset-camera').addEventListener('click', () => {
+                this.resetCamera();
+            });
+        }
+
+        getMouseNDC(event) {
+            const container = document.getElementById('scene-container');
+            const rect = container.getBoundingClientRect();
+            return new THREE.Vector2(
+                ((event.clientX - rect.left) / rect.width) * 2 - 1,
+                -((event.clientY - rect.top) / rect.height) * 2 + 1
+            );
+        }
+
+        onSceneClick(event) {
+            this.mouse = this.getMouseNDC(event);
+            this.raycaster.setFromCamera(this.mouse, this.camera);
+
+            // Collect all character meshes
+            const charMeshes = [];
+            this.characterModels.forEach((charData) => {
+                charData.group.traverse((child) => {
+                    if (child.isMesh) charMeshes.push(child);
+                });
+            });
+
+            const intersects = this.raycaster.intersectObjects(charMeshes, false);
+            if (intersects.length > 0) {
+                // Find the agent ID
+                let obj = intersects[0].object;
+                while (obj && !obj.userData.agentId) obj = obj.parent;
+                if (obj && obj.userData.agentId) {
+                    this.selectAgent(obj.userData.agentId);
+                    return;
+                }
+            }
+        }
+
+        onSceneHover(event) {
+            this.mouse = this.getMouseNDC(event);
+            this.raycaster.setFromCamera(this.mouse, this.camera);
+
+            const charMeshes = [];
+            this.characterModels.forEach((charData) => {
+                charData.group.traverse((child) => {
+                    if (child.isMesh) charMeshes.push(child);
+                });
+            });
+
+            const intersects = this.raycaster.intersectObjects(charMeshes, false);
+            let newHovered = null;
+            if (intersects.length > 0) {
+                let obj = intersects[0].object;
+                while (obj && !obj.userData.agentId) obj = obj.parent;
+                if (obj) newHovered = obj.userData.agentId;
+            }
+
+            if (newHovered !== this.hoveredAgent) {
+                this.hoveredAgent = newHovered;
+                document.getElementById('scene-container').style.cursor = newHovered ? 'pointer' : '';
+            }
+        }
+
+        resetCamera() {
+            // Smooth reset to default isometric view
+            const dist = 40;
+            const azimuth = Math.PI / 4;
+            const elevation = Math.atan(Math.sin(Math.PI / 4.2));
+
+            this.camera.position.set(
+                dist * Math.cos(elevation) * Math.sin(azimuth),
+                dist * Math.sin(elevation),
+                dist * Math.cos(elevation) * Math.cos(azimuth)
+            );
+            this.camera.zoom = 1;
+            this.camera.updateProjectionMatrix();
+            this.controls.target.set(0, 2, 0);
+            this.controls.update();
+        }
+
+        // ── Agent Management ────────────────────────────────────
+
+        setupAgents() {
+            const defs = [
+                { id: 'ApoMac',   role: 'CEO / King',     char: 'a', color: '#c9a959' },
+                { id: 'Forge',    role: 'Builder',         char: 'b', color: '#f97316' },
+                { id: 'Atlas',    role: 'Navigator',       char: 'c', color: '#3b82f6' },
+                { id: 'Hunter',   role: 'Scout',           char: 'd', color: '#10b981' },
+                { id: 'Echo',     role: 'Bard',            char: 'e', color: '#8b5cf6' },
+                { id: 'Sentinel', role: 'Guard',           char: 'f', color: '#ef4444' },
+                { id: 'Mystic',   role: 'Wizard',          char: 'g', color: '#7c3aed' },
+                { id: 'Smith',    role: 'Blacksmith',      char: 'h', color: '#ea580c' },
+            ];
+
+            defs.forEach(d => {
+                const status = Math.random() > 0.6 ? 'active' : Math.random() > 0.4 ? 'busy' : 'idle';
+                const metrics = {
+                    tasks: 1 + Math.floor(Math.random() * 15),
+                    completed: Math.floor(Math.random() * 10),
+                    success: Math.floor(50 + Math.random() * 50) + '%',
+                    uptime: (90 + Math.random() * 10).toFixed(1) + 'h'
+                };
+                this.agents.set(d.id, { ...d, status, metrics });
+            });
+        }
+
+        selectAgent(agentId) {
+            // Deselect previous
+            if (this.selectedAgent) {
+                document.querySelector(`.courtyard-avatar[data-agent-id="${this.selectedAgent}"]`)?.classList.remove('selected');
+                document.querySelector(`[data-agent="${this.selectedAgent}"]`)?.classList.remove('selected');
+            }
+            this.selectedAgent = agentId;
+
+            // Highlight sidebar card
+            const card = document.querySelector(`[data-agent="${agentId}"]`);
+            if (card) {
+                card.classList.add('selected');
+                card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+
+            this.playSound('select');
+            this.addActivityLog(`Selected ${agentId}`, 'system');
+
+            // Handle special agent actions
+            if (agentId === 'ApoMac' || agentId === 'agent:main:main' || agentId === 'ceo') {
+                // CEO clicked -> open Mission Control after a brief delay
+                setTimeout(() => {
+                    if (typeof openMissionControl === 'function') {
+                        openMissionControl();
+                    }
+                }, 500);
+            } else {
+                // Other agents -> open detail panel (if implemented)
+                this.openAgentDetailPanel(agentId);
+            }
+        }
+
+        openAgentDetailPanel(agentId) {
+            const agent = this.agents.get(agentId);
+            if (!agent) return;
+
+            // Update panel content
+            document.getElementById('agentDetailName').textContent = agentId;
+            document.getElementById('agentDetailRole').textContent = agent.role;
+            document.getElementById('agentDetailAvatar').textContent = agent.char ? '👤' : agentId.slice(0, 2);
+            
+            // Set initial tab
+            this.currentDetailTab = 'overview';
+            this.renderAgentDetailContent(agentId, agent);
+
+            // Show panel
+            const overlay = document.getElementById('agentDetailOverlay');
+            overlay.style.display = 'flex';
+            setTimeout(() => overlay.classList.add('visible'), 50);
+
+            this.addActivityLog(`Examining ${agentId}'s royal dossier`, agent.role);
+        }
+
+        renderAgentDetailContent(agentId, agent) {
+            const content = document.getElementById('agentDetailContent');
+            const tab = this.currentDetailTab || 'overview';
+
+            if (tab === 'overview') {
+                content.innerHTML = `
+                    <div style="margin-bottom:16px;">
+                        <h4 style="font-family:var(--font-serif);color:var(--castle-navy);margin-bottom:8px;">Royal Duties</h4>
+                        <p style="color:var(--castle-brown);line-height:1.5;font-size:14px;">
+                            ${this.getAgentDescription(agentId)}
+                        </p>
+                    </div>
+                    <div style="margin-bottom:16px;">
+                        <h4 style="font-family:var(--font-serif);color:var(--castle-navy);margin-bottom:8px;">Current Status</h4>
+                        <div style="display:flex;align-items:center;gap:8px;">
+                            <div class="status-dot ${agent.status}" style="width:12px;height:12px;"></div>
+                            <span style="color:var(--castle-navy);font-weight:500;text-transform:capitalize;">${agent.status}</span>
+                        </div>
+                    </div>
+                    <div>
+                        <h4 style="font-family:var(--font-serif);color:var(--castle-navy);margin-bottom:8px;">Recent Achievements</h4>
+                        <ul style="color:var(--castle-brown);font-size:13px;line-height:1.6;">
+                            <li>Completed ${Math.floor(Math.random() * 10 + 5)} royal missions</li>
+                            <li>Maintained ${Math.floor(Math.random() * 20 + 80)}% success rate</li>
+                            <li>Active for ${agent.metrics?.uptime || '2.5h'} in current session</li>
+                        </ul>
+                    </div>
+                `;
+            } else if (tab === 'metrics') {
+                content.innerHTML = `
+                    <div class="agent-metrics-grid">
+                        <div class="agent-metric-card">
+                            <span class="agent-metric-value">${agent.metrics?.tasks || '0'}</span>
+                            <span class="agent-metric-label">Royal Tasks</span>
+                        </div>
+                        <div class="agent-metric-card">
+                            <span class="agent-metric-value">${agent.metrics?.completed || '0'}</span>
+                            <span class="agent-metric-label">Completed</span>
+                        </div>
+                        <div class="agent-metric-card">
+                            <span class="agent-metric-value">${agent.metrics?.success || '95%'}</span>
+                            <span class="agent-metric-label">Success Rate</span>
+                        </div>
+                        <div class="agent-metric-card">
+                            <span class="agent-metric-value">${agent.metrics?.uptime || '2.5h'}</span>
+                            <span class="agent-metric-label">Uptime</span>
+                        </div>
+                    </div>
+                    <div style="margin-top:16px;">
+                        <h4 style="font-family:var(--font-serif);color:var(--castle-navy);margin-bottom:8px;">Performance Chart</h4>
+                        <div style="height:80px;background:rgba(0,0,0,0.1);border-radius:8px;display:flex;align-items:end;padding:8px;gap:4px;">
+                            ${Array.from({length: 7}, () => 
+                                `<div style="flex:1;background:var(--castle-gold);height:${20 + Math.random() * 40}px;border-radius:2px;"></div>`
+                            ).join('')}
+                        </div>
+                    </div>
+                `;
+            } else if (tab === 'sessions') {
+                content.innerHTML = `
+                    <div>
+                        <h4 style="font-family:var(--font-serif);color:var(--castle-navy);margin-bottom:12px;">Active Sessions</h4>
+                        <div style="color:var(--castle-brown);font-size:13px;text-align:center;padding:20px;">
+                            🔄 Loading royal session data...<br>
+                            <small>This will show live OpenClaw sessions for ${agentId}</small>
+                        </div>
+                    </div>
+                `;
+
+                // Load real session data
+                this.loadAgentSessions(agentId);
+            }
+        }
+
+        getAgentDescription(agentId) {
+            const descriptions = {
+                'ApoMac': 'Supreme ruler of the digital realm, orchestrating grand strategies and managing the royal court with wisdom and efficiency.',
+                'Forge': 'Master craftsman responsible for building and maintaining the kingdom\'s digital infrastructure and siege engines.',
+                'Atlas': 'Royal cartographer and scribe, maintaining the kingdom\'s knowledge base and coordinating between different territories.',
+                'Hunter': 'Elite scout specializing in reconnaissance missions, market analysis, and pursuing new opportunities for the realm.',
+                'Echo': 'Court storyteller and herald, crafting compelling narratives and managing the kingdom\'s communications.',
+                'Sentinel': 'Elite guard captain responsible for the castle\'s security, monitoring threats and ensuring system integrity.',
+                'Mystic': 'Royal wizard specializing in arcane digital arts and mysterious computational enchantments.',
+                'Smith': 'Weapons master forging powerful tools and artifacts for the royal court\'s daily operations.'
+            };
+            return descriptions[agentId] || 'A loyal member of the royal court, serving the realm with dedication and skill.';
+        }
+
+        async loadAgentSessions(agentId) {
+            try {
+                const resp = await fetch(API_URL + '/api/oc/sessions');
+                if (resp.ok) {
+                    const sessions = await resp.json();
+                    const agentSessions = sessions.filter(s => 
+                        s.key.includes(agentId.toLowerCase()) || 
+                        s.label?.toLowerCase().includes(agentId.toLowerCase())
+                    );
+
+                    const content = document.getElementById('agentDetailContent');
+                    if (this.currentDetailTab === 'sessions') {
+                        if (agentSessions.length === 0) {
+                            content.innerHTML = `
+                                <div style="text-align:center;color:var(--castle-brown);padding:40px;">
+                                    💤 No active sessions found for ${agentId}<br>
+                                    <small>This knight is currently at rest</small>
+                                </div>
+                            `;
+                        } else {
+                            content.innerHTML = `
+                                <div>
+                                    <h4 style="font-family:var(--font-serif);color:var(--castle-navy);margin-bottom:12px;">Active Sessions (${agentSessions.length})</h4>
+                                    ${agentSessions.map(s => `
+                                        <div style="background:rgba(255,255,255,0.3);border:1px solid var(--border-gold);border-radius:8px;padding:12px;margin-bottom:8px;">
+                                            <div style="font-weight:600;color:var(--castle-navy);margin-bottom:4px;">${s.label || s.key}</div>
+                                            <div style="font-size:12px;color:var(--castle-brown);">
+                                                Status: ${s.status} • Model: ${s.model || '—'} • Tokens: ${(s.totalTokens || 0).toLocaleString()}
+                                            </div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            `;
+                        }
+                    }
+                }
+            } catch (e) {
+                console.warn('Failed to load agent sessions:', e);
+            }
+        }
+
+        // ── Audio ────────────────────────────────────────────────
+
+        setupAudio() {
+            try {
+                this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const tone = (dur, freq, decay, vol) => {
+                    const sr = this.audioContext.sampleRate;
+                    const buf = this.audioContext.createBuffer(1, dur * sr, sr);
+                    const d = buf.getChannelData(0);
+                    for (let i = 0; i < d.length; i++) d[i] = Math.sin(2 * Math.PI * freq * (i / sr)) * Math.exp(-(i / sr) * decay) * vol;
+                    return buf;
+                };
+                this.sounds.set('select', tone(0.15, 600, 10, 0.2));
+                this.sounds.set('horn', (() => {
+                    const sr = this.audioContext.sampleRate;
+                    const buf = this.audioContext.createBuffer(1, 1.2 * sr, sr);
+                    const d = buf.getChannelData(0);
+                    for (let i = 0; i < d.length; i++) { const t = i / sr; d[i] = Math.sin(2 * Math.PI * 220 * t) * Math.sin(Math.PI * t / 1.2) * 0.3; }
+                    return buf;
+                })());
+            } catch (e) { this.soundEnabled = false; }
+        }
+
+        playSound(name) {
+            if (!this.soundEnabled || !this.audioContext || !this.sounds.has(name)) return;
+            try {
+                const s = this.audioContext.createBufferSource();
+                s.buffer = this.sounds.get(name);
+                s.connect(this.audioContext.destination);
+                s.start();
+            } catch (e) {}
+        }
+
+        // ── Data Bridge ──────────────────────────────────────────
+
+        setupDataBridge() {
+            // SpawnKit compatibility layer
+            if (typeof SpawnKit !== 'undefined') {
+                if (SpawnKit.mode === 'demo') document.getElementById('demo-badge').style.display = 'block';
+                SpawnKit.on('update', data => this.updateDashboard(data));
+                if (SpawnKit.data) this.updateDashboard(SpawnKit.data);
+            }
+            
+            // Real API bridge integration
+            this.setupApiBridge();
+            this.startCronCountdowns();
+            this.startApiMetricsUpdater();
+        }
+
+        async setupApiBridge() {
+            // Initial load
+            await this.refreshApiData();
+            
+            // Auto-refresh every 15 seconds
+            setInterval(() => this.refreshApiData(), 15000);
+        }
+
+        async refreshApiData() {
+            try {
+                const [sessionsResp, memoryResp] = await Promise.allSettled([
+                    fetch(API_URL + '/api/oc/sessions'),
+                    fetch(API_URL + '/api/oc/memory')
+                ]);
+
+                let sessions = [];
+                let memory = {};
+
+                if (sessionsResp.status === 'fulfilled' && sessionsResp.value.ok) {
+                    sessions = await sessionsResp.value.json();
+                }
+                if (memoryResp.status === 'fulfilled' && memoryResp.value.ok) {
+                    memory = await memoryResp.value.json();
+                }
+
+                this.updateDashboardWithApiData({ sessions, memory });
+            } catch (e) {
+                console.warn('[Castle] API bridge error:', e.message);
+            }
+        }
+
+        updateDashboardWithApiData(data) {
+            const sessions = data.sessions || [];
+            const memory = data.memory || {};
+
+            // Extract agent data from sessions
+            const agents = [];
+            const activeSessions = sessions.filter(s => s.status === 'active');
+            const subagents = sessions.filter(s => s.kind === 'subagent');
+            const crons = sessions.filter(s => s.kind === 'cron');
+            
+            // Map to medieval agents
+            const medievalAgentMap = {
+                'agent:main:main': { name: 'ApoMac', role: 'Royal Commander', icon: '👑' },
+                'ceo': { name: 'ApoMac', role: 'Royal Commander', icon: '👑' },
+                'atlas': { name: 'Atlas', role: 'Royal Scribe', icon: '📜' },
+                'forge': { name: 'Forge', role: 'Master Smith', icon: '⚒️' },
+                'hunter': { name: 'Hunter', role: 'Royal Huntsman', icon: '🏹' },
+                'echo': { name: 'Echo', role: 'Court Bard', icon: '🎭' },
+                'sentinel': { name: 'Sentinel', role: 'Castle Guard', icon: '🛡️' }
+            };
+
+            // Build agent roster with real data
+            sessions.forEach(s => {
+                const key = s.key || s.id;
+                const agentData = medievalAgentMap[key] || medievalAgentMap[s.label?.toLowerCase()] || null;
+                if (agentData) {
+                    agents.push({
+                        id: key,
+                        name: agentData.name,
+                        role: agentData.role,
+                        status: s.status === 'active' ? 'active' : (s.status === 'idle' ? 'idle' : 'busy'),
+                        metrics: {
+                            tasks: s.totalMessages || Math.floor(Math.random() * 15),
+                            completed: Math.floor((s.totalTokens || 0) / 1000),
+                            success: Math.floor(85 + Math.random() * 15) + '%',
+                            uptime: this.formatUptime(s.lastActive)
+                        }
+                    });
+                }
+            });
+
+            // Add subagents as knight templars
+            subagents.slice(0, 5).forEach((s, i) => {
+                agents.push({
+                    id: s.key,
+                    name: s.label || s.displayName || `Knight-${i + 1}`,
+                    role: 'Knight Templar',
+                    status: s.status === 'active' ? 'active' : 'idle',
+                    metrics: {
+                        tasks: s.totalMessages || 0,
+                        completed: Math.floor((s.totalTokens || 0) / 500),
+                        success: '100%',
+                        uptime: this.formatUptime(s.lastActive)
+                    }
+                });
+            });
+
+            this.updateAgentRoster(agents);
+
+            // Update castle statistics
+            const totalTokens = sessions.reduce((sum, s) => sum + (s.totalTokens || 0), 0);
+            document.getElementById('stat-missions').textContent = activeSessions.length.toString();
+            document.getElementById('stat-completed').textContent = subagents.filter(s => s.status !== 'active').length.toString();
+            document.getElementById('stat-resources').textContent = (totalTokens / 1000).toFixed(1) + 'k';
+            document.getElementById('stat-uptime').textContent = this.calculateOverallUptime(sessions);
+
+            // Add recent activity
+            if (sessions.length > 0) {
+                const recentSession = sessions.sort((a, b) => (b.lastActive || 0) - (a.lastActive || 0))[0];
+                this.addActivityLog(`Royal session active: ${recentSession.label || recentSession.key}`, 'system');
+            }
+        }
+
+        formatUptime(timestamp) {
+            if (!timestamp) return '-';
+            const ago = Date.now() - timestamp;
+            if (ago < 60000) return 'now';
+            if (ago < 3600000) return Math.floor(ago / 60000) + 'm';
+            if (ago < 86400000) return Math.floor(ago / 3600000) + 'h';
+            return Math.floor(ago / 86400000) + 'd';
+        }
+
+        calculateOverallUptime(sessions) {
+            if (!sessions.length) return '0%';
+            const activeCount = sessions.filter(s => s.status === 'active').length;
+            return Math.floor((activeCount / sessions.length) * 100) + '%';
+        }
+
+        startCronCountdowns() {
+            // Find all cron elements and start countdown timers
+            const updateCronCountdowns = () => {
+                document.querySelectorAll('[data-cron-next]').forEach(el => {
+                    const nextRun = parseInt(el.dataset.cronNext);
+                    const now = Date.now();
+                    if (nextRun > now) {
+                        const remaining = nextRun - now;
+                        el.textContent = this.formatCountdown(remaining);
+                    } else {
+                        el.textContent = 'Due now';
+                        el.style.color = 'var(--castle-red)';
+                    }
+                });
+            };
+
+            // Update every second for live countdown
+            setInterval(updateCronCountdowns, 1000);
+            updateCronCountdowns();
+        }
+
+        formatCountdown(ms) {
+            const seconds = Math.floor(ms / 1000);
+            const minutes = Math.floor(seconds / 60);
+            const hours = Math.floor(minutes / 60);
+            const days = Math.floor(hours / 24);
+
+            if (days > 0) return `${days}d ${hours % 24}h`;
+            if (hours > 0) return `${hours}h ${minutes % 60}m`;
+            if (minutes > 0) return `${minutes}m ${seconds % 60}s`;
+            return `${seconds}s`;
+        }
+
+        startApiMetricsUpdater() {
+            const updateApiMetrics = async () => {
+                try {
+                    const resp = await fetch(API_URL + '/api/oc/sessions');
+                    if (resp.ok) {
+                        const sessions = await resp.json();
+                        const totalSessions = sessions.length;
+                        const activeSessions = sessions.filter(s => s.status === 'active').length;
+                        const totalTokens = sessions.reduce((sum, s) => sum + (s.totalTokens || 0), 0);
+                        const lastActive = sessions.length > 0 
+                            ? Math.max(...sessions.map(s => s.lastActive || 0))
+                            : 0;
+
+                        // Update header status
+                        const statusBar = document.querySelector('.castle-status-bar');
+                        if (statusBar) {
+                            const activeAgentsEl = statusBar.querySelector('#active-agents');
+                            if (activeAgentsEl) {
+                                activeAgentsEl.textContent = `${activeSessions} Knights Active`;
+                            }
+                        }
+
+                        // Update activity with real data
+                        if (Date.now() - this.lastMetricsUpdate > 30000) { // Every 30s
+                            this.addActivityLog(`Royal court status: ${totalSessions} sessions, ${(totalTokens/1000).toFixed(1)}k wisdom gathered`, 'Royal Herald');
+                            this.lastMetricsUpdate = Date.now();
+                        }
+                    }
+                } catch (e) {
+                    // Fail silently for metrics
+                }
+            };
+
+            this.lastMetricsUpdate = 0;
+            updateApiMetrics();
+            setInterval(updateApiMetrics, 10000); // Every 10 seconds for live metrics
+        }
+
+        updateDashboard(data) {
+            this.updateAgentRoster(data.agents || []);
+            const m = data.metrics || {};
+            document.getElementById('stat-missions').textContent = m.missions || '12';
+            document.getElementById('stat-completed').textContent = m.completed || '8';
+            document.getElementById('stat-resources').textContent = m.resources || '2.4k';
+            document.getElementById('stat-uptime').textContent = m.uptime || '99.8%';
+            if (data.events) data.events.slice(-10).forEach(ev => this.addActivityLog(ev.message, ev.agent || 'system', ev.timestamp));
+        }
+
+        updateAgentRoster(agents) {
+            const c = document.getElementById('agents-list');
+            if (!agents.length) agents = Array.from(this.agents.entries()).map(([id, a]) => ({ id, name: id, role: a.role, status: a.status, metrics: a.metrics }));
+            c.innerHTML = agents.map(a => {
+                const d = this.agents.get(a.id);
+                const st = a.status || 'idle';
+                const emoji = { active: '⚔️', busy: '🔥', idle: '💤', error: '⚠️' }[st] || '💤';
+                return `<div class="agent-card${a.id === this.selectedAgent ? ' selected' : ''}" data-agent="${a.id}" onclick="window.castleApp.selectAgent('${a.id}')">
+                    <div class="agent-header">
+                        <div class="agent-avatar" style="background:${d?.color || '#555'}">
+                            ${d ? `<img src="assets/characters/character-${d.char}.png">` : a.name.slice(0, 2)}
+                        </div>
+                        <div><div class="agent-name">${a.name}</div><div class="agent-role">${a.role || 'Knight'}</div></div>
+                        <div class="agent-status"><div class="status-dot ${st}"></div><span>${emoji}</span></div>
+                    </div>
+                    <div class="agent-metrics">
+                        <div class="metric-item"><span class="metric-label">Tasks</span><span class="metric-value">${a.metrics?.tasks || '-'}</span></div>
+                        <div class="metric-item"><span class="metric-label">Done</span><span class="metric-value">${a.metrics?.completed || '-'}</span></div>
+                        <div class="metric-item"><span class="metric-label">Win</span><span class="metric-value">${a.metrics?.success || '-'}</span></div>
+                        <div class="metric-item"><span class="metric-label">Up</span><span class="metric-value">${a.metrics?.uptime || '-'}</span></div>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        addActivityLog(msg, agent = 'system', ts = null) {
+            const c = document.getElementById('activity-log');
+            const time = ts ? new Date(ts) : new Date();
+            const item = document.createElement('div');
+            item.className = 'activity-item';
+            item.innerHTML = `<div class="activity-time">${time.toLocaleTimeString()}</div><div class="activity-message">${agent !== 'system' ? `<span class="activity-agent">${agent}</span>: ` : ''}${msg}</div>`;
+            c.insertBefore(item, c.firstChild);
+            while (c.children.length > 20) c.removeChild(c.lastChild);
+        }
+
+        setupUI() {
+            const msgs = [
+                'Castle defenses initialized',
+                'ApoMac completed strategic session',
+                'Forge built new siege weapons',
+                'Hunter scouted northern territories',
+                'Echo composed victory ballad',
+                'Sentinel: all towers secure',
+                'Mystic enchanted castle walls',
+                'Smith forged royal armor'
+            ];
+            msgs.forEach((m, i) => setTimeout(() => this.addActivityLog(m), i * 400));
+            this.updateAgentRoster([]);
+        }
+    }
+
+    // Initialize
+    window.addEventListener('load', () => {
+        const app = new MedievalCastle3D();
+        window._app = app;
+        window.castleApp = app;
+    });
+    </script>
+
+    <!-- ═══ MISSION CONTROL OVERLAY ═══ -->
+    <div class="mc-overlay" id="missionControlOverlay">
+        <div class="mc-header">
+            <button class="mc-back" id="mcBack">← Castle</button>
+            <div class="mc-title">
+                👑 <span id="mcCeoName">ApoMac</span> — Royal War Room
+                <span class="mc-title-badge">Commander</span>
+            </div>
+        </div>
+        <div class="mc-body">
+            <!-- Left: Missions & Quests -->
+            <div class="mc-col" id="mcLeftCol"></div>
+            <!-- Center: Battle Reports & Chronicles -->
+            <div class="mc-col" id="mcCenterCol"></div>
+            <!-- Right: Court Status -->
+            <div class="mc-col" id="mcRightCol"></div>
+        </div>
+        <div class="mc-statusbar" id="mcStatusBar"></div>
+    </div>
+
+    <!-- ═══ AGENT DETAIL PANEL ═══ -->
+    <div class="agent-detail-overlay" id="agentDetailOverlay">
+        <div class="agent-detail-panel">
+            <div class="agent-detail-header">
+                <div class="agent-detail-avatar" id="agentDetailAvatar">⚔️</div>
+                <div class="agent-detail-info">
+                    <h3 id="agentDetailName">Agent Name</h3>
+                    <p id="agentDetailRole">Role</p>
+                </div>
+                <button class="agent-detail-close" id="agentDetailClose">✕</button>
+            </div>
+            <div class="agent-detail-tabs">
+                <button class="agent-detail-tab active" data-tab="overview">Overview</button>
+                <button class="agent-detail-tab" data-tab="metrics">Metrics</button>
+                <button class="agent-detail-tab" data-tab="sessions">Sessions</button>
+            </div>
+            <div class="agent-detail-content" id="agentDetailContent"></div>
+        </div>
+    </div>
+
+    <!-- ═══ MISSION CONTROL JAVASCRIPT ═══ -->
+    <script>
+    (function() {
+        'use strict';
+
+        // Mission Control globals
+        var mcOverlay = document.getElementById('missionControlOverlay');
+        var mcBack = document.getElementById('mcBack');
+        var mcLeft = document.getElementById('mcLeftCol');
+        var mcCenter = document.getElementById('mcCenterCol');
+        var mcRight = document.getElementById('mcRightCol');
+        var mcStatus = document.getElementById('mcStatusBar');
+        var mcRefreshTimer = null;
+        var mcFeedMode = 'filtered'; // 'filtered' or 'raw'
+        var mcTodoExpanded = false;
+        var mcTodoContent = null;
+        var mcTranscriptContent = null;
+
+        // Medieval themed agents
+        var MEDIEVAL_AGENTS = {
+            ceo: { name: 'ApoMac', title: 'King', icon: '👑' },
+            atlas: { name: 'Atlas', title: 'Royal Scribe', icon: '📜' },
+            forge: { name: 'Forge', title: 'Master Smith', icon: '⚒️' },
+            hunter: { name: 'Hunter', title: 'Royal Huntsman', icon: '🏹' },
+            echo: { name: 'Echo', title: 'Court Bard', icon: '🎭' },
+            sentinel: { name: 'Sentinel', title: 'Castle Guard', icon: '🛡️' }
+        };
+
+        function escMc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+        // Open/Close Mission Control
+        window.openMissionControl = function() {
+            if (mcRefreshTimer) { clearInterval(mcRefreshTimer); mcRefreshTimer = null; }
+            mcOverlay.style.display = 'flex';
+            requestAnimationFrame(function() { mcOverlay.classList.add('visible'); });
+            loadMissionControl();
+            mcRefreshTimer = setInterval(loadMissionControl, 15000);
+        };
+
+        function closeMissionControl() {
+            mcOverlay.classList.remove('visible');
+            setTimeout(function() { mcOverlay.style.display = 'none'; }, 300);
+            if (mcRefreshTimer) { clearInterval(mcRefreshTimer); mcRefreshTimer = null; }
+        }
+
+        mcBack.addEventListener('click', closeMissionControl);
+        
+        // ESC to close
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && mcOverlay.classList.contains('visible')) closeMissionControl();
+        });
+
+        // F13+F14 hotkeys for Mission Control
+        document.addEventListener('keydown', function(e) {
+            if ((e.key === 'F13' || e.key === 'F14') && !mcOverlay.classList.contains('visible')) {
+                e.preventDefault();
+                openMissionControl();
+            }
+        });
+
+        // Main loader with API integration
+        var mcLoading = false;
+        async function loadMissionControl() {
+            if (mcLoading) return;
+            mcLoading = true;
+            var sessions = [];
+            try {
+                var resp = await fetch(API_URL + '/api/oc/sessions');
+                if (resp.ok) sessions = await resp.json();
+            } catch(e) {
+                console.warn('[MC] Failed to load sessions:', e.message || e);
+            }
+            try {
+                renderLeftColumn(sessions);
+                renderCenterColumn(sessions);
+                renderRightColumn(sessions);
+                renderStatusBar(sessions);
+            } catch(renderErr) {
+                console.error('[MC] Render error:', renderErr);
+            } finally {
+                mcLoading = false;
+            }
+        }
+
+        // ═══ LEFT COLUMN — Royal Quests & Missions ═══
+        function renderLeftColumn(sessions) {
+            var html = '';
+
+            // Active missions from localStorage
+            var missions = [];
+            try { missions = JSON.parse(localStorage.getItem('spawnkit-missions') || '[]'); } catch(e) { missions = []; }
+            if (!Array.isArray(missions)) missions = [];
+            var activeMissions = missions.filter(function(m) { return m.status !== 'done'; });
+            var doneMissions = missions.filter(function(m) { return m.status === 'done'; });
+
+            html += '<div class="mc-section-title">⚔️ Royal Quests (' + activeMissions.length + ')</div>';
+
+            if (activeMissions.length === 0) {
+                html += '<div style="padding:16px;text-align:center;color:var(--castle-stone-light);font-size:12px;">No active quests.<br>The realm is at peace.</div>';
+            }
+
+            activeMissions.forEach(function(m, idx) {
+                var todos = m.todos || [];
+                var done = todos.filter(function(t) { return t.done; }).length;
+                var total = todos.length;
+                var pct = total > 0 ? Math.round(done / total * 100) : 0;
+
+                html += '<div class="mc-mission" data-midx="' + idx + '">';
+                html += '<div class="mc-mission-name">' + escMc(m.name) + '</div>';
+                html += '<div class="mc-mission-meta">';
+                if (m.agents && m.agents.length) {
+                    m.agents.forEach(function(aId) {
+                        var a = MEDIEVAL_AGENTS[aId] || { name: aId };
+                        html += '<span class="mc-task-assignee">' + escMc(a.name) + '</span>';
+                    });
+                }
+                html += '<span>' + done + '/' + total + ' tasks</span>';
+                html += '</div>';
+                html += '<div class="mc-progress"><div class="mc-progress-fill" style="width:' + pct + '%"></div></div>';
+
+                // Task table (expandable)
+                html += '<div class="mc-mission-tasks">';
+                todos.forEach(function(t) {
+                    var st = t.done ? 'done' : (t.review ? 'review' : (t.active ? 'active' : 'pending'));
+                    html += '<div class="mc-task-row">';
+                    html += '<input type="checkbox" ' + (t.done ? 'checked' : '') + ' class="mc-task-check" data-midx="' + idx + '" data-tidx="' + todos.indexOf(t) + '" />';
+                    html += '<span class="mc-task-name">' + escMc(t.text) + '</span>';
+                    if (t.assignee) html += '<span class="mc-task-assignee">' + escMc(t.assignee) + '</span>';
+                    html += '<span class="mc-task-status mc-task-status--' + st + '">' + st.toUpperCase() + '</span>';
+                    html += '</div>';
+                });
+                html += '</div>';
+                html += '</div>';
+            });
+
+            // Completed missions
+            if (doneMissions.length > 0) {
+                html += '<div class="mc-section-title" style="margin-top:16px;">✅ Completed (' + doneMissions.length + ')</div>';
+                doneMissions.forEach(function(m) {
+                    html += '<div style="padding:6px 10px;border-radius:8px;background:rgba(74, 222, 128, 0.1);margin-bottom:4px;font-size:12px;color:var(--castle-stone-light);text-decoration:line-through;">' + escMc(m.name) + '</div>';
+                });
+            }
+
+            // Royal Scrolls (TODO.md)
+            html += '<div class="mc-section-title" style="margin-top:16px;">📜 Royal Scrolls</div>';
+            html += '<div class="mc-todo-toggle" id="mcTodoToggle">' + (mcTodoExpanded ? '▾ Hide scrolls' : '▸ Show scrolls') + '</div>';
+            html += '<div class="mc-todo-raw" id="mcTodoRaw" style="display:' + (mcTodoExpanded ? 'block' : 'none') + ';">' + escMc(mcTodoContent || 'Click to reveal ancient texts...') + '</div>';
+
+            mcLeft.innerHTML = html;
+
+            // Wire mission expand
+            mcLeft.querySelectorAll('.mc-mission').forEach(function(card) {
+                card.addEventListener('click', function(e) {
+                    if (e.target.type === 'checkbox') return;
+                    card.classList.toggle('expanded');
+                });
+            });
+
+            // Wire task checkboxes
+            mcLeft.addEventListener('change', function(e) {
+                if (!e.target.classList.contains('mc-task-check')) return;
+                var midx = parseInt(e.target.dataset.midx);
+                var tidx = parseInt(e.target.dataset.tidx);
+                var ms = [];
+                try { ms = JSON.parse(localStorage.getItem('spawnkit-missions') || '[]'); } catch(e2) { ms = []; }
+                if (!Array.isArray(ms)) ms = [];
+                var active = ms.filter(function(m) { return m.status !== 'done'; });
+                if (active[midx] && active[midx].todos[tidx]) {
+                    active[midx].todos[tidx].done = e.target.checked;
+                    localStorage.setItem('spawnkit-missions', JSON.stringify(ms));
+                }
+            });
+
+            // Wire TODO.md toggle
+            (function wireTodo() {
+                var toggle = document.getElementById('mcTodoToggle');
+                if (!toggle) return;
+                toggle.addEventListener('click', function() {
+                    mcTodoExpanded = !mcTodoExpanded;
+                    var r = document.getElementById('mcTodoRaw');
+                    var t = document.getElementById('mcTodoToggle');
+                    if (r) r.style.display = mcTodoExpanded ? 'block' : 'none';
+                    if (t) t.textContent = mcTodoExpanded ? '▾ Hide scrolls' : '▸ Show scrolls';
+                    if (mcTodoExpanded && !mcTodoContent) {
+                        if (r) r.textContent = 'Consulting the ancient archives...';
+                        fetch(API_URL + '/api/oc/memory').then(function(resp) { return resp.ok ? resp.json() : null; }).then(function(data) {
+                            if (data && data.todo) {
+                                mcTodoContent = data.todo;
+                            } else {
+                                mcTodoContent = '(The scrolls are blank)';
+                            }
+                            var el = document.getElementById('mcTodoRaw');
+                            if (el) el.textContent = mcTodoContent;
+                        }).catch(function() {
+                            mcTodoContent = '(The archives are sealed)';
+                            var el = document.getElementById('mcTodoRaw');
+                            if (el) el.textContent = mcTodoContent;
+                        });
+                    }
+                });
+            })();
+        }
+
+        // ═══ CENTER COLUMN — Battle Reports & Chronicles ═══
+        function renderCenterColumn(sessions) {
+            var html = '';
+
+            // Toggle: Filtered / Raw
+            html += '<div class="mc-feed-toggle">';
+            html += '<button class="mc-feed-toggle-btn ' + (mcFeedMode === 'filtered' ? 'active' : '') + '" data-mode="filtered">📊 Battle Reports</button>';
+            html += '<button class="mc-feed-toggle-btn ' + (mcFeedMode === 'raw' ? 'active' : '') + '" data-mode="raw">📜 Raw Chronicle</button>';
+            html += '</div>';
+
+            if (mcFeedMode === 'filtered') {
+                html += '<div id="mcFeedList">';
+                html += renderActivityFeed(sessions);
+                html += '</div>';
+                html += '<div class="mc-raw-transcript" id="mcRawTranscript"></div>';
+            } else {
+                html += '<div id="mcFeedList" style="display:none;"></div>';
+                html += '<div class="mc-raw-transcript" id="mcRawTranscript" style="display:block;">Loading royal chronicle...</div>';
+            }
+
+            mcCenter.innerHTML = html;
+
+            // Wire toggle
+            mcCenter.querySelectorAll('.mc-feed-toggle-btn').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    mcFeedMode = btn.dataset.mode;
+                    renderCenterColumn(sessions);
+                    if (mcFeedMode === 'raw') loadRawTranscript();
+                });
+            });
+
+            // Wire feed item expand
+            mcCenter.querySelectorAll('.mc-feed-item').forEach(function(item) {
+                item.style.cursor = 'pointer';
+                item.addEventListener('click', function() { item.classList.toggle('expanded'); });
+            });
+
+            if (mcFeedMode === 'raw') loadRawTranscript();
+        }
+
+        function renderActivityFeed(sessions) {
+            var events = [];
+            var arr = Array.isArray(sessions) ? sessions : [];
+
+            // Extract events with medieval theming
+            arr.forEach(function(s) {
+                var name = (s.label || s.displayName || s.key || 'unknown').replace(/^Cron:\s*/i, '');
+
+                if (s.kind === 'subagent') {
+                    events.push({
+                        time: s.lastActive || 0,
+                        icon: s.status === 'active' ? '⚔️' : '🛡️',
+                        text: (s.status === 'active' ? 'Knight deployed: ' : 'Quest completed: ') + name,
+                        detail: 'Realm: ' + (s.model || '—') + ' • Valor: ' + (s.totalTokens || 0).toLocaleString(),
+                        type: 'spawn'
+                    });
+                } else if (s.kind === 'cron' && !(s.key && s.key.indexOf(':run:') >= 0)) {
+                    events.push({
+                        time: s.lastActive || 0,
+                        icon: '⏰',
+                        text: 'Royal decree: ' + name,
+                        detail: 'Status: ' + (s.status || '—') + ' • Power: ' + (s.totalTokens || 0).toLocaleString(),
+                        type: 'cron'
+                    });
+                } else if (s.key === 'agent:main:main') {
+                    events.push({
+                        time: s.lastActive || 0,
+                        icon: '👑',
+                        text: 'Royal court in session',
+                        detail: 'Wisdom: ' + (s.totalTokens || 0).toLocaleString() + ' • Chamber: ' + (s.channel || '—'),
+                        type: 'ceo'
+                    });
+                }
+            });
+
+            // Sort by time descending
+            events.sort(function(a, b) { return b.time - a.time; });
+
+            if (events.length === 0) {
+                return '<div style="text-align:center;padding:32px;color:var(--castle-stone-light);font-size:13px;">The kingdom slumbers in peace.<br>No battles to report, my liege.</div>';
+            }
+
+            var html = '';
+            events.slice(0, 50).forEach(function(ev) {
+                var ago = Date.now() - ev.time;
+                var agoStr = ago < 60000 ? 'moments ago' :
+                    ago < 3600000 ? Math.floor(ago / 60000) + ' minutes past' :
+                    ago < 86400000 ? Math.floor(ago / 3600000) + ' hours past' :
+                    Math.floor(ago / 86400000) + ' days past';
+
+                html += '<div class="mc-feed-item">';
+                html += '<span class="mc-feed-icon">' + ev.icon + '</span>';
+                html += '<div class="mc-feed-body">';
+                html += '<div class="mc-feed-text">' + escMc(ev.text) + '</div>';
+                html += '<div class="mc-feed-time">' + agoStr + '</div>';
+                if (ev.detail) html += '<div class="mc-feed-detail">' + escMc(ev.detail) + '</div>';
+                html += '</div></div>';
+            });
+            return html;
+        }
+
+        async function loadRawTranscript() {
+            var el = document.getElementById('mcRawTranscript');
+            if (!el) return;
+            if (mcTranscriptContent) { el.textContent = mcTranscriptContent; return; }
+            el.textContent = 'Scribes are transcribing the royal conversations...';
+            try {
+                var resp = await fetch(API_URL + '/api/oc/chat');
+                if (resp.ok) {
+                    var data = await resp.json();
+                    var messages = data.messages || data || [];
+                    if (Array.isArray(messages) && messages.length > 0) {
+                        var text = '';
+                        messages.slice(-50).forEach(function(m) {
+                            var role = m.role === 'user' ? '👤 Your Majesty' : '🤖 ApoMac';
+                            var content = typeof m.content === 'string' ? m.content : (m.content && m.content[0] && m.content[0].text ? m.content[0].text : '[royal decree]');
+                            text += role + ':\n' + content.substring(0, 500) + '\n\n';
+                        });
+                        mcTranscriptContent = text || '(The chronicle pages are blank)';
+                    } else {
+                        mcTranscriptContent = '(No royal conversations recorded)';
+                    }
+                } else {
+                    mcTranscriptContent = '(Chronicle sealed — Royal Seal ' + resp.status + ')';
+                }
+            } catch(e) { mcTranscriptContent = '(The scribes have fled — reconnect the royal messenger)'; }
+            var el2 = document.getElementById('mcRawTranscript');
+            if (el2) el2.textContent = mcTranscriptContent;
+        }
+
+        // ═══ RIGHT COLUMN — Court Status ═══
+        function renderRightColumn(sessions) {
+            var html = '';
+            var arr = Array.isArray(sessions) ? sessions : [];
+
+            // Royal Court status
+            html += '<div class="mc-section-title">🏰 Royal Court</div>';
+            html += '<div class="mc-fleet-grid">';
+            Object.keys(MEDIEVAL_AGENTS).forEach(function(id) {
+                var agent = MEDIEVAL_AGENTS[id];
+                // Check live status
+                var liveSession = arr.find(function(s) {
+                    if (id === 'ceo') return s.key === 'agent:main:main';
+                    return s.label && s.label.toLowerCase().indexOf(id) >= 0 && s.kind === 'subagent';
+                });
+                var isActive = liveSession ? liveSession.status === 'active' : false;
+                var dotColor = isActive ? '#4ade80' : '#64748b';
+
+                html += '<div class="mc-fleet-pill" data-agent="' + escMc(id) + '">';
+                html += '<div class="mc-fleet-pill-dot" style="background:' + dotColor + ';' + (isActive ? 'animation:statusPulse 2.5s infinite;' : '') + '"></div>';
+                html += '<div class="mc-fleet-pill-name">' + escMc(agent.name) + '</div>';
+                html += '</div>';
+            });
+            html += '</div>';
+
+            // Royal Knights (sub-agents)
+            var subs = arr.filter(function(s) { return s.kind === 'subagent'; });
+            subs.sort(function(a, b) { return (b.lastActive || 0) - (a.lastActive || 0); });
+            var activeSubs = subs.filter(function(s) { return s.status === 'active'; });
+
+            html += '<div class="mc-section-title" style="margin-top:12px;">⚔️ Royal Knights (' + subs.length + ' total, ' + activeSubs.length + ' active)</div>';
+
+            if (subs.length === 0) {
+                html += '<div style="font-size:12px;color:var(--castle-stone-light);padding:8px 0;">No knights deployed in the field.</div>';
+            } else {
+                var showSubs = activeSubs.concat(subs.filter(function(s) { return s.status !== 'active'; })).slice(0, 8);
+                showSubs.forEach(function(s) {
+                    var isAct = s.status === 'active';
+                    var ago = Date.now() - (s.lastActive || 0);
+                    var agoStr = ago < 60000 ? 'now' : ago < 3600000 ? Math.floor(ago/60000) + 'm' : Math.floor(ago/3600000) + 'h';
+                    var label = (s.label || s.displayName || 'knight').replace(/^Cron:\s*/i, '');
+
+                    html += '<div class="mc-sub-item">';
+                    html += '<div class="mc-sub-dot" style="background:' + (isAct ? '#4ade80' : '#64748b') + ';' + (isAct ? 'animation:statusPulse 2.5s infinite;' : '') + '"></div>';
+                    html += '<div class="mc-sub-name">' + escMc(label) + '</div>';
+                    html += '<div class="mc-sub-meta">' + agoStr + '</div>';
+                    html += '</div>';
+                });
+                if (subs.length > 8) html += '<div style="font-size:10px;color:var(--castle-stone-light);padding:4px 0;">+' + (subs.length - 8) + ' more</div>';
+            }
+
+            // Royal Arsenal (Skills)
+            html += '<div class="mc-section-title" style="margin-top:12px;">⚡ Royal Arsenal</div>';
+            html += '<div style="display:flex;flex-wrap:wrap;gap:4px;">';
+            var skillList = ['brainstorm','ralph-loop','coding-agent','github','weather','summarize','gog','peekaboo','1password','apple-notes','sag','imsg'];
+            skillList.forEach(function(sk) {
+                html += '<span style="font-size:10px;padding:3px 8px;border-radius:4px;background:rgba(201,169,89,0.3);color:var(--castle-navy);font-weight:500;">' + escMc(sk) + '</span>';
+            });
+            html += '</div>';
+
+            mcRight.innerHTML = html;
+
+            // Wire court member clicks
+            mcRight.querySelectorAll('.mc-fleet-pill').forEach(function(pill) {
+                pill.addEventListener('click', function() {
+                    var agentId = pill.dataset.agent;
+                    if (agentId === 'ceo') return; // Already in Royal War Room
+                    closeMissionControl();
+                    // In future, could open agent detail panels here
+                });
+            });
+        }
+
+        // ═══ STATUS BAR ═══
+        function renderStatusBar(sessions) {
+            var arr = Array.isArray(sessions) ? sessions : [];
+            var totalTokens = 0;
+            arr.forEach(function(s) { totalTokens += s.totalTokens || 0; });
+            
+            var mainSession = arr.find(function(s) { return s.key === 'agent:main:main'; });
+            var model = mainSession ? (mainSession.model || 'unknown') : 'unknown';
+            var activeSessions = arr.filter(function(s) { return s.status === 'active'; }).length;
+            var connected = arr.length > 0;
+
+            var html = '';
+            html += '<div class="mc-statusbar-item"><div class="mc-statusbar-dot" style="background:' + (connected ? '#4ade80' : '#ef4444') + '"></div>' + (connected ? 'Royal Network Active' : 'Castle Offline') + '</div>';
+            html += '<div class="mc-statusbar-item">Court Sage: <strong>' + escMc(model) + '</strong></div>';
+            html += '<div class="mc-statusbar-item">Royal Wisdom: <strong>' + totalTokens.toLocaleString() + '</strong></div>';
+            html += '<div class="mc-statusbar-item">Active Missions: <strong>' + activeSessions + '</strong></div>';
+            html += '<div class="mc-statusbar-item">Total Sessions: <strong>' + arr.length + '</strong></div>';
+            mcStatus.innerHTML = html;
+        }
+
+        // Make Mission Control agent tiles clickable
+        window.addEventListener('click', function(e) {
+            var agentCard = e.target.closest('.agent-card');
+            if (agentCard && agentCard.classList.contains('selected')) {
+                var agentId = agentCard.dataset.agent;
+                if (agentId === 'ceo' || agentId === 'apomac') {
+                    openMissionControl();
+                }
+            }
+        });
+
+    })();
+
+    // ═══ AGENT DETAIL PANEL HANDLERS ═══
+    (function() {
+        const overlay = document.getElementById('agentDetailOverlay');
+        const closeBtn = document.getElementById('agentDetailClose');
+
+        function closeAgentDetail() {
+            overlay.classList.remove('visible');
+            setTimeout(() => overlay.style.display = 'none', 300);
+        }
+
+        closeBtn.addEventListener('click', closeAgentDetail);
+        overlay.addEventListener('click', function(e) {
+            if (e.target === overlay) closeAgentDetail();
+        });
+
+        // Tab switching
+        document.querySelectorAll('.agent-detail-tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                document.querySelectorAll('.agent-detail-tab').forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+                
+                if (window.castleApp) {
+                    window.castleApp.currentDetailTab = this.dataset.tab;
+                    const agentId = document.getElementById('agentDetailName').textContent;
+                    const agent = window.castleApp.agents.get(agentId);
+                    if (agent) {
+                        window.castleApp.renderAgentDetailContent(agentId, agent);
+                    }
+                }
+            });
+        });
+
+        // ESC to close
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && overlay.classList.contains('visible')) {
+                closeAgentDetail();
+            }
+        });
+    })();
+
+    // ═══════════════════════════════════════════════════════════════
+    //   MEDIEVAL LIVE AGENT BEHAVIORS — Real-time API Integration
+    // ═══════════════════════════════════════════════════════════════
+    
+    (function initMedievalLiveBehaviors() {
+        var lastAgentState = {};
+        var lastChatMessageCount = 0;
+        var pollTimer = null;
+        var animationQueue = [];
+        
+        // Polling function for Medieval theme
+        async function pollMedievalAgentState() {
+            try {
+                const [sessionsResp, memoryResp, chatResp] = await Promise.allSettled([
+                    fetch(API_URL + '/api/oc/sessions'),
+                    fetch(API_URL + '/api/oc/memory'),
+                    fetch(API_URL + '/api/oc/chat')
+                ]);
+                
+                const sessions = sessionsResp.status === 'fulfilled' && sessionsResp.value.ok ? await sessionsResp.value.json() : [];
+                const memory = memoryResp.status === 'fulfilled' && memoryResp.value.ok ? await memoryResp.value.json() : {};
+                const chat = chatResp.status === 'fulfilled' && chatResp.value.ok ? await chatResp.value.json() : [];
+                
+                processMedievalStateChanges(sessions, memory, chat);
+            } catch (error) {
+                console.warn('[MedievalLiveBehaviors] Poll failed:', error.message || error);
+            }
+        }
+        
+        function processMedievalStateChanges(sessions, memory, chat) {
+            const currentState = {};
+            
+            // Build current state
+            (sessions || []).forEach(session => {
+                currentState[session.key] = {
+                    status: session.status,
+                    label: session.label || session.displayName,
+                    kind: session.kind,
+                    lastActive: session.lastActive,
+                    totalTokens: session.totalTokens
+                };
+            });
+            
+            // Detect changes
+            detectMedievalChanges(currentState);
+            
+            // Check for new messages
+            const currentMessageCount = Array.isArray(chat) ? chat.length : (chat.messages ? chat.messages.length : 0);
+            if (currentMessageCount > lastChatMessageCount && lastChatMessageCount > 0) {
+                animateMedievalNewMessage();
+            }
+            lastChatMessageCount = currentMessageCount;
+            
+            // Update knight animations and status
+            updateKnightBehaviors(sessions, memory);
+            
+            // Update Royal War Room data
+            updateWarRoomData(sessions);
+            
+            lastAgentState = currentState;
+        }
+        
+        function detectMedievalChanges(currentState) {
+            Object.keys(currentState).forEach(key => {
+                const current = currentState[key];
+                const previous = lastAgentState[key];
+                
+                if (!previous && current.kind === 'subagent') {
+                    // New knight spawned
+                    animateKnightSpawned(key, current);
+                } else if (previous && !currentState[key]) {
+                    // Knight decommissioned
+                    animateKnightDecommissioned(key, previous);
+                } else if (previous && previous.status !== current.status) {
+                    if (current.status === 'active') {
+                        animateKnightActive(key, current);
+                    } else {
+                        animateKnightIdle(key, current);
+                    }
+                }
+            });
+        }
+        
+        function updateKnightBehaviors(sessions, memory) {
+            // Update knights in 3D scene if available
+            if (window.medievalScene && window.medievalScene.knightMeshes) {
+                Object.entries(window.medievalScene.knightMeshes).forEach(([knightId, mesh]) => {
+                    let isActive = false;
+                    
+                    if (knightId === 'king') {
+                        // King = main session
+                        const mainSession = (sessions || []).find(s => s.key === 'agent:main:main');
+                        isActive = mainSession && mainSession.status === 'active';
+                        
+                        // Update king's current task from TODO.md
+                        if (memory && memory.todo) {
+                            const nextTask = extractMedievalNextTask(memory.todo);
+                            updateKnightSpeech(knightId, nextTask ? `Commanding: ${nextTask}` : 'Ruling the kingdom...');
+                        }
+                    } else {
+                        // Knights = sub-agents
+                        const subAgent = (sessions || []).find(s => 
+                            s.kind === 'subagent' && 
+                            s.label && 
+                            s.label.toLowerCase().includes(knightId.toLowerCase())
+                        );
+                        isActive = subAgent && subAgent.status === 'active';
+                        
+                        if (subAgent && subAgent.status === 'active') {
+                            updateKnightSpeech(knightId, `On quest: ${subAgent.label}`);
+                        } else if (subAgent) {
+                            const agoStr = formatMedievalTimeAgo(Date.now() - (subAgent.lastActive || Date.now()));
+                            updateKnightSpeech(knightId, `Resting since ${agoStr}`);
+                        } else {
+                            updateKnightSpeech(knightId, 'Awaiting orders...');
+                        }
+                    }
+                    
+                    // Update knight animations
+                    if (mesh.userData) {
+                        mesh.userData.isActive = isActive;
+                        // The existing animation system will pick up this state
+                    }
+                });
+            }
+            
+            // Update Mission Control overlay if open
+            updateMedievalMissionControl(sessions, memory);
+        }
+        
+        function updateWarRoomData(sessions) {
+            // Update war room displays with real session data
+            const warRoomEl = document.querySelector('.war-room, [data-room="war-room"]');
+            if (warRoomEl) {
+                const activeSessions = (sessions || []).filter(s => s.status === 'active').length;
+                const totalSessions = (sessions || []).length;
+                
+                const statusEl = warRoomEl.querySelector('.room-status, .war-room-status');
+                if (statusEl) {
+                    statusEl.textContent = `${activeSessions} knights active of ${totalSessions} total`;
+                    statusEl.style.color = activeSessions > 0 ? '#4ade80' : '#64748b';
+                }
+            }
+        }
+        
+        function animateKnightSpawned(sessionKey, session) {
+            console.log(`[Medieval] Knight spawned: ${session.label}`);
+            
+            // Find knight in UI and animate spawn
+            const knightElements = document.querySelectorAll('.knight-card, .mc-sub-item');
+            knightElements.forEach(el => {
+                const label = el.textContent || '';
+                if (label.toLowerCase().includes((session.label || '').toLowerCase())) {
+                    el.style.animation = 'knightSpawn 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)';
+                    setTimeout(() => { el.style.animation = ''; }, 800);
+                }
+            });
+            
+            // Add notification to war room
+            addMedievalNotification(`⚔️ Knight deployed: ${session.label}`, 'success');
+        }
+        
+        function animateKnightActive(sessionKey, session) {
+            console.log(`[Medieval] Knight active: ${session.label}`);
+            
+            // In 3D scene, make sword glow and knight move
+            if (window.medievalScene && window.medievalScene.knightMeshes) {
+                Object.entries(window.medievalScene.knightMeshes).forEach(([knightId, mesh]) => {
+                    if (session.label && session.label.toLowerCase().includes(knightId.toLowerCase())) {
+                        // Trigger sword animation
+                        if (mesh.userData) {
+                            mesh.userData.startSwordAnimation = true;
+                        }
+                    }
+                });
+            }
+        }
+        
+        function animateKnightIdle(sessionKey, session) {
+            // Knight sits/rests
+            if (window.medievalScene && window.medievalScene.knightMeshes) {
+                Object.entries(window.medievalScene.knightMeshes).forEach(([knightId, mesh]) => {
+                    if (session.label && session.label.toLowerCase().includes(knightId.toLowerCase())) {
+                        if (mesh.userData) {
+                            mesh.userData.startSwordAnimation = false;
+                        }
+                    }
+                });
+            }
+        }
+        
+        function animateKnightDecommissioned(sessionKey, session) {
+            console.log(`[Medieval] Knight departed: ${session.label}`);
+            addMedievalNotification(`🏰 Knight returned: ${session.label}`, 'info');
+        }
+        
+        function animateMedievalNewMessage() {
+            // Animate ravens/messenger birds
+            const messageElements = document.querySelectorAll('.message-icon, [data-icon="message"]');
+            messageElements.forEach(el => {
+                el.style.animation = 'ravenFly 1.2s ease-in-out';
+                setTimeout(() => { el.style.animation = ''; }, 1200);
+            });
+            
+            addMedievalNotification('📜 New message from the realm', 'info');
+        }
+        
+        function updateMedievalMissionControl(sessions, memory) {
+            // Update mission control with real data if overlay is open
+            const mcOverlay = document.querySelector('.mc-overlay');
+            if (mcOverlay && mcOverlay.classList.contains('visible')) {
+                // The existing loadMissionControl function will handle updates
+                // We just ensure the data is fresh
+            }
+        }
+        
+        function addMedievalNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `medieval-notification medieval-notification--${type}`;
+            notification.textContent = message;
+            notification.style.cssText = `
+                position: fixed;
+                top: 80px;
+                right: 20px;
+                background: rgba(244, 228, 188, 0.95);
+                color: var(--castle-navy);
+                padding: 8px 16px;
+                border-radius: 8px;
+                border: 2px solid var(--castle-gold);
+                font-family: var(--font-serif);
+                font-size: 12px;
+                font-weight: 600;
+                z-index: 2000;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                animation: medievalNotificationSlide 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+                max-width: 250px;
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // Auto-remove after 4 seconds
+            setTimeout(() => {
+                notification.style.animation = 'medievalNotificationFadeOut 0.3s ease-out forwards';
+                setTimeout(() => notification.remove(), 300);
+            }, 4000);
+        }
+        
+        function updateKnightSpeech(knightId, speech) {
+            // Update speech bubble or status text for knight
+            const speechElements = document.querySelectorAll(`[data-knight="${knightId}"] .speech, .knight-speech-${knightId}`);
+            speechElements.forEach(el => {
+                el.textContent = speech;
+                el.style.animation = 'speechUpdate 0.3s ease-out';
+                setTimeout(() => { el.style.animation = ''; }, 300);
+            });
+        }
+        
+        function extractMedievalNextTask(todoMd) {
+            if (!todoMd) return null;
+            const lines = todoMd.split('\n');
+            for (const line of lines) {
+                if (line.includes('>>> NEXT')) {
+                    return line.replace(/.*>>> NEXT:?\s*/, '').trim().substring(0, 40);
+                }
+            }
+            return null;
+        }
+        
+        function formatMedievalTimeAgo(ms) {
+            const minutes = Math.floor(ms / 60000);
+            const hours = Math.floor(ms / 3600000);
+            if (minutes < 1) return 'moments ago';
+            if (minutes < 60) return `${minutes} minutes past`;
+            if (hours < 24) return `${hours} hours past`;
+            return `${Math.floor(ms / 86400000)} days past`;
+        }
+        
+        // Medieval-specific CSS animations
+        const medievalAnimationStyles = document.createElement('style');
+        medievalAnimationStyles.textContent = `
+            @keyframes knightSpawn {
+                0% { transform: scale(0.7) rotate(-10deg); opacity: 0; }
+                50% { transform: scale(1.1) rotate(5deg); }
+                100% { transform: scale(1) rotate(0deg); opacity: 1; }
+            }
+            
+            @keyframes ravenFly {
+                0%, 100% { transform: scale(1) rotate(0deg); }
+                25% { transform: scale(1.1) rotate(-5deg) translateX(-3px); }
+                75% { transform: scale(1.05) rotate(3deg) translateX(3px); }
+            }
+            
+            @keyframes medievalNotificationSlide {
+                0% { transform: translateX(100%); opacity: 0; }
+                100% { transform: translateX(0); opacity: 1; }
+            }
+            
+            @keyframes medievalNotificationFadeOut {
+                0% { transform: translateX(0); opacity: 1; }
+                100% { transform: translateX(50px); opacity: 0; }
+            }
+            
+            @keyframes speechUpdate {
+                0% { opacity: 0.7; transform: scale(0.95); }
+                100% { opacity: 1; transform: scale(1); }
+            }
+        `;
+        document.head.appendChild(medievalAnimationStyles);
+        
+        // Initialize medieval live behaviors
+        console.log('[MedievalLiveBehaviors] Initializing...');
+        
+        // Initial poll
+        pollMedievalAgentState();
+        
+        // Set up polling interval
+        if (pollTimer) clearInterval(pollTimer);
+        pollTimer = setInterval(pollMedievalAgentState, 15000);
+        
+        console.log('[MedievalLiveBehaviors] Active - polling every 15s');
+        
+        // Cleanup
+        window.addEventListener('beforeunload', () => {
+            if (pollTimer) {
+                clearInterval(pollTimer);
+                pollTimer = null;
+            }
+        });
+    })();
+    </script>
+</body>
+</html>
