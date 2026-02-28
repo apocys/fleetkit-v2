@@ -13,7 +13,7 @@ const WORKSPACE = process.env.WORKSPACE || process.env.HOME + '/.openclaw/worksp
 const SESSIONS_FILE = process.env.HOME + '/.openclaw/agents/main/sessions/sessions.json';
 const STATIC_DIR = __dirname;
 const VERSION_FILE = path.join(__dirname, 'version.json');
-const REPO_DIR = process.env.SPAWNKIT_REPO || path.join(process.env.HOME, 'fleetkit-v2');
+const REPO_DIR = process.env.SPAWNKIT_REPO || path.join(process.env.HOME, 'spawnkit');
 const UPDATE_TOKEN = process.env.SK_API_TOKEN || '';
 
 // ── Version Management ──────────────────────────────────────────────────

@@ -1,6 +1,6 @@
 #!/bin/bash
 # Auto-sync: compare repo vs live, sync if different
-REPO="/home/apocyz_runner/fleetkit-v2"
+REPO="/home/apocyz_runner/spawnkit"
 LIVE="/home/apocyz_runner/spawnkit-server"
 STAMP_FILE="/tmp/.last-deploy-commit"
 
