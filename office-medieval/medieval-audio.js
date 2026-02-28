@@ -188,4 +188,109 @@
 
   document.addEventListener('click', initAudio, { once: true });
   document.addEventListener('keydown', initAudio, { once: true });
+
+  // ── Building Click Sounds ──────────────────────────────────
+  window.MedievalBuildingSounds = {
+      play: function(buildingName) {
+          if (!ctx || isMuted()) return;
+          var t = ctx.currentTime;
+          switch(buildingName) {
+              case '⚔️ Mission Hall':
+                  // War horn
+                  var o = ctx.createOscillator(); o.type = 'sawtooth';
+                  o.frequency.setValueAtTime(110, t);
+                  o.frequency.linearRampToValueAtTime(165, t + 0.3);
+                  var g = ctx.createGain();
+                  g.gain.setValueAtTime(0.15, t);
+                  g.gain.linearRampToValueAtTime(0.08, t + 0.5);
+                  g.gain.linearRampToValueAtTime(0, t + 0.8);
+                  o.connect(g); g.connect(ctx.destination);
+                  o.start(t); o.stop(t + 0.8);
+                  break;
+              case '🍺 Tavern':
+                  // Crowd murmur + glass clink
+                  for (var i = 0; i < 3; i++) {
+                      var o2 = ctx.createOscillator(); o2.type = 'sine';
+                      o2.frequency.value = 300 + Math.random() * 400;
+                      var g2 = ctx.createGain();
+                      g2.gain.setValueAtTime(0, t + i * 0.1);
+                      g2.gain.linearRampToValueAtTime(0.06, t + i * 0.1 + 0.05);
+                      g2.gain.linearRampToValueAtTime(0, t + i * 0.1 + 0.15);
+                      o2.connect(g2); g2.connect(ctx.destination);
+                      o2.start(t + i * 0.1); o2.stop(t + i * 0.1 + 0.2);
+                  }
+                  // Glass clink
+                  var clink = ctx.createOscillator(); clink.type = 'sine';
+                  clink.frequency.value = 2800;
+                  var cg = ctx.createGain();
+                  cg.gain.setValueAtTime(0.1, t + 0.35);
+                  cg.gain.linearRampToValueAtTime(0, t + 0.5);
+                  clink.connect(cg); cg.connect(ctx.destination);
+                  clink.start(t + 0.35); clink.stop(t + 0.55);
+                  break;
+              case '📚 Library':
+                  // Page turn (filtered noise burst)
+                  var buf = ctx.createBuffer(1, ctx.sampleRate * 0.3, ctx.sampleRate);
+                  var d = buf.getChannelData(0);
+                  for (var j = 0; j < d.length; j++) d[j] = (Math.random() * 2 - 1) * 0.1;
+                  var src = ctx.createBufferSource(); src.buffer = buf;
+                  var hp = ctx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 2000;
+                  var gg = ctx.createGain();
+                  gg.gain.setValueAtTime(0.12, t);
+                  gg.gain.linearRampToValueAtTime(0, t + 0.25);
+                  src.connect(hp); hp.connect(gg); gg.connect(ctx.destination);
+                  src.start(t); src.stop(t + 0.3);
+                  break;
+              case '🔨 Forge Workshop':
+                  // Anvil strike
+                  var anvil = ctx.createOscillator(); anvil.type = 'square';
+                  anvil.frequency.value = 800;
+                  var ag = ctx.createGain();
+                  ag.gain.setValueAtTime(0.15, t);
+                  ag.gain.linearRampToValueAtTime(0, t + 0.12);
+                  anvil.connect(ag); ag.connect(ctx.destination);
+                  anvil.start(t); anvil.stop(t + 0.15);
+                  // Second hit
+                  var a2 = ctx.createOscillator(); a2.type = 'square';
+                  a2.frequency.value = 650;
+                  var ag2 = ctx.createGain();
+                  ag2.gain.setValueAtTime(0.12, t + 0.2);
+                  ag2.gain.linearRampToValueAtTime(0, t + 0.35);
+                  a2.connect(ag2); ag2.connect(ctx.destination);
+                  a2.start(t + 0.2); a2.stop(t + 0.38);
+                  break;
+              case '🏪 Market':
+                  // Coin jingle
+                  for (var k = 0; k < 4; k++) {
+                      var coin = ctx.createOscillator(); coin.type = 'sine';
+                      coin.frequency.value = 1800 + Math.random() * 800;
+                      var cg2 = ctx.createGain();
+                      cg2.gain.setValueAtTime(0.08, t + k * 0.08);
+                      cg2.gain.linearRampToValueAtTime(0, t + k * 0.08 + 0.1);
+                      coin.connect(cg2); cg2.connect(ctx.destination);
+                      coin.start(t + k * 0.08); coin.stop(t + k * 0.08 + 0.12);
+                  }
+                  break;
+              case '🏠 Chapel':
+                  // Church bell
+                  var bell = ctx.createOscillator(); bell.type = 'sine';
+                  bell.frequency.value = 440;
+                  var bg = ctx.createGain();
+                  bg.gain.setValueAtTime(0.12, t);
+                  bg.gain.linearRampToValueAtTime(0.08, t + 0.5);
+                  bg.gain.linearRampToValueAtTime(0, t + 1.5);
+                  bell.connect(bg); bg.connect(ctx.destination);
+                  bell.start(t); bell.stop(t + 1.6);
+                  // Harmonics
+                  var h = ctx.createOscillator(); h.type = 'sine';
+                  h.frequency.value = 880;
+                  var hg = ctx.createGain();
+                  hg.gain.setValueAtTime(0.04, t);
+                  hg.gain.linearRampToValueAtTime(0, t + 1.0);
+                  h.connect(hg); hg.connect(ctx.destination);
+                  h.start(t); h.stop(t + 1.1);
+                  break;
+          }
+      }
+  };
 })();

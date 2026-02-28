@@ -61,6 +61,9 @@
 
         document.getElementById('building-panel').classList.add('panel-open');
 
+        // Play contextual building sound
+        if (window.MedievalBuildingSounds) window.MedievalBuildingSounds.play(buildingName);
+
         // Golden glow on building group
         var app = window.castleApp;
         if (app && app._buildingGroups) {
@@ -284,7 +287,7 @@
             '<div class="bp-section-title">📜 Skill Templates</div>' +
             '<div class="bp-skill-grid">' +
             ['Daily Standup','Code Review','Bug Hunter','Market Scout','Memory Keeper','Report Writer'].map(function(name) {
-                return '<div class="bp-card" style="text-align:center;cursor:pointer;" onclick="document.getElementById('forge-skill-name').value='' + name.toLowerCase().replace(/ /g,'-') + '';document.getElementById('forge-skill-desc').value='' + name + ' automation'">' +
+                return '<div class="bp-card" style="text-align:center;cursor:pointer;" onclick="document.getElementById(\x27forge-skill-name\x27).value=\x27' + name.toLowerCase().replace(/ /g,'-') + '\x27;document.getElementById(\x27forge-skill-desc\x27).value=\x27' + name + ' automation\x27">' +
                     '<div style="font-size:20px">⚙️</div>' +
                     '<div style="font-size:11px;color:#f4e4bc;margin-top:4px">' + name + '</div>' +
                     '</div>';

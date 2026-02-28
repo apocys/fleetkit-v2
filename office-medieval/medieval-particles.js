@@ -253,10 +253,9 @@ window.addEventListener('load', () => {
             lastTime = now;
             const elapsed = now / 1000;
 
-            // Day/night state for fireflies
-            const cycle = (elapsed % 3600) / 3600;
-            const sunAngle = cycle * Math.PI * 2 - Math.PI / 2;
-            const isNight = Math.sin(sunAngle) < -0.1;
+            // Day/night state for fireflies — read from scene state (real local time)
+            const dnState = app._dayNightState;
+            const isNight = dnState ? dnState.isNight : false;
 
             campfires.forEach(c => c.update(delta));
             smokeEmitters.forEach(s => s.update(delta));

@@ -191,6 +191,9 @@ class MedievalCastle3D {
         this.scene.add(keepLight);
 
         this.torchLights = [torch1, torch2, keepLight];
+
+        // Fire particle emitters at gate torches
+        this.torchParticles = this.createTorchParticles();
     }
 
     createGround() {
@@ -221,15 +224,37 @@ class MedievalCastle3D {
         }
         groundGeo.computeVertexNormals();
 
-        // River — blue plane running E-W at z=12
-        const riverGeo = new THREE.PlaneGeometry(60, 3);
-        const riverMat = new THREE.MeshStandardMaterial({
-            color: 0x3388cc,
-            roughness: 0.1,
-            metalness: 0.3,
+        // River — animated water shader running E-W at z=12
+        const riverGeo = new THREE.PlaneGeometry(60, 3, 60, 6);
+        const riverMat = new THREE.ShaderMaterial({
+            uniforms: {
+                uTime: { value: 0 },
+                uColor: { value: new THREE.Color(0x3388cc) },
+            },
+            vertexShader: `
+                uniform float uTime;
+                varying vec2 vUv;
+                void main() {
+                    vUv = uv;
+                    vec3 pos = position;
+                    pos.z += sin(pos.x * 2.0 + uTime * 1.5) * 0.08 + sin(pos.x * 5.0 + uTime * 2.5) * 0.03;
+                    gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+                }
+            `,
+            fragmentShader: `
+                uniform vec3 uColor;
+                uniform float uTime;
+                varying vec2 vUv;
+                void main() {
+                    float shimmer = sin(vUv.x * 30.0 + uTime * 2.0) * 0.05 + 0.95;
+                    float edge = smoothstep(0.0, 0.15, vUv.y) * smoothstep(1.0, 0.85, vUv.y);
+                    gl_FragColor = vec4(uColor * shimmer, 0.7 * edge);
+                }
+            `,
             transparent: true,
-            opacity: 0.75,
+            side: THREE.DoubleSide,
         });
+        this.riverMaterial = riverMat;
         const river = new THREE.Mesh(riverGeo, riverMat);
         river.rotation.x = -Math.PI / 2;
         river.position.set(0, 0.01, 12);
@@ -699,68 +724,98 @@ class MedievalCastle3D {
 
     async loadCharacters(updateProgress) {
         const agentDefs = [
-            { id: 'Sycopa',   color: 0x007AFF, speed: 0.4, crown: 0xFFD700 },
-            { id: 'Forge',    color: 0xFF9F0A, speed: 0.7, crown: null },
-            { id: 'Atlas',    color: 0xBF5AF2, speed: 0.6, crown: null },
-            { id: 'Hunter',   color: 0xFF453A, speed: 1.0, crown: null },
-            { id: 'Echo',     color: 0x0A84FF, speed: 0.5, crown: null },
-            { id: 'Sentinel', color: 0x30D158, speed: 0.8, crown: null },
+            { id: 'Sycopa',   glb: 'assets/characters/character-a.glb', speed: 0.4 },
+            { id: 'Forge',    glb: 'assets/characters/character-b.glb', speed: 0.7 },
+            { id: 'Atlas',    glb: 'assets/characters/character-c.glb', speed: 0.6 },
+            { id: 'Hunter',   glb: 'assets/characters/character-d.glb', speed: 1.0 },
+            { id: 'Echo',     glb: 'assets/characters/character-e.glb', speed: 0.5 },
+            { id: 'Sentinel', glb: 'assets/characters/character-f.glb', speed: 0.8 },
         ];
-
-        const emoticons = { idle: '💤 Idle', working: '⚔️ Working', chatting: '💬 Chatting', eating: '🍖 Eating', sleeping: '😴 Sleeping' };
 
         // Waypoints spread across entire map (castle, village, fields)
         const waypoints = [
-            // Sycopa — CEO, stays INSIDE castle courtyard (inner walls ±7)
             [{ x: 0, z: 0 }, { x: -4, z: -4 }, { x: 4, z: -4 }, { x: 4, z: 4 }, { x: -4, z: 4 }],
-            // Forge — CTO, village workshop area (all outside outer wall z>12)
             [{ x: 12, z: 20 }, { x: 8, z: 24 }, { x: 5, z: 22 }, { x: 10, z: 18 }, { x: 14, z: 22 }],
-            // Atlas — COO, wide village patrol (south of outer wall z>12)
             [{ x: -12, z: 20 }, { x: -5, z: 24 }, { x: 5, z: 22 }, { x: 12, z: 20 }, { x: 0, z: 28 }],
-            // Hunter — CRO, far scout: fields and edges (south of walls z>12)
             [{ x: 18, z: 16 }, { x: -16, z: 22 }, { x: -18, z: 14 }, { x: 14, z: 28 }, { x: 0, z: 18 }],
-            // Echo — CMO, village center: tavern + library (z>12)
             [{ x: -5, z: 24 }, { x: 5, z: 22 }, { x: -9, z: 27 }, { x: 7, z: 27 }, { x: 0, z: 20 }],
-            // Sentinel — QA, outer wall patrol (between inner and outer walls, z: -12 to 12)
             [{ x: 0, z: 13 }, { x: -13, z: 13 }, { x: -13, z: -13 }, { x: 13, z: -13 }, { x: 13, z: 13 }],
         ];
 
         for (let i = 0; i < agentDefs.length; i++) {
             const def = agentDefs[i];
-            const mesh = this.createCharacterMesh(def.color, def.crown);
-            mesh.scale.setScalar(1.2);
+            try {
+                const gltf = await this.loadModel(def.glb);
+                const model = gltf.scene;
+                model.scale.setScalar(0.5);
+                model.userData.agentId = def.id;
 
-            const wp = waypoints[i];
-            mesh.position.set(wp[0].x, 0, wp[0].z);
-            mesh.userData.agentId = def.id;
-            mesh.userData.emoticon = '💤 Idle';
-            this.scene.add(mesh);
+                model.traverse(child => {
+                    if (child.isMesh) {
+                        child.castShadow = true;
+                        child.receiveShadow = true;
+                        child.userData.agentId = def.id;
+                    }
+                });
 
-            this.characterModels.set(def.id, {
-                group: mesh,
-                model: mesh,
-                mixer: null,
-                animations: [],
-                waypoints: wp,
-                waypointIndex: 0,
-                nextWaypointIndex: 1,
-                speed: def.speed,
-                progress: 0,
-                bobPhase: Math.random() * Math.PI * 2,
-                glowMesh: null,
-            });
+                const wp = waypoints[i];
+                model.position.set(wp[0].x, 0, wp[0].z);
+                this.scene.add(model);
 
-            // HTML floating label
-            const label = document.createElement('div');
-            label.className = 'character-label';
-            label.textContent = def.id + ' \u{1F4A4}';
-            document.getElementById('labels-container').appendChild(label);
-            this.labelElements.set(def.id, label);
+                let mixer = null;
+                const animations = gltf.animations || [];
+                if (animations.length > 0) {
+                    mixer = new THREE.AnimationMixer(model);
+                    this.animationMixers.push(mixer);
+                    const clip = animations[0];
+                    const action = mixer.clipAction(clip);
+                    action.timeScale = 0.5 + def.speed * 0.5;
+                    action.play();
+                }
 
-            updateProgress('Character ' + def.id);
+                this.characterModels.set(def.id, {
+                    group: model,
+                    model: model,
+                    mixer: mixer,
+                    animations: animations,
+                    waypoints: wp,
+                    waypointIndex: 0,
+                    nextWaypointIndex: 1,
+                    speed: def.speed,
+                    progress: 0,
+                    bobPhase: Math.random() * Math.PI * 2,
+                    glowMesh: null,
+                });
+
+                const label = document.createElement('div');
+                label.className = 'character-label';
+                label.textContent = def.id + ' \u{1F4A4}';
+                document.getElementById('labels-container').appendChild(label);
+                this.labelElements.set(def.id, label);
+
+                updateProgress('Character ' + def.id);
+            } catch(e) {
+                console.warn('Failed to load character ' + def.id + ':', e);
+                const mesh = this.createCharacterMesh(0x888888, null);
+                mesh.scale.setScalar(1.2);
+                const wp = waypoints[i];
+                mesh.position.set(wp[0].x, 0, wp[0].z);
+                mesh.userData.agentId = def.id;
+                this.scene.add(mesh);
+                this.characterModels.set(def.id, {
+                    group: mesh, model: mesh, mixer: null, animations: [],
+                    waypoints: wp, waypointIndex: 0, nextWaypointIndex: 1,
+                    speed: def.speed, progress: 0, bobPhase: Math.random() * Math.PI * 2, glowMesh: null,
+                });
+                const label = document.createElement('div');
+                label.className = 'character-label';
+                label.textContent = def.id + ' \u{1F4A4}';
+                document.getElementById('labels-container').appendChild(label);
+                this.labelElements.set(def.id, label);
+                updateProgress('Character ' + def.id + ' (fallback)');
+            }
         }
 
-        // Animals
         this.spawnAnimals();
     }
 
@@ -837,6 +892,12 @@ class MedievalCastle3D {
         // Animate torch flicker
         this.animateTorches(elapsed);
 
+        // Animate torch fire particles
+        this.animateTorchParticles(delta);
+
+        // Animate water shader
+        if (this.riverMaterial) this.riverMaterial.uniforms.uTime.value = elapsed;
+
         // Animate animals
         this.animateAnimals(delta);
 
@@ -879,8 +940,8 @@ class MedievalCastle3D {
             const x = from.x + (to.x - from.x) * t;
             const z = from.z + (to.z - from.z) * t;
 
-            // Walking bob
-            const bob = Math.sin(elapsed * 6 + charData.bobPhase) * 0.03;
+            // Walking bob (skip for .glb models with their own animations)
+            const bob = charData.mixer ? 0 : Math.sin(elapsed * 6 + charData.bobPhase) * 0.03;
             group.position.set(x, bob, z);
 
             // Face direction of movement
@@ -939,6 +1000,82 @@ class MedievalCastle3D {
             const flicker = 1 + Math.sin(elapsed * 8 + i * 2.5) * 0.15 + Math.sin(elapsed * 13 + i) * 0.1;
             light.intensity = (i < 2 ? 2 : 1.5) * flicker;
         });
+    }
+
+    createTorchParticles() {
+        const positions = [
+            new THREE.Vector3(-2, 2.5, 5.5),
+            new THREE.Vector3(2, 2.5, 5.5),
+        ];
+        const particlesPerTorch = 40;
+        const total = positions.length * particlesPerTorch;
+        const geo = new THREE.BufferGeometry();
+        const posArr = new Float32Array(total * 3);
+        const colorArr = new Float32Array(total * 3);
+        const sizeArr = new Float32Array(total);
+        const lifeArr = new Float32Array(total);
+
+        for (let i = 0; i < total; i++) {
+            const torchIdx = Math.floor(i / particlesPerTorch);
+            const base = positions[torchIdx];
+            posArr[i * 3] = base.x + (Math.random() - 0.5) * 0.15;
+            posArr[i * 3 + 1] = base.y + Math.random() * 0.3;
+            posArr[i * 3 + 2] = base.z + (Math.random() - 0.5) * 0.15;
+            colorArr[i * 3] = 1.0;
+            colorArr[i * 3 + 1] = 0.5;
+            colorArr[i * 3 + 2] = 0.0;
+            sizeArr[i] = 0.08 + Math.random() * 0.05;
+            lifeArr[i] = Math.random();
+        }
+
+        geo.setAttribute('position', new THREE.BufferAttribute(posArr, 3));
+        geo.setAttribute('color', new THREE.BufferAttribute(colorArr, 3));
+        geo.setAttribute('size', new THREE.BufferAttribute(sizeArr, 1));
+
+        const mat = new THREE.PointsMaterial({
+            size: 0.1,
+            vertexColors: true,
+            transparent: true,
+            opacity: 0.8,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false,
+            sizeAttenuation: true,
+        });
+
+        const points = new THREE.Points(geo, mat);
+        this.scene.add(points);
+
+        return { points, positions, lifeArr, particlesPerTorch };
+    }
+
+    animateTorchParticles(delta) {
+        if (!this.torchParticles) return;
+        const { points, positions, lifeArr, particlesPerTorch } = this.torchParticles;
+        const posAttr = points.geometry.attributes.position;
+        const colorAttr = points.geometry.attributes.color;
+
+        for (let i = 0; i < lifeArr.length; i++) {
+            lifeArr[i] += delta * (1.5 + Math.random() * 0.5);
+            if (lifeArr[i] > 1.0) {
+                lifeArr[i] = 0;
+                const torchIdx = Math.floor(i / particlesPerTorch);
+                const base = positions[torchIdx];
+                posAttr.setXYZ(i,
+                    base.x + (Math.random() - 0.5) * 0.15,
+                    base.y,
+                    base.z + (Math.random() - 0.5) * 0.15
+                );
+            }
+            const y = posAttr.getY(i);
+            posAttr.setY(i, y + delta * 0.4);
+            posAttr.setX(i, posAttr.getX(i) + (Math.random() - 0.5) * delta * 0.1);
+
+            const t = lifeArr[i];
+            colorAttr.setXYZ(i, 1.0, 0.3 + t * 0.5, t * 0.2);
+        }
+        posAttr.needsUpdate = true;
+        colorAttr.needsUpdate = true;
+        points.material.opacity = 0.7;
     }
 
     animateAnimals(delta) {
