@@ -446,7 +446,7 @@
            CEO Communications Hub (was Mailbox) — Open / Close / Tabs
            ═══════════════════════════════════════════════ */
 
-        function openMailbox(tab) {
+        window.openMailbox = function openMailbox(tab) {
             if (typeof tab === 'object') tab = undefined; // Handle event object
             closeTodoPanel();
             closeDetailPanel();
@@ -3185,11 +3185,11 @@
             var activeSessions = (sessions && sessions.activeSessions) || 
                 (Array.isArray(sessions) ? sessions.filter(function(s) { return s.status === 'active'; }) : []);
             var running = subagents.filter(function(sa) { return sa.status === 'running'; });
-            var completed = subagents.filter(function(sa) { return sa.status === 'completed'; }).slice(0, 5);
+            // completed section removed (Kira fix 2026-02-28)
             var errored = subagents.filter(function(sa) { return sa.status === 'error'; }).slice(0, 3);
 
             // If no subagents but we have active sessions, show those as missions
-            if (running.length === 0 && completed.length === 0 && activeSessions.length === 0) {
+            if (running.length === 0 && activeSessions.length === 0) {
                 missionsBody.innerHTML = '<div class="cron-empty" style="text-align:center;padding:40px 20px;">' +
                     '<div style="font-size:40px;margin-bottom:12px;">🎯</div>' +
                     '<div style="font-size:14px;font-weight:600;color:var(--text-primary);margin-bottom:6px;">All Clear</div>' +
@@ -3239,21 +3239,7 @@
                 html += '</div>';
             }
 
-            // Completed
-            if (completed.length > 0) {
-                html += '<div class="cron-group"><div class="cron-group-title">✅ Completed (' + completed.length + ')</div>';
-                completed.forEach(function(sa) {
-                    html += '<div class="cron-item" style="opacity:0.7">';
-                    html += '<span class="cron-item-icon">✅</span>';
-                    html += '<div class="cron-item-info">';
-                    html += '<div class="cron-item-name">' + esc(sa.name || sa.label || sa.id) + '</div>';
-                    html += '<div class="cron-item-schedule">' + esc(sa.model || '') + (sa.totalTokens ? ' · ' + (sa.totalTokens/1000).toFixed(1) + 'k tokens' : '') + ' · Completed</div>';
-                    html += '</div>';
-                    html += '<span class="cron-item-status" style="color:var(--status-active);">Done</span>';
-                    html += '</div>';
-                });
-                html += '</div>';
-            }
+            // Completed section removed (Kira fix 2026-02-28)
 
             // Errored
             if (errored.length > 0) {
