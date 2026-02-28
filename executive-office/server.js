@@ -545,6 +545,51 @@ const server = http.createServer(async (req, res) => {
   }
 
   // ─── Local API routes ────────────────────────────────────
+
+  // POST /api/oc/chat — Send message to OpenClaw agent via gateway
+  if (req.url.replace(/\?.*/, '') === '/api/oc/chat' && req.method === 'POST') {
+    res.setHeader('Content-Type', 'application/json');
+    const body = await readBody(req);
+    const message = body?.message;
+    if (!message || typeof message !== 'string') {
+      res.writeHead(400);
+      res.end(JSON.stringify({ error: 'Missing message field' }));
+      return;
+    }
+    try {
+      const OC_GATEWAY = 'http://localhost:18789';
+      const OC_TOKEN = process.env.OC_GATEWAY_TOKEN || '2b1b2cdb509e42c71b487eca06502e794baff0d7e6a8e81e';
+      const resp = await fetch(OC_GATEWAY + '/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + OC_TOKEN,
+        },
+        body: JSON.stringify({
+          model: 'openclaw:main',
+          messages: [{ role: 'user', content: message }],
+          stream: false,
+        }),
+      });
+      if (!resp.ok) {
+        const errText = await resp.text();
+        console.error('[chat] Gateway error:', resp.status, errText);
+        res.writeHead(502);
+        res.end(JSON.stringify({ error: 'Gateway error', status: resp.status }));
+        return;
+      }
+      const data = await resp.json();
+      const reply = data?.choices?.[0]?.message?.content || '(No response)';
+      res.writeHead(200);
+      res.end(JSON.stringify({ ok: true, reply }));
+    } catch (e) {
+      console.error('[chat] Gateway send error:', e.message);
+      res.writeHead(500);
+      res.end(JSON.stringify({ error: 'Failed to reach gateway', detail: e.message }));
+    }
+    return;
+  }
+
   if (req.url.startsWith('/api/oc/')) {
     res.setHeader('Content-Type', 'application/json');
     const route = req.url.replace(/\?.*/, '');
