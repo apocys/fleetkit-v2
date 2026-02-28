@@ -5,7 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SpawnKit — Medieval Castle 3D</title>
     <script>
-        window.OC_RELAY_URL = window.OC_RELAY_URL || 'http://127.0.0.1:18790';
+        if (window.location.hostname.includes('spawnkit.ai')) {
+            window.OC_RELAY_URL = window.location.origin;
+        } else {
+            window.OC_RELAY_URL = window.OC_RELAY_URL || 'http://127.0.0.1:18790';
+        }
         var API_URL = window.OC_API_URL || (window.location.hostname.includes('spawnkit.ai') ? window.location.origin : 'http://127.0.0.1:8765');
     </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -673,7 +677,7 @@
             </div>
             <div class="castle-status-bar">
                 <div class="status-indicator"><div class="status-dot active"></div><span>Castle Online</span></div>
-                <div class="status-indicator"><div class="status-dot busy"></div><span id="active-agents">8 Knights Active</span></div>
+                <div class="status-indicator"><div class="status-dot busy"></div><span id="active-agents">Loading...</span></div>
             </div>
         </header>
 
@@ -733,6 +737,7 @@
     <script type="module" src="medieval-world.js"></script>
     <script type="module" src="medieval-particles.js"></script>
     <script type="module" src="medieval-characters-v2.js"></script>
+    <script type="module" src="medieval-agent-lifecycle.js"></script>
     <script type="module" src="medieval-sky.js"></script>
 
     <!-- ═══ MISSION CONTROL OVERLAY ═══ -->

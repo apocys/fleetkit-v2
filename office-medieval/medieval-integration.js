@@ -246,23 +246,88 @@
       document.body.appendChild(toggleBtn);
     }
 
+    // Track known sub-agents for spawn/decommission detection
+    var _knownSubAgents = {};
     setInterval(function() {
       if (!window.ThemeAuth) return;
       window.ThemeAuth.fetch(API_URL + '/api/oc/sessions').then(function(resp) {
         if (!resp.ok) return null;
         return resp.json();
       }).then(function(data) {
-        if (!data || !window.AgentRoutines) return;
+        if (!data) return;
         var sessions = data.sessions || data || [];
-        sessions.forEach(function(s) {
-          if (s.kind !== 'subagent' || s.status !== 'active') return;
-          var label = (s.label || '').toLowerCase();
-          app.characterModels.forEach(function(charData, agentId) {
-            if (label.indexOf(agentId.toLowerCase()) >= 0) {
-              window.AgentRoutines.onTask(agentId, { name: s.label || 'Working...', progress: 0 });
+
+        // Update header with real agent count
+        var activeCount = 0;
+        app.characterModels.forEach(function() { activeCount++; });
+        var subActive = sessions.filter(function(s) { return s.kind === 'subagent' && s.status === 'active'; }).length;
+        var headerEl = document.getElementById('active-agents');
+        if (headerEl) headerEl.textContent = activeCount + ' Knights Active' + (subActive ? ' + ' + subActive + ' Questing' : '');
+
+        // Routine integration
+        if (window.AgentRoutines) {
+          sessions.forEach(function(s) {
+            if (s.kind !== 'subagent' || s.status !== 'active') return;
+            var label = (s.label || '').toLowerCase();
+            app.characterModels.forEach(function(charData, agentId) {
+              if (label.indexOf(agentId.toLowerCase()) >= 0) {
+                window.AgentRoutines.onTask(agentId, { name: s.label || 'Working...', progress: 0 });
+              }
+            });
+          });
+        }
+
+        // Sub-agent spawn/decommission detection via Lifecycle system
+        if (window.MedievalLifecycle) {
+          var currentSubIds = {};
+          sessions.forEach(function(s) {
+            if (s.kind === 'subagent' && s.status === 'active') {
+              var sid = s.key || s.label || s.id;
+              currentSubIds[sid] = s;
             }
           });
-        });
+
+          // Detect NEW sub-agents (spawn)
+          Object.keys(currentSubIds).forEach(function(sid) {
+            if (!_knownSubAgents[sid]) {
+              var s = currentSubIds[sid];
+              var knightName = s.label || s.displayName || ('Knight-' + Object.keys(_knownSubAgents).length);
+              // Create a temporary character if not already on scene
+              if (!app.characterModels.has(knightName)) {
+                var mesh = app.createCharacterMesh(0x8B4513, null); // brown armor
+                mesh.scale.setScalar(1.2);
+                mesh.position.set(0, 0, 13); // gate
+                mesh.userData.agentId = knightName;
+                app.scene.add(mesh);
+                app.characterModels.set(knightName, {
+                  group: mesh, model: mesh, mixer: null, animations: [],
+                  waypoints: [{ x: 0, z: 13 }, { x: -12, z: 20 }, { x: 0, z: 0 }],
+                  waypointIndex: 0, nextWaypointIndex: 1, speed: 0.4,
+                  progress: 0, bobPhase: Math.random() * Math.PI * 2, glowMesh: null,
+                });
+                var label = document.createElement('div');
+                label.className = 'character-label';
+                label.textContent = knightName;
+                document.getElementById('labels-container').appendChild(label);
+                app.labelElements.set(knightName, label);
+                // This triggers spawn animation via detectSpawnDespawn
+              }
+            }
+          });
+
+          // Detect REMOVED sub-agents (decommission)
+          Object.keys(_knownSubAgents).forEach(function(sid) {
+            if (!currentSubIds[sid]) {
+              var s = _knownSubAgents[sid];
+              var knightName = s.label || s.displayName || sid;
+              if (app.characterModels.has(knightName)) {
+                window.MedievalLifecycle.decommissionAgent(knightName);
+              }
+            }
+          });
+
+          _knownSubAgents = currentSubIds;
+        }
       }).catch(function() {});
     }, 10000);
 

@@ -968,11 +968,25 @@ class MedievalCastle3D {
 
     // ── Day/Night Cycle (60s = full day) ─────────────────
     updateDayNight(elapsed) {
-        const cycle = (elapsed % 3600) / 3600; // 0-1 over 1 hour
-        const sunAngle = cycle * Math.PI * 2 - Math.PI / 2; // -π/2 to 3π/2
+        const CYCLE_SECONDS = 3600;
+        const DAY_FRACTION = 0.70; // 70% daylight, 30% night
+        const rawCycle = (elapsed % CYCLE_SECONDS) / CYCLE_SECONDS;
+
+        // Remap: stretch daytime, compress nighttime
+        let mappedCycle;
+        if (rawCycle < DAY_FRACTION) {
+            mappedCycle = (rawCycle / DAY_FRACTION) * 0.5;
+        } else {
+            mappedCycle = 0.5 + ((rawCycle - DAY_FRACTION) / (1 - DAY_FRACTION)) * 0.5;
+        }
+
+        const sunAngle = mappedCycle * Math.PI * 2 - Math.PI / 2;
         const sunHeight = Math.sin(sunAngle);
         const isNight = sunHeight < -0.1;
         const isDusk = sunHeight >= -0.1 && sunHeight < 0.15;
+
+        // Store for other modules to read
+        this._dayNightState = { sunAngle, sunHeight, isNight, isDusk, mappedCycle, rawCycle };
 
         // Move sun position
         if (this.sunLight) {

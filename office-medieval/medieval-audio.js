@@ -7,7 +7,15 @@
   function sunAngle() {
     var a = window.castleApp;
     if (!a || !a.clock) return 0;
-    return (a.clock.getElapsedTime() % 3600) / 3600 * Math.PI * 2 - Math.PI / 2;
+    // Use stored state from scene if available (70/30 remapped)
+    if (a._dayNightState) return a._dayNightState.sunAngle;
+    // Fallback: 70/30 day/night remapping
+    var DAY_FRACTION = 0.70;
+    var rawCycle = (a.clock.getElapsedTime() % 3600) / 3600;
+    var mapped = rawCycle < DAY_FRACTION
+      ? (rawCycle / DAY_FRACTION) * 0.5
+      : 0.5 + ((rawCycle - DAY_FRACTION) / (1 - DAY_FRACTION)) * 0.5;
+    return mapped * Math.PI * 2 - Math.PI / 2;
   }
   function isNight() { return Math.sin(sunAngle()) < -0.1; }
   function dayVol() { return Math.max(0, Math.sin(sunAngle())); }

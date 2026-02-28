@@ -77,8 +77,16 @@ function initSky(app) {
         const elapsed = now / 1000;
         twinkleTime += delta;
 
-        const cycle = (elapsed % 3600) / 3600;
-        const sunAngle = cycle * Math.PI * 2 - Math.PI / 2;
+        // 70% day / 30% night remapping (synced with medieval-scene.js)
+        const DAY_FRACTION = 0.70;
+        const rawCycle = (elapsed % 3600) / 3600;
+        let mappedCycle;
+        if (rawCycle < DAY_FRACTION) {
+            mappedCycle = (rawCycle / DAY_FRACTION) * 0.5;
+        } else {
+            mappedCycle = 0.5 + ((rawCycle - DAY_FRACTION) / (1 - DAY_FRACTION)) * 0.5;
+        }
+        const sunAngle = mappedCycle * Math.PI * 2 - Math.PI / 2;
         const sunHeight = Math.sin(sunAngle);
         const isNight = sunHeight < -0.1;
 
