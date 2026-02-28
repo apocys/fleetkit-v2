@@ -118,12 +118,12 @@
 
       '<div class="md-section-label">Connect Anywhere</div>' +
       '<div class="md-channels" id="missionDeskChannels">' +
-        '<div class="md-channel" title="Telegram"><span class="md-channel-icon">✈️</span><span class="md-channel-name">Telegram</span><span class="md-channel-status md-channel-on">Connected</span></div>' +
-        '<div class="md-channel" title="WhatsApp"><span class="md-channel-icon">💬</span><span class="md-channel-name">WhatsApp</span><span class="md-channel-status md-channel-on">Connected</span></div>' +
-        '<div class="md-channel" title="Signal"><span class="md-channel-icon">🔒</span><span class="md-channel-name">Signal</span><span class="md-channel-status md-channel-off">Available</span></div>' +
-        '<div class="md-channel" title="Discord"><span class="md-channel-icon">🎮</span><span class="md-channel-name">Discord</span><span class="md-channel-status md-channel-off">Available</span></div>' +
-        '<div class="md-channel" title="iMessage"><span class="md-channel-icon">🍎</span><span class="md-channel-name">iMessage</span><span class="md-channel-status md-channel-off">Available</span></div>' +
-        '<div class="md-channel" title="Slack"><span class="md-channel-icon">📡</span><span class="md-channel-name">Slack</span><span class="md-channel-status md-channel-off">Available</span></div>' +
+        '<button class="md-channel" title="Telegram" data-connected="1"><span class="md-channel-icon">✈️</span><span class="md-channel-name">Telegram</span><span class="md-channel-status md-channel-on">Connected</span></button>' +
+        '<button class="md-channel" title="WhatsApp" data-connected="1"><span class="md-channel-icon">💬</span><span class="md-channel-name">WhatsApp</span><span class="md-channel-status md-channel-on">Connected</span></button>' +
+        '<button class="md-channel" title="Signal"><span class="md-channel-icon">🔒</span><span class="md-channel-name">Signal</span><span class="md-channel-status md-channel-off">Available</span></button>' +
+        '<button class="md-channel" title="Discord"><span class="md-channel-icon">🎮</span><span class="md-channel-name">Discord</span><span class="md-channel-status md-channel-off">Available</span></button>' +
+        '<button class="md-channel" title="iMessage"><span class="md-channel-icon">🍎</span><span class="md-channel-name">iMessage</span><span class="md-channel-status md-channel-off">Available</span></button>' +
+        '<button class="md-channel" title="Slack"><span class="md-channel-icon">📡</span><span class="md-channel-name">Slack</span><span class="md-channel-status md-channel-off">Available</span></button>' +
       '</div>' +
     '</div>';
 
@@ -493,6 +493,50 @@
 
 // ═══ Kira Fixes 2026-02-28 ═══
 
+
+// Channel Status Panel (for already-connected channels)
+window.openChannelStatusPanel = function(channelId, displayName) {
+  var existing = document.getElementById('channelStatusOverlay');
+  if (existing) existing.remove();
+  var icons = {telegram:'\u2708\uFE0F',whatsapp:'\uD83D\uDCAC',signal:'\uD83D\uDD12',discord:'\uD83C\uDFAE',imessage:'\uD83C\uDF4E',slack:'\uD83D\uDCE1'};
+  var icon = icons[channelId] || '\uD83D\uDCE1';
+  var o = document.createElement('div');
+  o.id = 'channelStatusOverlay';
+  o.className = 'cron-overlay open';
+  o.style.zIndex = '10002';
+  o.innerHTML =
+    '<div class="cron-backdrop"></div>' +
+    '<div class="cron-panel" style="max-width:480px;max-height:80vh;">' +
+      '<div class="cron-header">' +
+        '<div class="cron-title"><span>' + icon + '</span> ' + displayName + '</div>' +
+        '<button class="cron-close" id="channelStatusClose">\u00D7</button>' +
+      '</div>' +
+      '<div class="cron-body" style="padding:24px;max-height:60vh;overflow-y:auto;">' +
+        '<div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">' +
+          '<div style="width:12px;height:12px;border-radius:50%;background:#34C759;flex-shrink:0;"></div>' +
+          '<div>' +
+            '<div style="font-weight:600;font-size:15px;">Connected & Active</div>' +
+            '<div style="color:var(--text-tertiary,#8E8E93);font-size:12px;">Messages are being routed through this channel</div>' +
+          '</div>' +
+        '</div>' +
+        '<div style="background:var(--bg-secondary,rgba(0,0,0,0.02));padding:16px;border-radius:12px;margin-bottom:12px;border:1px solid var(--border-subtle,rgba(0,0,0,0.06));">' +
+          '<h4 style="margin:0 0 8px;font-size:14px;font-weight:600;">\uD83D\uDCCA Channel Stats</h4>' +
+          '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">' +
+            '<div style="color:var(--text-secondary,#636366);font-size:13px;">Status: <strong style="color:var(--text-primary,#1D1D1F);">Active</strong></div>' +
+            '<div style="color:var(--text-secondary,#636366);font-size:13px;">Type: <strong style="color:var(--text-primary,#1D1D1F);">Direct</strong></div>' +
+          '</div>' +
+        '</div>' +
+        '<div style="background:var(--bg-secondary,rgba(0,0,0,0.02));padding:16px;border-radius:12px;border:1px solid var(--border-subtle,rgba(0,0,0,0.06));">' +
+          '<h4 style="margin:0 0 8px;font-size:14px;font-weight:600;">\u2699\uFE0F Actions</h4>' +
+          '<p style="margin:0;color:var(--text-secondary,#636366);font-size:13px;">Channel configuration and management coming soon.</p>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  document.body.appendChild(o);
+  document.getElementById('channelStatusClose').onclick = function() { o.remove(); };
+  o.querySelector('.cron-backdrop').onclick = function() { o.remove(); };
+};
+
 // FIX 3: Channel button click handlers
 (function() {
   function attachChannelClicks() {
@@ -506,7 +550,10 @@
         if (!name) return;
         var channelId = name.toLowerCase();
         console.log('[MissionDesk] Channel click:', channelId);
-        if (window.ChannelOnboarding && window.ChannelOnboarding.open) {
+        var isConnected = ch.hasAttribute('data-connected');
+        if (isConnected) {
+          if (window.openChannelStatusPanel) window.openChannelStatusPanel(channelId, name);
+        } else if (window.ChannelOnboarding && window.ChannelOnboarding.open) {
           window.ChannelOnboarding.open(channelId);
         }
       });
