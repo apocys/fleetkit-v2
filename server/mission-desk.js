@@ -506,35 +506,83 @@ window.openChannelStatusPanel = function(channelId, displayName) {
   o.style.zIndex = '10002';
   o.innerHTML =
     '<div class="cron-backdrop"></div>' +
-    '<div class="cron-panel" style="max-width:480px;max-height:80vh;">' +
+    '<div class="cron-panel" style="max-width:520px;max-height:80vh;">' +
       '<div class="cron-header">' +
         '<div class="cron-title"><span>' + icon + '</span> ' + displayName + '</div>' +
         '<button class="cron-close" id="channelStatusClose">\u00D7</button>' +
       '</div>' +
-      '<div class="cron-body" style="padding:24px;max-height:60vh;overflow-y:auto;">' +
-        '<div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">' +
-          '<div style="width:12px;height:12px;border-radius:50%;background:#34C759;flex-shrink:0;"></div>' +
-          '<div>' +
-            '<div style="font-weight:600;font-size:15px;">Connected & Active</div>' +
-            '<div style="color:var(--text-tertiary,#8E8E93);font-size:12px;">Messages are being routed through this channel</div>' +
-          '</div>' +
-        '</div>' +
-        '<div style="background:var(--bg-secondary,rgba(0,0,0,0.02));padding:16px;border-radius:12px;margin-bottom:12px;border:1px solid var(--border-subtle,rgba(0,0,0,0.06));">' +
-          '<h4 style="margin:0 0 8px;font-size:14px;font-weight:600;">\uD83D\uDCCA Channel Stats</h4>' +
-          '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">' +
-            '<div style="color:var(--text-secondary,#636366);font-size:13px;">Status: <strong style="color:var(--text-primary,#1D1D1F);">Active</strong></div>' +
-            '<div style="color:var(--text-secondary,#636366);font-size:13px;">Type: <strong style="color:var(--text-primary,#1D1D1F);">Direct</strong></div>' +
-          '</div>' +
-        '</div>' +
-        '<div style="background:var(--bg-secondary,rgba(0,0,0,0.02));padding:16px;border-radius:12px;border:1px solid var(--border-subtle,rgba(0,0,0,0.06));">' +
-          '<h4 style="margin:0 0 8px;font-size:14px;font-weight:600;">\u2699\uFE0F Actions</h4>' +
-          '<p style="margin:0;color:var(--text-secondary,#636366);font-size:13px;">Channel configuration and management coming soon.</p>' +
+      '<div class="cron-body" style="padding:24px;max-height:60vh;overflow-y:auto;" id="channelStatusBody">' +
+        '<div style="text-align:center;padding:32px 0;color:var(--text-tertiary,#8E8E93);">' +
+          '<div style="font-size:24px;margin-bottom:8px;">\u23F3</div>' +
+          'Loading channel info\u2026' +
         '</div>' +
       '</div>' +
     '</div>';
   document.body.appendChild(o);
   document.getElementById('channelStatusClose').onclick = function() { o.remove(); };
   o.querySelector('.cron-backdrop').onclick = function() { o.remove(); };
+
+  // Fetch real channel config
+  fetch('/api/oc/config').then(function(r) { return r.json(); }).then(function(config) {
+    var ch = (config.channels || {})[channelId] || {};
+    var body = document.getElementById('channelStatusBody');
+    if (!body) return;
+
+    var policyLabel = ch.dmPolicy === 'open' ? 'Open (anyone)' : ch.dmPolicy === 'allowlist' ? 'Allowlist only' : (ch.dmPolicy || 'Unknown');
+    var groupLabel = ch.groupPolicy === 'allowlist' ? 'Allowlist' : ch.groupPolicy === 'open' ? 'Open' : (ch.groupPolicy || 'Not set');
+    var allowList = (ch.allowFrom || []).join(', ') || 'None configured';
+
+    var details = '';
+    // Status header
+    details += '<div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">' +
+      '<div style="width:12px;height:12px;border-radius:50%;background:#34C759;flex-shrink:0;box-shadow:0 0 8px rgba(52,199,89,0.4);"></div>' +
+      '<div>' +
+        '<div style="font-weight:600;font-size:15px;">Connected & Active</div>' +
+        '<div style="color:var(--text-tertiary,#8E8E93);font-size:12px;">Source: OpenClaw configuration</div>' +
+      '</div>' +
+    '</div>';
+
+    // Connection details
+    details += '<div style="background:var(--bg-secondary,rgba(0,0,0,0.02));padding:16px;border-radius:12px;margin-bottom:12px;border:1px solid var(--border-subtle,rgba(0,0,0,0.06));">' +
+      '<h4 style="margin:0 0 12px;font-size:14px;font-weight:600;">\uD83D\uDD17 Connection Details</h4>' +
+      '<div style="display:grid;gap:8px;">';
+
+    if (channelId === 'telegram') {
+      details += '<div style="display:flex;justify-content:space-between;font-size:13px;"><span style="color:var(--text-secondary,#636366);">Bot</span><span style="font-weight:500;">@Apocys_bot</span></div>';
+      details += '<div style="display:flex;justify-content:space-between;font-size:13px;"><span style="color:var(--text-secondary,#636366);">Streaming</span><span style="font-weight:500;">' + (ch.streaming || 'off') + '</span></div>';
+    }
+    if (channelId === 'whatsapp') {
+      details += '<div style="display:flex;justify-content:space-between;font-size:13px;"><span style="color:var(--text-secondary,#636366);">Self-chat mode</span><span style="font-weight:500;">' + (ch.selfChatMode ? 'Enabled' : 'Disabled') + '</span></div>';
+      details += '<div style="display:flex;justify-content:space-between;font-size:13px;"><span style="color:var(--text-secondary,#636366);">Max media</span><span style="font-weight:500;">' + (ch.mediaMaxMb || '?') + ' MB</span></div>';
+    }
+
+    details += '<div style="display:flex;justify-content:space-between;font-size:13px;"><span style="color:var(--text-secondary,#636366);">DM Policy</span><span style="font-weight:500;">' + policyLabel + '</span></div>';
+    details += '<div style="display:flex;justify-content:space-between;font-size:13px;"><span style="color:var(--text-secondary,#636366);">Group Policy</span><span style="font-weight:500;">' + groupLabel + '</span></div>';
+    details += '<div style="display:flex;justify-content:space-between;font-size:13px;"><span style="color:var(--text-secondary,#636366);">Allowed</span><span style="font-weight:500;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + allowList + '">' + allowList + '</span></div>';
+
+    details += '</div></div>';
+
+    // Actions
+    details += '<div style="display:flex;gap:8px;margin-top:16px;">' +
+      '<button onclick="if(window.ChannelOnboarding&&window.ChannelOnboarding.open){document.getElementById(\'channelStatusOverlay\').remove();window.ChannelOnboarding.open(\'' + channelId + '\');}" style="flex:1;padding:12px;font-size:13px;font-weight:600;background:var(--bg-secondary,rgba(0,0,0,0.04));color:var(--text-primary,#1D1D1F);border:1px solid var(--border-subtle,rgba(0,0,0,0.1));border-radius:10px;cursor:pointer;">\u270F\uFE0F Edit Configuration</button>' +
+    '</div>';
+
+    body.innerHTML = details;
+  }).catch(function(err) {
+    var body = document.getElementById('channelStatusBody');
+    if (!body) return;
+    body.innerHTML =
+      '<div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">' +
+        '<div style="width:12px;height:12px;border-radius:50%;background:#34C759;flex-shrink:0;"></div>' +
+        '<div>' +
+          '<div style="font-weight:600;font-size:15px;">Connected</div>' +
+          '<div style="color:var(--text-tertiary,#8E8E93);font-size:12px;">Could not load details (API unavailable)</div>' +
+        '</div>' +
+      '</div>' +
+      '<div style="display:flex;gap:8px;margin-top:16px;">' +
+        '<button onclick="if(window.ChannelOnboarding&&window.ChannelOnboarding.open){document.getElementById(\'channelStatusOverlay\').remove();window.ChannelOnboarding.open(\'' + channelId + '\');}" style="flex:1;padding:12px;font-size:13px;font-weight:600;background:var(--bg-secondary,rgba(0,0,0,0.04));color:var(--text-primary,#1D1D1F);border:1px solid var(--border-subtle,rgba(0,0,0,0.1));border-radius:10px;cursor:pointer;">\u270F\uFE0F Edit Configuration</button>' +
+      '</div>';
+  });
 };
 
 // FIX 3: Channel button click handlers
