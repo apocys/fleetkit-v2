@@ -292,6 +292,22 @@
         .mood-bar { height: 6px; border-radius: 3px; background: rgba(0,0,0,0.1); overflow: hidden; margin-top: 4px; }
         .mood-bar-fill { height: 100%; border-radius: 3px; transition: width 0.5s ease; }
         .summon-model-btn.active { background: var(--castle-gold) !important; border-color: var(--castle-navy) !important; font-weight: 600; }
+        #knightsDropdown { scrollbar-width: thin; }
+        .kr-row { display: flex; align-items: center; gap: 10px; padding: 10px 14px; cursor: pointer; transition: background 0.12s; border-bottom: 1px solid rgba(201,169,89,0.12); }
+        .kr-row:last-child { border-bottom: none; }
+        .kr-row:hover { background: rgba(201,169,89,0.15); }
+        .kr-row.kr-selected { background: rgba(201,169,89,0.25); }
+        .kr-avatar { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; overflow: hidden; flex-shrink: 0; }
+        .kr-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .kr-info { flex: 1; min-width: 0; }
+        .kr-name { font-family: var(--font-serif); font-size: 13px; font-weight: 600; color: var(--castle-navy); }
+        .kr-role { font-size: 11px; color: var(--castle-brown); opacity: 0.7; }
+        .kr-right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+        .kr-emoji { font-size: 16px; }
+        .kr-status { width: 8px; height: 8px; border-radius: 50%; }
+        .kr-status.active { background: var(--status-active); box-shadow: 0 0 4px var(--status-active); }
+        .kr-status.idle { background: #888; }
+        .kr-section { padding: 6px 14px; font-family: var(--font-serif); font-size: 11px; font-weight: 600; color: var(--castle-brown); opacity: 0.6; text-transform: uppercase; letter-spacing: 1px; background: rgba(0,0,0,0.03); }
         .agent-metrics-grid {
             display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
         }
@@ -686,8 +702,10 @@
             </div>
             <div class="castle-status-bar">
                 <div class="status-indicator"><div class="status-dot active"></div><span>Castle Online</span></div>
-                <div class="status-indicator"><div class="status-dot busy"></div><span id="active-agents">Loading...</span></div>
+                <div class="status-indicator" id="knightsToggle" style="cursor:pointer;position:relative;"><div class="status-dot busy"></div><span id="active-agents">Loading...</span><span style="font-size:10px;opacity:0.5;margin-left:4px;">▼</span></div>
             </div>
+            <!-- Knights Roster Dropdown -->
+            <div id="knightsDropdown" style="display:none;position:absolute;top:36px;right:8px;width:320px;max-height:420px;overflow-y:auto;z-index:60;background:var(--bg-scroll);border:2px solid var(--border-gold);border-radius:12px;box-shadow:var(--shadow-deep);"></div>
         </header>
 
         <aside class="castle-sidebar">
@@ -878,6 +896,95 @@
                         window.castleApp.addActivityLog('⚔️ A new knight has been summoned for: ' + task.substring(0, 50) + '...', 'system');
                     }
                 });
+            }
+
+            // === Knights Roster Dropdown ===
+            var knightsToggle = document.getElementById('knightsToggle');
+            var knightsDD = document.getElementById('knightsDropdown');
+            if (knightsToggle && knightsDD) {
+                knightsToggle.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    if (knightsDD.style.display === 'none') {
+                        renderKnightsDropdown();
+                        knightsDD.style.display = 'block';
+                    } else {
+                        knightsDD.style.display = 'none';
+                    }
+                });
+                document.addEventListener('click', function(e) {
+                    if (!knightsDD.contains(e.target) && !knightsToggle.contains(e.target)) {
+                        knightsDD.style.display = 'none';
+                    }
+                });
+            }
+
+            function renderKnightsDropdown() {
+                var app = window.castleApp;
+                if (!app || !app.agents) return;
+                var lc = window.MedievalLifecycle;
+                var rows = [];
+
+                // Collect all agents
+                app.agents.forEach(function(agentData, agentId) {
+                    var charData = app.characterModels ? app.characterModels.get(agentId) : null;
+                    var state = lc ? lc.getAgentState(agentId) : null;
+                    var isActive = agentData.status === 'active' || (charData && !state?.isDecommissioning);
+                    rows.push({
+                        id: agentId,
+                        name: agentId,
+                        role: agentData.role || 'Knight',
+                        char: agentData.char || null,
+                        color: agentData.color || '#555',
+                        active: isActive,
+                        emoji: state?.currentEmoji || '',
+                        mood: state?.moodLabel || 'neutral',
+                        selected: agentId === app.selectedAgent
+                    });
+                });
+
+                // Sort: active first, then alphabetical
+                rows.sort(function(a, b) {
+                    if (a.active !== b.active) return a.active ? -1 : 1;
+                    return a.name.localeCompare(b.name);
+                });
+
+                var activeRows = rows.filter(function(r) { return r.active; });
+                var idleRows = rows.filter(function(r) { return !r.active; });
+
+                var html = '';
+                if (activeRows.length) {
+                    html += '<div class="kr-section">⚔️ Active (' + activeRows.length + ')</div>';
+                    activeRows.forEach(function(r) { html += knightRow(r); });
+                }
+                if (idleRows.length) {
+                    html += '<div class="kr-section">💤 Resting (' + idleRows.length + ')</div>';
+                    idleRows.forEach(function(r) { html += knightRow(r); });
+                }
+                if (!rows.length) {
+                    html = '<div style="padding:20px;text-align:center;color:var(--castle-brown);font-size:13px;">No knights in the realm</div>';
+                }
+
+                knightsDD.innerHTML = html;
+
+                // Wire click handlers
+                knightsDD.querySelectorAll('.kr-row').forEach(function(row) {
+                    row.addEventListener('click', function() {
+                        var id = row.dataset.agent;
+                        knightsDD.style.display = 'none';
+                        if (app.selectAgent) app.selectAgent(id);
+                    });
+                });
+            }
+
+            function knightRow(r) {
+                var avatarInner = r.char
+                    ? '<img src="assets/characters/character-' + r.char + '.png" alt="' + r.name + '">'
+                    : r.name.slice(0, 2);
+                return '<div class="kr-row' + (r.selected ? ' kr-selected' : '') + '" data-agent="' + r.id + '">'
+                    + '<div class="kr-avatar" style="background:' + r.color + ';">' + avatarInner + '</div>'
+                    + '<div class="kr-info"><div class="kr-name">' + r.name + '</div><div class="kr-role">' + r.role + '</div></div>'
+                    + '<div class="kr-right"><span class="kr-emoji">' + r.emoji + '</span><div class="kr-status ' + (r.active ? 'active' : 'idle') + '"></div></div>'
+                    + '</div>';
             }
 
             // Close summon overlay on backdrop click
