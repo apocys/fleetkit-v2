@@ -103,11 +103,17 @@
       '<div class="md-section-label">Quick Actions</div>' +
       '<div class="md-actions" id="missionDeskActions">' +
         '<button class="md-action" data-action="missions"><span class="md-action-icon">🎯</span><span class="md-action-label">Missions</span></button>' +
+        '<button class="md-action" data-action="briefing"><span class="md-action-icon">📋</span><span class="md-action-label">Daily Briefing</span></button>' +
         '<button class="md-action" data-action="boardroom"><span class="md-action-icon">🧠</span><span class="md-action-label">Boardroom</span></button>' +
         '<button class="md-action" data-action="forge"><span class="md-action-icon">🔨</span><span class="md-action-label">Skill Forge</span></button>' +
         '<button class="md-action" data-action="explore"><span class="md-action-icon">🚀</span><span class="md-action-label">Explore</span></button>' +
         '<button class="md-action" data-action="marketplace"><span class="md-action-icon">🏪</span><span class="md-action-label">Marketplace</span></button>' +
-        '<button class="md-action" data-action="deploy"><span class="md-action-icon">🚀</span><span class="md-action-label">Get Started</span></button>' +
+        '<button class="md-action" data-action="profile"><span class="md-action-icon">👤</span><span class="md-action-label">Creator Profile</span></button>' +
+      '</div>' +
+      '<div class="md-cta-wrapper" style="margin:16px 0 0;text-align:center;">' +
+        '<button class="md-action md-cta-primary" data-action="deploy" style="width:100%;padding:14px;font-size:14px;font-weight:600;background:linear-gradient(135deg,var(--exec-blue,#007AFF),#5856D6);color:#fff;border:none;border-radius:12px;cursor:pointer;transition:all 0.2s;box-shadow:0 4px 16px rgba(0,122,255,0.3);">' +
+          '<span class="md-action-icon" style="margin-right:8px;">🚀</span><span class="md-action-label">Get Started</span>' +
+        '</button>' +
       '</div>' +
       '<div class="md-section-label">Connect Anywhere</div>' +
       '<div class="md-channels" id="missionDeskChannels">' +
@@ -277,6 +283,10 @@
           if (skillsTab) skillsTab.click();
         }, 100);
       }
+    } else if (name === 'briefing') {
+      if (window.openMeetingPanel) { window.openMeetingPanel(); return; }
+    } else if (name === 'profile') {
+      if (window.openCreatorProfile) { window.openCreatorProfile(); return; }
     } else if (name === 'forge') {
       if (window.SkillForge) { window.SkillForge.open(); return; }
     } else if (name === 'explore') {
