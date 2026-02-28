@@ -1979,6 +1979,67 @@
             50% { opacity: 0.5; }
         }
 
+        .statusbar-update {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 4px 12px;
+            border-radius: 8px;
+            background: rgba(255, 149, 0, 0.12);
+            border: 1px solid rgba(255, 149, 0, 0.25);
+            font-size: 12px;
+            font-weight: 500;
+            color: #FF9500;
+            animation: updatePulse 3s ease-in-out infinite;
+        }
+        @keyframes updatePulse {
+            0%, 100% { border-color: rgba(255, 149, 0, 0.25); }
+            50% { border-color: rgba(255, 149, 0, 0.5); }
+        }
+        .statusbar-update-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #FF9500;
+        }
+        .statusbar-update-btn {
+            padding: 3px 10px;
+            border-radius: 6px;
+            border: none;
+            background: #FF9500;
+            color: white;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .statusbar-update-btn:hover {
+            background: #FF8000;
+            transform: scale(1.05);
+        }
+        .statusbar-update-btn:disabled {
+            background: #888;
+            cursor: wait;
+        }
+        .statusbar-update.updating {
+            background: rgba(0, 122, 255, 0.12);
+            border-color: rgba(0, 122, 255, 0.25);
+            color: var(--exec-blue);
+        }
+        .statusbar-update.updating .statusbar-update-dot {
+            background: var(--exec-blue);
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .statusbar-update.success {
+            background: rgba(48, 209, 88, 0.12);
+            border-color: rgba(48, 209, 88, 0.25);
+            color: #30D158;
+        }
+
         .statusbar-separator {
             width: 1px;
             height: 16px;
@@ -3492,6 +3553,11 @@
                     <span id="statusSystem">All systems nominal</span>
                 </div>
             </div>
+            <div id="updateBanner" class="statusbar-update" style="display:none;" aria-label="Update available">
+                <span class="statusbar-update-dot" aria-hidden="true"></span>
+                <span id="updateText">Update available</span>
+                <button id="updateBtn" class="statusbar-update-btn" aria-label="Update now">Update</button>
+            </div>
             <button class="statusbar-action" id="missionsBtn" aria-label="Missions">
                 <span class="statusbar-action-icon" aria-hidden="true">🎯</span>
                 <span>Missions</span>
@@ -3893,20 +3959,12 @@
         }
         // Make API URL available globally for all panels
         if (!window.OC_API_URL) window.OC_API_URL = relayUrl;
-        var relayToken = stored.relayToken || localStorage.getItem('spawnkit-token') || params.get('token') || '';
+        var relayToken = stored.relayToken || params.get('token') || '';
         
         window.OC_RELAY_URL = relayUrl;
         if (relayToken) window.OC_RELAY_TOKEN = relayToken;
         
         console.debug('🔌 SpawnKit Local: relay=' + relayUrl + ' token=' + (relayToken ? '***' : 'none'));
-        // Global authenticated fetch helper — used by all inline scripts
-        window.authFetch = function(url, opts) {
-          opts = opts || {};
-          opts.headers = opts.headers || {};
-          var t = window.OC_RELAY_TOKEN || '';
-          if (t) opts.headers['Authorization'] = 'Bearer ' + t;
-          return fetch(url, opts);
-        };
       })();
     </script>
     <script src="./src/data-bridge.js"></script>
@@ -4476,7 +4534,7 @@
             (async function() {
                 try {
                     var apiUrl = (window.OC_API_URL || (window.location.hostname.includes('spawnkit.ai') ? window.location.origin : 'http://127.0.0.1:8222'));
-                    var resp = await authFetch(apiUrl + '/api/oc/sessions');
+                    var resp = await fetch(apiUrl + '/api/oc/sessions');
                     if (!resp.ok) return;
                     var sessions = await resp.json();
                     // Map agentId to session key patterns
@@ -4549,7 +4607,7 @@
             (async function() {
                 try {
                     var apiUrl = (window.OC_API_URL || (window.location.hostname.includes('spawnkit.ai') ? window.location.origin : 'http://127.0.0.1:8222'));
-                    var resp = await authFetch(apiUrl + '/api/oc/sessions');
+                    var resp = await fetch(apiUrl + '/api/oc/sessions');
                     if (!resp.ok) return;
                     var sessions = await resp.json();
                     var agentKeyMap = { ceo: 'main', atlas: 'atlas', forge: 'forge', hunter: 'hunter', echo: 'echo', sentinel: 'sentinel' };
@@ -5263,9 +5321,8 @@
             }
 
             if (payload.agents) {
-                // Display team is always 6 (CEO suite) — OC may report fewer actual agents
-                var count = Math.max(payload.agents.length, 6);
-                document.getElementById('statusAgentCount').textContent = count + ' Agents';
+                var count = payload.agents.length;
+                document.getElementById('statusAgentCount').textContent = count + ' Agent' + (count !== 1 ? 's' : '');
             }
         }
 
@@ -5598,7 +5655,7 @@
                 var apiUrl = (window.OC_API_URL || (window.location.hostname.includes('spawnkit.ai') ? window.location.origin : 'http://127.0.0.1:8222'));
                 
                 // Try the dedicated chat history endpoint first
-                var response = await authFetch(apiUrl + '/api/oc/chat/history');
+                var response = await fetch(apiUrl + '/api/oc/chat/history');
                 if (response.ok) {
                     var data = await response.json();
                     if (data.ok && data.history) {
@@ -5607,7 +5664,7 @@
                 }
                 
                 // 3. Also fetch sessions for additional context
-                var sessResponse = await authFetch(apiUrl + '/api/oc/sessions');
+                var sessResponse = await fetch(apiUrl + '/api/oc/sessions');
                 if (sessResponse.ok) {
                     var sessions = await sessResponse.json();
                     if (Array.isArray(sessions)) {
@@ -5770,7 +5827,7 @@
             {
                 try {
                     var apiUrl = (window.OC_API_URL || (window.location.hostname.includes('spawnkit.ai') ? window.location.origin : 'http://127.0.0.1:8222'));
-                    var resp = await authFetch(apiUrl + '/api/oc/crons');
+                    var resp = await fetch(apiUrl + '/api/oc/crons');
                     if (resp.ok) {
                         var data = await resp.json();
                         crons = data.jobs || data.crons || (Array.isArray(data) ? data : []);
@@ -5926,7 +5983,7 @@
             if (!mem) {
                 try {
                     var apiUrl = (window.OC_API_URL || (window.location.hostname.includes('spawnkit.ai') ? window.location.origin : 'http://127.0.0.1:8222'));
-                    var resp = await authFetch(apiUrl + '/api/oc/memory');
+                    var resp = await fetch(apiUrl + '/api/oc/memory');
                     if (resp.ok) {
                         var data = await resp.json();
                         // API bridge returns { main: "content", files: [{name,size,modified}] }
@@ -6206,7 +6263,7 @@
             if (!sessions) {
                 try {
                     var apiUrl = (window.OC_API_URL || (window.location.hostname.includes('spawnkit.ai') ? window.location.origin : 'http://127.0.0.1:8222'));
-                    var resp = await authFetch(apiUrl + '/api/oc/sessions');
+                    var resp = await fetch(apiUrl + '/api/oc/sessions');
                     if (resp.ok) {
                         var data = await resp.json();
                         // API bridge returns array of sessions
@@ -6895,8 +6952,6 @@
     </script>
 
     <!-- Fleet client disabled: relay endpoints not yet deployed. Re-enable when fleet.spawnkit.ai/api/fleet/* is live -->
-    <!-- <script src="./src/fleet-client.js"></script> -->
-    <!-- <script src="./src/fleet-bootstrap.js"></script> -->
 
     <!-- ═══ Add Agent Wizard Logic ═══ -->
     <script>
@@ -8118,7 +8173,7 @@
             mcLoading = true;
             var sessions = [];
             try {
-                var resp = await authFetch(API_URL + '/api/oc/sessions');
+                var resp = await fetch(API_URL + '/api/oc/sessions');
                 if (resp.ok) sessions = await resp.json();
             } catch(e) {
                 console.warn('[MC] Failed to load sessions:', e.message || e);
@@ -8173,7 +8228,7 @@
             // Load TODO from API (cached in mcTodoContent)
             if (!mcTodoContent) {
                 var apiUrl = (window.OC_API_URL || (window.location.hostname.includes('spawnkit.ai') ? window.location.origin : 'http://127.0.0.1:8222'));
-                authFetch(apiUrl + '/api/oc/memory').then(function(r) { return r.ok ? r.json() : null; }).then(function(data) {
+                fetch(apiUrl + '/api/oc/memory').then(function(r) { return r.ok ? r.json() : null; }).then(function(data) {
                     if (data && data.todo) { mcTodoContent = data.todo; renderLeftColumn(sessions); }
                 }).catch(function() {});
             }
@@ -8256,7 +8311,7 @@
                     if (t) t.textContent = mcTodoExpanded ? '▾ Hide raw backlog' : '▸ Show raw backlog';
                     if (mcTodoExpanded && !mcTodoContent) {
                         if (r) r.textContent = 'Loading...';
-                        authFetch(API_URL + '/api/oc/memory').then(function(resp) { return resp.ok ? resp.json() : null; }).then(function(data) {
+                        fetch(API_URL + '/api/oc/memory').then(function(resp) { return resp.ok ? resp.json() : null; }).then(function(data) {
                             if (data && data.todo) {
                                 mcTodoContent = data.todo;
                             } else {
@@ -8381,7 +8436,7 @@
             if (mcTranscriptContent) { el.textContent = mcTranscriptContent; return; }
             el.textContent = 'Loading transcript...';
             try {
-                var resp = await authFetch(API_URL + '/api/oc/chat');
+                var resp = await fetch(API_URL + '/api/oc/chat');
                 if (resp.ok) {
                     var data = await resp.json();
                     var messages = data.messages || data || [];
@@ -8560,10 +8615,10 @@
         async function pollAgentState() {
             try {
                 const [sessionsResp, memoryResp, chatResp, cronsResp] = await Promise.allSettled([
-                    authFetch(getApiUrl() + '/api/oc/sessions'),
-                    authFetch(getApiUrl() + '/api/oc/memory'),
-                    authFetch(getApiUrl() + '/api/oc/chat'),
-                    authFetch(getApiUrl() + '/api/oc/crons')
+                    fetch(getApiUrl() + '/api/oc/sessions'),
+                    fetch(getApiUrl() + '/api/oc/memory'),
+                    fetch(getApiUrl() + '/api/oc/chat'),
+                    fetch(getApiUrl() + '/api/oc/crons')
                 ]);
                 
                 const sessions = sessionsResp.status === 'fulfilled' && sessionsResp.value.ok ? await sessionsResp.value.json() : [];
@@ -9061,7 +9116,82 @@
                 window.location.href = themeUrls[theme];
             });
         });
+
+        // ═══════════════════════════════════════════════════════════════
+        //   AUTO-UPDATE CHECK — Checks for new version every 5 min
+        // ═══════════════════════════════════════════════════════════════
+        (function initUpdateChecker() {
+            var banner = document.getElementById('updateBanner');
+            var textEl = document.getElementById('updateText');
+            var btnEl = document.getElementById('updateBtn');
+            if (!banner || !textEl || !btnEl) return;
+
+            var apiToken = localStorage.getItem('sk_api_token') || '';
+
+            function checkForUpdates() {
+                fetch('/api/oc/version')
+                    .then(function(r) { return r.json(); })
+                    .then(function(data) {
+                        if (data.updateAvailable) {
+                            var latest = data.latest ? data.latest.version : '?';
+                            var current = data.current ? data.current.version : '?';
+                            var behind = data.commitsBehind || 0;
+                            textEl.textContent = 'v' + current + ' → v' + latest + (behind > 0 ? ' (' + behind + ' commits)' : '');
+                            banner.style.display = 'flex';
+                        } else {
+                            banner.style.display = 'none';
+                        }
+                    })
+                    .catch(function() { /* silent */ });
+            }
+
+            btnEl.addEventListener('click', function() {
+                if (btnEl.disabled) return;
+                btnEl.disabled = true;
+                btnEl.textContent = 'Updating...';
+                banner.className = 'statusbar-update updating';
+                textEl.textContent = 'Pulling latest version...';
+
+                fetch('/api/oc/update', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + apiToken
+                    }
+                })
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    if (data.ok) {
+                        banner.className = 'statusbar-update success';
+                        textEl.textContent = 'Updated! Reloading...';
+                        btnEl.textContent = '✓';
+                        setTimeout(function() { window.location.reload(); }, 3000);
+                    } else {
+                        banner.className = 'statusbar-update';
+                        textEl.textContent = 'Update failed: ' + (data.error || 'unknown');
+                        btnEl.disabled = false;
+                        btnEl.textContent = 'Retry';
+                    }
+                })
+                .catch(function(err) {
+                    banner.className = 'statusbar-update';
+                    textEl.textContent = 'Update error: ' + err.message;
+                    btnEl.disabled = false;
+                    btnEl.textContent = 'Retry';
+                });
+            });
+
+            // Check on load + every 5 minutes
+            checkForUpdates();
+            setInterval(checkForUpdates, 5 * 60 * 1000);
+        })();
     })();
     </script>
+
+    <!-- Mission Desk (Kira fix 2026-02-28) -->
+    <link rel="stylesheet" href="mission-desk.css">
+    <script src="mission-desk.js"></script>
+    <script src="channel-onboarding.js"></script>
+    <script src="feature-toolbar.js"></script>
 </body>
 </html>
