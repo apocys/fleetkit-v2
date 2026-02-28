@@ -559,6 +559,28 @@ const server = http.createServer(async (req, res) => {
     try {
       const OC_GATEWAY = 'http://localhost:18789';
       const OC_TOKEN = process.env.OC_GATEWAY_TOKEN || '2b1b2cdb509e42c71b487eca06502e794baff0d7e6a8e81e';
+
+      // Detect persona prefix: [Speaking to Hunter] message
+      let agentMessage = message;
+      const personaMatch = message.match(/^\[Speaking to (\w+)\]\s*(.*)/s);
+      if (personaMatch) {
+        const personaName = personaMatch[1];
+        const userText = personaMatch[2];
+        // Load persona file if it exists
+        const personaPath = path.join(__dirname, 'office-medieval', 'personalities', personaName.toLowerCase() + '.md');
+        let personaCtx = '';
+        try {
+          if (fs.existsSync(personaPath)) {
+            personaCtx = fs.readFileSync(personaPath, 'utf8');
+          }
+        } catch(e) {}
+        if (personaCtx) {
+          agentMessage = `The user is speaking to ${personaName} in the medieval castle UI. Respond FULLY IN CHARACTER as ${personaName}. Use their personality, speech style, and temperament. Do NOT break character or mention being Sycopa/an AI. Stay brief and medieval-flavored.\n\nPersona:\n${personaCtx}\n\nUser says: ${userText}`;
+        } else {
+          agentMessage = `The user is speaking to ${personaName} in the medieval castle UI. Respond in character as ${personaName}, a knight of the castle. Stay brief and medieval-flavored.\n\nUser says: ${userText}`;
+        }
+      }
+
       const resp = await fetch(OC_GATEWAY + '/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -567,7 +589,7 @@ const server = http.createServer(async (req, res) => {
         },
         body: JSON.stringify({
           model: 'openclaw:main',
-          messages: [{ role: 'user', content: message }],
+          messages: [{ role: 'user', content: agentMessage }],
           stream: false,
         }),
       });

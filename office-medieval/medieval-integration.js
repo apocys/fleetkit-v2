@@ -242,9 +242,28 @@
           var persona = window._chatPersona;
           if (persona && persona !== 'ApoMac' && persona !== 'ceo') {
             text = '[Speaking to ' + persona + '] ' + text;
+            // Update the label for the response
+            var labels = chatContainer.querySelectorAll('.sk-chat-msg-label');
           }
           origSend(text);
         };
+      }
+
+      // Update assistant label based on active persona
+      var origAppend = null;
+      var chatMsgArea = chatContainer.querySelector('.sk-chat-messages');
+      if (chatMsgArea) {
+        var observer = new MutationObserver(function() {
+          var persona = window._chatPersona;
+          if (!persona || persona === 'ApoMac' || persona === 'ceo') return;
+          var msgs = chatMsgArea.querySelectorAll('.sk-chat-msg-assistant .sk-chat-msg-label');
+          msgs.forEach(function(label) {
+            if (label.textContent === '🤖 Sycopa') {
+              label.textContent = '🤖 ' + persona;
+            }
+          });
+        });
+        observer.observe(chatMsgArea, { childList: true, subtree: true });
       }
 
       var origSelect = app.selectAgent.bind(app);
