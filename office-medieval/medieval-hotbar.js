@@ -26,6 +26,12 @@
             if (typeof window.openBuildingPanel === 'function') window.openBuildingPanel('🏠 Chapel');
             else if (window.ThemeCustomize) ThemeCustomize.show();
         }},
+        { key: '6', icon: '⚔️', label: 'Summon', action: function() {
+            var overlay = document.getElementById('summonOverlay');
+            if (!overlay) return;
+            overlay.style.display = 'flex';
+            setTimeout(function() { overlay.classList.add('visible'); }, 50);
+        }},
     ];
     items.forEach(function(item) {
         var slot = document.createElement('div');

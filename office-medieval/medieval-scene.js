@@ -1373,6 +1373,21 @@ class MedievalCastle3D {
         overlay.style.display = 'flex';
         setTimeout(() => overlay.classList.add('visible'), 50);
 
+        // Wire chat button to open chat with this agent's context
+        const chatBtn = document.getElementById('agentChatBtn');
+        if (chatBtn) {
+            chatBtn.onclick = () => {
+                overlay.classList.remove('visible');
+                setTimeout(() => { overlay.style.display = 'none'; }, 300);
+                if (window.ThemeChat) {
+                    ThemeChat.show();
+                    setTimeout(() => {
+                        ThemeChat.send('Regarding ' + agentId + ': ');
+                    }, 300);
+                }
+            };
+        }
+
         this.addActivityLog(`Examining ${agentId}'s royal dossier`, agent.role);
     }
 
@@ -1380,7 +1395,23 @@ class MedievalCastle3D {
         const content = document.getElementById('agentDetailContent');
         const tab = this.currentDetailTab || 'overview';
 
+        // Pull real lifecycle data
+        const lc = window.MedievalLifecycle;
+        const state = lc ? lc.getAgentState(agentId) : null;
+        const personality = lc ? lc.getPersonality(agentId) : null;
+        const tod = lc ? lc.getTimeOfDay() : 'morning';
+        const routine = personality?.routines?.[tod];
+
         if (tab === 'overview') {
+            const moodPct = state ? Math.round(state.mood * 100) : 50;
+            const energyPct = state ? Math.round(state.energy * 100) : 50;
+            const moodColor = moodPct > 70 ? '#10b981' : moodPct > 35 ? '#f59e0b' : '#ef4444';
+            const energyColor = energyPct > 50 ? '#3b82f6' : energyPct > 20 ? '#f59e0b' : '#ef4444';
+            const moodLabel = state?.moodLabel || 'neutral';
+            const currentThought = state?.lastThought || routine?.thought || 'Contemplating...';
+            const currentEmoji = state?.currentEmoji || routine?.emoji || '⚔️';
+            const currentZone = routine?.zone || 'castle';
+
             content.innerHTML = `
                 <div style="margin-bottom:16px;">
                     <h4 style="font-family:var(--font-serif);color:var(--castle-navy);margin-bottom:8px;">Royal Duties</h4>
@@ -1389,21 +1420,82 @@ class MedievalCastle3D {
                     </p>
                 </div>
                 <div style="margin-bottom:16px;">
-                    <h4 style="font-family:var(--font-serif);color:var(--castle-navy);margin-bottom:8px;">Current Status</h4>
-                    <div style="display:flex;align-items:center;gap:8px;">
-                        <div class="status-dot ${agent.status}" style="width:12px;height:12px;"></div>
-                        <span style="color:var(--castle-navy);font-weight:500;text-transform:capitalize;">${agent.status}</span>
+                    <h4 style="font-family:var(--font-serif);color:var(--castle-navy);margin-bottom:8px;">💭 Current Thought</h4>
+                    <div style="background:rgba(255,255,255,0.4);border:1px solid var(--border-gold);border-radius:10px;padding:12px;display:flex;align-items:center;gap:10px;">
+                        <span style="font-size:24px;">${currentEmoji}</span>
+                        <span style="color:var(--castle-navy);font-style:italic;font-size:14px;">"${currentThought}"</span>
                     </div>
                 </div>
-                <div>
-                    <h4 style="font-family:var(--font-serif);color:var(--castle-navy);margin-bottom:8px;">Recent Achievements</h4>
-                    <ul style="color:var(--castle-brown);font-size:13px;line-height:1.6;">
-                        <li>Completed ${Math.floor(Math.random() * 10 + 5)} royal missions</li>
-                        <li>Maintained ${Math.floor(Math.random() * 20 + 80)}% success rate</li>
-                        <li>Active for ${agent.metrics?.uptime || '2.5h'} in current session</li>
-                    </ul>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+                    <div>
+                        <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--castle-brown);margin-bottom:4px;">
+                            <span>Mood: ${moodLabel}</span><span>${moodPct}%</span>
+                        </div>
+                        <div class="mood-bar"><div class="mood-bar-fill" style="width:${moodPct}%;background:${moodColor};"></div></div>
+                    </div>
+                    <div>
+                        <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--castle-brown);margin-bottom:4px;">
+                            <span>Energy</span><span>${energyPct}%</span>
+                        </div>
+                        <div class="mood-bar"><div class="mood-bar-fill" style="width:${energyPct}%;background:${energyColor};"></div></div>
+                    </div>
+                </div>
+                <div style="display:flex;gap:12px;font-size:12px;color:var(--castle-brown);">
+                    <span>📍 Zone: <b>${currentZone}</b></span>
+                    <span>🕐 Time: <b>${tod}</b></span>
+                    <span>⚡ Status: <b style="text-transform:capitalize;">${agent.status}</b></span>
                 </div>
             `;
+        } else if (tab === 'thoughts') {
+            // Build thought history from lifecycle routines
+            const routines = personality?.routines || {};
+            const timeOrder = ['dawn', 'morning', 'midday', 'afternoon', 'dusk', 'night'];
+            const timeIcons = { dawn: '🌅', morning: '☀️', midday: '🌞', afternoon: '🌤️', dusk: '🌅', night: '🌙' };
+            
+            let thoughtsHtml = '<div class="thoughts-feed">';
+            
+            // Current thought (highlighted)
+            const currentThought = state?.lastThought || routine?.thought || '';
+            if (currentThought) {
+                thoughtsHtml += `
+                    <div class="thought-entry" style="background:rgba(255,215,0,0.1);border-radius:8px;padding:10px;margin-bottom:8px;">
+                        <div class="thought-emoji">${state?.currentEmoji || '💭'}</div>
+                        <div>
+                            <div class="thought-text" style="font-weight:600;">"${currentThought}"</div>
+                            <div style="font-size:11px;color:var(--castle-brown);opacity:0.7;margin-top:2px;">Now · ${tod} · Mood: ${state?.moodLabel || 'neutral'}</div>
+                        </div>
+                    </div>`;
+            }
+
+            thoughtsHtml += '<h4 style="font-family:var(--font-serif);color:var(--castle-navy);font-size:13px;margin:12px 0 8px;">Daily Routine</h4>';
+            
+            timeOrder.forEach(t => {
+                const r = routines[t];
+                if (!r) return;
+                const isNow = t === tod;
+                thoughtsHtml += `
+                    <div class="thought-entry" style="${isNow ? 'opacity:1;' : 'opacity:0.65;'}">
+                        <div class="thought-time">${timeIcons[t] || '⏰'}</div>
+                        <div class="thought-emoji">${r.emoji}</div>
+                        <div class="thought-text">"${r.thought}" <span style="font-size:11px;opacity:0.5;">· ${r.zone}</span></div>
+                    </div>`;
+            });
+
+            // Personality traits
+            const prefs = personality?.preferredZones?.join(', ') || '—';
+            const avoids = personality?.avoidZones?.join(', ') || '—';
+            thoughtsHtml += `
+                <h4 style="font-family:var(--font-serif);color:var(--castle-navy);font-size:13px;margin:16px 0 8px;">Character Traits</h4>
+                <div style="font-size:12px;color:var(--castle-brown);line-height:1.8;">
+                    <div>❤️ Prefers: <b>${prefs}</b></div>
+                    <div>💔 Avoids: <b>${avoids}</b></div>
+                    <div>🚶 Speed: <b>Day ${personality?.walkSpeedMod?.day || 1}x / Night ${personality?.walkSpeedMod?.night || 1}x</b></div>
+                    <div>⚡ Energy decay: <b>${personality?.energyDecay || '?'}/tick</b></div>
+                </div>
+            `;
+            thoughtsHtml += '</div>';
+            content.innerHTML = thoughtsHtml;
+
         } else if (tab === 'metrics') {
             content.innerHTML = `
                 <div class="agent-metrics-grid">

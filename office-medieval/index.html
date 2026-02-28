@@ -283,6 +283,15 @@
         .agent-detail-content {
             min-height: 200px; color: var(--castle-navy);
         }
+        .thoughts-feed { max-height: 240px; overflow-y: auto; }
+        .thought-entry { display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px solid rgba(201,169,89,0.15); }
+        .thought-entry:last-child { border-bottom: none; }
+        .thought-time { font-size: 11px; color: var(--castle-brown); opacity: 0.6; min-width: 36px; padding-top: 2px; font-family: var(--font-serif); }
+        .thought-text { font-size: 13px; color: var(--castle-navy); line-height: 1.4; flex: 1; }
+        .thought-emoji { font-size: 16px; min-width: 24px; text-align: center; }
+        .mood-bar { height: 6px; border-radius: 3px; background: rgba(0,0,0,0.1); overflow: hidden; margin-top: 4px; }
+        .mood-bar-fill { height: 100%; border-radius: 3px; transition: width 0.5s ease; }
+        .summon-model-btn.active { background: var(--castle-gold) !important; border-color: var(--castle-navy) !important; font-weight: 600; }
         .agent-metrics-grid {
             display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
         }
@@ -773,12 +782,117 @@
             </div>
             <div class="agent-detail-tabs">
                 <button class="agent-detail-tab active" data-tab="overview">Overview</button>
+                <button class="agent-detail-tab" data-tab="thoughts">Thoughts</button>
                 <button class="agent-detail-tab" data-tab="metrics">Metrics</button>
                 <button class="agent-detail-tab" data-tab="sessions">Sessions</button>
             </div>
             <div class="agent-detail-content" id="agentDetailContent"></div>
+            <div class="agent-detail-actions" style="margin-top:16px;padding-top:12px;border-top:1px solid var(--border-gold);display:flex;gap:8px;">
+                <button id="agentChatBtn" class="agent-action-btn" style="flex:1;padding:10px;background:var(--castle-gold);color:var(--castle-navy);border:none;border-radius:8px;font-family:var(--font-serif);font-weight:600;cursor:pointer;font-size:13px;">💬 Speak to Knight</button>
+            </div>
         </div>
     </div>
+
+    <!-- ═══ Summon Knight Modal ═══ -->
+    <div class="agent-detail-overlay" id="summonOverlay">
+        <div class="agent-detail-panel" style="max-width:460px;">
+            <div class="agent-detail-header">
+                <div class="agent-detail-avatar" style="background:linear-gradient(135deg,#FFD700,#B8860B);">⚔️</div>
+                <div class="agent-detail-info">
+                    <h3 style="font-family:var(--font-medieval);">Summon a Knight</h3>
+                    <p>Send a new knight on a quest</p>
+                </div>
+                <button class="agent-detail-close" onclick="document.getElementById('summonOverlay').style.display='none';document.getElementById('summonOverlay').classList.remove('visible');">✕</button>
+            </div>
+            <div style="margin-bottom:16px;">
+                <label style="font-family:var(--font-serif);color:var(--castle-navy);font-weight:600;font-size:13px;display:block;margin-bottom:6px;">📜 Quest Description</label>
+                <textarea id="summonTask" rows="3" placeholder="Describe the quest for this knight..." style="width:100%;padding:10px;border:1px solid var(--border-gold);border-radius:8px;background:rgba(255,255,255,0.6);font-family:var(--font-serif);font-size:13px;color:var(--castle-navy);resize:vertical;box-sizing:border-box;"></textarea>
+            </div>
+            <div style="margin-bottom:16px;">
+                <label style="font-family:var(--font-serif);color:var(--castle-navy);font-weight:600;font-size:13px;display:block;margin-bottom:6px;">⚔️ Knight Class</label>
+                <div id="summonModelPicker" style="display:flex;gap:8px;flex-wrap:wrap;">
+                    <button class="summon-model-btn active" data-model="sonnet" style="flex:1;min-width:100px;padding:8px 12px;border:2px solid var(--border-gold);border-radius:8px;background:rgba(255,255,255,0.4);font-family:var(--font-serif);font-size:12px;cursor:pointer;color:var(--castle-navy);transition:all 0.15s;">🗡️ Squire<br><small style="opacity:0.6;">Sonnet · Fast</small></button>
+                    <button class="summon-model-btn" data-model="opus" style="flex:1;min-width:100px;padding:8px 12px;border:2px solid var(--border-gold);border-radius:8px;background:rgba(255,255,255,0.4);font-family:var(--font-serif);font-size:12px;cursor:pointer;color:var(--castle-navy);transition:all 0.15s;">⚔️ Knight<br><small style="opacity:0.6;">Opus · Deep</small></button>
+                    <button class="summon-model-btn" data-model="gpt" style="flex:1;min-width:100px;padding:8px 12px;border:2px solid var(--border-gold);border-radius:8px;background:rgba(255,255,255,0.4);font-family:var(--font-serif);font-size:12px;cursor:pointer;color:var(--castle-navy);transition:all 0.15s;">🏰 Paladin<br><small style="opacity:0.6;">GPT · Versatile</small></button>
+                </div>
+            </div>
+            <button id="summonBtn" style="width:100%;padding:12px;background:linear-gradient(135deg,#FFD700,#B8860B);color:var(--castle-navy);border:none;border-radius:10px;font-family:var(--font-medieval);font-size:16px;font-weight:600;cursor:pointer;letter-spacing:0.5px;box-shadow:0 4px 12px rgba(184,134,11,0.3);">⚔️ Summon Knight</button>
+        </div>
+    </div>
+
+    <!-- ═══ Summon Knight Logic ═══ -->
+    <script>
+    (function() {
+        document.addEventListener('DOMContentLoaded', function() {
+            // Model picker toggle
+            var pickerEl = document.getElementById('summonModelPicker');
+            if (pickerEl) {
+                pickerEl.addEventListener('click', function(e) {
+                    var btn = e.target.closest('.summon-model-btn');
+                    if (!btn) return;
+                    pickerEl.querySelectorAll('.summon-model-btn').forEach(function(b) { b.classList.remove('active'); });
+                    btn.classList.add('active');
+                });
+            }
+
+            // Summon button
+            var summonBtn = document.getElementById('summonBtn');
+            if (summonBtn) {
+                summonBtn.addEventListener('click', function() {
+                    var task = document.getElementById('summonTask').value.trim();
+                    if (!task) { document.getElementById('summonTask').focus(); return; }
+                    
+                    var activeModel = document.querySelector('.summon-model-btn.active');
+                    var model = activeModel ? activeModel.dataset.model : 'sonnet';
+                    var modelMap = { sonnet: 'Sonnet', opus: 'Opus', gpt: 'GPT' };
+                    
+                    // Send via chat to OpenClaw
+                    var message = 'Spawn a sub-agent (' + modelMap[model] + ') for this task: ' + task;
+                    
+                    if (window.ThemeChat && window.ThemeChat._sendMessage) {
+                        window.ThemeChat._sendMessage(message);
+                    } else if (window.ThemeAuth) {
+                        window.ThemeAuth.fetch(window.ThemeAuth.getApiUrl() + '/api/oc/chat', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ message: message })
+                        });
+                    }
+
+                    // Close modal + show feedback
+                    summonBtn.textContent = '✨ Knight Summoned!';
+                    summonBtn.style.background = '#10b981';
+                    setTimeout(function() {
+                        var overlay = document.getElementById('summonOverlay');
+                        overlay.classList.remove('visible');
+                        setTimeout(function() {
+                            overlay.style.display = 'none';
+                            summonBtn.textContent = '⚔️ Summon Knight';
+                            summonBtn.style.background = 'linear-gradient(135deg,#FFD700,#B8860B)';
+                            document.getElementById('summonTask').value = '';
+                        }, 300);
+                    }, 1200);
+
+                    // Activity log
+                    if (window.castleApp && window.castleApp.addActivityLog) {
+                        window.castleApp.addActivityLog('⚔️ A new knight has been summoned for: ' + task.substring(0, 50) + '...', 'system');
+                    }
+                });
+            }
+
+            // Close summon overlay on backdrop click
+            var summonOverlay = document.getElementById('summonOverlay');
+            if (summonOverlay) {
+                summonOverlay.addEventListener('click', function(e) {
+                    if (e.target === summonOverlay) {
+                        summonOverlay.classList.remove('visible');
+                        setTimeout(function() { summonOverlay.style.display = 'none'; }, 300);
+                    }
+                });
+            }
+        });
+    })();
+    </script>
 
     <!-- ═══ MODULAR JS ═══ -->
     <script src="medieval-mission-control.js"></script>
