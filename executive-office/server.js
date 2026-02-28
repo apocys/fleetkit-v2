@@ -313,6 +313,222 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  // ─── Channel OAuth & Verification Routes ──────────────────
+  const CHANNELS_FILE = path.join(WORKSPACE, '.spawnkit-channels.json');
+
+  function readChannels() {
+    try { return JSON.parse(fs.readFileSync(CHANNELS_FILE, 'utf8')); }
+    catch(e) { return {}; }
+  }
+
+  function writeChannels(data) {
+    fs.writeFileSync(CHANNELS_FILE, JSON.stringify(data, null, 2));
+  }
+
+  // Verify a channel's credentials by calling its real API
+  async function verifyChannel(channel, config) {
+    const https = require('https');
+    const http_ = require('http');
+
+    function apiGet(url, headers = {}) {
+      const mod = url.startsWith('https') ? https : http_;
+      return new Promise((resolve) => {
+        const req = mod.get(url, { headers, timeout: 10000 }, (resp) => {
+          let data = '';
+          resp.on('data', c => data += c);
+          resp.on('end', () => {
+            try { resolve({ ok: resp.statusCode >= 200 && resp.statusCode < 300, status: resp.statusCode, data: JSON.parse(data) }); }
+            catch(e) { resolve({ ok: false, status: resp.statusCode, data: data }); }
+          });
+        });
+        req.on('error', (e) => resolve({ ok: false, status: 0, error: e.message }));
+        req.on('timeout', () => { req.destroy(); resolve({ ok: false, status: 0, error: 'timeout' }); });
+      });
+    }
+
+    switch (channel) {
+      case 'telegram': {
+        if (!config.token) return { ok: false, error: 'Bot token required' };
+        // Validate format: 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11
+        if (!/^\d+:[A-Za-z0-9_-]{30,}$/.test(config.token)) {
+          return { ok: false, error: 'Invalid token format. Expected: 123456789:ABCdef...' };
+        }
+        const result = await apiGet(`https://api.telegram.org/bot${config.token}/getMe`);
+        if (result.ok && result.data?.ok) {
+          const bot = result.data.result;
+          return { ok: true, details: { botName: bot.first_name, username: bot.username, botId: bot.id } };
+        }
+        return { ok: false, error: result.data?.description || 'Invalid Telegram bot token' };
+      }
+
+      case 'discord': {
+        if (!config.token) return { ok: false, error: 'Bot token required' };
+        // Discord bot tokens are base64-ish strings
+        if (config.token.length < 50) {
+          return { ok: false, error: 'Token too short. Use the full bot token from Discord Developer Portal.' };
+        }
+        const result = await apiGet('https://discord.com/api/v10/users/@me', {
+          'Authorization': `Bot ${config.token}`
+        });
+        if (result.ok && result.data?.id) {
+          return { ok: true, details: { botName: result.data.username, botId: result.data.id, discriminator: result.data.discriminator } };
+        }
+        return { ok: false, error: result.data?.message || 'Invalid Discord bot token' };
+      }
+
+      case 'slack': {
+        if (!config.token) return { ok: false, error: 'Bot token required' };
+        if (!/^xoxb-/.test(config.token)) {
+          return { ok: false, error: 'Invalid format. Slack bot tokens start with xoxb-' };
+        }
+        const result = await apiGet('https://slack.com/api/auth.test', {
+          'Authorization': `Bearer ${config.token}`
+        });
+        if (result.ok && result.data?.ok) {
+          return { ok: true, details: { team: result.data.team, user: result.data.user, teamId: result.data.team_id } };
+        }
+        return { ok: false, error: result.data?.error || 'Invalid Slack bot token' };
+      }
+
+      case 'whatsapp': {
+        // WhatsApp Business API verification
+        if (!config.token) return { ok: false, error: 'Access token required' };
+        if (!config.phoneNumberId) {
+          // Format-only validation if no phone number ID
+          return { ok: true, details: { mode: 'token-only', note: 'Provide Phone Number ID for full verification' } };
+        }
+        const result = await apiGet(
+          `https://graph.facebook.com/v18.0/${config.phoneNumberId}`,
+          { 'Authorization': `Bearer ${config.token}` }
+        );
+        if (result.ok && result.data?.id) {
+          return { ok: true, details: { phoneNumberId: result.data.id, displayName: result.data.verified_name || result.data.display_phone_number } };
+        }
+        return { ok: false, error: result.data?.error?.message || 'Invalid WhatsApp credentials' };
+      }
+
+      case 'signal': {
+        // Signal doesn't have a public API for verification
+        // We validate the phone number format and mark as pending linking
+        if (!config.phoneNumber) return { ok: false, error: 'Phone number required' };
+        if (!/^\+\d{8,15}$/.test(config.phoneNumber.replace(/[\s-]/g, ''))) {
+          return { ok: false, error: 'Invalid phone format. Use international format: +33612345678' };
+        }
+        return { ok: true, details: { phoneNumber: config.phoneNumber, mode: 'device-linking', note: 'Complete linking in Signal app' } };
+      }
+
+      case 'imessage': {
+        // iMessage: check if we're on macOS and Messages.app is available
+        try {
+          const platform = require('os').platform();
+          if (platform !== 'darwin') {
+            return { ok: false, error: 'iMessage requires macOS' };
+          }
+          // Check if imsg CLI is available
+          try {
+            execSync('which imsg 2>/dev/null', { timeout: 3000 });
+            return { ok: true, details: { mode: 'native', cli: 'imsg', platform: 'macOS' } };
+          } catch(e) {
+            return { ok: true, details: { mode: 'applescript', platform: 'macOS', note: 'Install imsg CLI for full features' } };
+          }
+        } catch(e) {
+          return { ok: false, error: 'Could not detect macOS environment' };
+        }
+      }
+
+      default:
+        return { ok: false, error: `Unknown channel: ${channel}` };
+    }
+  }
+
+  // POST /api/oc/channels/verify — Real API verification
+  if (req.url === '/api/oc/channels/verify' && req.method === 'POST') {
+    const body = await readBody(req);
+    if (!body || !body.channel) {
+      res.writeHead(400, {'Content-Type':'application/json'});
+      res.end(JSON.stringify({ ok: false, error: 'Missing channel type' }));
+      return;
+    }
+    try {
+      const result = await verifyChannel(body.channel, body.config || body);
+      res.setHeader('Content-Type', 'application/json');
+      res.writeHead(result.ok ? 200 : 422);
+      res.end(JSON.stringify(result));
+    } catch(e) {
+      res.writeHead(500, {'Content-Type':'application/json'});
+      res.end(JSON.stringify({ ok: false, error: 'Verification failed: ' + e.message }));
+    }
+    return;
+  }
+
+  // GET /api/oc/channels/status — All connected channels
+  if (req.url === '/api/oc/channels/status' && req.method === 'GET') {
+    const saved = readChannels();
+    // Also check OpenClaw config for already-configured channels
+    const ocConfig = getConfig();
+    const channels = [];
+
+    // Merge saved channels
+    for (const [id, ch] of Object.entries(saved)) {
+      channels.push({ id, connected: true, ...ch });
+    }
+
+    // Check OpenClaw config for channels we didn't save but are configured
+    if (ocConfig.channels) {
+      for (const [id, conf] of Object.entries(ocConfig.channels)) {
+        if (!saved[id] && conf.enabled !== false) {
+          channels.push({ id, connected: true, source: 'openclaw', name: id, connectedAt: null });
+        }
+      }
+    }
+
+    res.setHeader('Content-Type', 'application/json');
+    res.writeHead(200);
+    res.end(JSON.stringify({ channels }));
+    return;
+  }
+
+  // POST /api/oc/channels/save — Persist channel config
+  if (req.url === '/api/oc/channels/save' && req.method === 'POST') {
+    const body = await readBody(req);
+    if (!body || !body.channel) {
+      res.writeHead(400, {'Content-Type':'application/json'});
+      res.end(JSON.stringify({ ok: false, error: 'Missing channel' }));
+      return;
+    }
+    const saved = readChannels();
+    saved[body.channel] = {
+      name: body.name || body.channel,
+      config: body.config || {},
+      details: body.details || {},
+      connectedAt: Date.now()
+    };
+    try {
+      writeChannels(saved);
+      res.setHeader('Content-Type', 'application/json');
+      res.writeHead(200);
+      res.end(JSON.stringify({ ok: true }));
+    } catch(e) {
+      res.writeHead(500, {'Content-Type':'application/json'});
+      res.end(JSON.stringify({ ok: false, error: 'Failed to save: ' + e.message }));
+    }
+    return;
+  }
+
+  // DELETE /api/oc/channels/:id — Disconnect a channel
+  if (req.url.startsWith('/api/oc/channels/') && req.method === 'DELETE') {
+    const channelId = req.url.split('/').pop();
+    const saved = readChannels();
+    if (saved[channelId]) {
+      delete saved[channelId];
+      writeChannels(saved);
+    }
+    res.setHeader('Content-Type', 'application/json');
+    res.writeHead(200);
+    res.end(JSON.stringify({ ok: true }));
+    return;
+  }
+
   // ─── Local API routes ────────────────────────────────────
   if (req.url.startsWith('/api/oc/')) {
     res.setHeader('Content-Type', 'application/json');

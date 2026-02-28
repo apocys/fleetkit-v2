@@ -1,6 +1,8 @@
 /**
- * SpawnKit Executive Office — Channel Connection Onboarding
- * Award-winning channel onboarding flows. Self-contained IIFE.
+ * SpawnKit — Channel Connection Wizard v2
+ * Awwwards-level OAuth bridge + guided setup wizard
+ * Real server-side verification, zero CLI exposure
+ * Self-contained IIFE, drop-in replacement
  */
 
 window.__skChannelOnboarding = true;
@@ -8,1072 +10,1255 @@ window.__skChannelOnboarding = true;
 (function () {
   'use strict';
 
-  // ── Channel Definitions ────────────────────────────────────────────────────
-  var channels = {
-    signal: {
-      name: 'Signal',
-      icon: '📱',
-      color: '#3A76F0',
-      gradient: 'linear-gradient(135deg, #3A76F0 0%, #2D5DD7 100%)',
-      description: 'Secure encrypted messaging',
-      benefits: ['End-to-end encryption', 'Private group chats', 'Self-destructing messages'],
-      setupSteps: [
-        { type: 'qr', title: 'Link your device', desc: 'Scan QR code with Signal app on your phone' },
-        { type: 'verify', title: 'Verify connection', desc: 'Send test message to confirm setup' }
-      ]
+  // ── Channel Registry ───────────────────────────────────────────────────────
+  var CHANNELS = {
+    telegram: {
+      name: 'Telegram',
+      icon: '✈️',
+      color: '#0088CC',
+      gradient: 'linear-gradient(135deg, #0088CC 0%, #006BA6 100%)',
+      tagline: 'Cloud messaging with bot platform',
+      benefits: ['Instant bot commands', 'Rich media & files', 'Group & channel support'],
+      authType: 'token',
+      tokenLabel: 'Bot Token',
+      tokenPlaceholder: '123456789:ABCdef-GHIjkl...',
+      tokenHelp: 'Get this from @BotFather on Telegram',
+      tokenGuideUrl: 'https://core.telegram.org/bots#botfather',
+      validateFormat: function(v) { return /^\d+:[A-Za-z0-9_-]{30,}$/.test(v); },
+      configKey: 'token',
+      phase: 1
     },
     discord: {
       name: 'Discord',
       icon: '🎮',
       color: '#5865F2',
       gradient: 'linear-gradient(135deg, #5865F2 0%, #4752C4 100%)',
-      description: 'Gaming and community platform',
-      benefits: ['Voice channels', 'Rich text formatting', 'Server integration'],
-      setupSteps: [
-        { type: 'token', title: 'Bot token', desc: 'Enter your Discord bot token', placeholder: 'MTI3NTMx...' },
-        { type: 'server', title: 'Select server', desc: 'Choose which Discord server to connect' },
-        { type: 'verify', title: 'Test connection', desc: 'Send a test message to verify' }
-      ]
+      tagline: 'Community platform for teams & gamers',
+      benefits: ['Server integration', 'Slash commands', 'Voice & threads'],
+      authType: 'token',
+      tokenLabel: 'Bot Token',
+      tokenPlaceholder: 'MTI3NTMx...',
+      tokenHelp: 'From Discord Developer Portal → Bot → Token',
+      tokenGuideUrl: 'https://discord.com/developers/applications',
+      validateFormat: function(v) { return v.length >= 50; },
+      configKey: 'token',
+      phase: 1
+    },
+    whatsapp: {
+      name: 'WhatsApp',
+      icon: '💚',
+      color: '#25D366',
+      gradient: 'linear-gradient(135deg, #25D366 0%, #128C7E 100%)',
+      tagline: 'Global messaging, billions of users',
+      benefits: ['Worldwide reach', 'Business API', 'Rich media & location'],
+      authType: 'qr',
+      tokenLabel: 'Access Token',
+      tokenPlaceholder: 'EAAx...',
+      tokenHelp: 'From Meta Business Suite → WhatsApp',
+      tokenGuideUrl: 'https://business.facebook.com/',
+      validateFormat: function(v) { return v.length >= 10; },
+      configKey: 'token',
+      phase: 1
+    },
+    signal: {
+      name: 'Signal',
+      icon: '📱',
+      color: '#3A76F0',
+      gradient: 'linear-gradient(135deg, #3A76F0 0%, #2D5DD7 100%)',
+      tagline: 'Private, encrypted messaging',
+      benefits: ['End-to-end encryption', 'Disappearing messages', 'No data collection'],
+      authType: 'phone',
+      tokenLabel: 'Phone Number',
+      tokenPlaceholder: '+33 6 12 34 56 78',
+      tokenHelp: 'International format with country code',
+      validateFormat: function(v) { return /^\+\d{8,15}$/.test(v.replace(/[\s\-()]/g, '')); },
+      configKey: 'phoneNumber',
+      phase: 1
     },
     imessage: {
       name: 'iMessage',
       icon: '💬',
       color: '#34C759',
       gradient: 'linear-gradient(135deg, #34C759 0%, #30D158 100%)',
-      description: 'Apple ecosystem messaging',
-      benefits: ['Native iOS integration', 'Rich media support', 'Handoff across devices'],
-      setupSteps: [
-        { type: 'system', title: 'System access', desc: 'Grant permission for macOS integration' },
-        { type: 'verify', title: 'Test message', desc: 'Send a test iMessage' }
-      ]
+      tagline: 'Native Apple ecosystem messaging',
+      benefits: ['macOS integration', 'Rich media', 'Handoff across devices'],
+      authType: 'system',
+      phase: 1
     },
     slack: {
       name: 'Slack',
       icon: '💼',
       color: '#4A154B',
       gradient: 'linear-gradient(135deg, #4A154B 0%, #611F69 100%)',
-      description: 'Professional team communication',
-      benefits: ['Workspace integration', 'Thread conversations', 'App ecosystem'],
-      setupSteps: [
-        { type: 'token', title: 'Bot token', desc: 'Enter your Slack bot token', placeholder: 'xoxb-...' },
-        { type: 'workspace', title: 'Select workspace', desc: 'Choose your Slack workspace' },
-        { type: 'verify', title: 'Test message', desc: 'Send a welcome message' }
-      ]
+      tagline: 'Professional team communication',
+      benefits: ['Workspace channels', 'Thread conversations', 'App integrations'],
+      authType: 'token',
+      tokenLabel: 'Bot Token',
+      tokenPlaceholder: 'xoxb-...',
+      tokenHelp: 'From Slack API → OAuth & Permissions → Bot Token',
+      tokenGuideUrl: 'https://api.slack.com/apps',
+      validateFormat: function(v) { return /^xoxb-/.test(v); },
+      configKey: 'token',
+      phase: 1
     },
-    telegram: {
-      name: 'Telegram',
-      icon: '✈️',
-      color: '#0088CC',
-      gradient: 'linear-gradient(135deg, #0088CC 0%, #006BA6 100%)',
-      description: 'Cloud-based instant messaging',
-      benefits: ['Large file sharing', 'Channels & groups', 'Bot platform'],
-      setupSteps: [
-        { type: 'token', title: 'Bot token', desc: 'Enter your Telegram bot token', placeholder: '123456:ABC-DEF...' },
-        { type: 'verify', title: 'Test connection', desc: 'Send a test message' }
-      ]
+    google: {
+      name: 'Google Workspace',
+      icon: '📧',
+      color: '#4285F4',
+      gradient: 'linear-gradient(135deg, #4285F4 0%, #34A853 50%, #FBBC05 100%)',
+      tagline: 'Gmail, Calendar, Drive — all connected',
+      benefits: ['Email integration', 'Calendar sync', 'Drive access'],
+      authType: 'oauth',
+      phase: 2
     },
-    whatsapp: {
-      name: 'WhatsApp',
-      icon: '💚',
-      color: '#25D366',
-      gradient: 'linear-gradient(135deg, #25D366 0%, #20B858 100%)',
-      description: 'Global messaging platform',
-      benefits: ['Worldwide reach', 'Business API', 'Rich media'],
-      setupSteps: [
-        { type: 'qr', title: 'Link device', desc: 'Scan QR code with WhatsApp mobile app' },
-        { type: 'verify', title: 'Test message', desc: 'Send a test message' }
-      ]
+    github: {
+      name: 'GitHub',
+      icon: '🐙',
+      color: '#171515',
+      gradient: 'linear-gradient(135deg, #24292e 0%, #40464d 100%)',
+      tagline: 'Code, issues, and pull requests',
+      benefits: ['Issue tracking', 'PR notifications', 'CI/CD integration'],
+      authType: 'oauth',
+      phase: 2
     }
   };
 
-  // ── CSS Styles ─────────────────────────────────────────────────────────────
-  var css = `
-    @keyframes ch-ob-fadein {
-      from { opacity: 0; transform: translateY(16px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-    @keyframes ch-ob-fadeout {
-      from { opacity: 1; }
-      to   { opacity: 0; }
-    }
-    @keyframes ch-ob-slide-in {
-      from { opacity: 0; transform: translateX(40px); }
-      to   { opacity: 1; transform: translateX(0); }
-    }
-    @keyframes ch-ob-slide-out {
-      from { opacity: 1; transform: translateX(0); }
-      to   { opacity: 0; transform: translateX(-40px); }
-    }
-    @keyframes ch-ob-channel-pop {
-      0%   { opacity: 0; transform: scale(0.6) rotate(-4deg); }
-      60%  { opacity: 1; transform: scale(1.08) rotate(2deg); }
-      100% { opacity: 1; transform: scale(1) rotate(0deg); }
-    }
-    @keyframes ch-ob-pulse-ring {
-      0%   { transform: scale(0.8); opacity: 0.8; }
-      100% { transform: scale(1.4); opacity: 0; }
-    }
-    @keyframes ch-ob-confetti {
-      0%   { transform: translateY(0) rotate(0deg);   opacity: 1; }
-      100% { transform: translateY(400px) rotate(720deg); opacity: 0; }
-    }
-    @keyframes ch-ob-celebration {
-      0%   { transform: scale(1); }
-      50%  { transform: scale(1.06); }
-      100% { transform: scale(1); }
-    }
-    @keyframes ch-ob-typing {
-      0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
-      40%            { transform: scale(1);   opacity: 1; }
-    }
-    @keyframes ch-ob-qr-scan {
-      0%   { transform: scale(1); opacity: 0.3; }
-      50%  { transform: scale(1.02); opacity: 0.8; }
-      100% { transform: scale(1); opacity: 0.3; }
-    }
-
-    .ch-ob-overlay {
-      position: fixed; inset: 0; z-index: 10001;
-      background: rgba(0, 0, 0, 0.72);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      display: flex; align-items: center; justify-content: center;
-      font-family: -apple-system, system-ui, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
-      transition: opacity 0.3s ease;
-    }
-    .ch-ob-overlay.ch-ob-hiding {
-      animation: ch-ob-fadeout 0.3s ease forwards;
-    }
-
-    /* Flow container */
-    .ch-ob-flow {
-      position: absolute; width: 100%; height: 100%;
-      display: flex; align-items: center; justify-content: center;
-      pointer-events: none; opacity: 0;
-    }
-    .ch-ob-flow.ch-ob-active {
-      pointer-events: auto; opacity: 1;
-    }
-    .ch-ob-flow.ch-ob-entering {
-      animation: ch-ob-slide-in 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-    }
-    .ch-ob-flow.ch-ob-leaving {
-      animation: ch-ob-slide-out 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-    }
-
-    /* Card */
-    .ch-ob-card {
-      background: rgba(28, 28, 30, 0.95);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 20px;
-      padding: 40px 36px 32px;
-      width: 480px;
-      max-width: calc(100vw - 40px);
-      box-shadow: 0 32px 80px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255,255,255,0.04);
-      position: relative;
-    }
-
-    /* Channel intro */
-    .ch-ob-channel-intro {
-      text-align: center; padding: 20px 0 32px;
-    }
-    .ch-ob-channel-icon {
-      width: 80px; height: 80px; margin: 0 auto 24px;
-      border-radius: 20px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 40px;
-      animation: ch-ob-channel-pop 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-      position: relative;
-    }
-    .ch-ob-channel-icon::after {
-      content: '';
-      position: absolute; inset: -8px;
-      border-radius: 28px;
-      border: 2px solid rgba(255, 255, 255, 0.2);
-      animation: ch-ob-pulse-ring 2s ease-out infinite;
-    }
-    .ch-ob-channel-title {
-      font-size: 28px; font-weight: 700; color: #fff;
-      margin: 0 0 8px; letter-spacing: -0.5px;
-      animation: ch-ob-fadein 0.6s 0.2s ease both;
-    }
-    .ch-ob-channel-desc {
-      font-size: 15px; color: rgba(255,255,255,0.5);
-      margin: 0 0 24px; line-height: 1.5;
-      animation: ch-ob-fadein 0.6s 0.35s ease both;
-    }
-
-    /* Benefits */
-    .ch-ob-benefits {
-      margin: 24px 0; animation: ch-ob-fadein 0.6s 0.5s ease both;
-    }
-    .ch-ob-benefits-title {
-      font-size: 14px; font-weight: 600; color: rgba(255,255,255,0.7);
-      margin: 0 0 12px; text-align: center;
-    }
-    .ch-ob-benefits-list {
-      display: flex; flex-direction: column; gap: 8px;
-    }
-    .ch-ob-benefit {
-      display: flex; align-items: center; gap: 10px;
-      font-size: 13px; color: rgba(255,255,255,0.6);
-    }
-    .ch-ob-benefit::before {
-      content: '✓';
-      color: #34C759;
-      font-weight: bold;
-      flex-shrink: 0;
-    }
-
-    /* Setup steps */
-    .ch-ob-setup {
-      padding: 24px 0;
-    }
-    .ch-ob-step-indicator {
-      display: flex; gap: 8px; justify-content: center; margin-bottom: 32px;
-    }
-    .ch-ob-step-dot {
-      width: 8px; height: 8px; border-radius: 50%;
-      background: rgba(255,255,255,0.2); transition: all 0.3s ease;
-    }
-    .ch-ob-step-dot.ch-ob-step-active {
-      width: 24px; border-radius: 4px;
-    }
-    .ch-ob-step-title {
-      font-size: 20px; font-weight: 700; color: #fff;
-      margin: 0 0 6px; letter-spacing: -0.3px;
-    }
-    .ch-ob-step-desc {
-      font-size: 14px; color: rgba(255,255,255,0.5);
-      margin: 0 0 24px; line-height: 1.5;
-    }
-
-    /* Input fields */
-    .ch-ob-field { margin-bottom: 20px; }
-    .ch-ob-field label {
-      display: block; font-size: 12px; font-weight: 500;
-      color: rgba(255,255,255,0.5); margin-bottom: 8px;
-      text-transform: uppercase; letter-spacing: 0.5px;
-    }
-    .ch-ob-input {
-      width: 100%; box-sizing: border-box;
-      background: rgba(255,255,255,0.06);
-      border: 1px solid rgba(255,255,255,0.1);
-      color: #fff; border-radius: 12px;
-      padding: 14px 16px; font-size: 16px;
-      font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace; outline: none;
-      transition: all 0.2s ease;
-    }
-    .ch-ob-input:focus {
-      border-color: rgba(0, 122, 255, 0.6);
-      background: rgba(0, 122, 255, 0.08);
-      box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.15);
-    }
-    .ch-ob-input::placeholder { color: rgba(255,255,255,0.25); }
-
-    /* QR code placeholder */
-    .ch-ob-qr-container {
-      display: flex; justify-content: center; margin: 20px 0;
-    }
-    .ch-ob-qr-placeholder {
-      width: 160px; height: 160px;
-      background: rgba(255,255,255,0.95);
-      border-radius: 12px; display: flex;
-      align-items: center; justify-content: center;
-      font-size: 14px; color: #000; text-align: center;
-      animation: ch-ob-qr-scan 2s infinite ease-in-out;
-      background-image: 
-        linear-gradient(0deg, rgba(0,0,0,0.1) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(0,0,0,0.1) 1px, transparent 1px);
-      background-size: 12px 12px;
-    }
-
-    /* System access */
-    .ch-ob-system-access {
-      background: rgba(255, 149, 0, 0.1);
-      border: 1px solid rgba(255, 149, 0, 0.3);
-      border-radius: 12px; padding: 16px;
-      margin: 20px 0; text-align: center;
-    }
-    .ch-ob-system-icon {
-      font-size: 24px; margin-bottom: 8px; display: block;
-    }
-    .ch-ob-system-text {
-      font-size: 13px; color: rgba(255,255,255,0.7);
-      margin: 0;
-    }
-
-    /* Actions */
-    .ch-ob-actions {
-      display: flex; align-items: center;
-      justify-content: space-between; margin-top: 32px;
-    }
-    .ch-ob-btn-primary {
-      border: none; border-radius: 12px;
-      padding: 14px 24px; font-size: 15px; font-weight: 600;
-      font-family: inherit; cursor: pointer;
-      transition: all 0.2s ease;
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
-    }
-    .ch-ob-btn-primary:hover:not(:disabled) {
-      transform: translateY(-1px);
-      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
-    }
-    .ch-ob-btn-primary:active:not(:disabled) { transform: translateY(0); }
-    .ch-ob-btn-primary:disabled {
-      opacity: 0.4; cursor: not-allowed;
-      box-shadow: none;
-    }
-    .ch-ob-btn-back {
-      background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.7);
-      border: 1px solid rgba(255,255,255,0.12);
-    }
-    .ch-ob-btn-back:hover:not(:disabled) {
-      background: rgba(255,255,255,0.12);
-      color: rgba(255,255,255,0.9);
-    }
-    .ch-ob-btn-cancel {
-      background: transparent; border: none;
-      color: rgba(255,255,255,0.4); font-size: 13px;
-      font-family: inherit; cursor: pointer;
-      padding: 0; transition: color 0.2s ease;
-    }
-    .ch-ob-btn-cancel:hover { color: rgba(255,255,255,0.65); }
-
-    /* Success state */
-    .ch-ob-success {
-      text-align: center; padding: 32px 0 24px;
-    }
-    .ch-ob-success-icon {
-      font-size: 48px; display: block; margin-bottom: 16px;
-      animation: ch-ob-celebration 0.6s ease;
-    }
-    .ch-ob-success-title {
-      font-size: 24px; font-weight: 700; color: #fff;
-      margin: 0 0 8px; letter-spacing: -0.4px;
-    }
-    .ch-ob-success-desc {
-      font-size: 15px; color: rgba(255,255,255,0.5);
-      margin: 0 0 24px; line-height: 1.5;
-    }
-
-    /* Testing state */
-    .ch-ob-testing {
-      text-align: center; padding: 20px 0;
-    }
-    .ch-ob-typing-indicator {
-      display: flex; gap: 5px; align-items: center;
-      justify-content: center; margin: 16px 0;
-    }
-    .ch-ob-typing-indicator span {
-      width: 8px; height: 8px;
-      background: rgba(255,255,255,0.5);
-      border-radius: 50%;
-      animation: ch-ob-typing 1.4s infinite ease-in-out;
-    }
-    .ch-ob-typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
-    .ch-ob-typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
-
-    /* Confetti */
-    .ch-ob-confetti-piece {
-      position: fixed; width: 8px; height: 8px;
-      border-radius: 2px; pointer-events: none; z-index: 10002;
-      animation: ch-ob-confetti 2.5s ease-in forwards;
-    }
-
-    /* Add Channel Button */
-    .chat-add-channel-btn {
-      background: rgba(0, 122, 255, 0.1);
-      border: 1px solid rgba(0, 122, 255, 0.3);
-      color: rgba(0, 122, 255, 0.9);
-      border-radius: 6px; padding: 4px 8px;
-      font-size: 12px; cursor: pointer;
-      margin-left: 8px; transition: all 0.2s ease;
-      font-family: inherit; line-height: 1;
-    }
-    .chat-add-channel-btn:hover {
-      background: rgba(0, 122, 255, 0.15);
-      border-color: rgba(0, 122, 255, 0.4);
-      color: #007AFF;
-    }
-
-    /* Settings channel section */
-    .settings-channels-section {
-      margin-top: 24px;
-    }
-    .settings-section-title {
-      font-size: 14px; font-weight: 600; color: #fff;
-      margin: 0 0 16px; display: flex; align-items: center; gap: 8px;
-    }
-    .settings-channels-grid {
-      display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-      gap: 12px; margin-bottom: 16px;
-    }
-    .settings-channel-card {
-      background: rgba(255,255,255,0.05);
-      border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 12px; padding: 16px 12px;
-      text-align: center; cursor: pointer;
-      transition: all 0.2s ease;
-    }
-    .settings-channel-card:hover {
-      background: rgba(255,255,255,0.08);
-      border-color: rgba(255,255,255,0.15);
-      transform: translateY(-2px);
-    }
-    .settings-channel-card.connected {
-      border-color: rgba(52, 199, 89, 0.4);
-      background: rgba(52, 199, 89, 0.1);
-    }
-    .settings-channel-icon {
-      font-size: 24px; display: block; margin-bottom: 8px;
-    }
-    .settings-channel-name {
-      font-size: 12px; font-weight: 500; color: #fff;
-      margin: 0 0 2px;
-    }
-    .settings-channel-status {
-      font-size: 10px; color: rgba(255,255,255,0.4);
-      margin: 0;
-    }
-    .settings-channel-status.connected {
-      color: rgba(52, 199, 89, 0.8);
-    }
-  `;
-
-  // ── Inject styles ──────────────────────────────────────────────────────────
-  var styleEl = document.createElement('style');
-  styleEl.textContent = css;
-  document.head.appendChild(styleEl);
-
   // ── State ──────────────────────────────────────────────────────────────────
-  var currentChannel = null;
-  var currentStep = 0;
-  var overlay = null;
-  var flows = [];
+  var state = {
+    overlay: null,
+    channel: null,
+    step: 0,
+    totalSteps: 0,
+    verifying: false,
+    config: {}
+  };
+
+  // ── CSS ────────────────────────────────────────────────────────────────────
+  var STYLE = document.createElement('style');
+  STYLE.textContent = '\
+/* ── SpawnKit Channel Wizard v2 ── */\n\
+\n\
+/* Keyframes */\n\
+@keyframes sk-cw-fade-in { from { opacity: 0; } to { opacity: 1; } }\n\
+@keyframes sk-cw-fade-out { from { opacity: 1; } to { opacity: 0; } }\n\
+@keyframes sk-cw-slide-up { from { opacity: 0; transform: translateY(24px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }\n\
+@keyframes sk-cw-slide-down { from { opacity: 1; transform: translateY(0) scale(1); } to { opacity: 0; transform: translateY(24px) scale(0.98); } }\n\
+@keyframes sk-cw-slide-left { from { opacity: 0; transform: translateX(60px); } to { opacity: 1; transform: translateX(0); } }\n\
+@keyframes sk-cw-slide-out-left { from { opacity: 1; transform: translateX(0); } to { opacity: 0; transform: translateX(-60px); } }\n\
+@keyframes sk-cw-icon-pop {\n\
+  0%   { opacity: 0; transform: scale(0.4) rotate(-12deg); }\n\
+  60%  { opacity: 1; transform: scale(1.1) rotate(3deg); }\n\
+  80%  { transform: scale(0.95) rotate(-1deg); }\n\
+  100% { opacity: 1; transform: scale(1) rotate(0deg); }\n\
+}\n\
+@keyframes sk-cw-pulse { 0%, 100% { transform: scale(1); opacity: 0.6; } 50% { transform: scale(1.5); opacity: 0; } }\n\
+@keyframes sk-cw-ring { 0% { transform: scale(0.85); opacity: 0.7; } 100% { transform: scale(1.6); opacity: 0; } }\n\
+@keyframes sk-cw-check-draw { from { stroke-dashoffset: 24; } to { stroke-dashoffset: 0; } }\n\
+@keyframes sk-cw-dot-bounce {\n\
+  0%, 80%, 100% { transform: scale(0.5); opacity: 0.3; }\n\
+  40% { transform: scale(1); opacity: 1; }\n\
+}\n\
+@keyframes sk-cw-progress-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }\n\
+@keyframes sk-cw-shimmer {\n\
+  0% { background-position: -200% 0; }\n\
+  100% { background-position: 200% 0; }\n\
+}\n\
+@keyframes sk-cw-confetti {\n\
+  0%   { transform: translateY(0) rotate(0deg); opacity: 1; }\n\
+  100% { transform: translateY(500px) rotate(720deg); opacity: 0; }\n\
+}\n\
+@keyframes sk-cw-celebrate { 0% { transform: scale(1); } 50% { transform: scale(1.08); } 100% { transform: scale(1); } }\n\
+@keyframes sk-cw-stagger-in {\n\
+  from { opacity: 0; transform: translateY(16px); }\n\
+  to   { opacity: 1; transform: translateY(0); }\n\
+}\n\
+@keyframes sk-cw-status-pulse {\n\
+  0%, 100% { box-shadow: 0 0 0 0 rgba(52, 199, 89, 0.4); }\n\
+  50% { box-shadow: 0 0 0 8px rgba(52, 199, 89, 0); }\n\
+}\n\
+\n\
+/* Overlay */\n\
+.sk-cw-overlay {\n\
+  position: fixed; inset: 0; z-index: 10001;\n\
+  background: rgba(0, 0, 0, 0.75);\n\
+  backdrop-filter: blur(24px) saturate(1.2);\n\
+  -webkit-backdrop-filter: blur(24px) saturate(1.2);\n\
+  display: flex; align-items: center; justify-content: center;\n\
+  font-family: "SF Pro Display", -apple-system, system-ui, "Inter", sans-serif;\n\
+  animation: sk-cw-fade-in 0.3s ease;\n\
+  -webkit-font-smoothing: antialiased;\n\
+}\n\
+.sk-cw-overlay.sk-cw-closing {\n\
+  animation: sk-cw-fade-out 0.25s ease forwards;\n\
+  pointer-events: none;\n\
+}\n\
+\n\
+/* Card */\n\
+.sk-cw-card {\n\
+  background: rgba(28, 28, 30, 0.97);\n\
+  border: 1px solid rgba(255, 255, 255, 0.07);\n\
+  border-radius: 24px;\n\
+  width: 480px; max-width: calc(100vw - 32px);\n\
+  padding: 40px 36px 32px;\n\
+  position: relative; overflow: hidden;\n\
+  box-shadow: 0 40px 100px rgba(0,0,0,0.65), 0 0 0 1px rgba(255,255,255,0.03), inset 0 1px 0 rgba(255,255,255,0.06);\n\
+  animation: sk-cw-slide-up 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);\n\
+}\n\
+.sk-cw-card.sk-cw-leaving {\n\
+  animation: sk-cw-slide-down 0.3s ease forwards;\n\
+}\n\
+\n\
+/* Progress Ring */\n\
+.sk-cw-progress {\n\
+  position: absolute; top: 20px; right: 24px;\n\
+  width: 40px; height: 40px;\n\
+}\n\
+.sk-cw-progress svg { width: 40px; height: 40px; transform: rotate(-90deg); }\n\
+.sk-cw-progress-track { fill: none; stroke: rgba(255,255,255,0.08); stroke-width: 3; }\n\
+.sk-cw-progress-fill {\n\
+  fill: none; stroke: #007AFF; stroke-width: 3;\n\
+  stroke-linecap: round;\n\
+  transition: stroke-dashoffset 0.6s cubic-bezier(0.4, 0, 0.2, 1);\n\
+}\n\
+.sk-cw-progress-text {\n\
+  position: absolute; inset: 0;\n\
+  display: flex; align-items: center; justify-content: center;\n\
+  font-size: 11px; font-weight: 600; color: rgba(255,255,255,0.5);\n\
+  letter-spacing: -0.2px;\n\
+}\n\
+\n\
+/* Channel Icon */\n\
+.sk-cw-icon-wrap {\n\
+  width: 88px; height: 88px; margin: 0 auto 28px;\n\
+  border-radius: 22px; position: relative;\n\
+  display: flex; align-items: center; justify-content: center;\n\
+  font-size: 44px;\n\
+  animation: sk-cw-icon-pop 0.7s cubic-bezier(0.34, 1.56, 0.64, 1);\n\
+  box-shadow: 0 12px 40px rgba(0,0,0,0.35);\n\
+}\n\
+.sk-cw-icon-ring {\n\
+  position: absolute; inset: -10px;\n\
+  border-radius: 32px; border: 2px solid rgba(255,255,255,0.15);\n\
+  animation: sk-cw-ring 2.5s ease-out infinite;\n\
+}\n\
+\n\
+/* Typography */\n\
+.sk-cw-title {\n\
+  font-size: 28px; font-weight: 700; color: #fff;\n\
+  margin: 0 0 6px; letter-spacing: -0.8px;\n\
+  text-align: center;\n\
+}\n\
+.sk-cw-subtitle {\n\
+  font-size: 15px; color: rgba(255,255,255,0.45);\n\
+  margin: 0 0 28px; line-height: 1.55;\n\
+  text-align: center;\n\
+}\n\
+\n\
+/* Benefits */\n\
+.sk-cw-benefits { margin: 0 0 32px; }\n\
+.sk-cw-benefit {\n\
+  display: flex; align-items: center; gap: 12px;\n\
+  font-size: 14px; color: rgba(255,255,255,0.6);\n\
+  padding: 6px 0;\n\
+}\n\
+.sk-cw-benefit-check {\n\
+  width: 20px; height: 20px; border-radius: 50%; flex-shrink: 0;\n\
+  display: flex; align-items: center; justify-content: center;\n\
+}\n\
+.sk-cw-benefit-check svg { width: 12px; height: 12px; }\n\
+\n\
+/* Input */\n\
+.sk-cw-field { margin: 0 0 20px; }\n\
+.sk-cw-label {\n\
+  display: block; font-size: 12px; font-weight: 600;\n\
+  color: rgba(255,255,255,0.45); margin: 0 0 8px;\n\
+  text-transform: uppercase; letter-spacing: 0.8px;\n\
+}\n\
+.sk-cw-input {\n\
+  width: 100%; box-sizing: border-box;\n\
+  background: rgba(255,255,255,0.05);\n\
+  border: 1.5px solid rgba(255,255,255,0.1);\n\
+  color: #fff; border-radius: 14px;\n\
+  padding: 15px 18px; font-size: 15px;\n\
+  font-family: "SF Mono", "Fira Code", Monaco, monospace;\n\
+  outline: none; transition: all 0.25s ease;\n\
+  letter-spacing: 0.2px;\n\
+}\n\
+.sk-cw-input:focus {\n\
+  border-color: rgba(0, 122, 255, 0.6);\n\
+  background: rgba(0, 122, 255, 0.06);\n\
+  box-shadow: 0 0 0 4px rgba(0, 122, 255, 0.12);\n\
+}\n\
+.sk-cw-input.sk-cw-valid {\n\
+  border-color: rgba(52, 199, 89, 0.6);\n\
+  background: rgba(52, 199, 89, 0.06);\n\
+  box-shadow: 0 0 0 4px rgba(52, 199, 89, 0.1);\n\
+}\n\
+.sk-cw-input.sk-cw-invalid {\n\
+  border-color: rgba(255, 59, 48, 0.6);\n\
+  background: rgba(255, 59, 48, 0.04);\n\
+}\n\
+.sk-cw-input::placeholder { color: rgba(255,255,255,0.2); }\n\
+.sk-cw-help {\n\
+  font-size: 12px; color: rgba(255,255,255,0.35);\n\
+  margin: 10px 0 0; line-height: 1.5;\n\
+}\n\
+.sk-cw-help a {\n\
+  color: #007AFF; text-decoration: none;\n\
+}\n\
+.sk-cw-help a:hover { text-decoration: underline; }\n\
+\n\
+/* Error */\n\
+.sk-cw-error {\n\
+  background: rgba(255, 59, 48, 0.1);\n\
+  border: 1px solid rgba(255, 59, 48, 0.25);\n\
+  border-radius: 12px; padding: 12px 16px;\n\
+  margin: 16px 0 0; font-size: 13px;\n\
+  color: rgba(255, 100, 90, 0.9); line-height: 1.5;\n\
+}\n\
+\n\
+/* System access (iMessage) */\n\
+.sk-cw-system-card {\n\
+  background: rgba(255, 149, 0, 0.08);\n\
+  border: 1px solid rgba(255, 149, 0, 0.2);\n\
+  border-radius: 16px; padding: 24px;\n\
+  text-align: center; margin: 20px 0;\n\
+}\n\
+.sk-cw-system-icon { font-size: 32px; margin: 0 0 12px; display: block; }\n\
+.sk-cw-system-text { font-size: 14px; color: rgba(255,255,255,0.6); margin: 0; line-height: 1.5; }\n\
+\n\
+/* QR Code */\n\
+.sk-cw-qr {\n\
+  width: 180px; height: 180px; margin: 20px auto;\n\
+  background: #fff; border-radius: 16px;\n\
+  display: flex; align-items: center; justify-content: center;\n\
+  position: relative; overflow: hidden;\n\
+}\n\
+.sk-cw-qr::after {\n\
+  content: "";\n\
+  position: absolute; inset: 0;\n\
+  background: linear-gradient(180deg, transparent 40%, rgba(0,122,255,0.15) 50%, transparent 60%);\n\
+  background-size: 100% 200%;\n\
+  animation: sk-cw-shimmer 2s linear infinite;\n\
+}\n\
+.sk-cw-qr-text { font-size: 12px; color: #666; text-align: center; z-index: 1; }\n\
+\n\
+/* Skeleton loading */\n\
+.sk-cw-skeleton {\n\
+  background: linear-gradient(90deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.04) 100%);\n\
+  background-size: 200% 100%;\n\
+  animation: sk-cw-shimmer 1.5s ease-in-out infinite;\n\
+  border-radius: 8px; height: 20px; margin: 8px 0;\n\
+}\n\
+\n\
+/* Verification status */\n\
+.sk-cw-verify-status {\n\
+  text-align: center; padding: 32px 0 16px;\n\
+}\n\
+.sk-cw-verify-spinner {\n\
+  width: 48px; height: 48px; margin: 0 auto 20px;\n\
+  border: 3px solid rgba(255,255,255,0.1);\n\
+  border-top-color: #007AFF;\n\
+  border-radius: 50%;\n\
+  animation: sk-cw-progress-spin 0.8s linear infinite;\n\
+}\n\
+.sk-cw-verify-dots {\n\
+  display: flex; gap: 6px; justify-content: center; margin: 16px 0;\n\
+}\n\
+.sk-cw-verify-dots span {\n\
+  width: 8px; height: 8px; border-radius: 50%;\n\
+  background: rgba(255,255,255,0.5);\n\
+  animation: sk-cw-dot-bounce 1.4s infinite ease-in-out;\n\
+}\n\
+.sk-cw-verify-dots span:nth-child(2) { animation-delay: 0.16s; }\n\
+.sk-cw-verify-dots span:nth-child(3) { animation-delay: 0.32s; }\n\
+.sk-cw-verify-text {\n\
+  font-size: 15px; color: rgba(255,255,255,0.6); margin: 0;\n\
+  transition: all 0.3s ease;\n\
+}\n\
+\n\
+/* Success */\n\
+.sk-cw-success { text-align: center; padding: 24px 0 16px; }\n\
+.sk-cw-success-icon {\n\
+  width: 72px; height: 72px; margin: 0 auto 20px;\n\
+  border-radius: 50%; display: flex;\n\
+  align-items: center; justify-content: center;\n\
+  background: rgba(52, 199, 89, 0.15);\n\
+  animation: sk-cw-celebrate 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);\n\
+}\n\
+.sk-cw-success-icon svg {\n\
+  width: 32px; height: 32px; stroke: #34C759; fill: none;\n\
+  stroke-width: 3; stroke-linecap: round; stroke-linejoin: round;\n\
+  stroke-dasharray: 24; stroke-dashoffset: 24;\n\
+  animation: sk-cw-check-draw 0.5s 0.3s ease forwards;\n\
+}\n\
+.sk-cw-success-details {\n\
+  background: rgba(255,255,255,0.04);\n\
+  border-radius: 12px; padding: 12px 16px;\n\
+  margin: 16px 0; font-size: 13px;\n\
+  color: rgba(255,255,255,0.5); text-align: left;\n\
+}\n\
+.sk-cw-success-detail { padding: 4px 0; display: flex; justify-content: space-between; }\n\
+.sk-cw-success-detail strong { color: rgba(255,255,255,0.8); font-weight: 500; }\n\
+\n\
+/* Buttons */\n\
+.sk-cw-actions {\n\
+  display: flex; align-items: center; justify-content: space-between;\n\
+  margin: 32px 0 0; gap: 12px;\n\
+}\n\
+.sk-cw-btn {\n\
+  border: none; border-radius: 14px;\n\
+  padding: 14px 28px; font-size: 15px; font-weight: 600;\n\
+  font-family: inherit; cursor: pointer;\n\
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);\n\
+  position: relative; overflow: hidden;\n\
+  -webkit-tap-highlight-color: transparent;\n\
+}\n\
+.sk-cw-btn:active:not(:disabled) { transform: scale(0.97); }\n\
+.sk-cw-btn:disabled { opacity: 0.35; cursor: not-allowed; }\n\
+.sk-cw-btn-primary {\n\
+  color: #fff;\n\
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);\n\
+}\n\
+.sk-cw-btn-primary:hover:not(:disabled) {\n\
+  transform: translateY(-1px);\n\
+  box-shadow: 0 8px 28px rgba(0,0,0,0.4);\n\
+}\n\
+.sk-cw-btn-secondary {\n\
+  background: rgba(255,255,255,0.07);\n\
+  color: rgba(255,255,255,0.7);\n\
+  border: 1px solid rgba(255,255,255,0.1);\n\
+}\n\
+.sk-cw-btn-secondary:hover:not(:disabled) {\n\
+  background: rgba(255,255,255,0.1);\n\
+  color: rgba(255,255,255,0.9);\n\
+}\n\
+.sk-cw-btn-ghost {\n\
+  background: transparent; color: rgba(255,255,255,0.35);\n\
+  font-size: 13px; padding: 8px 0;\n\
+}\n\
+.sk-cw-btn-ghost:hover { color: rgba(255,255,255,0.6); }\n\
+\n\
+/* Coming soon badge */\n\
+.sk-cw-coming-soon {\n\
+  position: absolute; top: 10px; right: 10px;\n\
+  background: rgba(255, 149, 0, 0.2); color: rgba(255, 149, 0, 0.9);\n\
+  font-size: 10px; font-weight: 700; padding: 3px 8px;\n\
+  border-radius: 6px; text-transform: uppercase;\n\
+  letter-spacing: 0.5px;\n\
+}\n\
+\n\
+/* Already connected */\n\
+.sk-cw-already {\n\
+  text-align: center; padding: 24px 0;\n\
+}\n\
+.sk-cw-already-badge {\n\
+  display: inline-flex; align-items: center; gap: 8px;\n\
+  background: rgba(52, 199, 89, 0.12);\n\
+  border: 1px solid rgba(52, 199, 89, 0.3);\n\
+  border-radius: 100px; padding: 10px 20px;\n\
+  font-size: 14px; font-weight: 600; color: #34C759;\n\
+  animation: sk-cw-status-pulse 2s infinite;\n\
+}\n\
+\n\
+/* Confetti */\n\
+.sk-cw-confetti {\n\
+  position: fixed; pointer-events: none; z-index: 10002;\n\
+  width: 8px; height: 8px; border-radius: 2px;\n\
+}\n\
+\n\
+/* Settings integration */\n\
+.sk-cw-settings-grid {\n\
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));\n\
+  gap: 10px; margin: 12px 0;\n\
+}\n\
+.sk-cw-settings-card {\n\
+  background: rgba(255,255,255,0.04);\n\
+  border: 1px solid rgba(255,255,255,0.07);\n\
+  border-radius: 14px; padding: 16px 10px;\n\
+  text-align: center; cursor: pointer;\n\
+  transition: all 0.25s ease;\n\
+  position: relative;\n\
+}\n\
+.sk-cw-settings-card:hover {\n\
+  background: rgba(255,255,255,0.07);\n\
+  border-color: rgba(255,255,255,0.12);\n\
+  transform: translateY(-2px);\n\
+}\n\
+.sk-cw-settings-card.sk-cw-connected {\n\
+  border-color: rgba(52, 199, 89, 0.35);\n\
+  background: rgba(52, 199, 89, 0.06);\n\
+}\n\
+.sk-cw-settings-card-icon { font-size: 24px; display: block; margin: 0 0 8px; }\n\
+.sk-cw-settings-card-name {\n\
+  font-size: 12px; font-weight: 600; color: #fff; margin: 0 0 3px;\n\
+}\n\
+.sk-cw-settings-card-status {\n\
+  font-size: 10px; color: rgba(255,255,255,0.35);\n\
+}\n\
+.sk-cw-settings-card.sk-cw-connected .sk-cw-settings-card-status {\n\
+  color: rgba(52, 199, 89, 0.8);\n\
+}\n\
+\n\
+/* Responsive */\n\
+@media (max-width: 520px) {\n\
+  .sk-cw-card { padding: 28px 20px 24px; border-radius: 20px; }\n\
+  .sk-cw-title { font-size: 24px; }\n\
+  .sk-cw-icon-wrap { width: 72px; height: 72px; font-size: 36px; border-radius: 18px; }\n\
+  .sk-cw-actions { flex-direction: column-reverse; }\n\
+  .sk-cw-btn { width: 100%; text-align: center; }\n\
+}\n\
+';
+  document.head.appendChild(STYLE);
+
+  // ── Helpers ────────────────────────────────────────────────────────────────
+
+  function el(tag, attrs, children) {
+    var e = document.createElement(tag);
+    if (attrs) Object.keys(attrs).forEach(function(k) {
+      if (k === 'className') e.className = attrs[k];
+      else if (k === 'innerHTML') e.innerHTML = attrs[k];
+      else if (k === 'textContent') e.textContent = attrs[k];
+      else if (k === 'style' && typeof attrs[k] === 'object') Object.assign(e.style, attrs[k]);
+      else if (k.startsWith('on')) e.addEventListener(k.slice(2).toLowerCase(), attrs[k]);
+      else e.setAttribute(k, attrs[k]);
+    });
+    if (children) children.forEach(function(c) { if (c) e.appendChild(typeof c === 'string' ? document.createTextNode(c) : c); });
+    return e;
+  }
+
+  function progressRingSVG(step, total) {
+    var r = 16, circ = 2 * Math.PI * r;
+    var pct = total > 0 ? step / total : 0;
+    var offset = circ * (1 - pct);
+    return '<svg viewBox="0 0 40 40"><circle class="sk-cw-progress-track" cx="20" cy="20" r="' + r + '"/>' +
+      '<circle class="sk-cw-progress-fill" cx="20" cy="20" r="' + r + '" stroke-dasharray="' + circ + '" stroke-dashoffset="' + offset + '"/></svg>' +
+      '<span class="sk-cw-progress-text">' + step + '/' + total + '</span>';
+  }
+
+  function checkSVG(color) {
+    return '<svg viewBox="0 0 24 24" fill="none" stroke="' + (color || '#34C759') + '" stroke-width="2.5" stroke-linecap="round"><polyline points="4 12 10 18 20 6"></polyline></svg>';
+  }
+
+  function benefitsList(benefits, color) {
+    return benefits.map(function(b, i) {
+      return '<div class="sk-cw-benefit" style="animation: sk-cw-stagger-in 0.4s ' + (0.1 + i * 0.08) + 's ease both;">' +
+        '<span class="sk-cw-benefit-check" style="background: ' + color + '20;">' + checkSVG(color) + '</span>' +
+        '<span>' + b + '</span></div>';
+    }).join('');
+  }
+
+  function getConnected() {
+    try { return JSON.parse(localStorage.getItem('spawnkit-channels') || '{}'); }
+    catch(e) { return {}; }
+  }
+
+  function saveConnected(id, data) {
+    var all = getConnected();
+    all[id] = data;
+    localStorage.setItem('spawnkit-channels', JSON.stringify(all));
+  }
+
+  function isConnected(id) {
+    return !!getConnected()[id];
+  }
+
+  async function apiPost(url, body) {
+    try {
+      var token = localStorage.getItem('spawnkit-token') || localStorage.getItem('spawnkit-config');
+      var headers = { 'Content-Type': 'application/json' };
+      if (token) {
+        try { var parsed = JSON.parse(token); if (parsed.relayToken) token = parsed.relayToken; } catch(e) {}
+        headers['Authorization'] = 'Bearer ' + token;
+      }
+      var resp = await fetch(url, { method: 'POST', headers: headers, body: JSON.stringify(body) });
+      return await resp.json();
+    } catch(e) {
+      return { ok: false, error: e.message };
+    }
+  }
+
+  async function apiGet(url) {
+    try {
+      var token = localStorage.getItem('spawnkit-token');
+      var headers = {};
+      if (token) headers['Authorization'] = 'Bearer ' + token;
+      var resp = await fetch(url, { headers: headers });
+      return await resp.json();
+    } catch(e) {
+      return { ok: false, error: e.message };
+    }
+  }
+
+  // ── Confetti ───────────────────────────────────────────────────────────────
   var confettiPieces = [];
 
-  // ── Connected Channels Management ──────────────────────────────────────────
-  function getConnectedChannels() {
-    try {
-      return JSON.parse(localStorage.getItem('spawnkit-connected-channels') || '[]');
-    } catch (e) {
-      return [];
-    }
-  }
-
-  function saveConnectedChannel(channelId, config) {
-    var connected = getConnectedChannels();
-    var existing = connected.findIndex(function(c) { return c.id === channelId; });
-    var channelData = {
-      id: channelId,
-      name: channels[channelId].name,
-      icon: channels[channelId].icon,
-      config: config,
-      connectedAt: Date.now()
-    };
-    
-    if (existing >= 0) {
-      connected[existing] = channelData;
-    } else {
-      connected.push(channelData);
-    }
-    
-    localStorage.setItem('spawnkit-connected-channels', JSON.stringify(connected));
-    updateTargetDropdown();
-  }
-
-  function updateTargetDropdown() {
-    var select = document.getElementById('chatTargetSelect');
-    if (!select) return;
-
-    var connected = getConnectedChannels();
-    var currentOptions = Array.from(select.options).map(function(opt) { return opt.value; });
-
-    connected.forEach(function(channel) {
-      if (!currentOptions.includes(channel.id)) {
-        var option = document.createElement('option');
-        option.value = channel.id;
-        option.textContent = channel.icon + ' ' + channel.name;
-        select.appendChild(option);
-      }
-    });
-  }
-
-  // ── Build Flow ─────────────────────────────────────────────────────────────
-  function buildFlow(channelId) {
-    // Cleanup any existing overlay first
-    if (overlay && overlay.parentNode) {
-      overlay.parentNode.removeChild(overlay);
-      overlay = null;
-    }
-    document.querySelectorAll('.ch-ob-overlay').forEach(function(el) { el.remove(); });
-
-    currentChannel = channelId;
-    currentStep = 0;
-    flows = [];
-    var channel = channels[channelId];
-
-    if (!channel) {
-      console.error('Channel not found:', channelId);
-      return;
-    }
-
-    overlay = document.createElement('div');
-    overlay.className = 'ch-ob-overlay';
-    overlay.id = 'chObOverlay';
-
-    // Step 1: Channel Intro
-    var introFlow = makeFlow(0, `
-      <div class="ch-ob-card">
-        <div class="ch-ob-channel-intro">
-          <div class="ch-ob-channel-icon" style="background: ${channel.gradient};">
-            ${channel.icon}
-          </div>
-          <h1 class="ch-ob-channel-title">Connect ${channel.name}</h1>
-          <p class="ch-ob-channel-desc">${channel.description}</p>
-          
-          <div class="ch-ob-benefits">
-            <h3 class="ch-ob-benefits-title">What you'll get:</h3>
-            <div class="ch-ob-benefits-list">
-              ${channel.benefits.map(function(benefit) {
-                return '<div class="ch-ob-benefit">' + benefit + '</div>';
-              }).join('')}
-            </div>
-          </div>
-        </div>
-        
-        <div class="ch-ob-actions">
-          <button class="ch-ob-btn-cancel" id="chObCancel">Cancel</button>
-          <button class="ch-ob-btn-primary" id="chObStartSetup" style="background: ${channel.gradient}; color: #fff;">
-            Get Started →
-          </button>
-        </div>
-      </div>
-    `);
-
-    // Setup Steps
-    channel.setupSteps.forEach(function(step, index) {
-      var isLast = index === channel.setupSteps.length - 1;
-      var stepFlow = buildSetupStep(step, index, isLast, channel);
-      flows.push(stepFlow);
-    });
-
-    // Success Step
-    var successFlow = makeFlow(channel.setupSteps.length + 1, `
-      <div class="ch-ob-card">
-        <div class="ch-ob-success">
-          <span class="ch-ob-success-icon">🎉</span>
-          <h1 class="ch-ob-success-title">${channel.name} Connected!</h1>
-          <p class="ch-ob-success-desc">You can now send and receive messages through ${channel.name}.</p>
-        </div>
-        
-        <div class="ch-ob-actions">
-          <div></div>
-          <button class="ch-ob-btn-primary" id="chObComplete" style="background: ${channel.gradient}; color: #fff;">
-            Start Messaging →
-          </button>
-        </div>
-      </div>
-    `);
-
-    flows = [introFlow];
-    channel.setupSteps.forEach(function(step, index) {
-      var isLast = index === channel.setupSteps.length - 1;
-      var stepFlow = buildSetupStep(step, index, isLast, channel);
-      flows.push(stepFlow);
-    });
-    flows.push(successFlow);
-
-    flows.forEach(function(flow) {
-      overlay.appendChild(flow);
-    });
-
-    document.body.appendChild(overlay);
-    initEventHandlers();
-    goToStep(0);
-  }
-
-  function buildSetupStep(step, index, isLast, channel) {
-    var stepNumber = index + 1;
-    var totalSteps = channel.setupSteps.length;
-    
-    // Generate step indicators
-    var indicators = '';
-    for (var i = 0; i <= totalSteps; i++) {
-      var activeClass = i === stepNumber ? ' ch-ob-step-active' : '';
-      indicators += '<div class="ch-ob-step-dot' + activeClass + '" style="' + 
-                   (i === stepNumber ? 'background: ' + channel.color : '') + '"></div>';
-    }
-
-    var content = '';
-    
-    if (step.type === 'qr') {
-      content = `
-        <div class="ch-ob-qr-container">
-          <div class="ch-ob-qr-placeholder">
-            📱<br>QR Code<br>Placeholder
-          </div>
-        </div>
-        <p style="text-align: center; font-size: 13px; color: rgba(255,255,255,0.5); margin: 0;">
-          Open ${channel.name} on your phone and scan this code
-        </p>
-      `;
-    } else if (step.type === 'token') {
-      content = `
-        <div class="ch-ob-field">
-          <label for="chObTokenInput">${step.title}</label>
-          <input class="ch-ob-input" id="chObTokenInput" type="text" 
-                 placeholder="${step.placeholder || 'Enter token...'}" autocomplete="off" />
-        </div>
-        <p style="font-size: 12px; color: rgba(255,255,255,0.4); margin: 8px 0 0;">
-          You can find this in your ${channel.name} developer settings
-        </p>
-      `;
-    } else if (step.type === 'server' || step.type === 'workspace') {
-      var itemName = step.type === 'server' ? 'server' : 'workspace';
-      content = `
-        <div class="ch-ob-field">
-          <label for="chObServerSelect">Select ${itemName}</label>
-          <select class="ch-ob-input" id="chObServerSelect" style="font-family: inherit;">
-            <option value="">Loading ${itemName}s...</option>
-          </select>
-        </div>
-      `;
-    } else if (step.type === 'system') {
-      content = `
-        <div class="ch-ob-system-access">
-          <span class="ch-ob-system-icon">🔐</span>
-          <p class="ch-ob-system-text">
-            ${channel.name} needs system permissions to send and receive messages
-          </p>
-        </div>
-        <p style="font-size: 12px; color: rgba(255,255,255,0.4); margin: 16px 0 0; text-align: center;">
-          Click "Grant Access" and approve the system dialog
-        </p>
-      `;
-    } else if (step.type === 'verify') {
-      content = `
-        <div class="ch-ob-testing" id="chObTesting">
-          <p style="font-size: 14px; color: rgba(255,255,255,0.6); margin: 0 0 16px;">
-            Testing connection to ${channel.name}...
-          </p>
-          <div class="ch-ob-typing-indicator">
-            <span></span><span></span><span></span>
-          </div>
-        </div>
-      `;
-    }
-
-    return makeFlow(stepNumber, `
-      <div class="ch-ob-card">
-        <div class="ch-ob-step-indicator">${indicators}</div>
-        <div class="ch-ob-setup">
-          <h2 class="ch-ob-step-title">${step.title}</h2>
-          <p class="ch-ob-step-desc">${step.desc}</p>
-          ${content}
-        </div>
-        
-        <div class="ch-ob-actions">
-          <button class="ch-ob-btn-back" id="chObBack">← Back</button>
-          <button class="ch-ob-btn-primary" id="chObNext" 
-                  style="background: ${channel.gradient}; color: #fff;" 
-                  ${step.type === 'verify' ? 'style="display:none;"' : ''}>
-            ${isLast ? 'Test Connection' : 'Continue'} →
-          </button>
-        </div>
-      </div>
-    `);
-  }
-
-  function makeFlow(num, html) {
-    var el = document.createElement('div');
-    el.className = 'ch-ob-flow';
-    el.id = 'chObFlow' + num;
-    el.innerHTML = html;
-    return el;
-  }
-
-  // ── Flow Navigation ────────────────────────────────────────────────────────
-  function goToStep(stepIndex) {
-    var from = flows[currentStep];
-    var to = flows[stepIndex];
-    
-    if (!to) {
-      complete();
-      return;
-    }
-
-    if (from) {
-      from.classList.add('ch-ob-leaving');
-      from.addEventListener('animationend', function handler() {
-        from.classList.remove('ch-ob-active', 'ch-ob-leaving');
-        from.removeEventListener('animationend', handler);
-      });
-    }
-
-    setTimeout(function() {
-      to.classList.add('ch-ob-active', 'ch-ob-entering');
-      to.addEventListener('animationend', function handler() {
-        to.classList.remove('ch-ob-entering');
-        to.removeEventListener('animationend', handler);
-        
-        // Auto-start verification for verify steps
-        if (stepIndex > 0 && channels[currentChannel].setupSteps[stepIndex - 1].type === 'verify') {
-          setTimeout(function() {
-            simulateVerification();
-          }, 1000);
-        }
-      });
-      currentStep = stepIndex;
-    }, from ? 200 : 0);
-  }
-
-  function simulateVerification() {
-    setTimeout(function() {
-      var nextBtn = document.getElementById('chObNext');
-      if (nextBtn) {
-        nextBtn.style.display = 'inline-block';
-        nextBtn.textContent = 'Continue →';
-        nextBtn.disabled = false;
-      }
-      var testing = document.getElementById('chObTesting');
-      if (testing) {
-        testing.innerHTML = `
-          <div style="color: #34C759; font-size: 14px;">
-            ✅ Connection successful!
-          </div>
-        `;
-      }
-    }, 2500);
-  }
-
-  // ── Event Handlers ─────────────────────────────────────────────────────────
-  function initEventHandlers() {
-    // Global event delegation for the overlay
-    overlay.addEventListener('click', function(e) {
-      if (e.target.id === 'chObCancel') {
-        close();
-      } else if (e.target.id === 'chObStartSetup') {
-        goToStep(1);
-      } else if (e.target.id === 'chObNext') {
-        handleNext();
-      } else if (e.target.id === 'chObBack') {
-        goToStep(currentStep - 1);
-      } else if (e.target.id === 'chObComplete') {
-        complete();
-      }
-    });
-
-    // Input validation
-    overlay.addEventListener('input', function(e) {
-      if (e.target.id === 'chObTokenInput') {
-        var nextBtn = document.getElementById('chObNext');
-        if (nextBtn) {
-          nextBtn.disabled = !e.target.value.trim();
-        }
-      }
-    });
-  }
-
-  function handleNext() {
-    var channel = channels[currentChannel];
-    var stepIndex = currentStep - 1;
-    
-    if (stepIndex >= 0 && stepIndex < channel.setupSteps.length) {
-      var step = channel.setupSteps[stepIndex];
-      var config = {};
-      
-      // Collect input data
-      if (step.type === 'token') {
-        var tokenInput = document.getElementById('chObTokenInput');
-        if (tokenInput) {
-          config.token = tokenInput.value.trim();
-          if (!config.token) {
-            tokenInput.focus();
-            return;
-          }
-        }
-      } else if (step.type === 'server' || step.type === 'workspace') {
-        var serverSelect = document.getElementById('chObServerSelect');
-        if (serverSelect) {
-          config.server = serverSelect.value;
-        }
-      }
-      
-      // Save step config
-      var existingConfig = JSON.parse(localStorage.getItem('spawnkit-channel-config-' + currentChannel) || '{}');
-      Object.assign(existingConfig, config);
-      localStorage.setItem('spawnkit-channel-config-' + currentChannel, JSON.stringify(existingConfig));
-    }
-    
-    goToStep(currentStep + 1);
-  }
-
-  // ── Launch confetti for success ───────────────────────────────────────────
-  function launchConfetti() {
-    var colors = [currentChannel ? channels[currentChannel].color : '#007AFF', '#34C759', '#FF9500', '#FF2D55'];
-    
-    for (var i = 0; i < 30; i++) {
+  function launchConfetti(color) {
+    var colors = [color || '#007AFF', '#34C759', '#FF9500', '#FF2D55', '#5856D6', '#00C7BE'];
+    for (var i = 0; i < 40; i++) {
       (function(idx) {
         setTimeout(function() {
-          var piece = document.createElement('div');
-          piece.className = 'ch-ob-confetti-piece';
-          piece.style.left = Math.random() * 100 + 'vw';
-          piece.style.top = (Math.random() * 30 - 10) + 'vh';
-          piece.style.background = colors[idx % colors.length];
-          piece.style.animationDuration = (1.8 + Math.random() * 1.2) + 's';
-          piece.style.animationDelay = (Math.random() * 0.6) + 's';
-          document.body.appendChild(piece);
-          confettiPieces.push(piece);
-          piece.addEventListener('animationend', function() {
-            if (piece.parentNode) piece.parentNode.removeChild(piece);
-          });
-        }, idx * 25);
+          var p = document.createElement('div');
+          p.className = 'sk-cw-confetti';
+          p.style.cssText = 'left:' + (Math.random() * 100) + 'vw;top:' + (Math.random() * 20 - 10) + 'vh;' +
+            'background:' + colors[idx % colors.length] + ';' +
+            'animation:sk-cw-confetti ' + (2 + Math.random()) + 's ease-in forwards;' +
+            'animation-delay:' + (Math.random() * 0.4) + 's;' +
+            'width:' + (6 + Math.random() * 6) + 'px;height:' + (4 + Math.random() * 4) + 'px;' +
+            'border-radius:' + (Math.random() > 0.5 ? '50%' : '2px') + ';';
+          document.body.appendChild(p);
+          confettiPieces.push(p);
+          p.addEventListener('animationend', function() { if (p.parentNode) p.remove(); });
+        }, idx * 20);
       })(i);
     }
   }
 
-  function stopConfetti() {
-    confettiPieces.forEach(function(piece) {
-      if (piece.parentNode) piece.parentNode.removeChild(piece);
-    });
+  function clearConfetti() {
+    confettiPieces.forEach(function(p) { if (p.parentNode) p.remove(); });
     confettiPieces = [];
   }
 
-  // ── Complete & Close ───────────────────────────────────────────────────────
-  function complete() {
-    if (currentChannel) {
-      var config = JSON.parse(localStorage.getItem('spawnkit-channel-config-' + currentChannel) || '{}');
-      saveConnectedChannel(currentChannel, config);
-      launchConfetti();
-      
-      setTimeout(function() {
-        close();
-      }, 2000);
-    } else {
-      close();
-    }
+  // ── Step Renderers ─────────────────────────────────────────────────────────
+
+  function renderIntro(ch) {
+    return '<div style="text-align:center;">' +
+      '<div class="sk-cw-icon-wrap" style="background:' + ch.gradient + ';">' +
+        ch.icon + '<div class="sk-cw-icon-ring"></div></div>' +
+      '<h1 class="sk-cw-title">Connect ' + ch.name + '</h1>' +
+      '<p class="sk-cw-subtitle">' + ch.tagline + '</p>' +
+      '</div>' +
+      '<div class="sk-cw-benefits">' + benefitsList(ch.benefits, ch.color) + '</div>';
   }
 
-  function close() {
-    stopConfetti();
-    if (overlay) {
-      overlay.classList.add('ch-ob-hiding');
-      setTimeout(function() {
-        if (overlay && overlay.parentNode) {
-          overlay.parentNode.removeChild(overlay);
-        }
-        overlay = null;
-        flows = [];
-        currentChannel = null;
-        currentStep = 0;
-      }, 320);
-    }
+  function renderDetecting(ch) {
+    return '<div class="sk-cw-verify-status">' +
+      '<div class="sk-cw-verify-spinner" style="border-top-color:' + ch.color + ';"></div>' +
+      '<p class="sk-cw-verify-text">Checking existing connections...</p>' +
+      '<div class="sk-cw-skeleton" style="width:70%;margin:16px auto 0;"></div>' +
+      '<div class="sk-cw-skeleton" style="width:50%;margin:8px auto 0;"></div>' +
+      '</div>';
   }
 
-  // ── Settings Panel Integration ─────────────────────────────────────────────
-  function addChannelSectionToSettings() {
-    var settingsBody = document.getElementById('settingsBody');
-    if (!settingsBody) return;
-
-    // Remove loading state if present
-    var existingEmpty = settingsBody.querySelector('.cron-empty');
-    if (existingEmpty) {
-      existingEmpty.remove();
-    }
-
-    // Check if channel section already exists
-    var existing = settingsBody.querySelector('.settings-channels-section');
-    if (existing) {
-      updateChannelSection();
-      return;
-    }
-
-    var connected = getConnectedChannels();
-    var channelCards = Object.keys(channels).map(function(channelId) {
-      var channel = channels[channelId];
-      var isConnected = connected.some(function(c) { return c.id === channelId; });
-      
-      return `
-        <div class="settings-channel-card ${isConnected ? 'connected' : ''}" data-channel="${channelId}">
-          <span class="settings-channel-icon">${channel.icon}</span>
-          <div class="settings-channel-name">${channel.name}</div>
-          <div class="settings-channel-status ${isConnected ? 'connected' : ''}">${isConnected ? 'Connected' : 'Connect'}</div>
-        </div>
-      `;
-    }).join('');
-
-    var sectionHTML = `
-      <div class="settings-channels-section">
-        <h3 class="settings-section-title">
-          <span>📡</span>
-          Channel Connections
-        </h3>
-        <div class="settings-channels-grid">
-          ${channelCards}
-        </div>
-      </div>
-    `;
-
-    settingsBody.insertAdjacentHTML('beforeend', sectionHTML);
-
-    // Attach click handlers directly on each card (event delegation can be blocked by dialog overlays)
-    var channelCards = settingsBody.querySelectorAll('.settings-channel-card');
-    channelCards.forEach(function(card) {
-      card.style.cursor = 'pointer';
-      card.addEventListener('click', function(e) {
-        e.stopPropagation();
-        var channelId = card.dataset.channel;
-        if (!channelId) return;
-        
-        // Close settings first
-        var settingsClose = document.getElementById('settingsClose');
-        if (settingsClose) settingsClose.click();
-        
-        setTimeout(function() {
-          buildFlow(channelId);
-        }, 350);
-      });
-    });
-  }
-
-  function updateChannelSection() {
-    var section = document.querySelector('.settings-channels-section');
-    if (!section) return;
-
-    var connected = getConnectedChannels();
-    var cards = section.querySelectorAll('.settings-channel-card');
-    
-    cards.forEach(function(card) {
-      var channelId = card.dataset.channel;
-      var isConnected = connected.some(function(c) { return c.id === channelId; });
-      var status = card.querySelector('.settings-channel-status');
-      
-      if (isConnected) {
-        card.classList.add('connected');
-        if (status) {
-          status.classList.add('connected');
-          status.textContent = 'Connected';
-        }
-      } else {
-        card.classList.remove('connected');
-        if (status) {
-          status.classList.remove('connected');
-          status.textContent = 'Connect';
-        }
+  function renderAlreadyConnected(ch, details) {
+    var detailsHTML = '';
+    if (details && typeof details === 'object') {
+      var entries = Object.entries(details).filter(function(e) { return typeof e[1] === 'string' || typeof e[1] === 'number'; }).slice(0, 3);
+      if (entries.length > 0) {
+        detailsHTML = '<div class="sk-cw-success-details">' +
+          entries.map(function(e) { return '<div class="sk-cw-success-detail"><span>' + e[0] + '</span><strong>' + e[1] + '</strong></div>'; }).join('') +
+          '</div>';
       }
-    });
+    }
+    return '<div class="sk-cw-already">' +
+      '<div class="sk-cw-icon-wrap" style="background:' + ch.gradient + ';">' + ch.icon + '</div>' +
+      '<h1 class="sk-cw-title">' + ch.name + '</h1>' +
+      '<div class="sk-cw-already-badge">✓ Already Connected</div>' +
+      detailsHTML +
+      '</div>';
   }
 
-  // ── Chat Panel Integration ─────────────────────────────────────────────────
-  function addChannelButtonToChat() {
-    var targetSelector = document.querySelector('.chat-target-selector');
-    if (!targetSelector || targetSelector.querySelector('.chat-add-channel-btn')) return;
-
-    var addButton = document.createElement('button');
-    addButton.className = 'chat-add-channel-btn';
-    addButton.textContent = '+';
-    addButton.title = 'Connect new channel';
-    
-    addButton.addEventListener('click', function() {
-      // Open a quick channel selector
-      showChannelSelector();
-    });
-
-    targetSelector.appendChild(addButton);
+  function renderTokenInput(ch) {
+    return '<div style="text-align:center;margin:0 0 24px;">' +
+      '<div class="sk-cw-icon-wrap" style="background:' + ch.gradient + ';width:56px;height:56px;font-size:28px;border-radius:16px;margin-bottom:20px;">' + ch.icon + '</div>' +
+      '<h2 class="sk-cw-title" style="font-size:22px;">Enter your ' + ch.tokenLabel + '</h2>' +
+      '</div>' +
+      '<div class="sk-cw-field">' +
+        '<label class="sk-cw-label">' + ch.tokenLabel + '</label>' +
+        '<input class="sk-cw-input" id="skCwTokenInput" type="text" placeholder="' + ch.tokenPlaceholder + '" autocomplete="off" spellcheck="false" />' +
+        '<p class="sk-cw-help">' + ch.tokenHelp +
+          (ch.tokenGuideUrl ? ' — <a href="' + ch.tokenGuideUrl + '" target="_blank" rel="noopener">Open guide ↗</a>' : '') +
+        '</p>' +
+      '</div>' +
+      '<div id="skCwTokenError"></div>';
   }
 
-  function showChannelSelector() {
-    var connected = getConnectedChannels();
-    var availableChannels = Object.keys(channels).filter(function(id) {
-      return !connected.some(function(c) { return c.id === id; });
+  function renderQRInput(ch) {
+    return '<div style="text-align:center;margin:0 0 16px;">' +
+      '<h2 class="sk-cw-title" style="font-size:22px;">Link your device</h2>' +
+      '<p class="sk-cw-subtitle" style="margin-bottom:20px;">Scan this QR code with ' + ch.name + ' on your phone</p>' +
+      '</div>' +
+      '<div class="sk-cw-qr"><span class="sk-cw-qr-text">📱 QR Code<br>Scan to link</span></div>' +
+      '<p style="text-align:center;font-size:12px;color:rgba(255,255,255,0.3);margin:16px 0 0;">Or enter credentials manually below</p>' +
+      '<div class="sk-cw-field" style="margin-top:16px;">' +
+        '<label class="sk-cw-label">' + (ch.tokenLabel || 'Access Token') + '</label>' +
+        '<input class="sk-cw-input" id="skCwTokenInput" type="text" placeholder="' + (ch.tokenPlaceholder || 'Paste token...') + '" autocomplete="off" />' +
+      '</div>';
+  }
+
+  function renderSystemAuth(ch) {
+    return '<div style="text-align:center;">' +
+      '<div class="sk-cw-icon-wrap" style="background:' + ch.gradient + ';">' + ch.icon + '</div>' +
+      '<h1 class="sk-cw-title" style="font-size:22px;">' + ch.name + ' on macOS</h1>' +
+      '</div>' +
+      '<div class="sk-cw-system-card">' +
+        '<span class="sk-cw-system-icon">🔐</span>' +
+        '<p class="sk-cw-system-text">SpawnKit will use system integration to connect to Messages.app.<br>No tokens or passwords needed.</p>' +
+      '</div>';
+  }
+
+  function renderPhoneInput(ch) {
+    return '<div style="text-align:center;margin:0 0 24px;">' +
+      '<div class="sk-cw-icon-wrap" style="background:' + ch.gradient + ';width:56px;height:56px;font-size:28px;border-radius:16px;margin-bottom:20px;">' + ch.icon + '</div>' +
+      '<h2 class="sk-cw-title" style="font-size:22px;">Link your ' + ch.name + '</h2>' +
+      '</div>' +
+      '<div class="sk-cw-field">' +
+        '<label class="sk-cw-label">' + ch.tokenLabel + '</label>' +
+        '<input class="sk-cw-input" id="skCwTokenInput" type="tel" placeholder="' + ch.tokenPlaceholder + '" autocomplete="off" />' +
+        '<p class="sk-cw-help">' + ch.tokenHelp + '</p>' +
+      '</div>';
+  }
+
+  function renderVerifying(ch) {
+    return '<div class="sk-cw-verify-status">' +
+      '<div class="sk-cw-verify-spinner" style="border-top-color:' + ch.color + ';"></div>' +
+      '<p class="sk-cw-verify-text" id="skCwVerifyText">Connecting to ' + ch.name + '...</p>' +
+      '<div class="sk-cw-verify-dots"><span></span><span></span><span></span></div>' +
+      '</div>';
+  }
+
+  function renderSuccess(ch, details) {
+    var detailsHTML = '';
+    if (details && typeof details === 'object') {
+      var entries = Object.entries(details).filter(function(e) {
+        return (typeof e[1] === 'string' || typeof e[1] === 'number') && e[0] !== 'mode';
+      }).slice(0, 4);
+      if (entries.length > 0) {
+        detailsHTML = '<div class="sk-cw-success-details">' +
+          entries.map(function(e) {
+            var label = e[0].replace(/([A-Z])/g, ' $1').replace(/^./, function(s) { return s.toUpperCase(); });
+            return '<div class="sk-cw-success-detail"><span>' + label + '</span><strong>' + e[1] + '</strong></div>';
+          }).join('') + '</div>';
+      }
+    }
+    return '<div class="sk-cw-success">' +
+      '<div class="sk-cw-success-icon">' +
+        '<svg viewBox="0 0 24 24"><polyline points="4 12 10 18 20 6"></polyline></svg>' +
+      '</div>' +
+      '<h1 class="sk-cw-title">' + ch.name + ' Connected!</h1>' +
+      '<p class="sk-cw-subtitle">You\'re all set. Messages will flow through ' + ch.name + '.</p>' +
+      detailsHTML +
+      '</div>';
+  }
+
+  function renderComingSoon(ch) {
+    return '<div style="text-align:center;">' +
+      '<div class="sk-cw-icon-wrap" style="background:' + ch.gradient + ';opacity:0.7;">' + ch.icon + '</div>' +
+      '<h1 class="sk-cw-title">' + ch.name + '</h1>' +
+      '<p class="sk-cw-subtitle">' + ch.tagline + '</p>' +
+      '<div style="background:rgba(255,149,0,0.1);border:1px solid rgba(255,149,0,0.25);border-radius:12px;padding:16px;margin:24px 0;">' +
+        '<span style="font-size:24px;display:block;margin-bottom:8px;">🚧</span>' +
+        '<p style="font-size:14px;color:rgba(255,255,255,0.6);margin:0;">Coming soon! We\'re working on ' + ch.name + ' integration.</p>' +
+      '</div>' +
+      '</div>';
+  }
+
+  // ── Wizard Flow Controller ─────────────────────────────────────────────────
+
+  // Steps: 0=intro, 1=detect, 2=auth, 3=verify, 4=success
+  var STEP_NAMES = ['intro', 'detect', 'auth', 'verify', 'success'];
+
+  function open(channelId) {
+    var ch = CHANNELS[channelId];
+    if (!ch) { console.error('[ChannelWizard] Unknown channel:', channelId); return; }
+
+    // Close any existing
+    closeImmediate();
+
+    state.channel = channelId;
+    state.step = 0;
+    state.totalSteps = ch.phase === 2 ? 1 : 4; // coming soon = 1 step
+    state.verifying = false;
+    state.config = {};
+
+    // Create overlay
+    state.overlay = el('div', { className: 'sk-cw-overlay' });
+    state.overlay.addEventListener('click', function(e) {
+      if (e.target === state.overlay) close();
     });
 
-    if (availableChannels.length === 0) {
-      // All channels connected, show settings instead
-      var settingsBtn = document.getElementById('settingsBtn');
-      if (settingsBtn) settingsBtn.click();
-      return;
+    document.body.appendChild(state.overlay);
+    renderStep();
+  }
+
+  function renderStep() {
+    var ch = CHANNELS[state.channel];
+    if (!ch || !state.overlay) return;
+
+    // Remove old card with animation
+    var oldCard = state.overlay.querySelector('.sk-cw-card');
+    if (oldCard) {
+      oldCard.classList.add('sk-cw-leaving');
+      setTimeout(function() { if (oldCard.parentNode) oldCard.remove(); }, 300);
+      setTimeout(renderCard, 150);
+    } else {
+      renderCard();
     }
 
-    // Create a simple channel picker overlay
-    var pickerHTML = `
-      <div class="ch-ob-overlay" id="channelPicker">
-        <div class="ch-ob-card" style="width: 320px;">
-          <h2 style="margin: 0 0 20px; font-size: 18px; color: #fff; text-align: center;">Connect Channel</h2>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-            ${availableChannels.map(function(channelId) {
-              var channel = channels[channelId];
-              return `
-                <div class="settings-channel-card" data-channel="${channelId}" style="cursor: pointer;">
-                  <span class="settings-channel-icon">${channel.icon}</span>
-                  <div class="settings-channel-name">${channel.name}</div>
-                  <div class="settings-channel-status">Connect</div>
-                </div>
-              `;
-            }).join('')}
-          </div>
-          <div style="text-align: center; margin-top: 20px;">
-            <button class="ch-ob-btn-cancel" id="pickerCancel">Cancel</button>
-          </div>
-        </div>
-      </div>
-    `;
+    function renderCard() {
+      var card = el('div', { className: 'sk-cw-card' });
 
-    document.body.insertAdjacentHTML('beforeend', pickerHTML);
-    var picker = document.getElementById('channelPicker');
-
-    picker.addEventListener('click', function(e) {
-      if (e.target.id === 'pickerCancel' || e.target === picker) {
-        picker.remove();
+      // Coming soon
+      if (ch.phase === 2) {
+        card.innerHTML = renderComingSoon(ch) +
+          '<div class="sk-cw-actions"><div></div>' +
+          '<button class="sk-cw-btn sk-cw-btn-secondary" id="skCwClose">Close</button></div>';
+        state.overlay.appendChild(card);
+        bindEvents(card);
         return;
       }
 
-      var channelCard = e.target.closest('.settings-channel-card');
-      if (channelCard) {
-        var channelId = channelCard.dataset.channel;
-        picker.remove();
-        buildFlow(channelId);
+      // Progress ring (not on intro or success)
+      if (state.step > 0 && state.step < 4) {
+        var progress = el('div', { className: 'sk-cw-progress', innerHTML: progressRingSVG(state.step, 3) });
+        card.appendChild(progress);
+      }
+
+      // Content
+      var content = el('div');
+      var stepName = STEP_NAMES[state.step];
+
+      switch (stepName) {
+        case 'intro':
+          content.innerHTML = renderIntro(ch);
+          break;
+        case 'detect':
+          content.innerHTML = renderDetecting(ch);
+          break;
+        case 'auth':
+          if (ch.authType === 'token') content.innerHTML = renderTokenInput(ch);
+          else if (ch.authType === 'qr') content.innerHTML = renderQRInput(ch);
+          else if (ch.authType === 'system') content.innerHTML = renderSystemAuth(ch);
+          else if (ch.authType === 'phone') content.innerHTML = renderPhoneInput(ch);
+          else content.innerHTML = renderTokenInput(ch);
+          break;
+        case 'verify':
+          content.innerHTML = renderVerifying(ch);
+          break;
+        case 'success':
+          content.innerHTML = renderSuccess(ch, state.verifyResult);
+          break;
+      }
+
+      card.appendChild(content);
+
+      // Actions
+      var actions = el('div', { className: 'sk-cw-actions' });
+
+      switch (stepName) {
+        case 'intro':
+          actions.innerHTML = '<button class="sk-cw-btn sk-cw-btn-ghost" id="skCwClose">Cancel</button>' +
+            '<button class="sk-cw-btn sk-cw-btn-primary" id="skCwNext" style="background:' + ch.gradient + ';">Get Started →</button>';
+          break;
+        case 'detect':
+          // No buttons during detection
+          break;
+        case 'auth':
+          var needsInput = ch.authType !== 'system';
+          actions.innerHTML = '<button class="sk-cw-btn sk-cw-btn-secondary" id="skCwBack">← Back</button>' +
+            '<button class="sk-cw-btn sk-cw-btn-primary" id="skCwVerify" style="background:' + ch.gradient + ';"' +
+            (needsInput ? ' disabled' : '') + '>' +
+            (ch.authType === 'system' ? 'Detect Integration →' : 'Verify & Connect →') + '</button>';
+          break;
+        case 'verify':
+          // No buttons during verification
+          break;
+        case 'success':
+          actions.innerHTML = '<div></div>' +
+            '<button class="sk-cw-btn sk-cw-btn-primary" id="skCwDone" style="background:' + ch.gradient + ';">Start Messaging →</button>';
+          break;
+      }
+
+      card.appendChild(actions);
+      state.overlay.appendChild(card);
+      bindEvents(card);
+
+      // Auto-advance for detect step
+      if (stepName === 'detect') {
+        runDetection(ch);
+      }
+
+      // Auto-run for verify step
+      if (stepName === 'verify') {
+        runVerification(ch);
+      }
+
+      // Focus input
+      if (stepName === 'auth') {
+        setTimeout(function() {
+          var input = document.getElementById('skCwTokenInput');
+          if (input) input.focus();
+        }, 400);
+      }
+    }
+  }
+
+  function bindEvents(card) {
+    card.addEventListener('click', function(e) {
+      var id = e.target.id;
+      if (id === 'skCwClose') close();
+      else if (id === 'skCwNext') { state.step = 1; renderStep(); }
+      else if (id === 'skCwBack') { state.step = state.step > 0 ? state.step - 1 : 0; renderStep(); }
+      else if (id === 'skCwVerify') handleVerifyClick();
+      else if (id === 'skCwDone') handleDone();
+      else if (id === 'skCwReconnect') { state.step = 2; renderStep(); }
+    });
+
+    // Live input validation
+    card.addEventListener('input', function(e) {
+      if (e.target.id === 'skCwTokenInput') {
+        var ch = CHANNELS[state.channel];
+        var val = e.target.value.trim();
+        var btn = document.getElementById('skCwVerify');
+
+        if (ch.validateFormat) {
+          var valid = ch.validateFormat(val);
+          e.target.classList.toggle('sk-cw-valid', valid && val.length > 0);
+          e.target.classList.toggle('sk-cw-invalid', !valid && val.length > 5);
+          if (btn) btn.disabled = !valid;
+        } else {
+          if (btn) btn.disabled = val.length === 0;
+        }
+      }
+    });
+
+    // Enter to submit
+    card.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' && e.target.id === 'skCwTokenInput') {
+        var btn = document.getElementById('skCwVerify');
+        if (btn && !btn.disabled) btn.click();
       }
     });
   }
 
-  // ── Initialization ─────────────────────────────────────────────────────────
-  function init() {
-    // Add channel section to settings when settings panel opens
-    document.addEventListener('click', function(e) {
-      if (e.target.id === 'settingsBtn' || e.target.closest('#settingsBtn')) {
-        setTimeout(addChannelSectionToSettings, 100);
+  // ── Detection: check if channel is already configured ──────────────────────
+  async function runDetection(ch) {
+    // Check localStorage first (fast)
+    if (isConnected(state.channel)) {
+      var saved = getConnected()[state.channel];
+      setTimeout(function() {
+        state.verifyResult = saved.details || {};
+        showAlreadyConnected(ch, saved.details);
+      }, 800);
+      return;
+    }
+
+    // Check server-side
+    try {
+      var result = await apiGet('/api/oc/channels/status');
+      if (result.channels) {
+        var found = result.channels.find(function(c) { return c.id === state.channel && c.connected; });
+        if (found) {
+          state.verifyResult = found;
+          showAlreadyConnected(ch, found);
+          return;
+        }
+      }
+    } catch(e) { /* continue to auth */ }
+
+    // Not connected — go to auth step
+    setTimeout(function() {
+      state.step = 2;
+      renderStep();
+    }, 1200);
+  }
+
+  function showAlreadyConnected(ch, details) {
+    var card = state.overlay.querySelector('.sk-cw-card');
+    if (!card) return;
+
+    var content = card.querySelector('div');
+    if (content) {
+      content.innerHTML = renderAlreadyConnected(ch, details);
+    }
+
+    // Replace actions
+    var actions = card.querySelector('.sk-cw-actions');
+    if (!actions) {
+      actions = el('div', { className: 'sk-cw-actions' });
+      card.appendChild(actions);
+    }
+    actions.innerHTML = '<button class="sk-cw-btn sk-cw-btn-secondary" id="skCwReconnect">Reconnect</button>' +
+      '<button class="sk-cw-btn sk-cw-btn-primary" id="skCwDone" style="background:' + ch.gradient + ';">Done</button>';
+  }
+
+  // ── Verification: real API call ────────────────────────────────────────────
+  function handleVerifyClick() {
+    var ch = CHANNELS[state.channel];
+    var input = document.getElementById('skCwTokenInput');
+    var val = input ? input.value.trim() : '';
+
+    if (ch.authType === 'system') {
+      // iMessage — no token needed
+      state.config = {};
+    } else if (ch.authType === 'phone') {
+      state.config = { phoneNumber: val };
+    } else {
+      state.config = {};
+      state.config[ch.configKey || 'token'] = val;
+    }
+
+    state.step = 3;
+    renderStep();
+  }
+
+  async function runVerification(ch) {
+    var statusEl = document.getElementById('skCwVerifyText');
+
+    function updateStatus(text) {
+      if (statusEl) {
+        statusEl.style.opacity = '0';
+        setTimeout(function() {
+          statusEl.textContent = text;
+          statusEl.style.opacity = '1';
+        }, 200);
+      }
+    }
+
+    // Step through status messages for feel
+    await new Promise(function(r) { setTimeout(r, 600); });
+    updateStatus('Verifying credentials...');
+    await new Promise(function(r) { setTimeout(r, 400); });
+
+    // Real API call
+    var result = await apiPost('/api/oc/channels/verify', {
+      channel: state.channel,
+      config: state.config
+    });
+
+    if (result.ok) {
+      updateStatus('Connection successful!');
+      await new Promise(function(r) { setTimeout(r, 600); });
+
+      // Save to server
+      await apiPost('/api/oc/channels/save', {
+        channel: state.channel,
+        name: ch.name,
+        config: state.config,
+        details: result.details || {}
+      });
+
+      // Save to localStorage
+      saveConnected(state.channel, {
+        name: ch.name,
+        icon: ch.icon,
+        details: result.details || {},
+        connectedAt: Date.now()
+      });
+
+      state.verifyResult = result.details;
+      state.step = 4;
+      renderStep();
+      launchConfetti(ch.color);
+    } else {
+      // Show error on auth step
+      state.step = 2;
+      renderStep();
+      setTimeout(function() {
+        var errContainer = document.getElementById('skCwTokenError');
+        if (errContainer) {
+          errContainer.innerHTML = '<div class="sk-cw-error">❌ ' + (result.error || 'Verification failed. Please check your credentials.') + '</div>';
+        }
+        // Re-populate input
+        var input = document.getElementById('skCwTokenInput');
+        if (input) {
+          var key = CHANNELS[state.channel].configKey || 'token';
+          input.value = state.config[key] || state.config.phoneNumber || '';
+          input.classList.add('sk-cw-invalid');
+          input.focus();
+          var btn = document.getElementById('skCwVerify');
+          if (btn) btn.disabled = false;
+        }
+      }, 200);
+    }
+  }
+
+  function handleDone() {
+    close();
+    // Try to open chat panel targeting this channel
+    if (window.openChatPanel) {
+      setTimeout(function() { window.openChatPanel(); }, 400);
+    }
+  }
+
+  // ── Close ──────────────────────────────────────────────────────────────────
+  function close() {
+    clearConfetti();
+    if (state.overlay) {
+      state.overlay.classList.add('sk-cw-closing');
+      setTimeout(function() {
+        closeImmediate();
+        updateSettingsSection();
+        updateTargetDropdown();
+      }, 280);
+    }
+  }
+
+  function closeImmediate() {
+    if (state.overlay && state.overlay.parentNode) {
+      state.overlay.remove();
+    }
+    state.overlay = null;
+    state.channel = null;
+    state.step = 0;
+    state.config = {};
+  }
+
+  // ── Settings Panel Integration ─────────────────────────────────────────────
+  function addSettingsSection() {
+    var body = document.getElementById('settingsBody');
+    if (!body) return;
+
+    // Remove existing
+    var existing = body.querySelector('.sk-cw-settings-section');
+    if (existing) existing.remove();
+
+    var connected = getConnected();
+    var section = el('div', { className: 'sk-cw-settings-section' });
+    section.innerHTML = '<h3 style="font-size:14px;font-weight:600;color:#fff;margin:24px 0 12px;display:flex;align-items:center;gap:8px;">' +
+      '<span>📡</span> Channel Connections</h3>' +
+      '<div class="sk-cw-settings-grid">' +
+      Object.keys(CHANNELS).map(function(id) {
+        var ch = CHANNELS[id];
+        var conn = connected[id];
+        var isConn = !!conn;
+        return '<div class="sk-cw-settings-card' + (isConn ? ' sk-cw-connected' : '') + '" data-channel="' + id + '">' +
+          (ch.phase === 2 ? '<div class="sk-cw-coming-soon">Soon</div>' : '') +
+          '<span class="sk-cw-settings-card-icon">' + ch.icon + '</span>' +
+          '<div class="sk-cw-settings-card-name">' + ch.name + '</div>' +
+          '<div class="sk-cw-settings-card-status">' + (isConn ? '✓ Connected' : 'Connect') + '</div>' +
+          '</div>';
+      }).join('') +
+      '</div>';
+
+    section.querySelectorAll('.sk-cw-settings-card').forEach(function(card) {
+      card.addEventListener('click', function() {
+        var id = card.dataset.channel;
+        // Close settings
+        var closeBtn = document.getElementById('settingsClose');
+        if (closeBtn) closeBtn.click();
+        setTimeout(function() { open(id); }, 350);
+      });
+    });
+
+    body.appendChild(section);
+  }
+
+  function updateSettingsSection() {
+    // Refresh if settings panel is open
+    var body = document.getElementById('settingsBody');
+    if (body && body.querySelector('.sk-cw-settings-section')) {
+      addSettingsSection();
+    }
+  }
+
+  // ── Chat Target Dropdown Integration ───────────────────────────────────────
+  function updateTargetDropdown() {
+    var select = document.getElementById('chatTargetSelect');
+    if (!select) return;
+    var connected = getConnected();
+    var existing = Array.from(select.options).map(function(o) { return o.value; });
+    Object.keys(connected).forEach(function(id) {
+      if (!existing.includes(id)) {
+        var ch = CHANNELS[id];
+        if (ch) {
+          var opt = document.createElement('option');
+          opt.value = id;
+          opt.textContent = ch.icon + ' ' + ch.name;
+          select.appendChild(opt);
+        }
+      }
+    });
+  }
+
+  // ── Quick Connect (for onboarding Beat 2.5) ────────────────────────────────
+  function openQuickConnect() {
+    // Opens a simplified channel picker overlay
+    closeImmediate();
+    var connected = getConnected();
+
+    var overlay = el('div', { className: 'sk-cw-overlay' });
+    var card = el('div', { className: 'sk-cw-card', style: { maxWidth: '520px' } });
+
+    card.innerHTML = '<div style="text-align:center;margin-bottom:28px;">' +
+      '<h1 class="sk-cw-title" style="font-size:24px;">Connect Your Channels</h1>' +
+      '<p class="sk-cw-subtitle" style="margin-bottom:0;">Choose how you want to communicate with your agents</p>' +
+      '</div>' +
+      '<div class="sk-cw-settings-grid" style="grid-template-columns:repeat(3,1fr);">' +
+      Object.keys(CHANNELS).filter(function(id) { return CHANNELS[id].phase === 1; }).map(function(id, i) {
+        var ch = CHANNELS[id];
+        var conn = connected[id];
+        return '<div class="sk-cw-settings-card' + (conn ? ' sk-cw-connected' : '') + '" data-channel="' + id + '" ' +
+          'style="animation:sk-cw-stagger-in 0.4s ' + (i * 0.06) + 's ease both;">' +
+          '<span class="sk-cw-settings-card-icon">' + ch.icon + '</span>' +
+          '<div class="sk-cw-settings-card-name">' + ch.name + '</div>' +
+          '<div class="sk-cw-settings-card-status">' + (conn ? '✓ Connected' : 'Connect') + '</div></div>';
+      }).join('') +
+      '</div>' +
+      '<div class="sk-cw-actions" style="margin-top:24px;">' +
+        '<button class="sk-cw-btn sk-cw-btn-ghost" id="skCwSkipChannels">Skip for now</button>' +
+        '<button class="sk-cw-btn sk-cw-btn-secondary" id="skCwCloseChannels">Continue →</button>' +
+      '</div>';
+
+    card.querySelectorAll('.sk-cw-settings-card').forEach(function(c) {
+      c.addEventListener('click', function() {
+        var id = c.dataset.channel;
+        overlay.remove();
+        open(id);
+      });
+    });
+
+    card.addEventListener('click', function(e) {
+      if (e.target.id === 'skCwSkipChannels' || e.target.id === 'skCwCloseChannels') {
+        overlay.classList.add('sk-cw-closing');
+        setTimeout(function() { overlay.remove(); }, 280);
       }
     });
 
-    // Add channel button to chat panel
+    overlay.addEventListener('click', function(e) {
+      if (e.target === overlay) {
+        overlay.classList.add('sk-cw-closing');
+        setTimeout(function() { overlay.remove(); }, 280);
+      }
+    });
+
+    overlay.appendChild(card);
+    document.body.appendChild(overlay);
+  }
+
+  // ── Init ───────────────────────────────────────────────────────────────────
+  function init() {
+    // Hook into settings panel opening
+    document.addEventListener('click', function(e) {
+      if (e.target.id === 'settingsBtn' || e.target.closest('#settingsBtn')) {
+        setTimeout(addSettingsSection, 150);
+      }
+    });
+
+    // Update chat dropdown on load
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', function() {
-        setTimeout(function() {
-          addChannelButtonToChat();
-          updateTargetDropdown();
-        }, 500);
+        setTimeout(updateTargetDropdown, 500);
       });
     } else {
-      setTimeout(function() {
-        addChannelButtonToChat();
-        updateTargetDropdown();
-      }, 500);
+      setTimeout(updateTargetDropdown, 500);
     }
   }
 
   // ── Public API ─────────────────────────────────────────────────────────────
   window.ChannelOnboarding = {
-    open: buildFlow,
+    open: open,
     close: close,
-    getConnectedChannels: getConnectedChannels,
-    channels: channels
+    getConnectedChannels: function() {
+      var connected = getConnected();
+      return Object.keys(connected).map(function(id) {
+        return Object.assign({ id: id }, connected[id]);
+      });
+    },
+    channels: CHANNELS,
+    openQuickConnect: openQuickConnect,
+    isChannelConnected: isConnected
   };
 
-  // ── Auto-init ──────────────────────────────────────────────────────────────
   init();
-
 })();
