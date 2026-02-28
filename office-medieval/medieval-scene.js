@@ -997,7 +997,7 @@ class MedievalCastle3D {
                        (hours >= SUNRISE - 0.5 && hours <= SUNRISE + DAWN_LEN);
 
         // Store for other modules to read
-        this._dayNightState = { sunAngle, sunHeight, isNight, isDusk, mappedCycle, rawCycle };
+        this._dayNightState = { sunAngle, sunHeight, isNight, isDusk, mappedCycle };
 
         // Move sun position
         if (this.sunLight) {
