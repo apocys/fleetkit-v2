@@ -1084,7 +1084,11 @@ window.__skChannelOnboarding = true;
       setTimeout(function() {
         var errContainer = document.getElementById('skCwTokenError');
         if (errContainer) {
-          errContainer.innerHTML = '<div class="sk-cw-error">❌ ' + (result.error || 'Verification failed. Please check your credentials.') + '</div>';
+          var errDiv = document.createElement('div');
+          errDiv.className = 'sk-cw-error';
+          errDiv.textContent = '❌ ' + (result.error || 'Verification failed. Please check your credentials.');
+          errContainer.innerHTML = '';
+          errContainer.appendChild(errDiv);
         }
         // Re-populate input
         var input = document.getElementById('skCwTokenInput');

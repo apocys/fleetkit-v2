@@ -1057,6 +1057,17 @@
                     + '</div>';
             }
 
+            // Close theme switcher on backdrop click
+            var themeOverlay = document.getElementById('themeSwitcherOverlay');
+            if (themeOverlay) {
+                themeOverlay.addEventListener('click', function(e) {
+                    if (e.target === themeOverlay) {
+                        themeOverlay.classList.remove('visible');
+                        setTimeout(function() { themeOverlay.style.display = 'none'; }, 300);
+                    }
+                });
+            }
+
             // Close summon overlay on backdrop click
             var summonOverlay = document.getElementById('summonOverlay');
             if (summonOverlay) {
