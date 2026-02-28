@@ -62,6 +62,8 @@
   document.head.appendChild(style);
 
   // ── Feature Definitions ────────────────────────────────────────────────────
+  // Only features with NO existing UI access point
+  // Removed: Channels (sidebar has cards), Mission Control (statusbar Missions)
   var features = [
     {
       id: 'briefing',
@@ -104,20 +106,6 @@
       label: 'Add Agent',
       color: 'rgba(255,59,48,0.1)',
       action: function() { if (window.openAddAgentWizard) window.openAddAgentWizard(); }
-    },
-    {
-      id: 'channels',
-      icon: '📡',
-      label: 'Channels',
-      color: 'rgba(0,199,190,0.1)',
-      action: function() { if (window.ChannelOnboarding) window.ChannelOnboarding.openQuickConnect(); }
-    },
-    {
-      id: 'mission-control',
-      icon: '🎛️',
-      label: 'Mission Control',
-      color: 'rgba(255,204,0,0.1)',
-      action: function() { if (window.openMissionControl) window.openMissionControl(); }
     }
   ];
 
