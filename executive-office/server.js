@@ -583,20 +583,22 @@ const server = http.createServer(async (req, res) => {
         if (dirIndex.startsWith(STATIC_DIR) && fs.existsSync(dirIndex)) {
           fs.readFile(dirIndex, (e3, html) => {
             if (e3) { res.writeHead(500); res.end('Error'); return; }
-            res.writeHead(200, {'Content-Type': 'text/html', 'Cache-Control': 'no-cache'}); res.end(html);
+            res.writeHead(200, {'Content-Type': 'text/html', 'Cache-Control': 'no-store, no-cache, must-revalidate'}); res.end(html);
           });
           return;
         }
         // SPA fallback to root index.html
         fs.readFile(path.join(STATIC_DIR, 'index.html'), (e2, html) => {
           if (e2) { res.writeHead(500); res.end('Error'); return; }
-          res.writeHead(200, {'Content-Type': 'text/html'}); res.end(html);
+          res.writeHead(200, {'Content-Type': 'text/html', 'Cache-Control': 'no-store, no-cache, must-revalidate'}); res.end(html);
         });
       } else { res.writeHead(500); res.end('Error'); }
       return;
     }
     const ext = path.extname(fullPath);
-    res.writeHead(200, {'Content-Type': MIME[ext] || 'application/octet-stream', 'Cache-Control': 'no-cache'});
+    // HTML: no-store to prevent flash of old content. JS/CSS: no-cache (revalidate).
+    const cachePolicy = ext === '.html' ? 'no-store, no-cache, must-revalidate' : 'no-cache';
+    res.writeHead(200, {'Content-Type': MIME[ext] || 'application/octet-stream', 'Cache-Control': cachePolicy});
     res.end(content);
   });
 });
