@@ -1025,8 +1025,8 @@ class MedievalCastle3D {
             const x = (projected.x * 0.5 + 0.5) * rect.width;
             const y = (-projected.y * 0.5 + 0.5) * rect.height;
 
-            // Clamp to viewport bounds
-            if (projected.z > 1 || x < 20 || x > rect.width - 20 || y < 20 || y > rect.height - 60) {
+            // Clamp to viewport bounds (100px bottom margin for hotbar)
+            if (projected.z > 1 || x < 40 || x > rect.width - 40 || y < 40 || y > rect.height - 100) {
                 label.style.display = 'none';
                 if (label._emojiEl) label._emojiEl.style.display = 'none';
             } else {
@@ -1061,13 +1061,13 @@ class MedievalCastle3D {
                 const projected = position.clone().project(this.camera);
                 const x = (projected.x * 0.5 + 0.5) * rect.width;
                 const y = (-projected.y * 0.5 + 0.5) * rect.height;
-                // Hide if behind camera or outside viewport bounds
-                if (projected.z > 1 || x < 20 || x > rect.width - 20 || y < 20 || y > rect.height - 60) {
+                // Hide if behind camera or outside viewport bounds (100px bottom margin for hotbar)
+                if (projected.z > 1 || x < 40 || x > rect.width - 40 || y < 40 || y > rect.height - 100) {
                     label.style.display = 'none';
                 } else {
                     label.style.display = '';
-                    label.style.left = Math.max(40, Math.min(x, rect.width - 80)) + 'px';
-                    label.style.top = y + 'px';
+                    label.style.left = Math.max(60, Math.min(x, rect.width - 80)) + 'px';
+                    label.style.top = Math.min(y, rect.height - 100) + 'px';
                 }
             });
         }

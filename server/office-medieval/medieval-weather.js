@@ -148,13 +148,39 @@ function initWeather(app) {
     const WEATHER_ICONS = { clear: '☀️', rain: '🌧️', snow: '❄️', fog: '🌫️', cloudy: '☁️' };
     const badge = document.createElement('div');
     badge.id = 'weather-badge';
-    badge.style.cssText = 'position:fixed;top:8px;right:80px;z-index:100;background:rgba(0,0,0,0.5);color:#fff;padding:4px 12px;border-radius:12px;font-size:12px;font-family:Crimson Text,serif;pointer-events:none;';
+    badge.style.cssText = 'position:fixed;top:44px;right:8px;z-index:90;background:rgba(0,0,0,0.6);color:#fff;padding:4px 12px;border-radius:12px;font-size:11px;font-family:Crimson Text,serif;pointer-events:auto;cursor:pointer;backdrop-filter:blur(4px);border:1px solid rgba(201,169,89,0.2);';
     document.body.appendChild(badge);
+
+    // Day/Night label
+    function getDayNightLabel() {
+        const state = (window.castleApp && window.castleApp._dayNightState);
+        if (state) return state.isNight ? '🌙 Night' : '☀️ Day';
+        const h = new Date().getHours();
+        return (h >= 7 && h < 20) ? '☀️ Day' : '🌙 Night';
+    }
 
     function updateBadge() {
         const icon = WEATHER_ICONS[currentWeather] || '☀️';
-        badge.textContent = icon + ' ' + currentWeather.charAt(0).toUpperCase() + currentWeather.slice(1);
+        const dayNight = getDayNightLabel();
+        badge.textContent = icon + ' ' + currentWeather.charAt(0).toUpperCase() + currentWeather.slice(1) + '  ·  ' + dayNight;
     }
+
+    // Click to cycle weather manually (for testing/preference)
+    let weatherOverride = null;
+    const weatherCycle = ['clear', 'cloudy', 'rain', 'snow', 'fog'];
+    badge.addEventListener('click', () => {
+        const idx = weatherCycle.indexOf(currentWeather);
+        const next = weatherCycle[(idx + 1) % weatherCycle.length];
+        currentWeather = next;
+        // Apply weather effects
+        if (rainSystem) rainSystem.visible = (next === 'rain');
+        if (snowSystem) snowSystem.visible = (next === 'snow');
+        if (app.scene.fog) {
+            const fogDensities = { fog: 0.015, rain: 0.009, snow: 0.008, cloudy: 0.007, clear: 0.006 };
+            app.scene.fog.density = fogDensities[next] || 0.006;
+        }
+        updateBadge();
+    });
 
     // ── Initialize ─────────────────────────────────────────────
     rainSystem = createRain();
