@@ -1295,6 +1295,96 @@ class MedievalCastle3D {
         }
     }
 
+    // ── Dynamic Character Management ────────────────────────
+    addDynamicCharacter(label, sessionKey) {
+        const id = label || sessionKey || 'knight-' + Date.now();
+        if (this.characterModels.has(id)) return; // already exists
+        
+        const colors = [0x9B59B6, 0xE67E22, 0x2ECC71, 0xE74C3C, 0x3498DB, 0x1ABC9C, 0xF39C12];
+        const color = colors[this.characterModels.size % colors.length];
+        const mesh = this.createCharacterMesh(color, null);
+        mesh.scale.setScalar(1.2);
+        
+        // Spawn at random village position (outside castle walls)
+        const spawnX = (Math.random() - 0.5) * 20;
+        const spawnZ = 16 + Math.random() * 12;
+        mesh.position.set(spawnX, 0, spawnZ);
+        mesh.userData.agentId = id;
+        mesh.userData.emoticon = '⚔️ Questing';
+        mesh.userData.isDynamic = true;
+        mesh.userData.sessionKey = sessionKey;
+        this.scene.add(mesh);
+        
+        // Generate patrol waypoints around spawn
+        const wp = [
+            { x: spawnX, z: spawnZ },
+            { x: spawnX + 2, z: spawnZ + 1.5 },
+            { x: spawnX - 1.5, z: spawnZ + 2 },
+            { x: spawnX - 2, z: spawnZ - 1 },
+            { x: spawnX + 1, z: spawnZ - 1.5 },
+        ];
+        
+        this.characterModels.set(id, {
+            group: mesh,
+            model: mesh,
+            mixer: null,
+            animations: [],
+            waypoints: wp,
+            waypointIndex: 0,
+            nextWaypointIndex: 1,
+            speed: 0.5 + Math.random() * 0.5,
+            progress: 0,
+            bobPhase: Math.random() * Math.PI * 2,
+            glowMesh: null,
+        });
+        
+        // HTML floating label
+        const labelEl = document.createElement('div');
+        labelEl.className = 'character-label';
+        labelEl.textContent = id + ' ⚔️';
+        const labelsContainer = document.getElementById('labels-container') || document.getElementById('scene-container');
+        labelsContainer.appendChild(labelEl);
+        this.labelElements.set(id, labelEl);
+        
+        console.log('[Scene] ⚔️ Dynamic character added:', id);
+        
+        // Trigger spawn animation from lifecycle system
+        if (window.MedievalLifecycle && window.MedievalLifecycle.spawnAgent) {
+            window.MedievalLifecycle.spawnAgent(id);
+        }
+        
+        return id;
+    }
+    
+    removeDynamicCharacter(sessionKey) {
+        // Find character by session key
+        let targetId = null;
+        this.characterModels.forEach((data, id) => {
+            if (data.group.userData.sessionKey === sessionKey || id === sessionKey) {
+                targetId = id;
+            }
+        });
+        if (!targetId) return;
+        
+        const charData = this.characterModels.get(targetId);
+        if (!charData) return;
+        
+        // Trigger decommission animation first
+        if (window.MedievalLifecycle && window.MedievalLifecycle.decommissionAgent) {
+            window.MedievalLifecycle.decommissionAgent(targetId);
+        }
+        
+        // Remove after animation (3s delay for decommission walk)
+        setTimeout(() => {
+            if (charData.group.parent) charData.group.parent.remove(charData.group);
+            this.characterModels.delete(targetId);
+            const label = this.labelElements.get(targetId);
+            if (label && label.parentNode) label.parentNode.removeChild(label);
+            this.labelElements.delete(targetId);
+            console.log('[Scene] 💀 Dynamic character removed:', targetId);
+        }, 4000);
+    }
+
     resetCamera() {
         // Smooth reset to default isometric view
         const dist = 60;

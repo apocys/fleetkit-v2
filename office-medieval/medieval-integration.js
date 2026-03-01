@@ -269,10 +269,13 @@
       var origSelect = app.selectAgent.bind(app);
       app.selectAgent = function(agentId) {
         origSelect(agentId);
-        if (agentId === 'ApoMac' || agentId === 'ceo') {
-          chatContainer.style.display = 'block';
-          window.ThemeChat.show();
-        }
+        // Open chat for all agents — set persona context for the selected agent
+        window._chatPersona = agentId;
+        chatContainer.style.display = 'flex';
+        window.ThemeChat.show();
+        // Update chat header to show who you're talking to
+        var headerLabel = chatContainer.querySelector('span');
+        if (headerLabel) headerLabel.textContent = '💬 Speaking to ' + agentId;
       };
 
       var toggleBtn = document.createElement('button');

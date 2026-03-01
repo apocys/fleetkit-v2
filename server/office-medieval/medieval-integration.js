@@ -210,23 +210,72 @@
       if (!chatContainer) {
         chatContainer = document.createElement('div');
         chatContainer.id = 'medievalChat';
-        chatContainer.style.cssText = 'position:fixed;right:0;bottom:0;width:380px;height:500px;z-index:100;display:none;';
+        chatContainer.style.cssText = 'position:fixed;right:8px;bottom:72px;width:380px;max-width:calc(100vw - 16px);height:min(480px, calc(100vh - 140px));z-index:200;display:none;flex-direction:column;border-radius:16px;overflow:hidden;border:2px solid rgba(180,150,100,0.4);box-shadow:0 8px 32px rgba(0,0,0,0.4);background:rgba(20,20,30,0.95);backdrop-filter:blur(12px);';
+        // Chat header with close button
+        var chatHeader = document.createElement('div');
+        chatHeader.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:rgba(30,25,20,0.8);border-bottom:1px solid rgba(180,150,100,0.3);';
+        chatHeader.innerHTML = '<span style="font-family:Crimson Text,serif;font-size:14px;font-weight:600;color:#C9A959;">💬 Royal Messenger</span>';
+        var closeBtn = document.createElement('button');
+        closeBtn.textContent = '✕';
+        closeBtn.style.cssText = 'background:rgba(180,60,60,0.6);color:#fff;border:none;border-radius:6px;width:26px;height:26px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;transition:background 0.15s;';
+        closeBtn.addEventListener('mouseenter', function() { closeBtn.style.background = 'rgba(220,60,60,0.9)'; });
+        closeBtn.addEventListener('mouseleave', function() { closeBtn.style.background = 'rgba(180,60,60,0.6)'; });
+        closeBtn.addEventListener('click', function() {
+          chatContainer.style.display = 'none';
+          window.ThemeChat.hide();
+        });
+        chatHeader.appendChild(closeBtn);
+        chatContainer.appendChild(chatHeader);
         document.body.appendChild(chatContainer);
       }
       window.ThemeChat.init(chatContainer, {
         theme:          'medieval',
         placeholder:    'Your command, Your Majesty...',
         userLabel:      'Your Majesty',
-        assistantLabel: '🤖 ApoMac',
+        assistantLabel: '🤖 Sycopa',
       });
+
+      // Wrap sendMessage to prefix with active persona context
+      var origSend = window.ThemeChat._sendMessage;
+      if (origSend) {
+        window.ThemeChat._sendMessage = function(text) {
+          var persona = window._chatPersona;
+          if (persona && persona !== 'ApoMac' && persona !== 'ceo') {
+            text = '[Speaking to ' + persona + '] ' + text;
+            // Update the label for the response
+            var labels = chatContainer.querySelectorAll('.sk-chat-msg-label');
+          }
+          origSend(text);
+        };
+      }
+
+      // Update assistant label based on active persona
+      var origAppend = null;
+      var chatMsgArea = chatContainer.querySelector('.sk-chat-messages');
+      if (chatMsgArea) {
+        var observer = new MutationObserver(function() {
+          var persona = window._chatPersona;
+          if (!persona || persona === 'ApoMac' || persona === 'ceo') return;
+          var msgs = chatMsgArea.querySelectorAll('.sk-chat-msg-assistant .sk-chat-msg-label');
+          msgs.forEach(function(label) {
+            if (label.textContent === '🤖 Sycopa') {
+              label.textContent = '🤖 ' + persona;
+            }
+          });
+        });
+        observer.observe(chatMsgArea, { childList: true, subtree: true });
+      }
 
       var origSelect = app.selectAgent.bind(app);
       app.selectAgent = function(agentId) {
         origSelect(agentId);
-        if (agentId === 'ApoMac' || agentId === 'ceo') {
-          chatContainer.style.display = 'block';
-          window.ThemeChat.show();
-        }
+        // Open chat for all agents — set persona context for the selected agent
+        window._chatPersona = agentId;
+        chatContainer.style.display = 'flex';
+        window.ThemeChat.show();
+        // Update chat header to show who you're talking to
+        var headerLabel = chatContainer.querySelector('span');
+        if (headerLabel) headerLabel.textContent = '💬 Speaking to ' + agentId;
       };
 
       var toggleBtn = document.createElement('button');
@@ -236,7 +285,8 @@
       toggleBtn.style.cssText = 'display:none;'; // Hidden — hotbar key 2 handles chat
       toggleBtn.addEventListener('click', function() {
         if (chatContainer.style.display === 'none') {
-          chatContainer.style.display = 'block';
+          chatContainer.style.display = 'flex';
+          chatContainer.style.flexDirection = 'column';
           window.ThemeChat.show();
         } else {
           chatContainer.style.display = 'none';
@@ -246,23 +296,88 @@
       document.body.appendChild(toggleBtn);
     }
 
+    // Track known sub-agents for spawn/decommission detection
+    var _knownSubAgents = {};
     setInterval(function() {
       if (!window.ThemeAuth) return;
       window.ThemeAuth.fetch(API_URL + '/api/oc/sessions').then(function(resp) {
         if (!resp.ok) return null;
         return resp.json();
       }).then(function(data) {
-        if (!data || !window.AgentRoutines) return;
+        if (!data) return;
         var sessions = data.sessions || data || [];
-        sessions.forEach(function(s) {
-          if (s.kind !== 'subagent' || s.status !== 'active') return;
-          var label = (s.label || '').toLowerCase();
-          app.characterModels.forEach(function(charData, agentId) {
-            if (label.indexOf(agentId.toLowerCase()) >= 0) {
-              window.AgentRoutines.onTask(agentId, { name: s.label || 'Working...', progress: 0 });
+
+        // Update header with real agent count
+        var activeCount = 0;
+        app.characterModels.forEach(function() { activeCount++; });
+        var subActive = sessions.filter(function(s) { return s.kind === 'subagent' && s.status === 'active'; }).length;
+        var headerEl = document.getElementById('active-agents');
+        if (headerEl) headerEl.textContent = activeCount + ' Knights Active' + (subActive ? ' + ' + subActive + ' Questing' : '');
+
+        // Routine integration
+        if (window.AgentRoutines) {
+          sessions.forEach(function(s) {
+            if (s.kind !== 'subagent' || s.status !== 'active') return;
+            var label = (s.label || '').toLowerCase();
+            app.characterModels.forEach(function(charData, agentId) {
+              if (label.indexOf(agentId.toLowerCase()) >= 0) {
+                window.AgentRoutines.onTask(agentId, { name: s.label || 'Working...', progress: 0 });
+              }
+            });
+          });
+        }
+
+        // Sub-agent spawn/decommission detection via Lifecycle system
+        if (window.MedievalLifecycle) {
+          var currentSubIds = {};
+          sessions.forEach(function(s) {
+            if (s.kind === 'subagent' && s.status === 'active') {
+              var sid = s.key || s.label || s.id;
+              currentSubIds[sid] = s;
             }
           });
-        });
+
+          // Detect NEW sub-agents (spawn)
+          Object.keys(currentSubIds).forEach(function(sid) {
+            if (!_knownSubAgents[sid]) {
+              var s = currentSubIds[sid];
+              var knightName = s.label || s.displayName || ('Knight-' + Object.keys(_knownSubAgents).length);
+              // Create a temporary character if not already on scene
+              if (!app.characterModels.has(knightName)) {
+                var mesh = app.createCharacterMesh(0x8B4513, null); // brown armor
+                mesh.scale.setScalar(1.2);
+                mesh.position.set(0, 0, 13); // gate
+                mesh.userData.agentId = knightName;
+                app.scene.add(mesh);
+                app.characterModels.set(knightName, {
+                  group: mesh, model: mesh, mixer: null, animations: [],
+                  waypoints: [{ x: 0, z: 13 }, { x: -12, z: 20 }, { x: 0, z: 0 }],
+                  waypointIndex: 0, nextWaypointIndex: 1, speed: 0.4,
+                  progress: 0, bobPhase: Math.random() * Math.PI * 2, glowMesh: null,
+                });
+                var label = document.createElement('div');
+                label.className = 'character-label';
+                label.textContent = knightName;
+                document.getElementById('labels-container').appendChild(label);
+                app.labelElements.set(knightName, label);
+                // This triggers spawn animation via detectSpawnDespawn
+              }
+            }
+          });
+
+          // Detect REMOVED sub-agents (decommission)
+          Object.keys(_knownSubAgents).forEach(function(sid) {
+            if (!currentSubIds[sid]) {
+              var s = _knownSubAgents[sid];
+              var knightName = s.label || s.displayName || sid;
+              if (app.characterModels.has(knightName)) {
+                window.MedievalLifecycle.decommissionAgent(knightName);
+              }
+            }
+          });
+
+          _knownSubAgents = currentSubIds;
+        }
       }).catch(function() {});
     }, 10000);
 

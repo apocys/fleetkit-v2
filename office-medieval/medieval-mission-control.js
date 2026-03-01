@@ -481,6 +481,8 @@
 
 (function initMedievalLiveBehaviors() {
     var lastAgentState = {};
+    var _initialPollDone = false;
+    var _notifiedKeys = new Set();
     var lastChatMessageCount = 0;
     var pollTimer = null;
     var animationQueue = [];
@@ -538,21 +540,46 @@
     }
     
     function detectMedievalChanges(currentState) {
-        Object.keys(currentState).forEach(key => {
-            const current = currentState[key];
-            const previous = lastAgentState[key];
+        // Skip first poll — all sessions appear as "new" since lastAgentState is empty
+        if (!_initialPollDone) {
+            _initialPollDone = true;
+            Object.keys(currentState).forEach(function(k) { _notifiedKeys.add(k); });
+            return;
+        }
+        Object.keys(currentState).forEach(function(key) {
+            var current = currentState[key];
+            var previous = lastAgentState[key];
             
-            if (!previous && current.kind === 'subagent') {
-                // New knight spawned
+            if (!previous && current.kind === 'subagent' && !_notifiedKeys.has(key)) {
+                // New knight spawned — notify + add 3D character
+                _notifiedKeys.add(key);
                 animateKnightSpawned(key, current);
+                // Add to 3D scene
+                if (window.castleApp && window.castleApp.addDynamicCharacter) {
+                    window.castleApp.addDynamicCharacter(current.label || key, key);
+                }
             } else if (previous && !currentState[key]) {
-                // Knight decommissioned
+                // Knight decommissioned — remove from 3D scene
+                _notifiedKeys.delete(key);
                 animateKnightDecommissioned(key, previous);
+                if (window.castleApp && window.castleApp.removeDynamicCharacter) {
+                    window.castleApp.removeDynamicCharacter(key);
+                }
             } else if (previous && previous.status !== current.status) {
                 if (current.status === 'active') {
                     animateKnightActive(key, current);
                 } else {
                     animateKnightIdle(key, current);
+                }
+            }
+        });
+        // Check for decommissioned (keys in lastAgentState but not in currentState)
+        Object.keys(lastAgentState).forEach(function(key) {
+            if (!currentState[key] && lastAgentState[key].kind === 'subagent') {
+                _notifiedKeys.delete(key);
+                animateKnightDecommissioned(key, lastAgentState[key]);
+                if (window.castleApp && window.castleApp.removeDynamicCharacter) {
+                    window.castleApp.removeDynamicCharacter(key);
                 }
             }
         });
