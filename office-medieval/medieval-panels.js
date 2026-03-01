@@ -196,9 +196,14 @@
         container.innerHTML = '<div class="bp-section-title">Agents</div><div id="bp-agent-list"><div class="bp-empty">Loading agents…</div></div>';
         var list = document.getElementById('bp-agent-list');
 
-        var agents = (window.castleApp && window.castleApp.agents)
-            ? Object.values(window.castleApp.agents)
-            : null;
+        var agents = null;
+        if (window.castleApp && window.castleApp.agents) {
+            if (window.castleApp.agents instanceof Map) {
+                agents = Array.from(window.castleApp.agents.values());
+            } else {
+                agents = Object.values(window.castleApp.agents);
+            }
+        }
 
         if (agents && agents.length) {
             renderAgentList(list, agents);
@@ -381,6 +386,7 @@
             '<button class="bp-btn" style="flex:1;" id="bp-open-channel-wizard">⚙️ Channel Wizard</button>' +
             '</div>' +
             '<div class="bp-section-title">🗺️ Realm</div>' +
+            '<button class="bp-btn" style="width:100%;margin-bottom:8px;" id="bp-open-allied">🏰 Allied Kingdoms (Rookery)</button>' +
             '<button class="bp-btn" style="width:100%;margin-bottom:8px;" id="bp-open-theme-switcher">🎨 Switch Theme / Realm</button>' +
             '<div style="font-size:11px;color:rgba(168,162,153,0.5);text-align:center;">Medieval Castle · v4.1</div>';
 
@@ -388,6 +394,13 @@
         if (wizBtn) {
             wizBtn.addEventListener('click', function() {
                 if (window.ChannelOnboarding) window.ChannelOnboarding.open();
+            });
+        }
+        var alliedBtn = document.getElementById('bp-open-allied');
+        if (alliedBtn) {
+            alliedBtn.addEventListener('click', function() {
+                closeBuildingPanel();
+                setTimeout(function() { if (typeof window.openBuildingPanel === 'function') window.openBuildingPanel('🏰 Rookery'); }, 200);
             });
         }
         var themeBtn = document.getElementById('bp-open-theme-switcher');

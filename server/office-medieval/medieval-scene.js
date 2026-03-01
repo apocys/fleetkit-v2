@@ -1026,7 +1026,7 @@ class MedievalCastle3D {
             const y = (-projected.y * 0.5 + 0.5) * rect.height;
 
             // Clamp to viewport bounds
-            if (projected.z > 1 || x < -50 || x > rect.width + 50 || y < -50 || y > rect.height + 50) {
+            if (projected.z > 1 || x < 20 || x > rect.width - 20 || y < 20 || y > rect.height - 60) {
                 label.style.display = 'none';
                 if (label._emojiEl) label._emojiEl.style.display = 'none';
             } else {
@@ -1062,11 +1062,11 @@ class MedievalCastle3D {
                 const x = (projected.x * 0.5 + 0.5) * rect.width;
                 const y = (-projected.y * 0.5 + 0.5) * rect.height;
                 // Hide if behind camera or outside viewport bounds
-                if (projected.z > 1 || x < -50 || x > rect.width + 50 || y < -50 || y > rect.height + 50) {
+                if (projected.z > 1 || x < 20 || x > rect.width - 20 || y < 20 || y > rect.height - 60) {
                     label.style.display = 'none';
                 } else {
                     label.style.display = '';
-                    label.style.left = Math.min(x, rect.width - 80) + 'px';
+                    label.style.left = Math.max(40, Math.min(x, rect.width - 80)) + 'px';
                     label.style.top = y + 'px';
                 }
             });
@@ -1166,6 +1166,35 @@ class MedievalCastle3D {
             if (typeof openMissionControl === 'function') openMissionControl();
             else this.resetCamera();
         });
+    
+        // ── Arrow Key Camera Pan (desktop navigation) ──
+        const PAN_SPEED = 0.5;
+        const _panKeys = new Set();
+        document.addEventListener('keydown', (e) => {
+            if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) {
+                e.preventDefault();
+                _panKeys.add(e.key);
+            }
+        });
+        document.addEventListener('keyup', (e) => {
+            _panKeys.delete(e.key);
+        });
+        // Pan update in animation loop
+        const origAnimate = this.animate.bind(this);
+        this.animate = (ts) => {
+            if (_panKeys.size > 0) {
+                const dx = (_panKeys.has('ArrowRight') ? PAN_SPEED : 0) - (_panKeys.has('ArrowLeft') ? PAN_SPEED : 0);
+                const dz = (_panKeys.has('ArrowDown') ? PAN_SPEED : 0) - (_panKeys.has('ArrowUp') ? PAN_SPEED : 0);
+                if (this.controls && this.controls.target) {
+                    this.controls.target.x += dx;
+                    this.controls.target.z += dz;
+                    this.camera.position.x += dx;
+                    this.camera.position.z += dz;
+                    this.controls.update();
+                }
+            }
+            origAnimate(ts);
+        };
     }
 
     getMouseNDC(event) {
@@ -1422,6 +1451,18 @@ class MedievalCastle3D {
             // Load real session data
             this.loadAgentSessions(agentId);
         }
+        } else if (tab === 'thoughts') {
+            content.innerHTML = `
+                <div>
+                    <h4 style="font-family:var(--font-serif);color:var(--castle-navy);margin-bottom:12px;">Royal Thoughts</h4>
+                    <div class="thoughts-feed" id="agentThoughtsFeed">
+                        <div style="color:var(--castle-brown);font-size:13px;text-align:center;padding:20px;">
+                            🔄 Reading the royal mind...
+                        </div>
+                    </div>
+                </div>
+            `;
+            this.loadAgentThoughts(agentId);
     }
 
     getAgentDescription(agentId) {
@@ -1476,6 +1517,33 @@ class MedievalCastle3D {
             }
         } catch (e) {
             console.warn('Failed to load agent sessions:', e);
+        }
+    }
+
+    async loadAgentThoughts(agentId) {
+        try {
+            const resp = await ThemeAuth.fetch(API_URL + '/api/oc/chat');
+            if (resp.ok) {
+                const messages = await resp.json();
+                const feed = document.getElementById('agentThoughtsFeed');
+                if (!feed || this.currentDetailTab !== 'thoughts') return;
+                
+                const recent = (Array.isArray(messages) ? messages : []).slice(-20).reverse();
+                if (recent.length === 0) {
+                    feed.innerHTML = '<div style="text-align:center;color:var(--castle-brown);padding:40px;">\ud83d\udca4 The knight\'s mind is still...<br><small>No recent thoughts recorded</small></div>';
+                    return;
+                }
+                feed.innerHTML = recent.map(function(m) {
+                    var time = m.timestamp ? new Date(m.timestamp).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'}) : '';
+                    var role = m.role === 'assistant' ? '\ud83d\udcad' : '\ud83d\udc51';
+                    var text = (m.content || m.text || '').substring(0, 200);
+                    return '<div class="thought-entry"><span class="thought-emoji">' + role + '</span><span class="thought-time">' + time + '</span><span class="thought-text">' + text + '</span></div>';
+                }).join('');
+            }
+        } catch(e) {
+            console.warn('Failed to load thoughts:', e);
+            var feed = document.getElementById('agentThoughtsFeed');
+            if (feed) feed.innerHTML = '<div style="text-align:center;color:var(--castle-brown);padding:20px;">\u26a0 Could not commune with this knight.</div>';
         }
     }
 

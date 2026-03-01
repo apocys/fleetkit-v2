@@ -191,9 +191,6 @@ class MedievalCastle3D {
         this.scene.add(keepLight);
 
         this.torchLights = [torch1, torch2, keepLight];
-
-        // Fire particle emitters at gate torches
-        this.torchParticles = this.createTorchParticles();
     }
 
     createGround() {
@@ -224,37 +221,15 @@ class MedievalCastle3D {
         }
         groundGeo.computeVertexNormals();
 
-        // River — animated water shader running E-W at z=12
-        const riverGeo = new THREE.PlaneGeometry(60, 3, 60, 6);
-        const riverMat = new THREE.ShaderMaterial({
-            uniforms: {
-                uTime: { value: 0 },
-                uColor: { value: new THREE.Color(0x3388cc) },
-            },
-            vertexShader: `
-                uniform float uTime;
-                varying vec2 vUv;
-                void main() {
-                    vUv = uv;
-                    vec3 pos = position;
-                    pos.z += sin(pos.x * 2.0 + uTime * 1.5) * 0.08 + sin(pos.x * 5.0 + uTime * 2.5) * 0.03;
-                    gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
-                }
-            `,
-            fragmentShader: `
-                uniform vec3 uColor;
-                uniform float uTime;
-                varying vec2 vUv;
-                void main() {
-                    float shimmer = sin(vUv.x * 30.0 + uTime * 2.0) * 0.05 + 0.95;
-                    float edge = smoothstep(0.0, 0.15, vUv.y) * smoothstep(1.0, 0.85, vUv.y);
-                    gl_FragColor = vec4(uColor * shimmer, 0.7 * edge);
-                }
-            `,
+        // River — blue plane running E-W at z=12
+        const riverGeo = new THREE.PlaneGeometry(60, 3);
+        const riverMat = new THREE.MeshStandardMaterial({
+            color: 0x3388cc,
+            roughness: 0.1,
+            metalness: 0.3,
             transparent: true,
-            side: THREE.DoubleSide,
+            opacity: 0.75,
         });
-        this.riverMaterial = riverMat;
         const river = new THREE.Mesh(riverGeo, riverMat);
         river.rotation.x = -Math.PI / 2;
         river.position.set(0, 0.01, 12);
@@ -724,98 +699,68 @@ class MedievalCastle3D {
 
     async loadCharacters(updateProgress) {
         const agentDefs = [
-            { id: 'Sycopa',   glb: 'assets/characters/character-a.glb', speed: 0.4 },
-            { id: 'Forge',    glb: 'assets/characters/character-b.glb', speed: 0.7 },
-            { id: 'Atlas',    glb: 'assets/characters/character-c.glb', speed: 0.6 },
-            { id: 'Hunter',   glb: 'assets/characters/character-d.glb', speed: 1.0 },
-            { id: 'Echo',     glb: 'assets/characters/character-e.glb', speed: 0.5 },
-            { id: 'Sentinel', glb: 'assets/characters/character-f.glb', speed: 0.8 },
+            { id: 'Sycopa',   color: 0x007AFF, speed: 0.4, crown: 0xFFD700 },
+            { id: 'Forge',    color: 0xFF9F0A, speed: 0.7, crown: null },
+            { id: 'Atlas',    color: 0xBF5AF2, speed: 0.6, crown: null },
+            { id: 'Hunter',   color: 0xFF453A, speed: 1.0, crown: null },
+            { id: 'Echo',     color: 0x0A84FF, speed: 0.5, crown: null },
+            { id: 'Sentinel', color: 0x30D158, speed: 0.8, crown: null },
         ];
+
+        const emoticons = { idle: '💤 Idle', working: '⚔️ Working', chatting: '💬 Chatting', eating: '🍖 Eating', sleeping: '😴 Sleeping' };
 
         // Waypoints spread across entire map (castle, village, fields)
         const waypoints = [
+            // Sycopa — CEO, stays INSIDE castle courtyard (inner walls ±7)
             [{ x: 0, z: 0 }, { x: -4, z: -4 }, { x: 4, z: -4 }, { x: 4, z: 4 }, { x: -4, z: 4 }],
+            // Forge — CTO, village workshop area (all outside outer wall z>12)
             [{ x: 12, z: 20 }, { x: 8, z: 24 }, { x: 5, z: 22 }, { x: 10, z: 18 }, { x: 14, z: 22 }],
+            // Atlas — COO, wide village patrol (south of outer wall z>12)
             [{ x: -12, z: 20 }, { x: -5, z: 24 }, { x: 5, z: 22 }, { x: 12, z: 20 }, { x: 0, z: 28 }],
+            // Hunter — CRO, far scout: fields and edges (south of walls z>12)
             [{ x: 18, z: 16 }, { x: -16, z: 22 }, { x: -18, z: 14 }, { x: 14, z: 28 }, { x: 0, z: 18 }],
+            // Echo — CMO, village center: tavern + library (z>12)
             [{ x: -5, z: 24 }, { x: 5, z: 22 }, { x: -9, z: 27 }, { x: 7, z: 27 }, { x: 0, z: 20 }],
+            // Sentinel — QA, outer wall patrol (between inner and outer walls, z: -12 to 12)
             [{ x: 0, z: 13 }, { x: -13, z: 13 }, { x: -13, z: -13 }, { x: 13, z: -13 }, { x: 13, z: 13 }],
         ];
 
         for (let i = 0; i < agentDefs.length; i++) {
             const def = agentDefs[i];
-            try {
-                const gltf = await this.loadModel(def.glb);
-                const model = gltf.scene;
-                model.scale.setScalar(0.5);
-                model.userData.agentId = def.id;
+            const mesh = this.createCharacterMesh(def.color, def.crown);
+            mesh.scale.setScalar(1.2);
 
-                model.traverse(child => {
-                    if (child.isMesh) {
-                        child.castShadow = true;
-                        child.receiveShadow = true;
-                        child.userData.agentId = def.id;
-                    }
-                });
+            const wp = waypoints[i];
+            mesh.position.set(wp[0].x, 0, wp[0].z);
+            mesh.userData.agentId = def.id;
+            mesh.userData.emoticon = '💤 Idle';
+            this.scene.add(mesh);
 
-                const wp = waypoints[i];
-                model.position.set(wp[0].x, 0, wp[0].z);
-                this.scene.add(model);
+            this.characterModels.set(def.id, {
+                group: mesh,
+                model: mesh,
+                mixer: null,
+                animations: [],
+                waypoints: wp,
+                waypointIndex: 0,
+                nextWaypointIndex: 1,
+                speed: def.speed,
+                progress: 0,
+                bobPhase: Math.random() * Math.PI * 2,
+                glowMesh: null,
+            });
 
-                let mixer = null;
-                const animations = gltf.animations || [];
-                if (animations.length > 0) {
-                    mixer = new THREE.AnimationMixer(model);
-                    this.animationMixers.push(mixer);
-                    const clip = animations[0];
-                    const action = mixer.clipAction(clip);
-                    action.timeScale = 0.5 + def.speed * 0.5;
-                    action.play();
-                }
+            // HTML floating label
+            const label = document.createElement('div');
+            label.className = 'character-label';
+            label.textContent = def.id + ' \u{1F4A4}';
+            document.getElementById('labels-container').appendChild(label);
+            this.labelElements.set(def.id, label);
 
-                this.characterModels.set(def.id, {
-                    group: model,
-                    model: model,
-                    mixer: mixer,
-                    animations: animations,
-                    waypoints: wp,
-                    waypointIndex: 0,
-                    nextWaypointIndex: 1,
-                    speed: def.speed,
-                    progress: 0,
-                    bobPhase: Math.random() * Math.PI * 2,
-                    glowMesh: null,
-                });
-
-                const label = document.createElement('div');
-                label.className = 'character-label';
-                label.textContent = def.id + ' \u{1F4A4}';
-                document.getElementById('labels-container').appendChild(label);
-                this.labelElements.set(def.id, label);
-
-                updateProgress('Character ' + def.id);
-            } catch(e) {
-                console.warn('Failed to load character ' + def.id + ':', e);
-                const mesh = this.createCharacterMesh(0x888888, null);
-                mesh.scale.setScalar(1.2);
-                const wp = waypoints[i];
-                mesh.position.set(wp[0].x, 0, wp[0].z);
-                mesh.userData.agentId = def.id;
-                this.scene.add(mesh);
-                this.characterModels.set(def.id, {
-                    group: mesh, model: mesh, mixer: null, animations: [],
-                    waypoints: wp, waypointIndex: 0, nextWaypointIndex: 1,
-                    speed: def.speed, progress: 0, bobPhase: Math.random() * Math.PI * 2, glowMesh: null,
-                });
-                const label = document.createElement('div');
-                label.className = 'character-label';
-                label.textContent = def.id + ' \u{1F4A4}';
-                document.getElementById('labels-container').appendChild(label);
-                this.labelElements.set(def.id, label);
-                updateProgress('Character ' + def.id + ' (fallback)');
-            }
+            updateProgress('Character ' + def.id);
         }
 
+        // Animals
         this.spawnAnimals();
     }
 
@@ -892,12 +837,6 @@ class MedievalCastle3D {
         // Animate torch flicker
         this.animateTorches(elapsed);
 
-        // Animate torch fire particles
-        this.animateTorchParticles(delta);
-
-        // Animate water shader
-        if (this.riverMaterial) this.riverMaterial.uniforms.uTime.value = elapsed;
-
         // Animate animals
         this.animateAnimals(delta);
 
@@ -940,8 +879,8 @@ class MedievalCastle3D {
             const x = from.x + (to.x - from.x) * t;
             const z = from.z + (to.z - from.z) * t;
 
-            // Walking bob (skip for .glb models with their own animations)
-            const bob = charData.mixer ? 0 : Math.sin(elapsed * 6 + charData.bobPhase) * 0.03;
+            // Walking bob
+            const bob = Math.sin(elapsed * 6 + charData.bobPhase) * 0.03;
             group.position.set(x, bob, z);
 
             // Face direction of movement
@@ -1002,82 +941,6 @@ class MedievalCastle3D {
         });
     }
 
-    createTorchParticles() {
-        const positions = [
-            new THREE.Vector3(-2, 2.5, 5.5),
-            new THREE.Vector3(2, 2.5, 5.5),
-        ];
-        const particlesPerTorch = 40;
-        const total = positions.length * particlesPerTorch;
-        const geo = new THREE.BufferGeometry();
-        const posArr = new Float32Array(total * 3);
-        const colorArr = new Float32Array(total * 3);
-        const sizeArr = new Float32Array(total);
-        const lifeArr = new Float32Array(total);
-
-        for (let i = 0; i < total; i++) {
-            const torchIdx = Math.floor(i / particlesPerTorch);
-            const base = positions[torchIdx];
-            posArr[i * 3] = base.x + (Math.random() - 0.5) * 0.15;
-            posArr[i * 3 + 1] = base.y + Math.random() * 0.3;
-            posArr[i * 3 + 2] = base.z + (Math.random() - 0.5) * 0.15;
-            colorArr[i * 3] = 1.0;
-            colorArr[i * 3 + 1] = 0.5;
-            colorArr[i * 3 + 2] = 0.0;
-            sizeArr[i] = 0.08 + Math.random() * 0.05;
-            lifeArr[i] = Math.random();
-        }
-
-        geo.setAttribute('position', new THREE.BufferAttribute(posArr, 3));
-        geo.setAttribute('color', new THREE.BufferAttribute(colorArr, 3));
-        geo.setAttribute('size', new THREE.BufferAttribute(sizeArr, 1));
-
-        const mat = new THREE.PointsMaterial({
-            size: 0.1,
-            vertexColors: true,
-            transparent: true,
-            opacity: 0.8,
-            blending: THREE.AdditiveBlending,
-            depthWrite: false,
-            sizeAttenuation: true,
-        });
-
-        const points = new THREE.Points(geo, mat);
-        this.scene.add(points);
-
-        return { points, positions, lifeArr, particlesPerTorch };
-    }
-
-    animateTorchParticles(delta) {
-        if (!this.torchParticles) return;
-        const { points, positions, lifeArr, particlesPerTorch } = this.torchParticles;
-        const posAttr = points.geometry.attributes.position;
-        const colorAttr = points.geometry.attributes.color;
-
-        for (let i = 0; i < lifeArr.length; i++) {
-            lifeArr[i] += delta * (1.5 + Math.random() * 0.5);
-            if (lifeArr[i] > 1.0) {
-                lifeArr[i] = 0;
-                const torchIdx = Math.floor(i / particlesPerTorch);
-                const base = positions[torchIdx];
-                posAttr.setXYZ(i,
-                    base.x + (Math.random() - 0.5) * 0.15,
-                    base.y,
-                    base.z + (Math.random() - 0.5) * 0.15
-                );
-            }
-            const y = posAttr.getY(i);
-            posAttr.setY(i, y + delta * 0.4);
-            posAttr.setX(i, posAttr.getX(i) + (Math.random() - 0.5) * delta * 0.1);
-
-            const t = lifeArr[i];
-            colorAttr.setXYZ(i, 1.0, 0.3 + t * 0.5, t * 0.2);
-        }
-        posAttr.needsUpdate = true;
-        colorAttr.needsUpdate = true;
-        points.material.opacity = 0.7;
-    }
-
     animateAnimals(delta) {
         if (!this.animals) return;
         this.animals.forEach(animal => {
@@ -1105,36 +968,11 @@ class MedievalCastle3D {
 
     // ── Day/Night Cycle (60s = full day) ─────────────────
     updateDayNight(elapsed) {
-        // Real local time: sunrise 06:30, sunset 20:30 (user's timezone)
-        const now = new Date();
-        const hours = now.getHours() + now.getMinutes() / 60 + now.getSeconds() / 3600;
-
-        const SUNRISE = 6.5;   // 06:30
-        const SUNSET  = 20.5;  // 20:30
-        const DAWN_LEN = 1.0;  // 1h dawn transition
-        const DUSK_LEN = 1.0;  // 1h dusk transition
-
-        // Map real time to sun angle: noon = peak (PI/2), midnight = trough (-PI/2)
-        let sunAngle, mappedCycle;
-        if (hours >= SUNRISE && hours <= SUNSET) {
-            // Daytime: map sunrise..sunset to 0..0.5 cycle
-            mappedCycle = ((hours - SUNRISE) / (SUNSET - SUNRISE)) * 0.5;
-        } else {
-            // Nighttime: map sunset..sunrise(+24h) to 0.5..1.0 cycle
-            const nightLen = 24 - (SUNSET - SUNRISE);
-            const nightElapsed = hours > SUNSET ? hours - SUNSET : hours + (24 - SUNSET);
-            mappedCycle = 0.5 + (nightElapsed / nightLen) * 0.5;
-        }
-        sunAngle = mappedCycle * Math.PI * 2 - Math.PI / 2;
-
+        const cycle = (elapsed % 3600) / 3600; // 0-1 over 1 hour
+        const sunAngle = cycle * Math.PI * 2 - Math.PI / 2; // -π/2 to 3π/2
         const sunHeight = Math.sin(sunAngle);
         const isNight = sunHeight < -0.1;
-        // Dusk/dawn: smooth transition zones
-        const isDusk = (hours >= SUNSET - DUSK_LEN && hours <= SUNSET + 0.5) ||
-                       (hours >= SUNRISE - 0.5 && hours <= SUNRISE + DAWN_LEN);
-
-        // Store for other modules to read
-        this._dayNightState = { sunAngle, sunHeight, isNight, isDusk, mappedCycle };
+        const isDusk = sunHeight >= -0.1 && sunHeight < 0.15;
 
         // Move sun position
         if (this.sunLight) {
@@ -1188,7 +1026,7 @@ class MedievalCastle3D {
             const y = (-projected.y * 0.5 + 0.5) * rect.height;
 
             // Clamp to viewport bounds
-            if (projected.z > 1 || x < -50 || x > rect.width + 50 || y < -50 || y > rect.height + 50) {
+            if (projected.z > 1 || x < 20 || x > rect.width - 20 || y < 20 || y > rect.height - 60) {
                 label.style.display = 'none';
                 if (label._emojiEl) label._emojiEl.style.display = 'none';
             } else {
@@ -1224,11 +1062,11 @@ class MedievalCastle3D {
                 const x = (projected.x * 0.5 + 0.5) * rect.width;
                 const y = (-projected.y * 0.5 + 0.5) * rect.height;
                 // Hide if behind camera or outside viewport bounds
-                if (projected.z > 1 || x < -50 || x > rect.width + 50 || y < -50 || y > rect.height + 50) {
+                if (projected.z > 1 || x < 20 || x > rect.width - 20 || y < 20 || y > rect.height - 60) {
                     label.style.display = 'none';
                 } else {
                     label.style.display = '';
-                    label.style.left = Math.min(x, rect.width - 80) + 'px';
+                    label.style.left = Math.max(40, Math.min(x, rect.width - 80)) + 'px';
                     label.style.top = y + 'px';
                 }
             });
@@ -1276,37 +1114,9 @@ class MedievalCastle3D {
                     if (cd) cd._paused = true;
                 }
             }
-            // Building drag (edit mode only)
-            if (!this._dragTarget && this._editMode && this.buildingGroups) {
-                const buildingMeshes = [];
-                this.buildingGroups.forEach(g => g.traverse(c => { if (c.isMesh) buildingMeshes.push(c); }));
-                const bHits = this.raycaster.intersectObjects(buildingMeshes, false);
-                if (bHits.length > 0) {
-                    let bg = bHits[0].object;
-                    while (bg.parent && !bg.userData.buildingName) bg = bg.parent;
-                    const buildingRoot = bg.userData.buildingName ? bg : bg.parent;
-                    if (buildingRoot) {
-                        this._dragBuilding = buildingRoot;
-                        this._wasDragging = false;
-                        this.controls.enabled = false;
-                        container.style.cursor = 'grabbing';
-                    }
-                }
-            }
         });
 
         container.addEventListener('pointermove', (e) => {
-            // Building drag (edit mode)
-            if (this._dragBuilding) {
-                this._wasDragging = true;
-                const ndc = this.getMouseNDC(e);
-                this.raycaster.setFromCamera(ndc, this.camera);
-                if (this.raycaster.ray.intersectPlane(this._dragPlane, this._dragIntersect)) {
-                    this._dragBuilding.position.x = this._dragIntersect.x;
-                    this._dragBuilding.position.z = this._dragIntersect.z;
-                }
-                return;
-            }
             if (!this._dragTarget) return;
             this._wasDragging = true;
             const ndc = this.getMouseNDC(e);
@@ -1322,6 +1132,7 @@ class MedievalCastle3D {
                 const agentId = this._dragTarget.userData.agentId;
                 const cd = this.characterModels.get(agentId);
                 if (cd) {
+                    // Update waypoints to new position + generate new patrol area
                     const px = this._dragTarget.position.x;
                     const pz = this._dragTarget.position.z;
                     cd.waypoints = [
@@ -1335,22 +1146,10 @@ class MedievalCastle3D {
                     cd.nextWaypointIndex = 1;
                     cd.progress = 0;
                     cd._paused = false;
-                    // Persist position
-                    this.saveAgentPosition(agentId, px, pz);
                 }
                 this._dragTarget = null;
                 this.controls.enabled = true;
                 container.style.cursor = '';
-            }
-            // Building drag end (edit mode)
-            if (this._dragBuilding) {
-                const bg = this._dragBuilding;
-                const name = bg.userData.buildingName || '';
-                this.saveBuildingPosition(name, bg.position.x, bg.position.z);
-                this._dragBuilding = null;
-                this.controls.enabled = true;
-                container.style.cursor = '';
-                this.addActivityLog('🏗️ Moved ' + name + ' to new location', 'system');
             }
         });
 
@@ -1367,6 +1166,35 @@ class MedievalCastle3D {
             if (typeof openMissionControl === 'function') openMissionControl();
             else this.resetCamera();
         });
+    
+        // ── Arrow Key Camera Pan (desktop navigation) ──
+        const PAN_SPEED = 0.5;
+        const _panKeys = new Set();
+        document.addEventListener('keydown', (e) => {
+            if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) {
+                e.preventDefault();
+                _panKeys.add(e.key);
+            }
+        });
+        document.addEventListener('keyup', (e) => {
+            _panKeys.delete(e.key);
+        });
+        // Pan update in animation loop
+        const origAnimate = this.animate.bind(this);
+        this.animate = (ts) => {
+            if (_panKeys.size > 0) {
+                const dx = (_panKeys.has('ArrowRight') ? PAN_SPEED : 0) - (_panKeys.has('ArrowLeft') ? PAN_SPEED : 0);
+                const dz = (_panKeys.has('ArrowDown') ? PAN_SPEED : 0) - (_panKeys.has('ArrowUp') ? PAN_SPEED : 0);
+                if (this.controls && this.controls.target) {
+                    this.controls.target.x += dx;
+                    this.controls.target.z += dz;
+                    this.camera.position.x += dx;
+                    this.camera.position.z += dz;
+                    this.controls.update();
+                }
+            }
+            origAnimate(ts);
+        };
     }
 
     getMouseNDC(event) {
@@ -1549,34 +1377,6 @@ class MedievalCastle3D {
         overlay.style.display = 'flex';
         setTimeout(() => overlay.classList.add('visible'), 50);
 
-        // Wire chat button to open chat with agent-specific context
-        const chatBtn = document.getElementById('agentChatBtn');
-        if (chatBtn) {
-            chatBtn.onclick = () => {
-                overlay.classList.remove('visible');
-                setTimeout(() => { overlay.style.display = 'none'; }, 300);
-                const chatEl = document.getElementById('medievalChat');
-                if (chatEl) {
-                    chatEl.style.display = 'flex';
-                    chatEl.style.flexDirection = 'column';
-                }
-                // Update chat header to show which agent we're talking to
-                const chatTitle = chatEl?.querySelector('[style*="Royal Messenger"]') || 
-                                  chatEl?.querySelector('span');
-                if (chatTitle) chatTitle.textContent = '💬 Speaking to ' + agentId;
-                // Track active persona for message prefixing
-                window._chatPersona = agentId;
-                if (window.ThemeChat) {
-                    ThemeChat.show();
-                    // Focus the input — user types, message gets prefixed on send
-                    setTimeout(() => {
-                        const input = chatEl?.querySelector('.sk-chat-input');
-                        if (input) { input.placeholder = 'Speak to ' + agentId + '...'; input.focus(); }
-                    }, 300);
-                }
-            };
-        }
-
         this.addActivityLog(`Examining ${agentId}'s royal dossier`, agent.role);
     }
 
@@ -1584,23 +1384,7 @@ class MedievalCastle3D {
         const content = document.getElementById('agentDetailContent');
         const tab = this.currentDetailTab || 'overview';
 
-        // Pull real lifecycle data
-        const lc = window.MedievalLifecycle;
-        const state = lc ? lc.getAgentState(agentId) : null;
-        const personality = lc ? lc.getPersonality(agentId) : null;
-        const tod = lc ? lc.getTimeOfDay() : 'morning';
-        const routine = personality?.routines?.[tod];
-
         if (tab === 'overview') {
-            const moodPct = state ? Math.round(state.mood * 100) : 50;
-            const energyPct = state ? Math.round(state.energy * 100) : 50;
-            const moodColor = moodPct > 70 ? '#10b981' : moodPct > 35 ? '#f59e0b' : '#ef4444';
-            const energyColor = energyPct > 50 ? '#3b82f6' : energyPct > 20 ? '#f59e0b' : '#ef4444';
-            const moodLabel = state?.moodLabel || 'neutral';
-            const currentThought = state?.lastThought || routine?.thought || 'Contemplating...';
-            const currentEmoji = state?.currentEmoji || routine?.emoji || '⚔️';
-            const currentZone = routine?.zone || 'castle';
-
             content.innerHTML = `
                 <div style="margin-bottom:16px;">
                     <h4 style="font-family:var(--font-serif);color:var(--castle-navy);margin-bottom:8px;">Royal Duties</h4>
@@ -1609,88 +1393,21 @@ class MedievalCastle3D {
                     </p>
                 </div>
                 <div style="margin-bottom:16px;">
-                    <h4 style="font-family:var(--font-serif);color:var(--castle-navy);margin-bottom:8px;">💭 Current Thought</h4>
-                    <div style="background:rgba(255,255,255,0.4);border:1px solid var(--border-gold);border-radius:10px;padding:12px;display:flex;align-items:center;gap:10px;">
-                        <span style="font-size:24px;">${currentEmoji}</span>
-                        <span style="color:var(--castle-navy);font-style:italic;font-size:14px;">"${currentThought}"</span>
+                    <h4 style="font-family:var(--font-serif);color:var(--castle-navy);margin-bottom:8px;">Current Status</h4>
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <div class="status-dot ${agent.status}" style="width:12px;height:12px;"></div>
+                        <span style="color:var(--castle-navy);font-weight:500;text-transform:capitalize;">${agent.status}</span>
                     </div>
                 </div>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
-                    <div>
-                        <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--castle-brown);margin-bottom:4px;">
-                            <span>Mood: ${moodLabel}</span><span>${moodPct}%</span>
-                        </div>
-                        <div class="mood-bar"><div class="mood-bar-fill" style="width:${moodPct}%;background:${moodColor};"></div></div>
-                    </div>
-                    <div>
-                        <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--castle-brown);margin-bottom:4px;">
-                            <span>Energy</span><span>${energyPct}%</span>
-                        </div>
-                        <div class="mood-bar"><div class="mood-bar-fill" style="width:${energyPct}%;background:${energyColor};"></div></div>
-                    </div>
-                </div>
-                <div style="display:flex;gap:12px;font-size:12px;color:var(--castle-brown);">
-                    <span>📍 Zone: <b>${currentZone}</b></span>
-                    <span>🕐 Time: <b>${tod}</b></span>
-                    <span>⚡ Status: <b style="text-transform:capitalize;">${agent.status}</b></span>
+                <div>
+                    <h4 style="font-family:var(--font-serif);color:var(--castle-navy);margin-bottom:8px;">Recent Achievements</h4>
+                    <ul style="color:var(--castle-brown);font-size:13px;line-height:1.6;">
+                        <li>Completed ${Math.floor(Math.random() * 10 + 5)} royal missions</li>
+                        <li>Maintained ${Math.floor(Math.random() * 20 + 80)}% success rate</li>
+                        <li>Active for ${agent.metrics?.uptime || '2.5h'} in current session</li>
+                    </ul>
                 </div>
             `;
-        } else if (tab === 'thoughts') {
-            // Build thought history from lifecycle routines
-            const routines = personality?.routines || {};
-            const timeOrder = ['dawn', 'morning', 'midday', 'afternoon', 'dusk', 'night'];
-            const timeIcons = { dawn: '🌅', morning: '☀️', midday: '🌞', afternoon: '🌤️', dusk: '🌅', night: '🌙' };
-            
-            let thoughtsHtml = '<div class="thoughts-feed">';
-            
-            // Current thought (highlighted)
-            const currentThought = state?.lastThought || routine?.thought || '';
-            if (currentThought) {
-                thoughtsHtml += `
-                    <div class="thought-entry" style="background:rgba(255,215,0,0.1);border-radius:8px;padding:10px;margin-bottom:8px;">
-                        <div class="thought-emoji">${state?.currentEmoji || '💭'}</div>
-                        <div>
-                            <div class="thought-text" style="font-weight:600;">"${currentThought}"</div>
-                            <div style="font-size:11px;color:var(--castle-brown);opacity:0.7;margin-top:2px;">Now · ${tod} · Mood: ${state?.moodLabel || 'neutral'}</div>
-                        </div>
-                    </div>`;
-            }
-
-            thoughtsHtml += '<h4 style="font-family:var(--font-serif);color:var(--castle-navy);font-size:13px;margin:12px 0 8px;">Daily Routine</h4>';
-            
-            timeOrder.forEach(t => {
-                const r = routines[t];
-                if (!r) return;
-                const isNow = t === tod;
-                thoughtsHtml += `
-                    <div class="thought-entry" style="${isNow ? 'opacity:1;' : 'opacity:0.65;'}">
-                        <div class="thought-time">${timeIcons[t] || '⏰'}</div>
-                        <div class="thought-emoji">${r.emoji}</div>
-                        <div class="thought-text">"${r.thought}" <span style="font-size:11px;opacity:0.5;">· ${r.zone}</span></div>
-                    </div>`;
-            });
-
-            // Personality traits
-            const prefs = personality?.preferredZones?.join(', ') || '—';
-            const avoids = personality?.avoidZones?.join(', ') || '—';
-            thoughtsHtml += `
-                <h4 style="font-family:var(--font-serif);color:var(--castle-navy);font-size:13px;margin:16px 0 8px;">Character Traits</h4>
-                <div style="font-size:12px;color:var(--castle-brown);line-height:1.8;">
-                    <div>❤️ Prefers: <b>${prefs}</b></div>
-                    <div>💔 Avoids: <b>${avoids}</b></div>
-                    <div>🚶 Speed: <b>Day ${personality?.walkSpeedMod?.day || 1}x / Night ${personality?.walkSpeedMod?.night || 1}x</b></div>
-                    <div>⚡ Energy decay: <b>${personality?.energyDecay || '?'}/tick</b></div>
-                </div>
-            `;
-            thoughtsHtml += '</div>';
-            
-            // Add real transcript section (loaded async)
-            thoughtsHtml += '<div id="agent-transcript-feed" style="margin-top:16px;"><h4 style="font-family:var(--font-serif);color:var(--castle-navy);font-size:13px;margin-bottom:8px;">📜 Recent Royal Decrees</h4><div style="text-align:center;color:var(--castle-brown);font-size:12px;opacity:0.5;">Loading scrolls...</div></div>';
-            content.innerHTML = thoughtsHtml;
-
-            // Fetch real transcript
-            this.loadTranscriptForAgent(agentId);
-
         } else if (tab === 'metrics') {
             content.innerHTML = `
                 <div class="agent-metrics-grid">
@@ -1734,6 +1451,18 @@ class MedievalCastle3D {
             // Load real session data
             this.loadAgentSessions(agentId);
         }
+        } else if (tab === 'thoughts') {
+            content.innerHTML = `
+                <div>
+                    <h4 style="font-family:var(--font-serif);color:var(--castle-navy);margin-bottom:12px;">Royal Thoughts</h4>
+                    <div class="thoughts-feed" id="agentThoughtsFeed">
+                        <div style="color:var(--castle-brown);font-size:13px;text-align:center;padding:20px;">
+                            🔄 Reading the royal mind...
+                        </div>
+                    </div>
+                </div>
+            `;
+            this.loadAgentThoughts(agentId);
     }
 
     getAgentDescription(agentId) {
@@ -1791,149 +1520,30 @@ class MedievalCastle3D {
         }
     }
 
-    async loadTranscriptForAgent(agentId) {
-        const feed = document.getElementById('agent-transcript-feed');
-        if (!feed) return;
+    async loadAgentThoughts(agentId) {
         try {
-            const resp = await ThemeAuth.fetch(API_URL + '/api/oc/chat/transcript?last=10');
-            if (!resp.ok) { feed.innerHTML = ''; return; }
-            const data = await resp.json();
-            const msgs = data.messages || [];
-            if (!msgs.length) {
-                feed.innerHTML = '<h4 style="font-family:var(--font-serif);color:var(--castle-navy);font-size:13px;margin-bottom:8px;">📜 Recent Royal Decrees</h4><div style="text-align:center;color:var(--castle-brown);font-size:12px;padding:12px;">No recent scrolls found</div>';
-                return;
-            }
-            let html = '<h4 style="font-family:var(--font-serif);color:var(--castle-navy);font-size:13px;margin-bottom:8px;">📜 Recent Royal Decrees</h4><div class="thoughts-feed" style="max-height:180px;">';
-            msgs.forEach(m => {
-                const isUser = m.role === 'user';
-                const icon = isUser ? '👑' : '🤖';
-                const label = isUser ? 'Your Majesty' : 'Sycopa';
-                const time = m.ts ? new Date(m.ts).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : '';
-                const text = m.text.length > 200 ? m.text.substring(0, 200) + '...' : m.text;
-                html += `<div class="thought-entry">
-                    <div class="thought-emoji">${icon}</div>
-                    <div style="flex:1;min-width:0;">
-                        <div style="font-size:11px;color:var(--castle-brown);opacity:0.6;margin-bottom:2px;">${label} · ${time}</div>
-                        <div class="thought-text" style="font-size:12px;">${text.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
-                    </div>
-                </div>`;
-            });
-            html += '</div>';
-            feed.innerHTML = html;
-        } catch(e) {
-            feed.innerHTML = '';
-        }
-    }
-
-    // ── Position Persistence ─────────────────────────────────
-
-    saveAgentPosition(agentId, x, z) {
-        try {
-            const data = JSON.parse(localStorage.getItem('medieval-agent-positions') || '{}');
-            data[agentId] = { x: Math.round(x * 10) / 10, z: Math.round(z * 10) / 10 };
-            localStorage.setItem('medieval-agent-positions', JSON.stringify(data));
-        } catch(e) {}
-    }
-
-    loadAgentPositions() {
-        try {
-            return JSON.parse(localStorage.getItem('medieval-agent-positions') || '{}');
-        } catch(e) { return {}; }
-    }
-
-    saveBuildingPosition(name, x, z) {
-        try {
-            const data = JSON.parse(localStorage.getItem('medieval-building-positions') || '{}');
-            data[name] = { x: Math.round(x * 10) / 10, z: Math.round(z * 10) / 10 };
-            localStorage.setItem('medieval-building-positions', JSON.stringify(data));
-        } catch(e) {}
-    }
-
-    loadBuildingPositions() {
-        try {
-            return JSON.parse(localStorage.getItem('medieval-building-positions') || '{}');
-        } catch(e) { return {}; }
-    }
-
-    applyPersistedPositions() {
-        // Characters
-        const agentPos = this.loadAgentPositions();
-        for (const [agentId, pos] of Object.entries(agentPos)) {
-            const cd = this.characterModels?.get(agentId);
-            if (cd?.group) {
-                cd.group.position.x = pos.x;
-                cd.group.position.z = pos.z;
-                cd.waypoints = [
-                    { x: pos.x, z: pos.z },
-                    { x: pos.x + 2, z: pos.z + 1.5 },
-                    { x: pos.x - 1.5, z: pos.z + 2 },
-                ];
-            }
-        }
-        // Buildings
-        const buildPos = this.loadBuildingPositions();
-        if (this.buildingGroups) {
-            this.buildingGroups.forEach(bg => {
-                const name = bg.userData?.buildingName;
-                if (name && buildPos[name]) {
-                    bg.position.x = buildPos[name].x;
-                    bg.position.z = buildPos[name].z;
+            const resp = await ThemeAuth.fetch(API_URL + '/api/oc/chat');
+            if (resp.ok) {
+                const messages = await resp.json();
+                const feed = document.getElementById('agentThoughtsFeed');
+                if (!feed || this.currentDetailTab !== 'thoughts') return;
+                
+                const recent = (Array.isArray(messages) ? messages : []).slice(-20).reverse();
+                if (recent.length === 0) {
+                    feed.innerHTML = '<div style="text-align:center;color:var(--castle-brown);padding:40px;">\ud83d\udca4 The knight\'s mind is still...<br><small>No recent thoughts recorded</small></div>';
+                    return;
                 }
-            });
-        }
-    }
-
-    // ── Edit Mode ────────────────────────────────────────────
-
-    toggleEditMode() {
-        this._editMode = !this._editMode;
-        window._editMode = this._editMode;
-
-        // Toggle visual indicator
-        let banner = document.getElementById('edit-mode-banner');
-        if (this._editMode) {
-            if (!banner) {
-                banner = document.createElement('div');
-                banner.id = 'edit-mode-banner';
-                banner.style.cssText = 'position:fixed;top:40px;left:50%;transform:translateX(-50%);z-index:300;background:linear-gradient(135deg,#f59e0b,#d97706);color:#1a1a2e;padding:8px 24px;border-radius:20px;font-family:var(--font-medieval,serif);font-size:14px;font-weight:600;box-shadow:0 4px 16px rgba(0,0,0,0.3);display:flex;align-items:center;gap:12px;';
-                banner.innerHTML = '🏗️ Edit Mode — drag buildings & agents <button id="edit-mode-exit" style="background:#1a1a2e;color:#f59e0b;border:none;border-radius:12px;padding:4px 12px;cursor:pointer;font-size:12px;font-weight:600;">Save & Exit</button> <button id="edit-mode-reset" style="background:rgba(0,0,0,0.2);color:#1a1a2e;border:none;border-radius:12px;padding:4px 12px;cursor:pointer;font-size:12px;">Reset All</button>';
-                document.body.appendChild(banner);
-                document.getElementById('edit-mode-exit').addEventListener('click', () => this.toggleEditMode());
-                document.getElementById('edit-mode-reset').addEventListener('click', () => {
-                    localStorage.removeItem('medieval-agent-positions');
-                    localStorage.removeItem('medieval-building-positions');
-                    this.addActivityLog('🔄 All positions reset to defaults', 'system');
-                    location.reload();
-                });
+                feed.innerHTML = recent.map(function(m) {
+                    var time = m.timestamp ? new Date(m.timestamp).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'}) : '';
+                    var role = m.role === 'assistant' ? '\ud83d\udcad' : '\ud83d\udc51';
+                    var text = (m.content || m.text || '').substring(0, 200);
+                    return '<div class="thought-entry"><span class="thought-emoji">' + role + '</span><span class="thought-time">' + time + '</span><span class="thought-text">' + text + '</span></div>';
+                }).join('');
             }
-            banner.style.display = 'flex';
-            // Add glow to buildings
-            if (this.buildingGroups) {
-                this.buildingGroups.forEach(bg => {
-                    bg.traverse(c => {
-                        if (c.isMesh && c.material) {
-                            c._editOrigEmissive = c.material.emissiveIntensity || 0;
-                            c.material.emissive = c.material.emissive || new THREE.Color(0xffaa00);
-                            c.material.emissive.set(0xf59e0b);
-                            c.material.emissiveIntensity = 0.2;
-                        }
-                    });
-                });
-            }
-            this.addActivityLog('🏗️ Edit mode activated — drag to rearrange', 'system');
-        } else {
-            if (banner) banner.style.display = 'none';
-            // Remove building glow
-            if (this.buildingGroups) {
-                this.buildingGroups.forEach(bg => {
-                    bg.traverse(c => {
-                        if (c.isMesh && c.material && c._editOrigEmissive !== undefined) {
-                            c.material.emissiveIntensity = c._editOrigEmissive;
-                        }
-                    });
-                });
-            }
-            this.addActivityLog('✅ Edit mode saved', 'system');
+        } catch(e) {
+            console.warn('Failed to load thoughts:', e);
+            var feed = document.getElementById('agentThoughtsFeed');
+            if (feed) feed.innerHTML = '<div style="text-align:center;color:var(--castle-brown);padding:20px;">\u26a0 Could not commune with this knight.</div>';
         }
     }
 
@@ -2171,7 +1781,6 @@ class MedievalCastle3D {
                     // Update activity with real data
                     if (Date.now() - this.lastMetricsUpdate > 30000) { // Every 30s
                         this.addActivityLog(`Royal court status: ${totalSessions} sessions, ${(totalTokens/1000).toFixed(1)}k wisdom gathered`, 'Royal Herald');
-                        this.applyPersistedPositions();
                         this.lastMetricsUpdate = Date.now();
                     }
                 }
@@ -2220,27 +1829,12 @@ class MedievalCastle3D {
         }).join('');
     }
 
-    addActivityLog(msg, agent = 'system', ts = null, meta = null) {
+    addActivityLog(msg, agent = 'system', ts = null) {
         const c = document.getElementById('activity-log');
         const time = ts ? new Date(ts) : new Date();
         const item = document.createElement('div');
         item.className = 'activity-item';
-        // Make clickable if has agent context
-        const clickable = (agent && agent !== 'system') || (meta && meta.agentId);
-        if (clickable) {
-            item.style.cursor = 'pointer';
-            item.addEventListener('click', () => {
-                const targetAgent = meta?.agentId || agent;
-                if (targetAgent && this.agents.has(targetAgent)) {
-                    this.selectAgent(targetAgent);
-                } else if (meta?.action === 'chat') {
-                    const chatEl = document.getElementById('medievalChat');
-                    if (chatEl) { chatEl.style.display = 'flex'; chatEl.style.flexDirection = 'column'; }
-                    if (window.ThemeChat) ThemeChat.show();
-                }
-            });
-        }
-        item.innerHTML = `<div class="activity-time">${time.toLocaleTimeString()}</div><div class="activity-message">${agent !== 'system' ? `<span class="activity-agent">${agent}</span>: ` : ''}${msg}${clickable ? ' <span style="font-size:10px;opacity:0.4;">tap to view</span>' : ''}</div>`;
+        item.innerHTML = `<div class="activity-time">${time.toLocaleTimeString()}</div><div class="activity-message">${agent !== 'system' ? `<span class="activity-agent">${agent}</span>: ` : ''}${msg}</div>`;
         c.insertBefore(item, c.firstChild);
         while (c.children.length > 20) c.removeChild(c.lastChild);
     }
