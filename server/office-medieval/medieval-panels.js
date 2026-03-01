@@ -471,20 +471,27 @@
                 '<span>' + (connected ? '✅ Active' : '<span style="color:rgba(168,162,153,0.4);font-size:11px">Not configured</span>') + '</span>' +
                 '</div>';
         }).join('');
-        // Fetch real channel info from OC
-        (async function() {
-            try {
-                var fetcher = (typeof ThemeAuth !== 'undefined' && ThemeAuth.fetch) ? ThemeAuth.fetch.bind(ThemeAuth) : window.fetch.bind(window);
-                var resp = await fetcher('/api/oc/health');
-                if (resp.ok) {
-                    var data = await resp.json();
-                    var channels = data.channels || data.activeChannels || {};
-                    window._ocChannelInfo = channels;
-                    // Re-render if we got data
-                    if (Object.keys(channels).length > 0) renderSettings(container);
-                }
-            } catch(e) {}
-        })();
+        // Fetch real channel info from OC (only once per panel open, skip if already fetched)
+        if (!window._ocChannelFetched) {
+            window._ocChannelFetched = true;
+            (async function() {
+                try {
+                    var fetcher = (typeof ThemeAuth !== 'undefined' && ThemeAuth.fetch) ? ThemeAuth.fetch.bind(ThemeAuth) : window.fetch.bind(window);
+                    var resp = await fetcher('/api/oc/health');
+                    if (resp.ok) {
+                        var data = await resp.json();
+                        var channels = data.channels || data.activeChannels || {};
+                        window._ocChannelInfo = channels;
+                        // Re-render once with real data, reset fetch flag after
+                        if (Object.keys(channels).length > 0) {
+                            window._ocChannelFetched = false;
+                            renderSettings(container);
+                        }
+                    }
+                } catch(e) {}
+                window._ocChannelFetched = false;
+            })();
+        }
 
         container.innerHTML =
             '<div class="bp-section-title">⛪ Chapel — Royal Communications</div>' +
