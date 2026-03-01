@@ -880,14 +880,17 @@ const server = http.createServer(async (req, res) => {
       fs.writeFileSync(path.join(bpDir, '.vars.json'), JSON.stringify(vars, null, 2));
       
       // Run bootstrap.sh
-      const output = execSync(`bash "${path.join(bpDir, 'bootstrap.sh')}" "${workspace}" 2>&1`, {
-        timeout: 30000,
-        encoding: 'utf8',
-        env: { ...process.env, HOME: process.env.HOME }
-      });
-      
-      // Clean up vars file
-      try { fs.unlinkSync(path.join(bpDir, '.vars.json')); } catch(e) {}
+      let output = '';
+      try {
+        output = execSync(`bash "${path.join(bpDir, 'bootstrap.sh')}" "${workspace}" 2>&1`, {
+          timeout: 30000,
+          encoding: 'utf8',
+          env: { ...process.env, HOME: process.env.HOME }
+        });
+      } finally {
+        // Always clean up vars file (success or error)
+        try { fs.unlinkSync(path.join(bpDir, '.vars.json')); } catch(e) {}
+      }
       
       res.setHeader('Content-Type', 'application/json');
       res.writeHead(200);
