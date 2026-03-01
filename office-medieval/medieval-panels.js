@@ -233,8 +233,11 @@
                     body: JSON.stringify({ message: '/brainstorm ' + q })
                 });
                 var data = await resp.json();
-                // Save result
-                saveBrainstorm(q + ' → ' + (data.reply || data.text || data.response || 'Sent to agent').substring(0, 100));
+                // Extract content from OpenAI-format response
+                var reply = (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content)
+                    ? data.choices[0].message.content
+                    : (data.reply || data.text || data.response || 'Sent to agent');
+                saveBrainstorm(q + ' → ' + reply.substring(0, 120));
             } catch(e) {
                 saveBrainstorm(q + ' → [Queued — agent will respond shortly]');
             }
