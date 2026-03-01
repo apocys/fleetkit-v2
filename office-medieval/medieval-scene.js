@@ -1487,7 +1487,7 @@ class MedievalCastle3D {
 
             // Load real session data
             this.loadAgentSessions(agentId);
-        }
+
         } else if (tab === 'thoughts') {
             content.innerHTML = `
                 <div>
