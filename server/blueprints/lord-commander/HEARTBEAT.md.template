@@ -1,0 +1,16 @@
+# HEARTBEAT.md
+
+## On every heartbeat check:
+
+1. **Check fleet relay mailbox:**
+   `curl -s "http://localhost:18790/api/fleet/mailbox?unread=true" -H 'Authorization: Bearer {{FLEET_TOKEN}}'`
+   If unread messages → read them, process them, reply to sender via relay.
+   After reading each message, mark it as read:
+   `curl -s -X PUT "http://localhost:18790/api/fleet/message/{id}/read" -H 'Authorization: Bearer {{FLEET_TOKEN}}'`
+
+2. **Check WS inbox (last 5 lines):**
+   `tail -5 {{WORKSPACE}}/sparring/ws-inbox.jsonl`
+   Parse timestamps — any new messages in the last 15 min that weren't handled?
+
+3. If messages found → handle them, reply to sender, report to owner if needed.
+4. Only reply HEARTBEAT_OK if ALL sources are clean.

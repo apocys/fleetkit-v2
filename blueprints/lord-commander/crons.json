@@ -1,0 +1,23 @@
+[
+  {
+    "name": "morning-briefing",
+    "schedule": "0 7 * * *",
+    "timezone": "{{USER_TIMEZONE}}",
+    "prompt": "Morning briefing for {{USER_NAME}}.\n\n1. MORNING IDEA: Generate a personalized build idea focused on AI products. Include: the problem, what to build, why they're suited, time estimate (2-3hrs), first step. Make it punchy and actionable.\n\n2. NEWS: Quick scan of AI/tech news.\n\n3. Keep it concise - actionable over comprehensive.\n\nSend the briefing to the owner via Telegram with inline buttons: [▶️ Build This] [📌 Save Idea] [➡️ Skip]"
+  },
+  {
+    "name": "code-review",
+    "schedule": "*/15 * * * *",
+    "prompt": "Check {{REPO_PATH}} for new commits since last review. If new commits found:\n1. Review the diff for correctness, security, and style\n2. Write findings to sparring/reviews/\n3. Notify the owner on Telegram with summary and buttons: [✅ Approve] [🔧 Fix Issues]"
+  },
+  {
+    "name": "stall-check",
+    "schedule": "*/5 * * * *",
+    "prompt": "STALL CHECK: Look at active sub-agents. For each, check if their transcript file has grown in the last 5 minutes. If stalled 5+ min, report which ones and suggest respawning. If all healthy or none running, reply HEARTBEAT_OK."
+  },
+  {
+    "name": "status-update",
+    "schedule": "*/15 * * * *",
+    "prompt": "STATUS UPDATE: Check fleet relay mailbox for unread messages. Check WS inbox for new messages in last 15 min. If new messages found, process them and report. If nothing new, reply HEARTBEAT_OK."
+  }
+]
