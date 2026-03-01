@@ -869,7 +869,11 @@ const server = http.createServer(async (req, res) => {
       const fs = require('fs');
       const path = require('path');
       const { execSync } = require('child_process');
-      const bpDir = path.join(BLUEPRINTS_DIR, body.blueprintId);
+      // Sanitise blueprintId: alphanumeric + hyphens only, no path traversal
+      const safeId = String(body.blueprintId).replace(/[^a-zA-Z0-9_-]/g, '');
+      if (!safeId || safeId !== body.blueprintId) { res.writeHead(400, {'Content-Type':'application/json'}); res.end(JSON.stringify({error:'Invalid blueprint id'})); return; }
+      const bpDir = path.join(BLUEPRINTS_DIR, safeId);
+      if (!bpDir.startsWith(BLUEPRINTS_DIR)) { res.writeHead(400, {'Content-Type':'application/json'}); res.end(JSON.stringify({error:'Invalid blueprint path'})); return; }
       if (!fs.existsSync(bpDir)) { res.writeHead(404, {'Content-Type':'application/json'}); res.end(JSON.stringify({error:'Blueprint not found'})); return; }
       
       const vars = body.variables || {};
