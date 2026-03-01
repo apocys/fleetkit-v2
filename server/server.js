@@ -920,20 +920,20 @@ const server = http.createServer(async (req, res) => {
               cronResults.push({ name: cron.name, status: 'skipped', reason: 'no REPO_PATH' });
               continue;
             }
-            // Build openclaw cron add command
-            const args = ['openclaw', 'cron', 'add', '--name', JSON.stringify(name), '--message', JSON.stringify(prompt), '--json'];
+            // Build openclaw cron add command — use spawnSync (no shell) to prevent injection
+            const { spawnSync } = require('child_process');
+            const spawnArgs = ['cron', 'add', '--name', name, '--message', prompt, '--session', 'main', '--json'];
             if (schedule.startsWith('*/') || schedule.match(/^[0-9*,/\s]+$/)) {
-              args.push('--cron', JSON.stringify(schedule));
+              spawnArgs.push('--cron', schedule);
             }
-            if (tz) args.push('--tz', JSON.stringify(tz));
-            // Session: morning-briefing goes to main, stall/status go to main, code-review to main
-            args.push('--session', 'main');
+            if (tz) spawnArgs.push('--tz', tz);
             try {
-              const cronOut = execSync(args.join(' '), { timeout: 10000, encoding: 'utf8' });
-              const cronData = JSON.parse(cronOut);
+              const cronResult = spawnSync('openclaw', spawnArgs, { timeout: 10000, encoding: 'utf8' });
+              if (cronResult.error) throw cronResult.error;
+              const cronData = JSON.parse(cronResult.stdout);
               cronResults.push({ name: cron.name, status: 'registered', id: cronData.id });
             } catch(ce) {
-              cronResults.push({ name: cron.name, status: 'failed', error: ce.message.slice(0, 100) });
+              cronResults.push({ name: cron.name, status: 'failed', error: (ce.message || String(ce)).slice(0, 100) });
             }
           }
         } catch(cronErr) {
