@@ -291,6 +291,8 @@
             
             if (data.ok) {
                 state.result = data;
+                var cronCount = (data.crons || []).filter(function(c) { return c.status === 'registered'; }).length;
+                if (statusEl) statusEl.textContent = (med ? 'Champion forged! ' + cronCount + ' heralds deployed.' : 'Done! ' + cronCount + ' crons registered.');
                 setTimeout(nextStep, 1500);
             } else {
                 if (statusEl) {
@@ -317,7 +319,7 @@
             '<div class="sw-feature"><span class="sw-feature-check">✅</span> ' + (med ? 'Battle commands ready (/mission, /brainstorm)' : 'Slash commands ready (/mission, /brainstorm)') + '</div>' +
             '<div class="sw-feature"><span class="sw-feature-check">✅</span> 4 quality skills installed</div>' +
             '<div class="sw-feature"><span class="sw-feature-check">✅</span> ' + (med ? 'Ancient wisdom bestowed (memory)' : 'Starter memory with best practices') + '</div>' +
-            '<div class="sw-feature"><span class="sw-feature-check">✅</span> ' + (med ? 'Morning heralds & review sentinels ready' : 'Morning briefings & code reviews configured') + '</div>' +
+            '<div class="sw-feature"><span class="sw-feature-check">✅</span> ' + (med ? 'Morning heralds & review sentinels registered' : 'Morning briefings & code reviews auto-registered') + '</div>' +
             '<div class="sw-feature"><span class="sw-feature-check">✅</span> Telegram inline buttons enabled</div>' +
             '</div>' +
             '</div>' +

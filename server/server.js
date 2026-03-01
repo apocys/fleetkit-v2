@@ -896,12 +896,58 @@ const server = http.createServer(async (req, res) => {
         try { fs.unlinkSync(path.join(bpDir, '.vars.json')); } catch(e) {}
       }
       
+      // Auto-register crons from crons.json
+      const cronsFile = path.join(bpDir, 'crons.json');
+      const cronResults = [];
+      if (fs.existsSync(cronsFile)) {
+        try {
+          const crons = JSON.parse(fs.readFileSync(cronsFile, 'utf8'));
+          for (const cron of crons) {
+            // Substitute variables in prompts and schedule
+            let prompt = cron.prompt || '';
+            let name = cron.name || 'unnamed';
+            let schedule = cron.schedule || '';
+            let tz = cron.timezone || '';
+            for (const [k, v] of Object.entries(vars)) {
+              const re = new RegExp('\\{\\{' + k + '\\}\\}', 'g');
+              prompt = prompt.replace(re, v);
+              name = name.replace(re, v);
+              schedule = schedule.replace(re, v);
+              tz = tz.replace(re, v);
+            }
+            // Skip code-review cron if no repo configured
+            if (cron.name === 'code-review' && (!vars.REPO_PATH || vars.REPO_PATH.trim() === '')) {
+              cronResults.push({ name: cron.name, status: 'skipped', reason: 'no REPO_PATH' });
+              continue;
+            }
+            // Build openclaw cron add command
+            const args = ['openclaw', 'cron', 'add', '--name', JSON.stringify(name), '--message', JSON.stringify(prompt), '--json'];
+            if (schedule.startsWith('*/') || schedule.match(/^[0-9*,/\s]+$/)) {
+              args.push('--cron', JSON.stringify(schedule));
+            }
+            if (tz) args.push('--tz', JSON.stringify(tz));
+            // Session: morning-briefing goes to main, stall/status go to main, code-review to main
+            args.push('--session', 'main');
+            try {
+              const cronOut = execSync(args.join(' '), { timeout: 10000, encoding: 'utf8' });
+              const cronData = JSON.parse(cronOut);
+              cronResults.push({ name: cron.name, status: 'registered', id: cronData.id });
+            } catch(ce) {
+              cronResults.push({ name: cron.name, status: 'failed', error: ce.message.slice(0, 100) });
+            }
+          }
+        } catch(cronErr) {
+          cronResults.push({ name: 'parse', status: 'failed', error: cronErr.message.slice(0, 100) });
+        }
+      }
+
       res.setHeader('Content-Type', 'application/json');
       res.writeHead(200);
       res.end(JSON.stringify({ 
         ok: true, 
         workspace,
         output: output.split('\n').filter(l => l.trim()).slice(-15),
+        crons: cronResults,
         message: `Blueprint '${body.blueprintId}' applied to ${workspace}`
       }));
     } catch(e) {
