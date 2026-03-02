@@ -352,7 +352,7 @@
         var shown = Math.min(skills.length, 5);
         for (var i = 0; i < shown; i++) {
           var s = skills[i];
-          var sname = s.name || s.title || String(s);
+          var sname = s.name || s.id || s.title || String(s);
           var sdesc = s.description || s.desc || 'Click to see details';
           items.appendChild(makeConnectorItem('⚡', escMc(sname), '', sdesc));
         }
