@@ -3614,6 +3614,9 @@
             var orchOl = document.getElementById("orchestrationOverlay"); if (orchOl) orchOl.classList.remove("open");
             var addOl = document.getElementById("addAgentOverlay"); if (addOl) addOl.classList.remove("open");
             document.body.style.overflow = '';
+            if (window.SetupWizard && typeof window.SetupWizard.close === 'function') window.SetupWizard.close();
+            if (window.SkillForge && typeof window.SkillForge.close === 'function') window.SkillForge.close();
+            if (window.SkillMarketplace && typeof window.SkillMarketplace.close === 'function') window.SkillMarketplace.close();
         };
 
         /* ── Window API: expose all panel functions globally ── */
