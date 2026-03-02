@@ -14,6 +14,9 @@ if [ "$CURRENT" != "$LAST" ]; then
     rsync -a --delete "$REPO/server/" "$LIVE/" \
         --exclude='sync.sh' --exclude='auto-sync.sh' \
         --exclude='node_modules/' --exclude='*.log'
+    rsync -a --delete "$REPO/office-medieval/" "$LIVE/office-medieval/" 2>/dev/null || true
+    rsync -a --delete "$REPO/office-executive/" "$LIVE/office-executive/" 2>/dev/null || true
+    rsync -a --delete "$REPO/lib/" "$LIVE/lib/" 2>/dev/null || true
     echo "$CURRENT" > "$STAMP_FILE"
     echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) Deployed $CURRENT" >> /tmp/deploy.log
     
