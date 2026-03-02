@@ -1,143 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <style>
-      /* Option A: Hide everything until auth resolves. Prevents overlay chaos. */
-      body.sk-auth-pending { visibility: hidden; }
-      body.sk-auth-pending .dw-overlay,
-      body.sk-auth-pending #sk-auth-overlay,
-      body.sk-auth-pending .sk-ob-overlay { visibility: visible; }
-    .cron-overlay.open { z-index: 10001 !important; }
-    
-    /* ── Typing dots animation ── */
-    .typing-dots {
-        display: flex;
-        align-items: center;
-        gap: 4px;
-        padding: 4px 0;
-    }
-    .typing-dots span {
-        display: inline-block;
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        background: var(--exec-blue, #0a84ff);
-        opacity: 0.4;
-        animation: typingBounce 1.4s infinite ease-in-out both;
-    }
-    .typing-dots span:nth-child(1) { animation-delay: 0s; }
-    .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
-    .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
-    @keyframes typingBounce {
-        0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
-        40% { transform: scale(1); opacity: 1; }
-    }
-
-    </style>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SpawnKit — Executive Office</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css">
-    <link rel="stylesheet" href="mission-desk.css">
-    <script>
-    // Global error tracking
-    window.addEventListener('error', function(e) {
-      console.error('[GLOBAL ERROR]', e.filename + ':' + e.lineno, e.message);
-    });
-    window.addEventListener('unhandledrejection', function(e) {
-      console.error('[UNHANDLED PROMISE]', e.reason);
-    });
-    // Log all fetch calls
-    (function() {
-      var origFetch = window.fetch;
-      window.fetch = function(url, opts) {
-        var method = (opts && opts.method) || 'GET';
-        console.log('[fetch]', method, typeof url === 'string' ? url : url.url);
-        return origFetch.apply(this, arguments).then(function(resp) {
-          if (!resp.ok) console.warn('[fetch]', resp.status, typeof url === 'string' ? url : url.url);
-          return resp;
-        }).catch(function(err) {
-          console.error('[fetch FAIL]', typeof url === 'string' ? url : url.url, err.message);
-          throw err;
-        });
-      };
-    })();
-    </script>
+    <link rel="stylesheet" href="exec-styles.css">
 </head>
-<body class="sk-auth-pending">
-
-    <!-- ═══ Onboarding Wizard ═══ -->
-    <dialog id="onboardingWizard" aria-modal="true" aria-label="Welcome to SpawnKit">
-      <div class="ob-inner">
-        <div class="ob-dots" aria-label="Step indicator">
-          <span class="ob-dot ob-dot-active" id="obDot0"></span>
-          <span class="ob-dot" id="obDot1"></span>
-          <span class="ob-dot" id="obDot2"></span>
-        </div>
-
-        <!-- Step 1: Welcome -->
-        <div class="ob-step" id="obStep0">
-          <div class="ob-icon">🏢</div>
-          <h2 class="ob-title">Welcome to Your AI Office</h2>
-          <p class="ob-desc">SpawnKit gives you a visual command center for your AI team. Think of it like a virtual office where AI agents work for you.</p>
-          <div class="ob-actions ob-actions-right">
-            <button class="ob-btn ob-btn-primary" id="obNext0">Get Started →</button>
-          </div>
-        </div>
-
-        <!-- Step 2: Connect -->
-        <div class="ob-step ob-step-hidden" id="obStep1">
-          <div class="ob-icon">🔗</div>
-          <h2 class="ob-title">Connect Your AI</h2>
-          <p class="ob-desc">Your agents need an AI brain to think. Pick a provider and sign in — it only takes a few seconds.</p>
-
-          <div class="ob-provider-cards">
-            <button class="ob-provider-card" id="obConnectClaude" onclick="window.open('https://console.anthropic.com/login', '_blank')">
-              <div class="ob-provider-icon">🟣</div>
-              <div class="ob-provider-info">
-                <strong>Claude (Anthropic)</strong>
-                <span>Best for reasoning & writing</span>
-              </div>
-              <span class="ob-provider-arrow">→</span>
-            </button>
-            <button class="ob-provider-card" id="obConnectOpenAI" onclick="window.open('https://platform.openai.com/login', '_blank')">
-              <div class="ob-provider-icon">🟢</div>
-              <div class="ob-provider-info">
-                <strong>GPT (OpenAI)</strong>
-                <span>Best for code & general tasks</span>
-              </div>
-              <span class="ob-provider-arrow">→</span>
-            </button>
-          </div>
-
-          <p class="ob-hint" style="margin-top:16px;text-align:center;color:#888;font-size:12px;">You'll sign in with your existing account. No API keys needed — we handle the connection securely.</p>
-
-          <div class="ob-actions ob-actions-split" style="margin-top:20px;">
-            <button class="ob-btn ob-btn-secondary" id="obBack1">← Back</button>
-            <button class="ob-btn ob-btn-primary" id="obNext1">Continue →</button>
-          </div>
-        </div>
-
-        <!-- Step 3: All Set -->
-        <div class="ob-step ob-step-hidden" id="obStep2">
-          <div class="ob-icon">✅</div>
-          <h2 class="ob-title">You're All Set!</h2>
-          <p class="ob-desc">Your AI office is ready. Here's what you can do:</p>
-          <ul class="ob-feature-list">
-            <li><span>💬</span><span><strong>Chat</strong> — Talk to your CEO agent in real-time</span></li>
-            <li><span>📅</span><span><strong>Crons</strong> — See your scheduled tasks</span></li>
-            <li><span>🧠</span><span><strong>Memory</strong> — Your agent's long-term knowledge</span></li>
-            <li><span>🎯</span><span><strong>Missions</strong> — Assign tasks to your team</span></li>
-          </ul>
-          <div class="ob-actions ob-actions-right">
-            <button class="ob-btn ob-btn-primary" id="obEnter">Enter Your Office →</button>
-          </div>
-        </div>
-      </div>
-    </dialog>
+<body>
 
     <!-- ═══ Ambient Background ═══ -->
     <div class="exec-backdrop" aria-hidden="true"></div>
@@ -150,7 +22,7 @@
     <!-- ═══ SVG Avatar Definitions (hidden, referenced by use) ═══ -->
     <svg xmlns="http://www.w3.org/2000/svg" style="display:none">
         <defs>
-            <!-- ── Sycopa: Tech CEO with glasses ── -->
+            <!-- ── ApoMac: Tech CEO with glasses ── -->
             <symbol id="avatar-ceo" viewBox="0 0 48 48">
                 <circle cx="24" cy="24" r="24" fill="#007AFF"/>
                 <circle cx="24" cy="20" r="10" fill="#F5D6B8"/>
@@ -280,7 +152,7 @@
         <div class="exec-floor" id="gridView" role="tabpanel" aria-labelledby="tabGrid">
 
             <!-- ── CEO Room ────────────────────────────── -->
-            <div class="exec-room exec-room--ceo" role="button" tabindex="0" aria-label="CEO Office — Sycopa" data-agent="ceo">
+            <div class="exec-room exec-room--ceo" role="button" tabindex="0" aria-label="CEO Office — ApoMac" data-agent="ceo">
                 <span class="exec-room-label">CEO Office</span>
                 <div class="ceo-content">
                     <div class="agent-avatar agent-avatar--lg" aria-hidden="true">
@@ -288,12 +160,22 @@
                         <span class="agent-status-dot agent-status-dot--active" aria-label="Active"></span>
                     </div>
                     <div class="ceo-info">
-                        <span class="agent-name">👑 Sycopa</span>
+                        <span class="agent-name">👑 ApoMac</span>
                         <span class="agent-role">Chief Executive Officer</span>
-                        <span style="font-size:9px;font-weight:700;color:#FFD60A;text-transform:uppercase;letter-spacing:0.8px;">Team Lead · Always Active</span>
+                        <span style="font-size:9px;font-weight:700;color:#FFD60A;text-transform:uppercase;letter-spacing:0.8px;">Orchestrator · Non-decommissionable</span>
                     </div>
                 </div>
-                <!-- Buttons removed: Inbox → Mission Control Chat, Orchestration → dispersed to Settings/Mission Control -->
+                <div class="ceo-actions-stack" style="position:absolute; top:12px; right:20px; display:flex; flex-direction:column; gap:6px; z-index:2;">
+                    <button class="ceo-mailbox" aria-label="Open mailbox — 3 unread messages" id="mailboxBtn" style="position:relative; top:auto; right:auto;">
+                        <span class="ceo-mailbox-icon" aria-hidden="true">📬</span>
+                        <span>Inbox</span>
+                        <span class="ceo-mailbox-badge" id="mailboxBadge">3</span>
+                    </button>
+                    <button class="ceo-mailbox ceo-orchestration-btn" aria-label="Open orchestration panel" id="orchestrationBtn" style="position:relative; top:auto; right:auto; background: linear-gradient(135deg, var(--exec-blue-muted), rgba(88, 86, 214, 0.15)); border: 1px solid rgba(0, 122, 255, 0.2);">
+                        <span class="ceo-mailbox-icon" aria-hidden="true">🎛️</span>
+                        <span>Orchestration</span>
+                    </button>
+                </div>
 
                 <!-- CEO Detail (hidden by default) -->
                 <div class="agent-detail" id="detail-ceo">
@@ -482,10 +364,20 @@
                     <span class="statusbar-item-icon" aria-hidden="true">⚡</span>
                     <span id="statusSystem">All systems nominal</span>
                 </div>
+                <div class="statusbar-separator" aria-hidden="true"></div>
+                <div class="statusbar-item" id="statusTodoItem">
+                    <span class="statusbar-item-icon" aria-hidden="true">📝</span>
+                    <span id="statusTodoCount">0 TODOs</span>
+                </div>
             </div>
             <div id="connectedIndicator" class="statusbar-item" style="display:none;">
                 <span class="statusbar-dot" style="background:#30D158;box-shadow:0 0 6px rgba(48,209,88,0.5)" aria-hidden="true"></span>
                 <span id="connectedLabel">Connected</span>
+            </div>
+            <div id="updateBanner" class="statusbar-update" style="display:none;" aria-label="Update available">
+                <span class="statusbar-update-dot" aria-hidden="true"></span>
+                <span id="updateText">Update available</span>
+                <button id="updateBtn" class="statusbar-update-btn" aria-label="Update now">Update</button>
             </div>
             <button class="statusbar-action" id="missionsBtn" aria-label="Missions">
                 <span class="statusbar-action-icon" aria-hidden="true">🎯</span>
@@ -515,8 +407,10 @@
                 <span class="statusbar-action-icon" aria-hidden="true">🎨</span>
                 <span>Themes</span>
             </button>
-            <!-- Add Agent: moved to agent fleet grid (circle button inline with agents) -->
-            <button class="statusbar-action" id="addAgentBtn" aria-label="Add Agent" style="display:none;" hidden></button>
+            <button class="statusbar-action" id="addAgentBtn" aria-label="Add Agent" style="background:linear-gradient(135deg, rgba(48,209,88,0.12), rgba(0,122,255,0.08)); border-color:rgba(48,209,88,0.3);">
+                <span class="statusbar-action-icon" aria-hidden="true">➕</span>
+                <span>Add Agent</span>
+            </button>
             <div class="exec-command-input">
                 <input
                     type="text"
@@ -599,12 +493,33 @@
 
             <!-- Activity Tab Content -->
             <div class="comm-tab-content" id="activityTabContent">
-                <div class="activity-tab-content" id="activityFeedList">
+                <div class="activity-tab-content" id="activityTabContent">
                     <div class="activity-item">
-                        <span class="activity-icon">⏳</span>
+                        <span class="activity-icon">🤖</span>
                         <div class="activity-content">
-                            <div class="activity-text">Loading activity…</div>
-                            <div class="activity-time"></div>
+                            <div class="activity-text">Forge spawned sub-agent for optimization task</div>
+                            <div class="activity-time">5 minutes ago</div>
+                        </div>
+                    </div>
+                    <div class="activity-item">
+                        <span class="activity-icon">📅</span>
+                        <div class="activity-content">
+                            <div class="activity-text">Morning brief cron executed</div>
+                            <div class="activity-time">2 hours ago</div>
+                        </div>
+                    </div>
+                    <div class="activity-item">
+                        <span class="activity-icon">✅</span>
+                        <div class="activity-content">
+                            <div class="activity-text">Sentinel audit passed (Grade A)</div>
+                            <div class="activity-time">3 hours ago</div>
+                        </div>
+                    </div>
+                    <div class="activity-item">
+                        <span class="activity-icon">🔄</span>
+                        <div class="activity-content">
+                            <div class="activity-text">Fleet relay connected</div>
+                            <div class="activity-time">8 hours ago</div>
                         </div>
                     </div>
                 </div>
@@ -638,14 +553,14 @@
     <div class="meeting-overlay" id="meetingOverlay" role="dialog" aria-modal="true" aria-labelledby="meetingTitle">
         <div class="meeting-backdrop" id="meetingBackdrop"></div>
         <div class="meeting-panel">
-            <div class="meeting-header" style="padding:16px 24px;border-bottom:1px solid var(--border-subtle);display:flex;align-items:center;gap:12px;">
-                <button class="meeting-close" id="meetingClose" aria-label="Close meeting panel" style="background:var(--bg-tertiary);border:1px solid var(--border-subtle);border-radius:8px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;color:var(--text-secondary);">←</button>
-                <div class="meeting-title" id="meetingTitle" style="flex:1;font-size:18px;font-weight:700;">
+            <div class="meeting-header">
+                <div class="meeting-title" id="meetingTitle">
                     <span aria-hidden="true">🏛️</span>
                     Executive Boardroom
                 </div>
+                <button class="meeting-close" id="meetingClose" aria-label="Close meeting panel">×</button>
             </div>
-            <div class="meeting-content" id="meetingContent" style="flex:1;overflow-y:auto;padding:24px;max-width:900px;margin:0 auto;width:100%;">
+            <div class="meeting-content" id="meetingContent">
                 <!-- Content populated by JS -->
             </div>
         </div>
@@ -729,26 +644,12 @@
     <div class="cron-overlay" id="missionsOverlay" role="dialog" aria-modal="true" aria-label="Missions">
         <div class="cron-backdrop" id="missionsBackdrop"></div>
         <div class="cron-panel">
-            <div class="cron-header" style="flex-wrap:wrap;gap:8px;">
-                <div class="cron-title" style="flex:1;">
+            <div class="cron-header">
+                <div class="cron-title">
                     <span aria-hidden="true">🎯</span>
                     Active Missions
                 </div>
-                <button id="newMissionBtn" style="padding:6px 14px;border-radius:8px;border:none;background:var(--exec-blue);color:white;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;">+ New Mission</button>
                 <button class="cron-close" id="missionsClose" aria-label="Close">×</button>
-            </div>
-            <div id="newMissionForm" style="display:none;padding:16px 20px;border-bottom:1px solid var(--border-subtle);background:var(--bg-tertiary);">
-                <div style="font-size:13px;font-weight:600;color:var(--text-primary);margin-bottom:8px;">🚀 New Mission</div>
-                <textarea id="newMissionInput" rows="3" placeholder="Describe the mission... e.g. Research the top 5 stablecoin competitors and summarize their reserve strategies" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid var(--border-medium);border-radius:10px;font-size:13px;font-family:inherit;resize:none;background:var(--bg-primary);color:var(--text-primary);"></textarea>
-                <div style="display:flex;gap:8px;margin-top:10px;align-items:center;">
-                    <select id="newMissionModel" style="padding:6px 10px;border:1px solid var(--border-medium);border-radius:8px;font-size:12px;font-family:inherit;background:var(--bg-primary);color:var(--text-secondary);cursor:pointer;">
-                        <option value="sonnet">Sonnet (fast)</option>
-                        <option value="opus">Opus (deep)</option>
-                    </select>
-                    <div style="flex:1;"></div>
-                    <button id="cancelMissionBtn" style="padding:6px 14px;border-radius:8px;border:1px solid var(--border-medium);background:transparent;color:var(--text-secondary);font-size:12px;font-weight:500;cursor:pointer;font-family:inherit;">Cancel</button>
-                    <button id="launchMissionBtn" style="padding:6px 14px;border-radius:8px;border:none;background:linear-gradient(135deg,#30D158,#007AFF);color:white;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;">🚀 Launch</button>
-                </div>
             </div>
             <div class="cron-body" id="missionsBody">
                 <div class="cron-empty">Loading missions…</div>
@@ -757,19 +658,18 @@
     </div>
 
     <!-- ═══ Settings Panel (NEW #3 + NEW #5) ═══ -->
-    <div class="detail-overlay" id="settingsOverlay" role="dialog" aria-modal="true" aria-label="Settings">
-        <div class="detail-backdrop" id="settingsBackdrop"></div>
-        <div class="detail-panel" style="width:440px;">
-            <div class="detail-hero" style="padding:20px 24px 16px;">
-                <div style="width:48px;height:48px;border-radius:50%;background:var(--exec-blue);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">⚙️</div>
-                <div class="detail-hero-info" style="flex:1;">
-                    <div class="detail-hero-name">Settings</div>
-                    <div class="detail-hero-role">Configuration & Preferences</div>
+    <div class="cron-overlay" id="settingsOverlay" role="dialog" aria-modal="true" aria-label="Settings">
+        <div class="cron-backdrop" id="settingsBackdrop"></div>
+        <div class="cron-panel" style="max-width:500px;">
+            <div class="cron-header">
+                <div class="cron-title">
+                    <span aria-hidden="true">⚙️</span>
+                    Settings
                 </div>
-                <button class="detail-close" id="settingsClose" aria-label="Close">×</button>
+                <button class="cron-close" id="settingsClose" aria-label="Close">×</button>
             </div>
-            <div class="detail-body" id="settingsBody" style="padding:16px 24px;overflow-y:auto;flex:1;">
-                <div style="color:var(--text-tertiary);font-size:13px;">Loading settings…</div>
+            <div class="cron-body" id="settingsBody">
+                <div class="cron-empty">Loading settings…</div>
             </div>
         </div>
     </div>
@@ -809,7 +709,7 @@
     </div>
 
     <!-- ═══ Add Agent Wizard ═══ -->
-    <div class="chat-history-overlay" id="addAgentOverlay" role="dialog" aria-modal="true" aria-label="Add Agent Wizard" style="z-index:10001;">
+    <div class="chat-history-overlay" id="addAgentOverlay" role="dialog" aria-modal="true" aria-label="Add Agent Wizard" style="z-index:300;">
         <div class="chat-history-backdrop" id="addAgentBackdrop"></div>
         <div class="chat-history-modal" style="max-width:440px; max-height:85vh; height:auto;">
             <div class="chat-history-header">
@@ -861,89 +761,44 @@
     <!-- ═══════════════════════════════════════════════════
          JavaScript — Interactions & State Bridge
          ═══════════════════════════════════════════════════ -->
-
-
-    <!-- ═══ Local OpenClaw Relay Config + Core App ═══ -->
-    <!-- theme-auth.js DISABLED for Executive: it has its own auth (auth.js + deploy-wizard.js) -->
-    <!-- <script src="../lib/theme-auth.js"></script> -->
-    <script src="deploy-wizard.js"></script>
-    <script src="onboarding.js"></script>
-    <script src="auth.js"></script>
-    <script src="app.js"></script>
-    <script src="./src/data-bridge.js?v=2"></script>
-
-    <!-- ═══ Main App Logic ═══ -->
-    <script src="main.js"></script>
-
-    <!-- ═══ Mission Desk — Chat-First UI ═══ -->
-    <script src="mission-desk.js"></script>
-    <script src="swarm-ui.js"></script>
+    <!-- ═══ Local OpenClaw Relay Config ═══ -->
+    <script src="gateway-detect.js"></script>
+    <script src="./src/data-bridge.js"></script>
+    <script src="app-init.js"></script>
 
     <!-- Fleet client disabled: relay endpoints not yet deployed. Re-enable when fleet.spawnkit.ai/api/fleet/* is live -->
-    <!-- <script src="./src/fleet-client.js"></script> -->
-    <!-- <script src="./src/fleet-bootstrap.js"></script> -->
 
     <!-- ═══ Add Agent Wizard Logic ═══ -->
-    <script src="agents.js?v=3"></script>
+    <script src="agent-wizard.js"></script>
 
     <!-- ═══ Orchestration Panel Logic ═══ -->
-    <script src="orchestration.js"></script>
+    <script src="relay-bridge.js"></script>
 
+    <!-- ═══════════════════════════════════════════════════
+         F13+F14: CEO Mission Control — Full-Screen Panel
+         ═══════════════════════════════════════════════════ -->
 
-    <!-- Mission Control HTML (Claude Cowork layout) -->
-    <link rel="stylesheet" href="mc-layout.css">
-    <link rel="stylesheet" href="panel-fix.css">
-    <link rel="stylesheet" href="polish.css">
+    <!-- Mission Control HTML -->
     <div class="mc-overlay" id="missionControlOverlay">
-
-        <!-- LEFT SIDEBAR -->
-        <div class="mc-sidebar-left" id="mcSideLeft">
-            <!-- mc-sidebar-left.js renders + wires the action buttons dynamically -->
-            <div class="mc-sl-section-label">Recent</div>
-            <div class="mc-sl-history" id="mcHistoryList"></div>
-            <div class="mc-sl-footer" id="mcUserFooter"></div>
-        </div>
-
-        <!-- CENTER PANEL -->
-        <div class="mc-center" id="mcCenter">
-            <div class="mc-center-tabs" id="mcCenterTabs">
-                <button class="mc-tab active" data-tab="chat">Chat</button>
-                <button class="mc-tab" data-tab="orchestration">Orchestration</button>
-                <button class="mc-tab" data-tab="remote">Remote</button>
+        <div class="mc-header">
+            <button class="mc-back" id="mcBack">← Fleet</button>
+            <div class="mc-title">
+                👑 <span id="mcCeoName">ApoMac</span> — Mission Control
+                <span class="mc-title-badge">Orchestrator</span>
             </div>
-            <div class="mc-center-title" id="mcCenterTitle"></div>
-            <div class="mc-center-body" id="mcCenterBody"></div>
-            <div class="mc-center-input" id="mcCenterInput">
-                <textarea id="mcChatInput" placeholder="Reply..." rows="1"></textarea>
-                <div class="mc-input-bar">
-                    <button class="mc-attach-btn" id="mcAttach">+</button>
-                    <div class="mc-input-right">
-                        <span class="mc-model-label" id="mcModelLabel">Opus 4.6 <span class="mc-model-chevron">⌄</span></span>
-                        <button class="mc-send-btn" id="mcSend">↑</button>
-                    </div>
-                </div>
-            </div>
-            <div class="mc-center-disclaimer">AI can make errors. Please verify responses.</div>
         </div>
-
-        <!-- RIGHT SIDEBAR -->
-        <div class="mc-sidebar-right" id="mcSideRight">
-            <div class="mc-sr-section" id="mcProgression"></div>
-            <div class="mc-sr-section" id="mcFiles"></div>
-            <div class="mc-sr-section" id="mcContext"></div>
+        <div class="mc-body">
+            <!-- Left: Progression -->
+            <div class="mc-col" id="mcLeftCol"></div>
+            <!-- Center: Activity Feed -->
+            <div class="mc-col" id="mcCenterCol"></div>
+            <!-- Right: Context -->
+            <div class="mc-col" id="mcRightCol"></div>
         </div>
+        <div class="mc-statusbar" id="mcStatusBar"></div>
     </div>
 
-
-    <!-- ═══ CEO Mission Control JS (modular) ═══ -->
-    <script src="mc-sidebar-left.js"></script>
-    <script src="mc-center.js"></script>
-    <script src="mc-sidebar-right.js"></script>
-    <script src="mc-core.js"></script>
-    <script src="skill-forge.js"></script>
-    <script src="use-case-explorer.js"></script>
-    <script src="skill-marketplace.js"></script>
-
+    <script src="mc-wiring.js"></script>
 
     <!-- ═══ Theme Picker Overlay ═══ -->
     <div class="theme-picker-overlay" id="themePickerOverlay">
@@ -982,68 +837,12 @@
         </div>
     </div>
 
+    <script src="live-agents.js"></script>
 
-
-    <!-- Activate Agent Modal -->
-    <div id="activateAgentModal" role="dialog" aria-modal="true" aria-label="Activate Agent">
-        <div class="activate-modal-backdrop" id="activateModalBackdrop"></div>
-        <div class="activate-modal-card">
-
-            <!-- Step 1: Skill Picker -->
-            <div class="activate-step active" id="activateStep1">
-                <div class="activate-modal-header">
-                    <div class="activate-modal-title" id="activateModalTitle">Activate Agent</div>
-                    <div class="activate-modal-subtitle">Pick up to 3 skills for this agent</div>
-                </div>
-                <div id="activateRecommendedSection">
-                    <div class="activate-section-label" id="activateRecommendedLabel">Recommended</div>
-                    <div class="skill-chips-row" id="activateRecommendedChips"></div>
-                </div>
-                <div class="activate-section-label">All Skills</div>
-                <div class="skill-chips-row" id="activateAllChips"></div>
-                <div class="activate-skill-counter">Selected: <span id="activateSelectedCount">0</span>/3</div>
-                <div class="activate-modal-actions">
-                    <button class="activate-btn-primary" id="activateModalConfirm">Activate →</button>
-                    <button class="activate-btn-later" id="activateModalLater">Cancel</button>
-                </div>
-            </div>
-
-            <!-- Step 2: Confirmation -->
-            <div class="activate-step" id="activateStep2">
-                <div style="text-align:center; padding: 8px 0 4px;">
-                    <div class="activate-confirm-icon">✅</div>
-                    <div class="activate-confirm-title" id="activateConfirmTitle">Agent Activated!</div>
-                    <div class="activate-confirm-equipped">Your agent is now equipped with:</div>
-                    <ul class="activate-confirm-skills" id="activateConfirmSkillsList"></ul>
-                    <div class="activate-confirm-desc" id="activateConfirmDesc"></div>
-                </div>
-                <div class="activate-modal-actions" style="margin-top: 20px;">
-                    <button class="activate-btn-primary" id="activateStartConvo">Start a Conversation →</button>
-                    <button class="activate-btn-later" id="activateModalClose">Close</button>
-                </div>
-            </div>
-
-        </div>
-    </div>
+    <!-- Mission Desk (Kira fix 2026-02-28) -->
+    <link rel="stylesheet" href="mission-desk.css">
+    <script src="mission-desk.js"></script>
     <script src="channel-onboarding.js"></script>
-    <script src="setup-wizard.js"></script>
-
-    <!-- Creator Profile Overlay -->
-    <div id="creatorProfileOverlay" class="cron-overlay">
-      <div class="cron-backdrop" onclick="if(typeof closeCreatorProfile==='function')closeCreatorProfile()"></div>
-      <div class="cron-panel">
-        <div class="cron-header">
-          <span>👤 Creator Profile</span>
-          <button class="cron-close" onclick="if(typeof closeCreatorProfile==='function')closeCreatorProfile()">✕</button>
-        </div>
-        <div class="cron-body" id="creatorProfileContent">
-          <div style="padding:32px;text-align:center;color:#8E8E93;">
-            <div style="font-size:48px;margin-bottom:16px;">👤</div>
-            <div style="font-size:17px;font-weight:600;color:#F2F2F7;margin-bottom:8px;">Creator Profile</div>
-            <div style="font-size:13px;line-height:1.5;">Build your agent creator identity.<br>Share agents, earn reputation, get discovered.<br><br><span style="color:#636366;font-size:12px;">Coming soon — SpawnKit v2</span></div>
-          </div>
-        </div>
-      </div>
-    </div>
+    <script src="feature-toolbar.js"></script>
 </body>
 </html>
