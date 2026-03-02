@@ -3617,6 +3617,8 @@
             if (window.SetupWizard && typeof window.SetupWizard.close === 'function') window.SetupWizard.close();
             if (window.SkillForge && typeof window.SkillForge.close === 'function') window.SkillForge.close();
             if (window.SkillMarketplace && typeof window.SkillMarketplace.close === 'function') window.SkillMarketplace.close();
+            var dbOl = document.getElementById('dailyBriefOverlay'); if (dbOl) dbOl.remove();
+            document.querySelectorAll('.uce-overlay').forEach(function(el) { el.remove(); });
         };
 
         /* ── Window API: expose all panel functions globally ── */
