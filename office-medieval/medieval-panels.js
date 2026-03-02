@@ -10,6 +10,8 @@
         '🔨 Forge Workshop':{ icon: '🔨', title: 'Skill Forge',      render: renderForge },
         '🏪 Market':       { icon: '🏪', title: 'Skill Marketplace', render: renderMarket },
         '🏠 Chapel':       { icon: '🏠', title: 'Settings',         render: renderSettings },
+        '📜 Scriptorium':  { icon: '📜', title: 'Scheduled Quests', render: renderScriptorium },
+        '🗺️ Memory Tower': { icon: '🗺️', title: 'Memory Archives', render: renderMemoryTower },
         '🏰 Rookery':      { icon: '🐦‍⬛', title: 'Allied Kingdoms',  render: function(c) { if (window.renderAlliedKingdoms) window.renderAlliedKingdoms(c); else c.innerHTML = '<div class="bp-empty">Rookery module not loaded.</div>'; } },
     };
 
@@ -572,7 +574,146 @@
         }
     }
 
-    // ── Utility ─────────────────────────────────────────────────────────
+    // ── Render: Scriptorium (Cron Jobs) ────────────────────────────────
+    function renderScriptorium(container) {
+        container.innerHTML = '<div class="bp-section-title">📜 Scheduled Quests</div>' +
+            '<div id="bp-cron-list"><div class="bp-empty">Consulting the scrolls…</div></div>';
+        var list = document.getElementById('bp-cron-list');
+        var fetcher = (typeof ThemeAuth !== 'undefined' && ThemeAuth.fetch)
+            ? ThemeAuth.fetch.bind(ThemeAuth) : window.fetch.bind(window);
+
+        fetcher('/api/oc/crons').then(function(r) { return r.json(); }).then(function(data) {
+            var crons = data.jobs || data.crons || (Array.isArray(data) ? data : []);
+            if (!crons.length) {
+                list.innerHTML = '<div class="bp-empty">No scheduled quests found.<br><span style="font-size:11px;">Crons defined in OpenClaw will appear here.</span></div>';
+                return;
+            }
+            list.innerHTML = '';
+            crons.forEach(function(c) {
+                var card = document.createElement('div');
+                card.className = 'bp-card';
+                var status = c.status || (c.enabled === true ? 'active' : c.enabled === false ? 'paused' : 'unknown');
+                if (c.state && c.state.lastStatus === 'error') status = 'error';
+                var icon = status === 'active' ? '⏰' : status === 'error' ? '❌' : '⏸️';
+                var sched = humanCronMedieval(c.schedule);
+                var nextMs = (c.state && c.state.nextRunAtMs) || c.nextRun;
+                var next = nextMs ? new Date(nextMs).toLocaleString('en-GB', {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '—';
+                var lastRun = c.state && c.state.lastRunAtMs ? new Date(c.state.lastRunAtMs).toLocaleString('en-GB', {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '—';
+
+                card.innerHTML = '<div class="bp-row">' +
+                    '<span style="font-size:16px">' + icon + '</span>' +
+                    '<div style="flex:1">' +
+                    '<div style="font-size:13px;color:#f4e4bc">' + esc(c.name || c.id || 'Unnamed Quest') + '</div>' +
+                    '<div style="font-size:11px;color:rgba(168,162,153,0.7)">' + esc(sched) + '</div>' +
+                    '</div>' +
+                    '<span class="bp-tag" style="' + (status === 'active' ? 'background:rgba(76,175,80,0.2);color:#4caf50;border-color:rgba(76,175,80,0.3)' : status === 'error' ? 'background:rgba(244,67,54,0.2);color:#f44336;border-color:rgba(244,67,54,0.3)' : '') + '">' + esc(status) + '</span>' +
+                    '</div>';
+
+                var detail = document.createElement('div');
+                detail.className = 'bp-detail';
+                detail.style.display = 'none';
+                detail.innerHTML = '<div style="margin-top:6px;font-size:11px;">' +
+                    '<div>Next: ' + esc(next) + '</div>' +
+                    '<div>Last: ' + esc(lastRun) + '</div>' +
+                    (c.owner ? '<div>Owner: ' + esc(c.owner) + '</div>' : '') +
+                    (c.payload ? '<div style="margin-top:4px;color:rgba(201,169,89,0.6);white-space:pre-wrap;word-break:break-word;">' + esc(String(c.payload).substring(0, 200)) + '</div>' : '') +
+                    '</div>';
+                card.appendChild(detail);
+                card.addEventListener('click', function() {
+                    var open = detail.style.display !== 'none';
+                    detail.style.display = open ? 'none' : 'block';
+                    card.classList.toggle('bp-expanded', !open);
+                });
+                list.appendChild(card);
+            });
+        }).catch(function() {
+            list.innerHTML = '<div class="bp-empty">Could not reach the scriptorium.</div>';
+        });
+    }
+
+    function humanCronMedieval(schedule) {
+        if (!schedule) return '\u2014';
+        if (typeof schedule === 'object') {
+            if (schedule.cron || schedule.expr) return humanCronMedieval(schedule.cron || schedule.expr);
+            if (schedule.every) return 'Every ' + schedule.every;
+            return JSON.stringify(schedule);
+        }
+        var s = String(schedule);
+        var map = {
+            '*/5 * * * *': 'Every 5 min', '*/15 * * * *': 'Every 15 min',
+            '*/30 * * * *': 'Every 30 min', '0 * * * *': 'Every hour',
+            '0 */2 * * *': 'Every 2h', '0 */6 * * *': 'Every 6h',
+            '0 9 * * *': 'Daily 9:00', '0 8 * * *': 'Daily 8:00',
+            '0 8 * * 1-5': 'Weekdays 8:00', '0 0 * * *': 'Midnight',
+            '0 9 * * 1': 'Mon 9:00', '30 6 * * *': 'Daily 6:30',
+            '0 0,6,12,18 * * *': 'Every 6h', '0 6,14,22 * * *': '3x daily (CET)'
+        };
+        return map[s] || s;
+    }
+
+    // ── Render: Memory Tower ────────────────────────────────────────────
+    function renderMemoryTower(container) {
+        container.innerHTML = '<div class="bp-section-title">🗺️ Memory Archives</div>' +
+            '<div id="bp-memory-content"><div class="bp-empty">Opening the archives…</div></div>';
+        var content = document.getElementById('bp-memory-content');
+        var fetcher = (typeof ThemeAuth !== 'undefined' && ThemeAuth.fetch)
+            ? ThemeAuth.fetch.bind(ThemeAuth) : window.fetch.bind(window);
+
+        fetcher('/api/oc/memory').then(function(r) { return r.json(); }).then(function(data) {
+            var memText = data.content || data.memory || data.text || '';
+            if (typeof data === 'string') memText = data;
+            if (!memText) {
+                content.innerHTML = '<div class="bp-empty">The archives are empty.<br><span style="font-size:11px;">MEMORY.md content will appear here.</span></div>';
+                return;
+            }
+            // Parse markdown sections
+            var sections = memText.split(/^## /m);
+            var html = '';
+            sections.forEach(function(sec, i) {
+                if (i === 0 && !sec.trim()) return;
+                if (i === 0) {
+                    var lines = sec.trim().split('\n');
+                    var title = lines[0].replace(/^#\s*/, '');
+                    html += '<div style="font-size:14px;color:#f4e4bc;font-weight:600;margin-bottom:12px;font-family:Crimson Text,serif;">' + esc(title) + '</div>';
+                    return;
+                }
+                var lines = sec.split('\n');
+                var heading = lines[0].trim();
+                var body = lines.slice(1).join('\n').trim();
+                var truncated = body.length > 300;
+                var preview = truncated ? body.substring(0, 300) + '\u2026' : body;
+
+                html += '<div class="bp-card bp-mem-card">' +
+                    '<div class="bp-row" style="justify-content:space-between">' +
+                    '<strong style="font-size:12px;color:rgba(201,169,89,0.9)">' + esc(heading) + '</strong>' +
+                    (truncated ? '<span class="bp-tag" style="font-size:9px">expand</span>' : '') +
+                    '</div>' +
+                    '<div class="bp-detail bp-mem-preview" style="display:block;margin-top:6px;font-size:11px;color:rgba(168,162,153,0.7);white-space:pre-wrap;word-break:break-word;line-height:1.4;">' +
+                    esc(preview) +
+                    '</div>' +
+                    (truncated ? '<div class="bp-detail bp-mem-full" style="display:none;margin-top:6px;font-size:11px;color:rgba(168,162,153,0.7);white-space:pre-wrap;word-break:break-word;line-height:1.4;">' + esc(body) + '</div>' : '') +
+                    '</div>';
+            });
+            content.innerHTML = html || '<div class="bp-empty">Archives parsed but empty.</div>';
+
+            content.querySelectorAll('.bp-mem-card').forEach(function(card) {
+                var full = card.querySelector('.bp-mem-full');
+                if (!full) return;
+                var preview = card.querySelector('.bp-mem-preview');
+                var tag = card.querySelector('.bp-tag');
+                card.addEventListener('click', function() {
+                    var showing = full.style.display !== 'none';
+                    full.style.display = showing ? 'none' : 'block';
+                    preview.style.display = showing ? 'block' : 'none';
+                    if (tag) tag.textContent = showing ? 'expand' : 'collapse';
+                });
+            });
+        }).catch(function() {
+            content.innerHTML = '<div class="bp-empty">Could not access the archives.</div>';
+        });
+    }
+
+        // ── Utility ─────────────────────────────────────────────────────────
     function esc(str) {
         return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
     }
@@ -585,6 +726,8 @@
         { name: '🔨 Forge Workshop',x: 10,  z: 20 },
         { name: '🏪 Market',        x: 6,   z: 26 },
         { name: '🏠 Chapel',        x: -8,  z: 26 },
+        { name: '📜 Scriptorium',  x: -14, z: 24 },
+        { name: '🗺️ Memory Tower', x: 14,  z: 24 },
     ];
 
     function patchBuildingClick(app) {

@@ -50,6 +50,12 @@
         { key: '8', icon: '🏰', label: 'Allies', action: function() {
             if (typeof window.openBuildingPanel === 'function') window.openBuildingPanel('🏰 Rookery');
         }},
+        { key: '9', icon: '📜', label: 'Crons', action: function() {
+            if (typeof window.openBuildingPanel === 'function') window.openBuildingPanel('📜 Scriptorium');
+        }},
+        { key: '0', icon: '🗺️', label: 'Memory', action: function() {
+            if (typeof window.openBuildingPanel === 'function') window.openBuildingPanel('🗺️ Memory Tower');
+        }},
     ];
     items.forEach(function(item) {
         var slot = document.createElement('div');
