@@ -110,8 +110,8 @@
         '<button class="md-action" data-action="marketplace"><span class="md-action-icon">🏪</span><span class="md-action-label">Marketplace</span></button>' +
         '<button class="md-action" data-action="profile"><span class="md-action-icon">👤</span><span class="md-action-label">Creator Profile</span></button>' +
       '</div>' +
-      (window.__skDemoMode ? '<div class="md-cta-wrapper" style="margin:16px 0 0;text-align:center;">' : '') +
-        (window.__skDemoMode ? '<button class="md-action md-cta-primary" data-action="deploy" style="width:100%;padding:14px;font-size:14px;font-weight:600;background:linear-gradient(135deg,var(--exec-blue,#007AFF),#5856D6);color:#fff;border:none;border-radius:12px;cursor:pointer;transition:all 0.2s;box-shadow:0 4px 16px rgba(0,122,255,0.3);">' +
+      ((window.__skDemoMode && !localStorage.getItem('spawnkit-token')) ? '<div class="md-cta-wrapper" style="margin:16px 0 0;text-align:center;">' : '') +
+        ((window.__skDemoMode && !localStorage.getItem('spawnkit-token')) ? '<button class="md-action md-cta-primary" data-action="deploy" style="width:100%;padding:14px;font-size:14px;font-weight:600;background:linear-gradient(135deg,var(--exec-blue,#007AFF),#5856D6);color:#fff;border:none;border-radius:12px;cursor:pointer;transition:all 0.2s;box-shadow:0 4px 16px rgba(0,122,255,0.3);">' +
           '<span class="md-action-icon" style="margin-right:8px;">🚀</span><span class="md-action-label">Get Started</span>' +
         '</button>' +
       '</div>' +

@@ -175,6 +175,9 @@
             localStorage.setItem('spawnkit-instance-url', url);
             localStorage.setItem('spawnkit-api-token', tok);
             localStorage.setItem('spawnkit-token', tok); // Also set for auth.js
+            // Clear demo mode when connecting to real instance
+            localStorage.removeItem('spawnkit-demo-mode');
+            window.__skDemoMode = false;
             status.innerHTML = '<div class="dw-msg dw-msg-success">✅ Connected! ' + data.length + ' sessions found. Reloading…</div>';
             setTimeout(function() { location.reload(); }, 1200);
           });
