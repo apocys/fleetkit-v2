@@ -178,24 +178,13 @@
               if (Array.isArray(data)) {
                 console.log('[Auth] ✅ Verified — ' + data.length + ' sessions');
                 localStorage.setItem('spawnkit-connected-once', '1');
+                // Show connected indicator (element in index.html)
+                var ci = document.getElementById('connectedIndicator');
+                if (ci) { ci.style.display = 'flex'; }
+                var cl = document.getElementById('connectedLabel');
+                if (cl) { cl.textContent = 'Connected · ' + data.length + ' sessions'; }
                 callback();
                 window.dispatchEvent(new Event('skAuthResolved'));
-                // Show connected indicator in statusbar
-                (function() {
-                  var bar = document.querySelector('.exec-statusbar .statusbar-info');
-                  if (bar && !document.getElementById('sk-connected-indicator')) {
-                    var sep = document.createElement('div');
-                    sep.className = 'statusbar-separator';
-                    sep.setAttribute('aria-hidden', 'true');
-                    var item = document.createElement('div');
-                    item.className = 'statusbar-item';
-                    item.id = 'sk-connected-indicator';
-                    item.style.cssText = 'color:#30d158;font-weight:500;gap:5px;';
-                    item.innerHTML = '<span style="width:6px;height:6px;border-radius:50%;background:#30d158;display:inline-block;box-shadow:0 0 4px #30d158;flex-shrink:0;"></span><span>Connected · ' + data.length + ' sessions</span>';
-                    bar.appendChild(sep);
-                    bar.appendChild(item);
-                  }
-                })();
               } else {
                 console.error('[Auth] Invalid response, not an array');
                 throw new Error('invalid');
