@@ -177,8 +177,25 @@
             return resp.json().then(function(data) {
               if (Array.isArray(data)) {
                 console.log('[Auth] ✅ Verified — ' + data.length + ' sessions');
+                localStorage.setItem('spawnkit-connected-once', '1');
                 callback();
                 window.dispatchEvent(new Event('skAuthResolved'));
+                // Show connected indicator in statusbar
+                (function() {
+                  var bar = document.querySelector('.exec-statusbar .statusbar-info');
+                  if (bar && !document.getElementById('sk-connected-indicator')) {
+                    var sep = document.createElement('div');
+                    sep.className = 'statusbar-separator';
+                    sep.setAttribute('aria-hidden', 'true');
+                    var item = document.createElement('div');
+                    item.className = 'statusbar-item';
+                    item.id = 'sk-connected-indicator';
+                    item.style.cssText = 'color:#30d158;font-weight:500;gap:5px;';
+                    item.innerHTML = '<span style="width:6px;height:6px;border-radius:50%;background:#30d158;display:inline-block;box-shadow:0 0 4px #30d158;flex-shrink:0;"></span><span>Connected · ' + data.length + ' sessions</span>';
+                    bar.appendChild(sep);
+                    bar.appendChild(item);
+                  }
+                })();
               } else {
                 console.error('[Auth] Invalid response, not an array');
                 throw new Error('invalid');
@@ -193,11 +210,25 @@
         })
         .catch(function(err) {
           console.error('[Auth] Connection failed:', err.message || err);
-          localStorage.removeItem(STORAGE_KEY);
-          localStorage.removeItem('spawnkit-instance-url');
-          localStorage.removeItem('spawnkit-api-token');
-          window.__skAuthResolve = callback;
-          showOverlay();
+          // IMPORTANT: Only clear token on explicit auth failure, NOT on network timeout.
+          // Network flakiness (AbortError, TypeError: fetch failed) should show "Reconnecting"
+          // not wipe the token and force full re-auth.
+          var isNetworkError = !err.message || err.name === 'AbortError' ||
+            err.message.includes('fetch') || err.message.includes('network') ||
+            err.message.includes('timeout') || err.message.includes('Failed to fetch');
+          if (isNetworkError && localStorage.getItem('spawnkit-connected-once')) {
+            // Transient error — keep token, show reconnecting state, retry in 10s
+            console.warn('[Auth] Network error — keeping token, retrying in 10s');
+            document.body.classList.remove('sk-auth-pending');
+            window.dispatchEvent(new CustomEvent('skAuthReconnecting'));
+            setTimeout(function() { window.skAuthReady(callback); }, 10000);
+          } else {
+            localStorage.removeItem(STORAGE_KEY);
+            localStorage.removeItem('spawnkit-instance-url');
+            localStorage.removeItem('spawnkit-api-token');
+            window.__skAuthResolve = callback;
+            showOverlay();
+          }
         });
     } else if (window.__skDemoMode) {
       // Demo mode: no token needed, boot straight in

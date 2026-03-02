@@ -171,6 +171,27 @@
   }
 
   /* ── Chat Tab ───────────────────────────────────────────────────── */
+  function isSystemMessage(m) {
+    // Filter out heartbeats, system prompts, internal signals
+    if (!m) return false;
+    var role = String(m.role || '').toLowerCase();
+    if (role === 'system') return true;
+    var content = m.content || '';
+    if (Array.isArray(content)) content = content.map(function(c){ return c.text || c.content || ''; }).join(' ');
+    var c = String(content).trim();
+    if (!c) return true;
+    var systemPatterns = [
+      'HEARTBEAT_OK', 'NO_REPLY', 'Read HEARTBEAT.md',
+      '[System Message]', 'A scheduled reminder has been triggered',
+      'STATUS UPDATE FOR KIRA', 'STALL CHECK', 'MANDATORY CHECKS',
+      'Handle this reminder internally', 'cron-event'
+    ];
+    for (var i = 0; i < systemPatterns.length; i++) {
+      if (c.indexOf(systemPatterns[i]) !== -1) return true;
+    }
+    return false;
+  }
+
   function renderMessages(messages) {
     if (!messages || !messages.length) {
       elBody.innerHTML = '<div class="mc-empty" style="padding:48px 24px;">' +
@@ -182,6 +203,7 @@
     var html = '';
     for (var i = 0; i < messages.length; i++) {
       var m = messages[i];
+      if (isSystemMessage(m)) continue;
       var role = String(m.role || 'assistant').toUpperCase();
       var content = m.content || '';
       if (Array.isArray(content)) {
@@ -415,10 +437,16 @@
         elBody.innerHTML = html;
       })
       .catch(function () {
-        elBody.innerHTML = '<div class="mc-empty mc-empty--placeholder">' +
-          '<span class="mc-remote-icon">📡</span><br>' +
-          'Fleet relay not reachable.<br>' +
-          '<small>Start fleet-relay to see remote connections.</small></div>';
+        elBody.innerHTML = '<div class="mc-empty mc-empty--placeholder" style="padding:48px 24px;text-align:center;">' +
+          '<div style="font-size:40px;margin-bottom:16px;">🌐</div>' +
+          '<div style="font-size:15px;font-weight:600;color:var(--mc-text-primary,#1c1c1e);margin-bottom:8px;">No remote offices connected</div>' +
+          '<div style="font-size:13px;color:var(--mc-text-dim,#8e8e93);line-height:1.6;max-width:280px;margin:0 auto 20px;">' +
+          'Set up Fleet Relay to connect remote OpenClaw instances and collaborate across machines.' +
+          '</div>' +
+          '<a href="https://docs.openclaw.ai/fleet-relay" target="_blank" rel="noopener" ' +
+          'style="display:inline-block;padding:8px 18px;background:rgba(0,122,255,0.1);border:1px solid rgba(0,122,255,0.25);' +
+          'border-radius:8px;color:#007aff;font-size:13px;font-weight:500;text-decoration:none;">' +
+          '📖 Fleet Relay Setup Guide</a></div>';
       });
   }
 
