@@ -218,6 +218,27 @@
         .mc-statusbar-item { display: flex; align-items: center; gap: 4px; }
         .mc-statusbar-dot { width: 6px; height: 6px; border-radius: 50%; }
 
+        /* MC Chat bar */
+        .mc-chat-bar {
+            display: flex; align-items: center; gap: 8px; padding: 10px 20px;
+            background: rgba(10,10,20,0.95); border-top: 1px solid rgba(201,169,89,0.2);
+            flex-shrink: 0;
+        }
+        .mc-chat-input {
+            flex: 1; background: rgba(255,255,255,0.06); border: 1px solid rgba(168,162,153,0.25);
+            border-radius: 8px; padding: 8px 12px; color: #f4e4bc; font-size: 13px;
+            font-family: 'Crimson Text', serif; outline: none; transition: border-color 0.2s;
+        }
+        .mc-chat-input:focus { border-color: rgba(201,169,89,0.5); }
+        .mc-chat-input::placeholder { color: rgba(168,162,153,0.4); }
+        .mc-chat-send {
+            background: rgba(201,169,89,0.15); border: 1px solid rgba(201,169,89,0.4);
+            color: rgba(201,169,89,0.9); border-radius: 8px; padding: 8px 14px;
+            cursor: pointer; font-size: 13px; transition: all 0.2s; flex-shrink: 0;
+        }
+        .mc-chat-send:hover { background: rgba(201,169,89,0.25); }
+        .mc-chat-send:disabled { opacity: 0.4; cursor: not-allowed; }
+
         /* Status pulse animation */
         @keyframes statusPulse {
             0%, 100% { opacity: 1; transform: scale(1); }
@@ -803,6 +824,10 @@
             <div class="mc-col" id="mcRightCol"></div>
         </div>
         <div class="mc-statusbar" id="mcStatusBar"></div>
+        <div class="mc-chat-bar" id="mcChatBar">
+            <input class="mc-chat-input" id="mcChatInput" type="text" placeholder="Send a message to your agents… (Enter to send)" maxlength="1000" autocomplete="off">
+            <button class="mc-chat-send" id="mcChatSend">⚔️ Send</button>
+        </div>
     </div>
 
     <!-- ═══ AGENT DETAIL PANEL ═══ -->

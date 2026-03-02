@@ -834,4 +834,45 @@
             pollTimer = null;
         }
     });
+
+    // ── MC Chat Bar ────────────────────────────────────────────────────
+    (function initMcChat() {
+        var input = document.getElementById('mcChatInput');
+        var sendBtn = document.getElementById('mcChatSend');
+        if (!input || !sendBtn) return;
+
+        async function sendMcMessage() {
+            var msg = input.value.trim();
+            if (!msg) return;
+            input.value = '';
+            sendBtn.disabled = true;
+            sendBtn.textContent = '⏳';
+
+            try {
+                var resp = await ThemeAuth.fetch(API_URL + '/api/oc/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: msg })
+                });
+                if (resp.ok) {
+                    // Refresh activity feed
+                    setTimeout(pollMedievalAgentState, 800);
+                }
+            } catch(e) {
+                console.warn('[MC Chat] Send failed:', e);
+            }
+
+            sendBtn.disabled = false;
+            sendBtn.textContent = '⚔️ Send';
+            input.focus();
+        }
+
+        sendBtn.addEventListener('click', sendMcMessage);
+        input.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMcMessage();
+            }
+        });
+    })();
 })();
