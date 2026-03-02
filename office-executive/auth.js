@@ -176,6 +176,11 @@
             return resp.json().then(function(data) {
               if (Array.isArray(data)) {
                 console.log('[Auth] ✅ Verified — ' + data.length + ' sessions');
+                // Show connected indicator
+                var ci = document.getElementById('connectedIndicator');
+                if (ci) { ci.style.display = 'flex'; }
+                var cl = document.getElementById('connectedLabel');
+                if (cl) { cl.textContent = 'Connected · ' + data.length + ' sessions'; }
                 callback();
                 window.dispatchEvent(new Event('skAuthResolved'));
               } else {
@@ -192,15 +197,27 @@
         })
         .catch(function(err) {
           console.error('[Auth] Connection failed:', err.message || err);
-          localStorage.removeItem(STORAGE_KEY);
-          localStorage.removeItem('spawnkit-instance-url');
-          localStorage.removeItem('spawnkit-api-token');
-          window.__skAuthResolve = callback;
-          showOverlay();
+          // On timeout/network errors, still boot the app (offline-friendly)
+          // Only clear token on explicit auth rejection (handled in .then)
+          if (err.name === 'TimeoutError' || err.name === 'AbortError' || err.message === 'Failed to fetch') {
+            console.warn('[Auth] Network issue — booting with cached token');
+            callback();
+            window.dispatchEvent(new Event('skAuthResolved'));
+          } else {
+            localStorage.removeItem(STORAGE_KEY);
+            localStorage.removeItem('spawnkit-instance-url');
+            localStorage.removeItem('spawnkit-api-token');
+            window.__skAuthResolve = callback;
+            showOverlay();
+          }
         });
     } else if (window.__skDemoMode) {
       // Demo mode: no token needed, boot straight in
       console.log('[Auth] Demo mode active — skipping auth overlay');
+      var ci = document.getElementById('connectedIndicator');
+      if (ci) { ci.style.display = 'flex'; }
+      var cl = document.getElementById('connectedLabel');
+      if (cl) { cl.textContent = 'Demo Mode'; }
       callback();
       window.dispatchEvent(new Event('skAuthResolved'));
     } else {

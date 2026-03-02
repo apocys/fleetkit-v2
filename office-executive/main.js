@@ -3494,7 +3494,7 @@
 
             // Fallback: no API
             html += '</div>';
-            html += '<div style="padding:16px;text-align:center;color:#8E8E93;font-size:13px;">📡 Fetching fleet status…</div>';
+            html += '<div style="text-align:center;padding:40px 20px;opacity:0.8;"><div style="font-size:48px;margin-bottom:16px;">🌐</div><div style="font-size:16px;font-weight:600;margin-bottom:8px;">No Remote Offices Connected</div><div style="font-size:13px;color:var(--text-tertiary);max-width:280px;margin:0 auto;">Connect fleet relay to manage remote offices and coordinate with other agents.</div></div>';
             body.innerHTML = html;
         }
 
