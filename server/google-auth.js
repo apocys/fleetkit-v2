@@ -237,6 +237,9 @@
 
   /* ── Bootstrap ──────────────────────────────────────────── */
   function bootstrap() {
+    // Always init GSI eagerly so the button is ready when overlay shows
+    initGSI();
+
     // Check for stored user profile from localStorage
     var name = localStorage.getItem('spawnkit-user-name');
     var avatar = localStorage.getItem('spawnkit-user-avatar');
@@ -258,9 +261,10 @@
             renderUserIcon(data.user);
           } else {
             renderUserIcon(null);
+            showGoogleSignIn();
           }
         })
-        .catch(function () { renderUserIcon(null); });
+        .catch(function () { renderUserIcon(null); showGoogleSignIn(); });
     }
 
     // Expose public API
