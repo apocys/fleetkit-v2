@@ -450,17 +450,20 @@
             if (typeof tab === 'object') tab = undefined; // Handle event object
             closeAllPanels();
             mailboxOverlay.classList.add('open');
-            
+
+            // Always populate targets eagerly so "Loading targets..." is replaced
+            loadChatTargets();
+
             // Switch to specified tab or default to Messages when opened via mailbox button
             if (tab === 'chat') {
                 switchCommTab('chat');
-                loadChatTargets(); // Load available targets for chat tab
-                document.getElementById('chatTabInput').focus();
+                var chatInput = document.getElementById('chatTabInput');
+                if (chatInput) chatInput.focus();
             } else {
                 switchCommTab('messages'); // Default to Messages tab when opened via CEO mailbox button
-                mailboxClose.focus();
+                if (mailboxClose) mailboxClose.focus();
             }
-            
+
             document.body.style.overflow = 'hidden';
             loadChatTabTranscript(); // Load chat data when opening
         }
@@ -2183,6 +2186,15 @@
         ];
 
         function loadChatTargets() {
+            // Try to enrich targets from relay/data-bridge
+            try {
+                var agents = (window.SpawnKit && window.SpawnKit.data && window.SpawnKit.data.agents) || [];
+                if (agents.length > 0) {
+                    availableChatTargets = agents.map(function(a) {
+                        return { id: a.id, name: a.name + ' (' + (a.role || '') + ')', emoji: a.id === 'ceo' ? '\uD83C\uDFAD' : '\uD83E\uDD16' };
+                    });
+                }
+            } catch(e) {}
             updateChatTargetSelector();
         }
 
@@ -2636,21 +2648,37 @@
         async function renderCronJobs() {
             var crons = null;
 
-            // Always prefer API bridge (has full state with nextRunAtMs)
-            {
-                try {
-                    var apiUrl = (window.OC_API_URL || (window.location.hostname.includes('spawnkit.ai') ? window.location.origin : 'http://127.0.0.1:8222'));
-                    var resp = await  skFetch(apiUrl + '/api/oc/crons');
-                    if (resp.ok) {
-                        var data = await resp.json();
-                        crons = data.jobs || data.crons || (Array.isArray(data) ? data : []);
-                    }
-                } catch(e) {}
-            }
+            // Show loading state (safe: static string, no user input)
+            cronBody.textContent = '';
+            var loadingEl = document.createElement('div');
+            loadingEl.style.cssText = 'text-align:center;padding:40px 20px;color:var(--text-tertiary);font-size:13px;';
+            loadingEl.textContent = 'Loading cron jobs\u2026';
+            cronBody.appendChild(loadingEl);
 
-            // Fallback to cached liveCronData if bridge failed
+            // 1) Prefer API bridge (has full state with nextRunAtMs)
+            try {
+                var apiUrl = (window.OC_API_URL || (window.location.hostname.includes('spawnkit.ai') ? window.location.origin : 'http://127.0.0.1:8222'));
+                var fetchFn = window.skFetch || fetch;
+                var resp = await fetchFn(apiUrl + '/api/oc/crons');
+                if (resp.ok) {
+                    var data = await resp.json();
+                    crons = data.jobs || data.crons || (Array.isArray(data) ? data : []);
+                }
+            } catch(e) {}
+
+            // 2) Fallback to cached liveCronData if bridge failed
             if ((!crons || !Array.isArray(crons) || crons.length === 0) && liveCronData) {
                 crons = liveCronData;
+            }
+
+            // 3) Fallback to SpawnKit data-bridge (direct)
+            if ((!crons || !Array.isArray(crons) || crons.length === 0) && window.SpawnKit && window.SpawnKit.data && window.SpawnKit.data.crons) {
+                crons = window.SpawnKit.data.crons;
+            }
+
+            // 4) Fallback to API bridge getCrons() (may have loaded since prefetch)
+            if ((!crons || !Array.isArray(crons) || crons.length === 0) && API && API.getCrons) {
+                try { crons = await Promise.resolve(API.getCrons()); } catch(e) {}
             }
 
             if (!crons || !Array.isArray(crons) || crons.length === 0) {
@@ -2709,7 +2737,7 @@
                     var currentState = btn.classList.contains('on');
                     btn.classList.toggle('on'); // optimistic update
                     var apiUrl = window.OC_API_URL || (window.location.hostname.includes('spawnkit.ai') ? window.location.origin : 'http://127.0.0.1:8222');
-                    skFetch(apiUrl + '/api/oc/crons', {
+                    (window.skFetch || fetch)(apiUrl + '/api/oc/crons', {
                         method: 'POST',
                         headers: {'Content-Type': 'application/json'},
                         body: JSON.stringify({action: 'update', jobId: cronId, patch: {enabled: !currentState}})
@@ -2803,6 +2831,13 @@
         }
 
         async function renderMemory() {
+            // Show loading state
+            memoryBody.textContent = '';
+            var loadingEl = document.createElement('div');
+            loadingEl.style.cssText = 'text-align:center;padding:40px 20px;color:var(--text-tertiary);font-size:13px;';
+            loadingEl.textContent = 'Loading memory\u2026';
+            memoryBody.appendChild(loadingEl);
+
             var mem = liveMemoryData;
             // Resolve if liveMemoryData is a Promise
             if (mem && typeof mem.then === 'function') {
@@ -2811,6 +2846,12 @@
             if (API && !mem) {
                 try { mem = await Promise.resolve(API.getMemory()); } catch(e) {}
             }
+
+            // Fallback to SpawnKit data-bridge (direct)
+            if (!mem && window.SpawnKit && window.SpawnKit.data && window.SpawnKit.data.memory) {
+                mem = window.SpawnKit.data.memory;
+            }
+
             // If mem came from data-bridge, it has {longTerm, daily, ...} shape
             // If longTerm is a string (legacy), wrap it
             if (mem && typeof mem.longTerm === 'string') {
@@ -2821,7 +2862,8 @@
             if (!mem) {
                 try {
                     var apiUrl = (window.OC_API_URL || (window.location.hostname.includes('spawnkit.ai') ? window.location.origin : 'http://127.0.0.1:8222'));
-                    var resp = await  skFetch(apiUrl + '/api/oc/memory');
+                    var fetchFn = window.skFetch || fetch;
+                    var resp = await fetchFn(apiUrl + '/api/oc/memory');
                     if (resp.ok) {
                         var data = await resp.json();
                         // API bridge returns { main: "content", files: [{name,size,modified}] }

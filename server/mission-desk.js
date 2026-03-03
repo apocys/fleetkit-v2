@@ -125,6 +125,7 @@
         '<button class="md-action" data-action="boardroom"><span class="md-action-icon">🧠</span><span class="md-action-label">Boardroom</span></button>' +
         '<button class="md-action" data-action="forge"><span class="md-action-icon">🔨</span><span class="md-action-label">Skill Forge</span></button>' +
         '<button class="md-action" data-action="explore"><span class="md-action-icon">🚀</span><span class="md-action-label">Explore</span></button>' +
+        '<button class="md-action" data-action="communications"><span class="md-action-icon">📬</span><span class="md-action-label">Communications</span></button>' +
         '<button class="md-action" data-action="marketplace"><span class="md-action-icon">🏪</span><span class="md-action-label">Marketplace</span></button>' +
         '<button class="md-action" data-action="profile"><span class="md-action-icon">👤</span><span class="md-action-label">Creator Profile</span></button>' +
       '</div>' +
@@ -310,6 +311,10 @@
       if (window.SkillForge) { window.SkillForge.open(); return; }
     } else if (name === 'explore') {
       if (window.UseCaseExplorer) { window.UseCaseExplorer.open(); return; }
+    } else if (name === 'communications') {
+      if (typeof window.openMailbox === 'function') { window.openMailbox('messages'); return; }
+      var mbBtn = document.getElementById('mailboxBtn');
+      if (mbBtn) mbBtn.click();
     } else if (name === 'deploy') {
       if (window.DeployWizard) { window.DeployWizard.open(); return; }
     } else if (name === 'marketplace') {
@@ -425,10 +430,14 @@
       }
     });
 
-    /* Suggestion chips */
+    /* Suggestion chips — inject prompt into input (do NOT auto-send) */
     document.querySelectorAll('.md-chip').forEach(function (chip) {
       chip.addEventListener('click', function () {
-        activate(chip.getAttribute('data-prompt'));
+        var prompt = chip.getAttribute('data-prompt');
+        if (!prompt) return;
+        heroInput.value = prompt;
+        heroInput.dispatchEvent(new Event('input')); // update send-btn visibility
+        heroInput.focus();
       });
     });
 
