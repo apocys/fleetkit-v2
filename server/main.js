@@ -450,17 +450,20 @@
             if (typeof tab === 'object') tab = undefined; // Handle event object
             closeAllPanels();
             mailboxOverlay.classList.add('open');
-            
+
+            // Always populate targets eagerly so "Loading targets..." is replaced
+            loadChatTargets();
+
             // Switch to specified tab or default to Messages when opened via mailbox button
             if (tab === 'chat') {
                 switchCommTab('chat');
-                loadChatTargets(); // Load available targets for chat tab
-                document.getElementById('chatTabInput').focus();
+                var chatInput = document.getElementById('chatTabInput');
+                if (chatInput) chatInput.focus();
             } else {
                 switchCommTab('messages'); // Default to Messages tab when opened via CEO mailbox button
-                mailboxClose.focus();
+                if (mailboxClose) mailboxClose.focus();
             }
-            
+
             document.body.style.overflow = 'hidden';
             loadChatTabTranscript(); // Load chat data when opening
         }
@@ -2183,6 +2186,15 @@
         ];
 
         function loadChatTargets() {
+            // Try to enrich targets from relay/data-bridge
+            try {
+                var agents = (window.SpawnKit && window.SpawnKit.data && window.SpawnKit.data.agents) || [];
+                if (agents.length > 0) {
+                    availableChatTargets = agents.map(function(a) {
+                        return { id: a.id, name: a.name + ' (' + (a.role || '') + ')', emoji: a.id === 'ceo' ? '\uD83C\uDFAD' : '\uD83E\uDD16' };
+                    });
+                }
+            } catch(e) {}
             updateChatTargetSelector();
         }
 
