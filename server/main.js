@@ -2819,6 +2819,13 @@
         }
 
         async function renderMemory() {
+            // Show loading state
+            memoryBody.textContent = '';
+            var loadingEl = document.createElement('div');
+            loadingEl.style.cssText = 'text-align:center;padding:40px 20px;color:var(--text-tertiary);font-size:13px;';
+            loadingEl.textContent = 'Loading memory\u2026';
+            memoryBody.appendChild(loadingEl);
+
             var mem = liveMemoryData;
             // Resolve if liveMemoryData is a Promise
             if (mem && typeof mem.then === 'function') {
@@ -2827,6 +2834,12 @@
             if (API && !mem) {
                 try { mem = await Promise.resolve(API.getMemory()); } catch(e) {}
             }
+
+            // Fallback to SpawnKit data-bridge (direct)
+            if (!mem && window.SpawnKit && window.SpawnKit.data && window.SpawnKit.data.memory) {
+                mem = window.SpawnKit.data.memory;
+            }
+
             // If mem came from data-bridge, it has {longTerm, daily, ...} shape
             // If longTerm is a string (legacy), wrap it
             if (mem && typeof mem.longTerm === 'string') {
@@ -2837,7 +2850,8 @@
             if (!mem) {
                 try {
                     var apiUrl = (window.OC_API_URL || (window.location.hostname.includes('spawnkit.ai') ? window.location.origin : 'http://127.0.0.1:8222'));
-                    var resp = await  skFetch(apiUrl + '/api/oc/memory');
+                    var fetchFn = window.skFetch || fetch;
+                    var resp = await fetchFn(apiUrl + '/api/oc/memory');
                     if (resp.ok) {
                         var data = await resp.json();
                         // API bridge returns { main: "content", files: [{name,size,modified}] }
