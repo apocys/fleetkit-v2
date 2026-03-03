@@ -2636,21 +2636,37 @@
         async function renderCronJobs() {
             var crons = null;
 
-            // Always prefer API bridge (has full state with nextRunAtMs)
-            {
-                try {
-                    var apiUrl = (window.OC_API_URL || (window.location.hostname.includes('spawnkit.ai') ? window.location.origin : 'http://127.0.0.1:8222'));
-                    var resp = await  skFetch(apiUrl + '/api/oc/crons');
-                    if (resp.ok) {
-                        var data = await resp.json();
-                        crons = data.jobs || data.crons || (Array.isArray(data) ? data : []);
-                    }
-                } catch(e) {}
-            }
+            // Show loading state (safe: static string, no user input)
+            cronBody.textContent = '';
+            var loadingEl = document.createElement('div');
+            loadingEl.style.cssText = 'text-align:center;padding:40px 20px;color:var(--text-tertiary);font-size:13px;';
+            loadingEl.textContent = 'Loading cron jobs\u2026';
+            cronBody.appendChild(loadingEl);
 
-            // Fallback to cached liveCronData if bridge failed
+            // 1) Prefer API bridge (has full state with nextRunAtMs)
+            try {
+                var apiUrl = (window.OC_API_URL || (window.location.hostname.includes('spawnkit.ai') ? window.location.origin : 'http://127.0.0.1:8222'));
+                var fetchFn = window.skFetch || fetch;
+                var resp = await fetchFn(apiUrl + '/api/oc/crons');
+                if (resp.ok) {
+                    var data = await resp.json();
+                    crons = data.jobs || data.crons || (Array.isArray(data) ? data : []);
+                }
+            } catch(e) {}
+
+            // 2) Fallback to cached liveCronData if bridge failed
             if ((!crons || !Array.isArray(crons) || crons.length === 0) && liveCronData) {
                 crons = liveCronData;
+            }
+
+            // 3) Fallback to SpawnKit data-bridge (direct)
+            if ((!crons || !Array.isArray(crons) || crons.length === 0) && window.SpawnKit && window.SpawnKit.data && window.SpawnKit.data.crons) {
+                crons = window.SpawnKit.data.crons;
+            }
+
+            // 4) Fallback to API bridge getCrons() (may have loaded since prefetch)
+            if ((!crons || !Array.isArray(crons) || crons.length === 0) && API && API.getCrons) {
+                try { crons = await Promise.resolve(API.getCrons()); } catch(e) {}
             }
 
             if (!crons || !Array.isArray(crons) || crons.length === 0) {
@@ -2709,7 +2725,7 @@
                     var currentState = btn.classList.contains('on');
                     btn.classList.toggle('on'); // optimistic update
                     var apiUrl = window.OC_API_URL || (window.location.hostname.includes('spawnkit.ai') ? window.location.origin : 'http://127.0.0.1:8222');
-                    skFetch(apiUrl + '/api/oc/crons', {
+                    (window.skFetch || fetch)(apiUrl + '/api/oc/crons', {
                         method: 'POST',
                         headers: {'Content-Type': 'application/json'},
                         body: JSON.stringify({action: 'update', jobId: cronId, patch: {enabled: !currentState}})
