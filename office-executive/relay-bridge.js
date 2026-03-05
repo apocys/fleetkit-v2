@@ -392,6 +392,59 @@
         });
     }
 
+    // ── Task Graph helper ──
+    function buildTaskGraphSvg(missions) {
+        if (!missions || missions.length === 0) return '';
+        var width = Math.max(320, missions.length * 120);
+        var centerY = 60;
+        var nodeRadius = 18;
+        var spacing = width / (missions.length + 1);
+        var svg = '';
+        svg += '<div style="margin-bottom:14px;border-radius:14px;padding:12px 14px;background:var(--bg-tertiary);border:1px solid var(--border-subtle);">';
+        svg += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">';
+        svg += '<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.6px;color:var(--text-tertiary);">Task Graph</div>';
+        svg += '<div style="font-size:11px;color:var(--text-tertiary);">Flow of missions across your fleet</div>';
+        svg += '</div>';
+        svg += '<div style="overflow-x:auto;padding-bottom:4px;">';
+        svg += '<svg viewBox="0 0 ' + width + ' 120" preserveAspectRatio="xMidYMid meet" style="width:100%;min-height:120px;display:block;">
+  <defs>
+    <linearGradient id="skTaskEdge" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="rgba(0,122,255,0.3)"/>
+      <stop offset="100%" stop-color="rgba(88,86,214,0.6)"/>
+    </linearGradient>
+  </defs>';
+
+        // Edges between sequential missions
+        for (var i = 0; i < missions.length - 1; i++) {
+            var x1 = spacing * (i + 1);
+            var x2 = spacing * (i + 2);
+            svg += '<path d="M' + x1 + ' ' + centerY + ' C ' + (x1 + 20) + ' ' + (centerY - 18) + ', ' + (x2 - 20) + ' ' + (centerY + 18) + ', ' + x2 + ' ' + centerY + '" stroke="url(#skTaskEdge)" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.9" />';
+        }
+
+        // Nodes
+        missions.forEach(function(m, idx) {
+            var x = spacing * (idx + 1);
+            var status = (m.status || 'active').toLowerCase();
+            var color = status === 'done' ? '#34C759' : (status === 'paused' ? '#FF9500' : '#007AFF');
+            var label = esc(m.name || ('Mission ' + (idx + 1)));
+            svg += '<g>';
+            svg += '<circle cx="' + x + '" cy="' + centerY + '" r="' + nodeRadius + '" fill="' + color + '" fill-opacity="0.12" stroke="' + color + '" stroke-width="1.5" />';
+            svg += '<circle cx="' + x + '" cy="' + centerY + '" r="4" fill="' + color + '" />';
+            svg += '<rect x="' + (x - 60) + '" y="' + (centerY + 26) + '" rx="8" ry="8" width="120" height="26" fill="rgba(0,0,0,0.04)" />';
+            svg += '<text x="' + x + '" y="' + (centerY + 44) + '" text-anchor="middle" font-size="11" fill="var(--text-primary)" style="font-family: system-ui, -apple-system, BlinkMacSystemFont, \"SF Pro Text\", sans-serif;">' + label + '</text>';
+            svg += '</g>';
+        });
+
+        svg += '</svg></div>';
+        svg += '<div style="display:flex;gap:12px;margin-top:6px;font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.4px;">';
+        svg += '<span><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:#007AFF;margin-right:4px;"></span>Active</span>';
+        svg += '<span><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:#34C759;margin-right:4px;"></span>Done</span>';
+        svg += '<span><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:#FF9500;margin-right:4px;"></span>Paused</span>';
+        svg += '</div>';
+        svg += '</div>';
+        return svg;
+    }
+
     // ── Missions Tab (F12) ──
     function loadOrchMissions() {
         var el = document.getElementById('orchTabMissions');
@@ -415,38 +468,66 @@
             html += '<div style="font-size:12px;color:var(--text-tertiary);line-height:1.5;">Create a mission to organize work.<br>The CEO can assign agents and track progress.</div>';
             html += '</div>';
         } else {
+            // Awwwards-style task graph
+            html += buildTaskGraphSvg(missions);
+
+            // Kanban columns
+            var backlog = [], inProgress = [], done = [];
             missions.forEach(function(m, idx) {
-                var doneTasks = (m.todos || []).filter(function(t) { return t.done; }).length;
-                var totalTasks = (m.todos || []).length;
-                var progress = totalTasks > 0 ? Math.round(doneTasks / totalTasks * 100) : 0;
-                var statusColor = m.status === 'active' ? '#30D158' : m.status === 'done' ? '#007AFF' : '#8E8E93';
-
-                html += '<div class="mission-card" data-mission-idx="' + idx + '" style="padding:12px 14px;border-radius:12px;background:var(--bg-tertiary);margin-bottom:8px;cursor:pointer;border:1px solid transparent;transition:all 0.15s;">';
-                html += '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;">';
-                html += '<div style="font-size:14px;font-weight:600;color:var(--text-primary);">' + esc(m.name) + '</div>';
-                html += '<span style="font-size:10px;padding:2px 8px;border-radius:4px;background:' + statusColor + '22;color:' + statusColor + ';font-weight:600;text-transform:uppercase;">' + esc(m.status || 'active') + '</span>';
-                html += '</div>';
-                if (m.desc) html += '<div style="font-size:12px;color:var(--text-secondary);margin-bottom:6px;">' + esc(m.desc) + '</div>';
-
-                // Assigned agents
-                if (m.agents && m.agents.length > 0) {
-                    html += '<div style="display:flex;gap:4px;margin-bottom:8px;flex-wrap:wrap;">';
-                    m.agents.forEach(function(aId) {
-                        var a = (typeof AGENTS !== 'undefined') ? AGENTS[aId] : null;
-                        html += '<span style="font-size:10px;padding:2px 8px;border-radius:4px;background:var(--exec-blue-muted);color:var(--exec-blue);font-weight:500;">' + esc(a ? a.name : aId) + '</span>';
-                    });
-                    html += '</div>';
-                }
-
-                // Progress bar
-                html += '<div style="display:flex;align-items:center;gap:8px;">';
-                html += '<div style="flex:1;height:4px;border-radius:2px;background:var(--border-subtle);">';
-                html += '<div style="height:100%;width:' + progress + '%;border-radius:2px;background:' + statusColor + ';transition:width 0.3s;"></div>';
-                html += '</div>';
-                html += '<span style="font-size:11px;font-weight:600;color:var(--text-secondary);">' + doneTasks + '/' + totalTasks + '</span>';
-                html += '</div>';
-                html += '</div>';
+                var status = (m.status || 'active').toLowerCase();
+                if (status === 'done') done.push({ m: m, idx: idx });
+                else if (status === 'active') inProgress.push({ m: m, idx: idx });
+                else backlog.push({ m: m, idx: idx });
             });
+
+            function column(title, items, accent) {
+                var col = '<div style="background:var(--bg-tertiary);border-radius:14px;padding:10px 10px 12px;border:1px solid var(--border-subtle);min-height:80px;">';
+                col += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">';
+                col += '<span style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-tertiary);">' + title + '</span>';
+                col += '<span style="width:8px;height:8px;border-radius:50%;background:' + accent + ';"></span>';
+                col += '</div>';
+                if (!items.length) {
+                    col += '<div style="font-size:11px;color:var(--text-tertiary);padding:8px 4px;">No cards</div>';
+                }
+                items.forEach(function(entry) {
+                    var m = entry.m; var idx = entry.idx;
+                    var doneTasks = (m.todos || []).filter(function(t) { return t.done; }).length;
+                    var totalTasks = (m.todos || []).length;
+                    var progress = totalTasks > 0 ? Math.round(doneTasks / totalTasks * 100) : 0;
+                    var status = (m.status || 'active').toLowerCase();
+                    var statusColor = status === 'active' ? '#30D158' : status === 'done' ? '#007AFF' : '#8E8E93';
+
+                    col += '<div class="mission-card" data-mission-idx="' + idx + '" style="padding:10px 10px;border-radius:10px;background:var(--bg-secondary);margin-bottom:6px;cursor:pointer;border:1px solid transparent;transition:all 0.15s;">';
+                    col += '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px;">';
+                    col += '<div style="font-size:13px;font-weight:600;color:var(--text-primary);max-width:80%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + esc(m.name) + '</div>';
+                    col += '<span style="font-size:9px;padding:2px 6px;border-radius:999px;background:' + statusColor + '22;color:' + statusColor + ';font-weight:600;text-transform:uppercase;">' + esc(m.status || 'active') + '</span>';
+                    col += '</div>';
+                    if (m.desc) col += '<div style="font-size:11px;color:var(--text-secondary);margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + esc(m.desc) + '</div>';
+                    if (m.agents && m.agents.length > 0) {
+                        col += '<div style="display:flex;gap:4px;margin-bottom:6px;flex-wrap:wrap;">';
+                        m.agents.forEach(function(aId) {
+                            var a = (typeof AGENTS !== 'undefined') ? AGENTS[aId] : null;
+                            col += '<span style="font-size:9px;padding:2px 6px;border-radius:999px;background:var(--exec-blue-muted);color:var(--exec-blue);font-weight:500;">' + esc(a ? a.name : aId) + '</span>';
+                        });
+                        col += '</div>';
+                    }
+                    col += '<div style="display:flex;align-items:center;gap:6px;">';
+                    col += '<div style="flex:1;height:3px;border-radius:999px;background:var(--border-subtle);">';
+                    col += '<div style="height:100%;width:' + progress + '%;border-radius:999px;background:' + statusColor + ';transition:width 0.25s;"></div>';
+                    col += '</div>';
+                    col += '<span style="font-size:10px;font-weight:600;color:var(--text-secondary);">' + doneTasks + '/' + totalTasks + '</span>';
+                    col += '</div>';
+                    col += '</div>';
+                });
+                col += '</div>';
+                return col;
+            }
+
+            html += '<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;align-items:flex-start;">';
+            html += column('Backlog', backlog, 'rgba(142,142,147,0.8)');
+            html += column('In Progress', inProgress, '#007AFF');
+            html += column('Done', done, '#34C759');
+            html += '</div>';
         }
 
         el.innerHTML = html;
