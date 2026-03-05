@@ -94,6 +94,50 @@ function resolveThemePath(theme) {
   return null;
 }
 
+// --- External URL security (openExternal / navigation) ---
+const ALLOWED_EXTERNAL_HOSTS = [
+  'spawnkit.ai',      // and subdomains (docs, download, etc.)
+  'openclaw.ai',      // and subdomains
+  'github.com',
+  'www.github.com'
+];
+
+function isValidExternalUrl(urlString) {
+  if (typeof urlString !== 'string' || !urlString.trim()) return false;
+  try {
+    const u = new URL(urlString.trim());
+    if (u.protocol !== 'https:') return false;
+    const host = u.hostname.toLowerCase();
+    return ALLOWED_EXTERNAL_HOSTS.some(allowed => host === allowed || host.endsWith('.' + allowed));
+  } catch {
+    return false;
+  }
+}
+
+function isAllowedFileNavigation(urlString, appDir) {
+  try {
+    const u = new URL(urlString);
+    if (u.protocol !== 'file:') return false;
+    const normalized = path.normalize(decodeURIComponent(u.pathname));
+    const appDirNormalized = path.normalize(appDir);
+    return normalized.startsWith(appDirNormalized);
+  } catch {
+    return false;
+  }
+}
+
+function attachNavigationLockdown(webContents, appDir) {
+  webContents.setWindowOpenHandler(({ url }) => {
+    if (isValidExternalUrl(url)) shell.openExternal(url);
+    return { action: 'deny' };
+  });
+  webContents.on('will-navigate', (event, url) => {
+    if (isAllowedFileNavigation(url, appDir)) return;
+    event.preventDefault();
+    if (isValidExternalUrl(url)) shell.openExternal(url);
+  });
+}
+
 async function switchTheme(newTheme) {
   try {
     // Validate theme exists
@@ -158,6 +202,8 @@ function createSettingsWindow() {
 
   settingsWindow.loadFile(path.join(__dirname, 'settings.html'));
 
+  attachNavigationLockdown(settingsWindow.webContents, __dirname);
+
   settingsWindow.once('ready-to-show', () => {
     settingsWindow.show();
   });
@@ -185,6 +231,8 @@ function createAgentBuilderWindow() {
 
   builderWindow.loadFile(path.join(__dirname, 'agent-builder.html'));
 
+  attachNavigationLockdown(builderWindow.webContents, __dirname);
+
   builderWindow.once('ready-to-show', () => {
     builderWindow.show();
   });
@@ -208,6 +256,8 @@ function createSetupWindow() {
   });
 
   setupWindow.loadFile(path.join(__dirname, 'renderer', 'index.html'));
+
+  attachNavigationLockdown(setupWindow.webContents, __dirname);
 
   setupWindow.once('ready-to-show', () => {
     setupWindow.show();
@@ -283,13 +333,7 @@ function createMainWindow() {
     mainWindow = null;
   });
 
-  // Open external links in default browser
-  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-    if (url.startsWith('http')) {
-      shell.openExternal(url);
-    }
-    return { action: 'deny' };
-  });
+  attachNavigationLockdown(mainWindow.webContents, __dirname);
 }
 
 // --- Application Menu ---
@@ -684,6 +728,9 @@ ipcMain.handle('open-agent-builder', () => {
 
 // Open external links
 ipcMain.handle('open-external', (_, url) => {
+  if (!isValidExternalUrl(url)) {
+    throw new Error('External links are limited to allowed hosts (e.g. spawnkit.ai, openclaw.ai, github.com)');
+  }
   shell.openExternal(url);
 });
 

@@ -87,12 +87,17 @@ if [[ "$HEALTH_OK" == "false" ]]; then
     echo "⚠️  Rollback complete."
   fi
   
-  # Notify via fleet relay
-  curl -s -X POST "http://localhost:18790/api/fleet/message" \
-    -H 'Authorization: Bearer sk-fleet-2ad53564b03d9facbe3389bb5c461179ffc73af12e50ae00' \
-    -H 'Content-Type: application/json' \
-    -d "{\"from\":\"sycopa\",\"to\":\"apomac\",\"subject\":\"DEPLOY FAILED\",\"text\":\"Deploy of $COMMIT FAILED — health check failed. Rolled back.\",\"priority\":\"high\"}" \
-    > /dev/null 2>&1 || true
+  # Notify via fleet relay (optional; requires FLEET_RELAY_TOKEN)
+  : "${FLEET_RELAY_TOKEN:=}"
+  if [[ -n "$FLEET_RELAY_TOKEN" ]]; then
+    payload="{\"from\":\"sycopa\",\"to\":\"apomac\",\"subject\":\"DEPLOY FAILED\",\"text\":\"Deploy of $COMMIT FAILED — health check failed. Rolled back.\",\"priority\":\"high\"}"
+    curl -s -X POST "http://localhost:18790/api/fleet/message" \
+      -H "Authorization: Bearer $FLEET_RELAY_TOKEN" \
+      -H 'Content-Type: application/json' \
+      -d "$payload" >/dev/null 2>&1 || true
+  else
+    echo "⚠️ FLEET_RELAY_TOKEN not set; skipping failure notification"
+  fi
   
   DEPLOY_END=$(date +%s)
   DURATION=$((DEPLOY_END - DEPLOY_START))
