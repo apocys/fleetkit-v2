@@ -184,70 +184,136 @@
         var role = AGENT_ROLES.find(function(r) { return r.id === wizardState.role; });
         var model = AGENT_MODELS.find(function(m) { return m.id === wizardState.model; });
 
-        // Create agent tile in the grid
-        var gridView = document.getElementById('gridView');
-        if (gridView) {
-            var baseId = wizardState.name.toLowerCase().replace(/[^a-z0-9]/g, '');
-            var agentId = baseId;
-            var suffix = 2;
-            while (typeof AGENTS !== 'undefined' && AGENTS[agentId]) {
-                agentId = baseId + suffix;
-                suffix++;
+        var baseId = wizardState.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+        var agentId = baseId;
+        var suffix = 2;
+        while (typeof AGENTS !== 'undefined' && AGENTS[agentId]) {
+            agentId = baseId + suffix;
+            suffix++;
+        }
+
+        // ── 1. Persist to localStorage (Mission Desk reads this on load) ──
+        var agentRecord = {
+            id: agentId,
+            name: wizardState.name,
+            emoji: wizardState.emoji || '🤖',
+            role: role ? role.name : 'Custom',
+            roleId: wizardState.role,
+            model: model ? model.id : wizardState.model,
+            modelName: model ? model.name : wizardState.model,
+            status: 'active',
+            createdAt: new Date().toISOString()
+        };
+
+        var created = [];
+        try { created = JSON.parse(localStorage.getItem('spawnkit-created-agents') || '[]'); } catch(e) { created = []; }
+        if (!Array.isArray(created)) created = [];
+        // Prevent duplicates
+        created = created.filter(function(c) { return c.id !== agentId; });
+        created.push(agentRecord);
+        localStorage.setItem('spawnkit-created-agents', JSON.stringify(created));
+
+        // ── 2. Register in AGENTS dict (for openDetailPanel) ──
+        if (typeof AGENTS !== 'undefined') {
+            // AGENTS may be an array (mission-desk) or object (app-init)
+            var agentObj = {
+                id: agentId,
+                name: agentRecord.emoji + ' ' + agentRecord.name,
+                role: agentRecord.role,
+                color: '#007AFF',
+                status: 'active',
+                task: 'Ready for tasks',
+                model: agentRecord.modelName
+            };
+            if (Array.isArray(AGENTS)) {
+                AGENTS.push(agentObj);
+            } else {
+                AGENTS[agentId] = agentObj;
             }
-            var tile = document.createElement('div');
-            tile.className = 'exec-room';
-            tile.setAttribute('role', 'button');
-            tile.setAttribute('tabindex', '0');
-            tile.setAttribute('aria-label', wizardState.name + ' — ' + (role ? role.name : 'Agent'));
-            tile.setAttribute('data-agent', agentId);
-            tile.innerHTML = '<span class="exec-room-label">' + wizardState.name + '</span>' +
-                '<div class="agent-avatar" aria-hidden="true" style="width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-size:24px;background:var(--exec-blue-muted);border-radius:50%;">' +
-                wizardState.emoji +
-                '<span class="agent-status-dot agent-status-dot--active" aria-label="Active"></span>' +
-                '</div>' +
-                '<span class="agent-name">' + wizardState.name + '</span>' +
-                '<span class="agent-role">' + (role ? role.name : 'Custom') + '</span>' +
-                '<div class="agent-detail" id="detail-' + agentId + '">' +
-                '<div class="agent-detail-row"><span class="agent-detail-label">Model</span><span class="agent-detail-value">' + (model ? model.name : wizardState.model) + '</span></div>' +
-                '<div class="agent-detail-row"><span class="agent-detail-label">Status</span><span class="agent-detail-value">🟢 Ready</span></div>' +
-                '<div class="agent-detail-row"><span class="agent-detail-label">Created</span><span class="agent-detail-value">Just now</span></div>' +
-                '</div>';
+        }
 
-            // Insert before the last grid item or at the end
-            gridView.appendChild(tile);
-
-            // Register in AGENTS dict so openDetailPanel works
-            if (typeof AGENTS !== 'undefined') {
-                AGENTS[agentId] = {
-                    name: wizardState.name,
-                    role: role ? role.name : 'Custom',
-                    color: '#007AFF',
-                    status: 'active',
-                    task: 'Ready for tasks',
-                    model: model ? model.name : wizardState.model
-                };
+        // ── 3. Update Mission Desk grid live (no refresh needed) ──
+        var teamEl = document.getElementById('missionDeskTeam');
+        if (teamEl && typeof window.refreshMissionDeskTeam === 'function') {
+            window.refreshMissionDeskTeam();
+        } else if (teamEl) {
+            // Fallback: insert tile before the "+ Add Agent" button
+            var addTile = teamEl.querySelector('.md-agent--add');
+            var newTile = document.createElement('div');
+            newTile.className = 'md-agent';
+            newTile.setAttribute('data-agent-id', agentId);
+            newTile.setAttribute('tabindex', '0');
+            newTile.setAttribute('role', 'button');
+            newTile.setAttribute('aria-label', agentRecord.emoji + ' ' + agentRecord.name);
+            newTile.innerHTML =
+                '<div class="md-agent-avatar"><div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:20px;background:#007AFF22;border-radius:50%;">' + agentRecord.emoji + '</div>' +
+                '<span class="md-agent-status md-agent-status--active"></span></div>' +
+                '<div class="md-agent-name">' + agentRecord.emoji + ' ' + agentRecord.name + '</div>' +
+                '<div class="md-agent-role">' + agentRecord.role + '</div>';
+            if (addTile) {
+                teamEl.insertBefore(newTile, addTile);
+            } else {
+                teamEl.appendChild(newTile);
             }
-
-            // Wire click handler to open detail panel
-            tile.addEventListener('click', function() {
+            // Wire click to open detail
+            newTile.addEventListener('click', function() {
                 if (typeof openDetailPanel === 'function') openDetailPanel(agentId);
             });
+        }
 
-            // Update agent count
-            var countEl = document.getElementById('statusAgentCount');
-            if (countEl) {
-                var current = parseInt(countEl.textContent) || 6;
-                countEl.textContent = (current + 1) + ' Agents';
-            }
+        // ── 4. Also add to hidden exec grid (legacy compat) ──
+        var gridView = document.getElementById('gridView');
+        if (gridView) {
+            var tile = document.createElement('div');
+            tile.className = 'exec-room';
+            tile.setAttribute('data-agent', agentId);
+            tile.innerHTML = '<span class="exec-room-label">' + wizardState.name + '</span>';
+            gridView.appendChild(tile);
         }
 
         // Show success toast
         if (typeof showToast === 'function') {
-            showToast('✨ Agent "' + wizardState.emoji + ' ' + wizardState.name + '" created!');
+            showToast('✨ Agent "' + agentRecord.emoji + ' ' + agentRecord.name + '" created!');
         }
 
         closeAddAgentWizard();
     }
+
+    // ── Delete a custom agent ──
+    function deleteCustomAgent(agentId) {
+        // Remove from localStorage
+        var created = [];
+        try { created = JSON.parse(localStorage.getItem('spawnkit-created-agents') || '[]'); } catch(e) { created = []; }
+        created = created.filter(function(c) { return c.id !== agentId; });
+        localStorage.setItem('spawnkit-created-agents', JSON.stringify(created));
+
+        // Remove from AGENTS dict
+        if (typeof AGENTS !== 'undefined') {
+            if (Array.isArray(AGENTS)) {
+                for (var i = AGENTS.length - 1; i >= 0; i--) {
+                    if (AGENTS[i].id === agentId) { AGENTS.splice(i, 1); break; }
+                }
+            } else {
+                delete AGENTS[agentId];
+            }
+        }
+
+        // Remove from DOM
+        var mdTile = document.querySelector('.md-agent[data-agent-id="' + agentId + '"]');
+        if (mdTile) mdTile.remove();
+        var execTile = document.querySelector('.exec-room[data-agent="' + agentId + '"]');
+        if (execTile) execTile.remove();
+
+        if (typeof showToast === 'function') {
+            showToast('🗑️ Agent removed');
+        }
+
+        // Close detail panel if open
+        if (typeof window.closeAllPanels === 'function') window.closeAllPanels();
+    }
+
+    // Export for use by detail panel delete button
+    window.deleteCustomAgent = deleteCustomAgent;
 
     // Wire up events
     document.addEventListener('DOMContentLoaded', function() {

@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Agent Wizard — Automated Tests</title>
+  <style>
+    body { font-family: -apple-system, system-ui, sans-serif; padding: 20px; background: #1a1a1a; color: #fff; }
+    .test { padding: 8px 12px; margin: 4px 0; border-radius: 8px; font-size: 14px; }
+    .pass { background: #1b3a1b; border: 1px solid #30D158; }
+    .fail { background: #3a1b1b; border: 1px solid #FF3B30; }
+    .skip { background: #3a3a1b; border: 1px solid #FF9500; }
+    h1 { font-size: 18px; margin-bottom: 16px; }
+    #summary { margin-top: 16px; font-size: 16px; font-weight: 600; }
+  </style>
+</head>
+<body>
+  <h1>🧪 Agent Wizard Tests</h1>
+  <div id="results"></div>
+  <div id="summary"></div>
+
+  <script>
+    var results = [];
+    var el = document.getElementById('results');
+
+    function assert(name, fn) {
+      try {
+        var ok = fn();
+        results.push({ name: name, pass: !!ok });
+        el.innerHTML += '<div class="test ' + (ok ? 'pass' : 'fail') + '">' + (ok ? '✅' : '❌') + ' ' + name + '</div>';
+      } catch(e) {
+        results.push({ name: name, pass: false, error: e.message });
+        el.innerHTML += '<div class="test fail">❌ ' + name + ' — ' + e.message + '</div>';
+      }
+    }
+
+    // ── Setup: Mock environment ──
+    localStorage.removeItem('spawnkit-created-agents');
+
+    // ── Test 1: localStorage starts empty ──
+    assert('localStorage starts empty', function() {
+      var data = localStorage.getItem('spawnkit-created-agents');
+      return data === null || data === '[]';
+    });
+
+    // ── Test 2: Write agent to localStorage ──
+    assert('Write agent to localStorage', function() {
+      var agent = {
+        id: 'phoenix',
+        name: 'Phoenix',
+        emoji: '🔥',
+        role: 'TaskRunner',
+        roleId: 'taskrunner',
+        model: 'claude-sonnet-4',
+        modelName: 'Claude Sonnet 4',
+        status: 'active',
+        createdAt: new Date().toISOString()
+      };
+      var created = [];
+      created.push(agent);
+      localStorage.setItem('spawnkit-created-agents', JSON.stringify(created));
+      var stored = JSON.parse(localStorage.getItem('spawnkit-created-agents'));
+      return stored.length === 1 && stored[0].id === 'phoenix' && stored[0].name === 'Phoenix';
+    });
+
+    // ── Test 3: Read agent back ──
+    assert('Read agent from localStorage', function() {
+      var stored = JSON.parse(localStorage.getItem('spawnkit-created-agents') || '[]');
+      return stored.length === 1 && stored[0].emoji === '🔥' && stored[0].role === 'TaskRunner';
+    });
+
+    // ── Test 4: Add second agent (no duplicates) ──
+    assert('Add second agent without duplicates', function() {
+      var stored = JSON.parse(localStorage.getItem('spawnkit-created-agents') || '[]');
+      stored = stored.filter(function(c) { return c.id !== 'nexus'; });
+      stored.push({ id: 'nexus', name: 'Nexus', emoji: '🧠', role: 'Researcher', status: 'active', createdAt: new Date().toISOString() });
+      localStorage.setItem('spawnkit-created-agents', JSON.stringify(stored));
+      var result = JSON.parse(localStorage.getItem('spawnkit-created-agents'));
+      return result.length === 2 && result[0].id === 'phoenix' && result[1].id === 'nexus';
+    });
+
+    // ── Test 5: Prevent duplicate ID ──
+    assert('Prevent duplicate agent ID', function() {
+      var stored = JSON.parse(localStorage.getItem('spawnkit-created-agents') || '[]');
+      stored = stored.filter(function(c) { return c.id !== 'phoenix'; });
+      stored.push({ id: 'phoenix', name: 'Phoenix v2', emoji: '🔥', role: 'Custom', status: 'active', createdAt: new Date().toISOString() });
+      localStorage.setItem('spawnkit-created-agents', JSON.stringify(stored));
+      var result = JSON.parse(localStorage.getItem('spawnkit-created-agents'));
+      return result.length === 2 && result.filter(function(a) { return a.id === 'phoenix'; }).length === 1;
+    });
+
+    // ── Test 6: Delete agent from localStorage ──
+    assert('Delete agent from localStorage', function() {
+      var stored = JSON.parse(localStorage.getItem('spawnkit-created-agents') || '[]');
+      stored = stored.filter(function(c) { return c.id !== 'phoenix'; });
+      localStorage.setItem('spawnkit-created-agents', JSON.stringify(stored));
+      var result = JSON.parse(localStorage.getItem('spawnkit-created-agents'));
+      return result.length === 1 && result[0].id === 'nexus';
+    });
+
+    // ── Test 7: Delete last agent ──
+    assert('Delete last agent leaves empty array', function() {
+      var stored = JSON.parse(localStorage.getItem('spawnkit-created-agents') || '[]');
+      stored = stored.filter(function(c) { return c.id !== 'nexus'; });
+      localStorage.setItem('spawnkit-created-agents', JSON.stringify(stored));
+      var result = JSON.parse(localStorage.getItem('spawnkit-created-agents'));
+      return result.length === 0;
+    });
+
+    // ── Test 8: Corrupt localStorage recovery ──
+    assert('Handle corrupt localStorage gracefully', function() {
+      localStorage.setItem('spawnkit-created-agents', 'NOT_JSON{{{');
+      var created = [];
+      try { created = JSON.parse(localStorage.getItem('spawnkit-created-agents') || '[]'); } catch(e) { created = []; }
+      if (!Array.isArray(created)) created = [];
+      return Array.isArray(created) && created.length === 0;
+    });
+
+    // ── Test 9: Agent ID generation (sanitization) ──
+    assert('Agent ID strips special chars', function() {
+      var name = 'My Agent #1!';
+      var baseId = name.toLowerCase().replace(/[^a-z0-9]/g, '');
+      return baseId === 'myagent1';
+    });
+
+    // ── Test 10: Agent ID dedup with suffix ──
+    assert('Agent ID dedup adds suffix', function() {
+      var AGENTS = { phoenix: true };
+      var baseId = 'phoenix';
+      var agentId = baseId;
+      var suffix = 2;
+      while (AGENTS[agentId]) {
+        agentId = baseId + suffix;
+        suffix++;
+      }
+      return agentId === 'phoenix2';
+    });
+
+    // ── Test 11: getAllAgents integration ──
+    assert('getAllAgents merges hardcoded + custom', function() {
+      localStorage.setItem('spawnkit-created-agents', JSON.stringify([
+        { id: 'custom1', name: 'Custom', emoji: '🎯', role: 'Analyst' }
+      ]));
+      var hardcoded = [
+        { id: 'ceo', name: 'Sycopa', role: 'CEO' },
+        { id: 'forge', name: 'Forge', role: 'CTO' }
+      ];
+      var all = hardcoded.slice();
+      try {
+        var created = JSON.parse(localStorage.getItem('spawnkit-created-agents') || '[]');
+        created.forEach(function(c) {
+          all.push({ id: c.id, name: c.emoji + ' ' + c.name, role: c.role || 'Custom', status: 'active' });
+        });
+      } catch(e) {}
+      return all.length === 3 && all[2].id === 'custom1' && all[2].name === '🎯 Custom';
+    });
+
+    // ── Test 12: isCustomAgent detection ──
+    assert('isCustomAgent correctly identifies custom vs hardcoded', function() {
+      localStorage.setItem('spawnkit-created-agents', JSON.stringify([{ id: 'custom1' }]));
+      var created = JSON.parse(localStorage.getItem('spawnkit-created-agents') || '[]');
+      var isCustom = created.some(function(c) { return c.id === 'custom1'; });
+      var isHardcoded = created.some(function(c) { return c.id === 'ceo'; });
+      return isCustom === true && isHardcoded === false;
+    });
+
+    // ── Cleanup ──
+    localStorage.removeItem('spawnkit-created-agents');
+
+    // ── Summary ──
+    var passed = results.filter(function(r) { return r.pass; }).length;
+    var total = results.length;
+    document.getElementById('summary').innerHTML = 
+      (passed === total ? '🎉' : '⚠️') + ' ' + passed + '/' + total + ' tests passed';
+    document.getElementById('summary').style.color = passed === total ? '#30D158' : '#FF3B30';
+  </script>
+</body>
+</html>

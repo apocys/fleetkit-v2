@@ -513,6 +513,26 @@
       });
     });
 
+    /* Refresh Mission Desk team grid (called after agent creation/deletion) */
+    function refreshMissionDeskTeam() {
+      var teamEl = document.getElementById('missionDeskTeam');
+      if (!teamEl) return;
+      teamEl.innerHTML = buildTeamHtml();
+      // Re-wire click handlers
+      teamEl.querySelectorAll('.md-agent').forEach(function(tile) {
+        if (tile.classList.contains('md-agent--add')) {
+          tile.addEventListener('click', function() {
+            if (typeof window.openAddAgentWizard === 'function') window.openAddAgentWizard();
+          });
+        } else {
+          tile.addEventListener('click', function() {
+            handleAgentClick(tile.getAttribute('data-agent-id'));
+          });
+        }
+      });
+    }
+    window.refreshMissionDeskTeam = refreshMissionDeskTeam;
+
     /* Panel close */
     panelClose && panelClose.addEventListener('click', closePanel);
     backdrop   && backdrop.addEventListener('click', closePanel);

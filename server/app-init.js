@@ -710,7 +710,32 @@ try {
             } catch(e) {}
         }
 
+        // Delete button for custom agents (not hardcoded ones)
+        var isCustomAgent = false;
+        try {
+            var createdAgents = JSON.parse(localStorage.getItem('spawnkit-created-agents') || '[]');
+            isCustomAgent = createdAgents.some(function(c) { return c.id === agentId; });
+        } catch(e) {}
+        if (isCustomAgent) {
+            body += '<div class="detail-section" style="margin-top:16px;padding-top:12px;border-top:1px solid var(--border-subtle);">';
+            body += '<button id="deleteAgentBtn" data-agent-id="' + esc(agentId) + '" style="width:100%;padding:10px;border-radius:10px;border:1px solid #FF3B30;background:transparent;color:#FF3B30;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.15s;">🗑️ Delete Agent</button>';
+            body += '</div>';
+        }
+
         document.getElementById('detailBody').innerHTML = body;
+
+        // Wire delete button
+        var delBtn = document.getElementById('deleteAgentBtn');
+        if (delBtn) {
+            delBtn.addEventListener('click', function() {
+                var id = delBtn.dataset.agentId;
+                if (confirm('Delete this agent? This cannot be undone.')) {
+                    if (typeof window.deleteCustomAgent === 'function') {
+                        window.deleteCustomAgent(id);
+                    }
+                }
+            });
+        }
 
         // Wire up skill management buttons (NEW #1) — works with or without API
         var addSkillBtn = document.getElementById('addSkillBtn');
