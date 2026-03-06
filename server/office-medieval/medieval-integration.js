@@ -279,7 +279,7 @@
           if (!persona || persona === 'ApoMac' || persona === 'ceo') return;
           var msgs = chatMsgArea.querySelectorAll('.sk-chat-msg-assistant .sk-chat-msg-label');
           msgs.forEach(function(label) {
-            if (label.textContent === '🤖 Sycopa') {
+            if (label.textContent === '🤖 ApoMac') {
               label.textContent = '🤖 ' + persona;
             }
           });
