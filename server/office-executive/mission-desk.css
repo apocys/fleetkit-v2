@@ -272,6 +272,37 @@
   color: var(--text-tertiary, #636366); background: var(--bg-tertiary, #F5F5F7);
 }
 
+/* ── 6b. Chat Resume Button ──────────────────────────────── */
+.md-chat-resume-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  border: 1px solid var(--border-subtle, rgba(0, 0, 0, 0.08));
+  background: var(--bg-secondary, rgba(0, 0, 0, 0.04));
+  cursor: pointer;
+  transition: all 200ms var(--ease-smooth, ease);
+  max-width: 200px;
+  color: var(--exec-blue, #007AFF);
+}
+.md-chat-resume-btn:hover {
+  background: var(--bg-tertiary, rgba(0, 0, 0, 0.08));
+  border-color: var(--exec-blue, #007AFF);
+}
+.md-chat-resume-btn svg {
+  flex-shrink: 0;
+  stroke: var(--exec-blue, #007AFF);
+}
+.md-chat-resume-preview {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary, #636366);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /* ── 7. Chat Expanded ─────────────────────────────────────── */
 #chatExpanded {
   position: fixed;

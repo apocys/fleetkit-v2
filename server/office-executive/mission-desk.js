@@ -97,14 +97,30 @@
       ? '<img src="' + escapeHtml(userAvatar) + '" alt="" style="width:32px;height:32px;border-radius:50%;object-fit:cover;" />'
       : '<div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#007AFF,#5856D6);display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:600;">' + escapeHtml(userDisplay.charAt(0).toUpperCase()) + '</div>';
 
+    // Chat history preview for header button
+    var chatHistory = [];
+    try { chatHistory = JSON.parse(localStorage.getItem('spawnkit-chat-history') || '[]'); } catch(e) {}
+    var lastAiMsg = '';
+    for (var ci = chatHistory.length - 1; ci >= 0; ci--) {
+      if (chatHistory[ci].role === 'ai' && chatHistory[ci].text) { lastAiMsg = chatHistory[ci].text; break; }
+    }
+    var chatPreview = lastAiMsg ? escapeHtml(lastAiMsg.substring(0, 40)) + (lastAiMsg.length > 40 ? '...' : '') : '';
+    var chatBtnStyle = chatHistory.length > 0 ? '' : ' style="display:none"';
+
     var header = '<div class="md-page-header" style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px 8px;max-width:640px;margin:0 auto;width:100%;">' +
       '<div style="display:flex;align-items:center;gap:10px;">' +
         '<div style="font-size:20px;font-weight:700;color:var(--text-primary,#1c1c1e);letter-spacing:-0.3px;">SpawnKit</div>' +
         '<div style="font-size:11px;color:var(--text-tertiary,#8E8E93);background:var(--bg-secondary,rgba(0,0,0,0.04));padding:2px 8px;border-radius:6px;font-weight:500;">Beta</div>' +
       '</div>' +
-      '<button class="md-user-menu" id="mdUserMenu" style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:4px;border-radius:10px;transition:background 0.15s;background:none;border:none;" aria-label="User menu">' +
-        avatarHtml +
-      '</button>' +
+      '<div style="display:flex;align-items:center;gap:8px;">' +
+        '<button class="md-chat-resume-btn" id="mdChatResumeBtn"' + chatBtnStyle + ' aria-label="Resume chat">' +
+          '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>' +
+          '<span class="md-chat-resume-preview" id="mdChatResumePreview">' + (chatPreview || 'Continue chat') + '</span>' +
+        '</button>' +
+        '<button class="md-user-menu" id="mdUserMenu" style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:4px;border-radius:10px;transition:background 0.15s;background:none;border:none;" aria-label="User menu">' +
+          avatarHtml +
+        '</button>' +
+      '</div>' +
     '</div>';
 
     var landing = '<div id="missionDesk" class="md-landing">' +
@@ -292,6 +308,27 @@
       var heroInput = document.getElementById('missionDeskInput');
       if (heroInput) heroInput.focus();
     }, 310);
+    updateChatResumeBtn();
+  }
+
+  function updateChatResumeBtn() {
+    var btn = document.getElementById('mdChatResumeBtn');
+    var preview = document.getElementById('mdChatResumePreview');
+    if (!btn) return;
+    var history = [];
+    try { history = JSON.parse(localStorage.getItem('spawnkit-chat-history') || '[]'); } catch(e) {}
+    if (history.length > 0) {
+      btn.style.display = '';
+      if (preview) {
+        var lastAi = '';
+        for (var i = history.length - 1; i >= 0; i--) {
+          if (history[i].role === 'ai' && history[i].text) { lastAi = history[i].text; break; }
+        }
+        preview.textContent = lastAi ? lastAi.substring(0, 40) + (lastAi.length > 40 ? '...' : '') : 'Continue chat';
+      }
+    } else {
+      btn.style.display = 'none';
+    }
   }
 
   /* ── Panel system ───────────────────────────────────────────────── */
@@ -451,6 +488,14 @@
     /* Send visibility */
     if (heroInput && heroSend) bindSendVisibility(heroInput, heroSend);
     if (chatInput && chatSend) bindSendVisibility(chatInput, chatSend);
+
+    /* Chat resume button */
+    var chatResumeBtn = document.getElementById('mdChatResumeBtn');
+    if (chatResumeBtn) {
+      chatResumeBtn.addEventListener('click', function () {
+        activate(); // open chat with existing history, no initial message
+      });
+    }
 
     /* Hero input */
     heroInput && heroInput.addEventListener('keydown', function (e) {
