@@ -232,7 +232,7 @@
                     agentIds.forEach(function(id) {
                         LIVE_AGENT_DATA[id] = {
                             currentTask: parsed.nextTask || 'See TODO.md',
-                            todos: id === 'ceo' ? parsed.todos : [],
+                            todos: parsed.todos,
                             skills: []
                         };
                     });
