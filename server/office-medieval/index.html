@@ -1021,6 +1021,25 @@
                     });
                 });
 
+                // Also include dynamically spawned sub-agent knights
+                if (app.characterModels) {
+                    app.characterModels.forEach(function(charData, knightId) {
+                        if (!app.agents.has(knightId)) {
+                            rows.push({
+                                id: knightId,
+                                name: knightId,
+                                role: 'Sub-Agent',
+                                char: null,
+                                color: '#8B4513',
+                                active: true,
+                                emoji: '⚔️',
+                                mood: 'questing',
+                                selected: knightId === app.selectedAgent
+                            });
+                        }
+                    });
+                }
+
                 // Sort: active first, then alphabetical
                 rows.sort(function(a, b) {
                     if (a.active !== b.active) return a.active ? -1 : 1;

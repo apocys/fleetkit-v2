@@ -294,12 +294,42 @@
         window._chatPersona = agentId;
         window._chatSessionKey = null; // reset — default to main session
 
-        // Check if this agentId is a sub-agent knight — if so, route to its session
+        // Check if this agentId is a sub-agent knight
         var charData = app.characterModels.get(agentId);
         if (charData && charData.sessionKey) {
           window._chatSessionKey = charData.sessionKey;
+          // Sub-agent selected — show mission status panel instead of chat
+          chatContainer.style.display = 'flex';
+          window.ThemeChat.show();
+          var headerLabel = chatContainer.querySelector('span');
+          if (headerLabel) headerLabel.textContent = '⚔️ ' + agentId + ' — Mission';
+          // Fetch sub-agent history and show it
+          window.ThemeAuth.fetch(window.ThemeAuth.getApiUrl() + '/api/oc/sessions').then(function(r) {
+            if (!r.ok) return;
+            return r.json();
+          }).then(function(data) {
+            if (!data) return;
+            var sessions = data.sessions || data || [];
+            var sess = sessions.find(function(s) { return s.key === charData.sessionKey; });
+            if (sess && window.ThemeChat._appendMsg) {
+              // Clear chat and show mission info
+              var msgArea = chatContainer.querySelector('.sk-chat-messages');
+              if (msgArea) msgArea.innerHTML = '';
+              window.ThemeChat._appendMsg({ role: 'assistant', content: '⚔️ **' + agentId + '**\n📋 Task: ' + (sess.task || sess.label || 'Unknown mission') + '\n⏱ Status: ' + (sess.status || 'active') + '\n🤖 Model: ' + (sess.model || 'unknown'), timestamp: Date.now() });
+              if (sess.status === 'done' || sess.status === 'completed') {
+                // Disable input for completed missions
+                var input = chatContainer.querySelector('input');
+                if (input) { input.placeholder = 'Mission complete — read only'; input.disabled = true; }
+              } else {
+                var input = chatContainer.querySelector('input');
+                if (input) { input.placeholder = 'Send message to ' + agentId + '...'; input.disabled = false; }
+              }
+            }
+          });
+          return;
         }
 
+        window._chatSessionKey = null;
         chatContainer.style.display = 'flex';
         window.ThemeChat.show();
         // Update chat header to show who you're talking to
