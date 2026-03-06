@@ -439,9 +439,7 @@ try {
 
     function openMailbox(tab) {
         if (typeof tab === 'object') tab = undefined; // Handle event object
-        closeTodoPanel();
-        closeDetailPanel();
-        closeChatPanel(); // Close old chat panel if open
+        closeAllPanels();
         mailboxOverlay.classList.add('open');
 
         // Switch to specified tab or default to Messages when opened via mailbox button
@@ -524,8 +522,7 @@ try {
             return;
         }
 
-        closeMailbox();
-        closeTodoPanel();
+        closeAllPanels();
 
         var agent = AGENTS[agentId];
         if (!agent) return;
@@ -916,8 +913,7 @@ try {
        ═══════════════════════════════════════════════ */
 
     async function openMeetingPanel() {
-        closeTodoPanel(); // Close TODO panel if open
-        closeMailbox();   // Close mailbox if open
+        closeAllPanels();
 
         // Build meeting content from REAL active subagents (FIX #7)
         var content = '';
@@ -1661,6 +1657,7 @@ try {
 
         if (!overlay || !body) return;
 
+        closeAllPanels();
         overlay.classList.add('open');
         document.body.style.overflow = 'hidden';
 
@@ -2122,6 +2119,16 @@ try {
         closeCronPanel();
         closeMemoryPanel();
         closeRemotePanel();
+        closeMissionsPanel();
+        closeSettingsPanel();
+        closeChatHistory();
+        // Close orchestration overlay if open
+        var orchOvl = document.getElementById('orchestrationOverlay');
+        if (orchOvl) { orchOvl.classList.remove('open'); }
+        // Close add agent wizard if open
+        var addAgentOvl = document.getElementById('addAgentOverlay');
+        if (addAgentOvl) { addAgentOvl.classList.remove('open'); }
+        document.body.style.overflow = '';
     }
 
     /* ═══════════════════════════════════════════════
@@ -2141,6 +2148,18 @@ try {
        ═══════════════════════════════════════════════ */
 
     window.__EXEC_THEME = 'executive';
+
+    /* Export panel functions for cross-module use (mission-desk.js, orchestration.js etc.) */
+    window.closeAllPanels = closeAllPanels;
+    window.openMailbox = openMailbox;
+    window.openMeetingPanel = openMeetingPanel;
+    window.openMissionsPanel = openMissionsPanel;
+    window.openSettingsPanel = openSettingsPanel;
+    window.openCronPanel = openCronPanel;
+    window.openMemoryPanel = openMemoryPanel;
+    window.openDetailPanel = openDetailPanel;
+    window.openChatHistory = openChatHistory;
+    window.openRemoteOverlay = openRemoteOverlay;
 
     /* ═══════════════════════════════════════════════
        Live Activity Simulation — Makes it feel alive
