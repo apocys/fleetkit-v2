@@ -1405,7 +1405,14 @@ const server = http.createServer(async (req, res) => {
           });
           return;
         }
-        // SPA fallback to office-executive/index.html
+        // For asset files (.js, .css, .json, .png, etc) return proper 404 — never serve HTML as JS
+        const reqExt = path.extname(filePath);
+        if (reqExt && reqExt !== '.html') {
+          res.writeHead(404, {'Content-Type': 'text/plain'});
+          res.end('Not found: ' + filePath);
+          return;
+        }
+        // SPA fallback to office-executive/index.html (only for navigation/HTML requests)
         fs.readFile(path.join(STATIC_DIR, 'office-executive', 'index.html'), (e2, html) => {
           if (e2) { res.writeHead(500); res.end('Error'); return; }
           res.writeHead(200, {'Content-Type': 'text/html', 'Cache-Control': 'no-store, no-cache, must-revalidate'}); res.end(html);
