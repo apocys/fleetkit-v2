@@ -633,6 +633,7 @@
             },
             events: [],
             todo: memoryData.todo || '',
+            todo: memoryData.todo || '',
             memory: {
                 lastUpdated: memoryData.files && memoryData.files.length > 0 ? new Date().toISOString() : null,
                 fileCount: (memoryData.files || []).length,
