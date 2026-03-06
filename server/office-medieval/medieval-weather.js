@@ -148,8 +148,11 @@ function initWeather(app) {
     const WEATHER_ICONS = { clear: '☀️', rain: '🌧️', snow: '❄️', fog: '🌫️', cloudy: '☁️' };
     const badge = document.createElement('div');
     badge.id = 'weather-badge';
-    badge.style.cssText = 'position:fixed;top:44px;right:8px;z-index:90;background:rgba(0,0,0,0.6);color:#fff;padding:4px 12px;border-radius:12px;font-size:11px;font-family:Crimson Text,serif;pointer-events:auto;cursor:pointer;backdrop-filter:blur(4px);border:1px solid rgba(201,169,89,0.2);';
-    document.body.appendChild(badge);
+    badge.style.cssText = 'display:inline-flex;align-items:center;gap:4px;background:rgba(0,0,0,0.4);color:#fff;padding:2px 10px;border-radius:8px;font-size:11px;font-family:Crimson Text,serif;pointer-events:auto;cursor:pointer;backdrop-filter:blur(4px);border:1px solid rgba(201,169,89,0.15);margin-left:8px;';
+    // Append to header status bar instead of body (avoids popup overlap)
+    var statusBar = document.querySelector('.castle-status-bar');
+    if (statusBar) statusBar.appendChild(badge);
+    else document.body.appendChild(badge);
 
     // Day/Night label
     function getDayNightLabel() {

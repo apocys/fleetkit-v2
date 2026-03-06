@@ -232,18 +232,39 @@
         theme:          'medieval',
         placeholder:    'Your command, Your Majesty...',
         userLabel:      'Your Majesty',
-        assistantLabel: '🤖 Sycopa',
+        assistantLabel: '🤖 ApoMac',
       });
 
-      // Wrap sendMessage to prefix with active persona context
+      // Wrap sendMessage to route to sub-agent or persona
       var origSend = window.ThemeChat._sendMessage;
       if (origSend) {
         window.ThemeChat._sendMessage = function(text) {
           var persona = window._chatPersona;
+          var sessionKey = window._chatSessionKey; // set when selecting a sub-agent
+
+          // If targeting a sub-agent session, send directly to that session
+          if (sessionKey && sessionKey !== 'agent:main:main') {
+            if (!text.trim()) return;
+            var input = chatContainer.querySelector('input');
+            if (input) { input.value = ''; input.focus(); }
+            // Show user message
+            window.ThemeChat._appendMsg && window.ThemeChat._appendMsg({ role: 'user', content: text, timestamp: Date.now() });
+            window.ThemeAuth.fetch(window.ThemeAuth.getApiUrl() + '/api/oc/chat', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ message: text, sessionKey: sessionKey })
+            }).then(function(resp) {
+              if (resp.ok) return resp.json().then(function(data) {
+                if (data.reply) window.ThemeChat._appendMsg && window.ThemeChat._appendMsg({ role: 'assistant', content: data.reply, timestamp: Date.now() });
+              });
+            }).catch(function() {
+              window.ThemeChat._appendMsg && window.ThemeChat._appendMsg({ role: 'assistant', content: '(Connection lost)', timestamp: Date.now() });
+            });
+            return;
+          }
+
           if (persona && persona !== 'ApoMac' && persona !== 'ceo') {
             text = '[Speaking to ' + persona + '] ' + text;
-            // Update the label for the response
-            var labels = chatContainer.querySelectorAll('.sk-chat-msg-label');
           }
           origSend(text);
         };
@@ -271,6 +292,14 @@
         origSelect(agentId);
         // Open chat for all agents — set persona context for the selected agent
         window._chatPersona = agentId;
+        window._chatSessionKey = null; // reset — default to main session
+
+        // Check if this agentId is a sub-agent knight — if so, route to its session
+        var charData = app.characterModels.get(agentId);
+        if (charData && charData.sessionKey) {
+          window._chatSessionKey = charData.sessionKey;
+        }
+
         chatContainer.style.display = 'flex';
         window.ThemeChat.show();
         // Update chat header to show who you're talking to
@@ -341,7 +370,11 @@
           Object.keys(currentSubIds).forEach(function(sid) {
             if (!_knownSubAgents[sid]) {
               var s = currentSubIds[sid];
-              var knightName = s.label || s.displayName || ('Knight-' + Object.keys(_knownSubAgents).length);
+              // Generate friendly knight name — avoid raw UUIDs
+              var rawName = s.label || s.displayName || '';
+              var isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}/.test(rawName);
+              var knightNum = Object.keys(_knownSubAgents).length + 1;
+              var knightName = (rawName && !isUUID) ? rawName : ('Knight-' + knightNum);
               // Create a temporary character if not already on scene
               if (!app.characterModels.has(knightName)) {
                 var mesh = app.createCharacterMesh(0x8B4513, null); // brown armor
@@ -354,6 +387,7 @@
                   waypoints: [{ x: 0, z: 13 }, { x: -12, z: 20 }, { x: 0, z: 0 }],
                   waypointIndex: 0, nextWaypointIndex: 1, speed: 0.4,
                   progress: 0, bobPhase: Math.random() * Math.PI * 2, glowMesh: null,
+                  sessionKey: sid, // for reverse lookup during decommission
                 });
                 var label = document.createElement('div');
                 label.className = 'character-label';
@@ -369,8 +403,17 @@
           Object.keys(_knownSubAgents).forEach(function(sid) {
             if (!currentSubIds[sid]) {
               var s = _knownSubAgents[sid];
-              var knightName = s.label || s.displayName || sid;
-              if (app.characterModels.has(knightName)) {
+              // Use stored friendly name for decommission lookup
+              var rawDecomName = s.label || s.displayName || sid;
+              var isUUID2 = /^[0-9a-f]{8}-[0-9a-f]{4}/.test(rawDecomName);
+              var knightName = isUUID2 ? null : rawDecomName;
+              // If UUID, find matching knight by session key
+              if (!knightName) {
+                app.characterModels.forEach(function(cd, aid) {
+                  if (cd.sessionKey === sid) knightName = aid;
+                });
+              }
+              if (knightName && app.characterModels.has(knightName)) {
                 window.MedievalLifecycle.decommissionAgent(knightName);
               }
             }

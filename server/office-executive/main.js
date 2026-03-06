@@ -30,6 +30,9 @@
         try {
             setupConfig = JSON.parse(localStorage.getItem('spawnkit-config') || '{}');
         } catch(e) {}
+        
+        // Dynamic CEO name from config
+        var ceoName = setupConfig.userName || 'ApoMac';
 
         /* Check if spawnkitAPI is available (Electron preload) */
         // spawnkitAPI reference — isAvailable() is async, resolved at init time
@@ -133,7 +136,7 @@
         }, 2000);
 
         var AGENTS = {
-            ceo:      { name: setupConfig.userName || 'Sycopa', role: setupConfig.ceoName || 'CEO', color: '#007AFF', status: 'active', task: 'Orchestrating fleet operations' },
+            ceo:      { name: setupConfig.userName || 'ApoMac', role: setupConfig.ceoName || 'CEO', color: '#007AFF', status: 'active', task: 'Orchestrating fleet operations' },
             atlas:    { name: 'Atlas',    role: 'COO',           color: '#BF5AF2', status: 'idle', task: '' },
             forge:    { name: 'Forge',    role: 'CTO',           color: '#FF9F0A', status: 'idle', task: '' },
             hunter:   { name: 'Hunter',   role: 'CRO',           color: '#FF453A', status: 'idle', task: '' },
@@ -168,8 +171,8 @@
 
         /* SVG avatar ID map for mailbox rendering */
         var AVATAR_MAP = {
-            'Sycopa': 'avatar-ceo',
-            [setupConfig.userName || 'Sycopa']: 'avatar-ceo',
+            'ApoMac': 'avatar-ceo',
+            [ceoName]: 'avatar-ceo',
             'Atlas': 'avatar-atlas',
             'Forge': 'avatar-forge',
             'Hunter': 'avatar-hunter',
@@ -2179,9 +2182,9 @@
         }
 
         /* ── Chat Tab Functions ─────────────────────── */
-        var currentChatTarget = 'ceo'; // Default target: CEO (Sycopa)
+        var currentChatTarget = 'ceo'; // Default target: CEO (ApoMac)
         var availableChatTargets = [
-            { id: 'ceo', name: 'CEO (Sycopa)', emoji: '🎭' },
+            { id: 'ceo', name: 'CEO (' + ceoName + ')', emoji: '🎭' },
             { id: 'apomac', name: 'ApoMac (Remote)', emoji: '🍎' }
         ];
 
@@ -3471,13 +3474,13 @@
             var html = '<div style="margin-bottom:16px">';
             html += '<div style="font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:#8E8E93;font-weight:600;margin-bottom:12px">Fleet Network</div>';
 
-            // This IS Sycopa HQ — show as home office with green status
+            // This IS the CEO's HQ — show as home office with green status
             html += '<div class="remote-office-card" style="border:1.5px solid #34C75940;background:var(--bg-tertiary);">';
             html += '<div class="remote-office-header">';
             html += '<span class="remote-office-emoji">🎭</span>';
             html += '<div>';
-            html += '<div class="remote-office-name">Sycopa HQ <span style="font-size:10px;font-weight:500;background:#34C75920;color:#34C759;border-radius:4px;padding:1px 6px;margin-left:6px;">This Office</span></div>';
-            html += '<div class="remote-office-status online" style="color:#34C759;">● Online — Sycopa (CEO)</div>';
+            html += '<div class="remote-office-name">' + ceoName + ' HQ <span style="font-size:10px;font-weight:500;background:#34C75920;color:#34C759;border-radius:4px;padding:1px 6px;margin-left:6px;">This Office</span></div>';
+            html += '<div class="remote-office-status online" style="color:#34C759;">● Online — ' + ceoName + ' (CEO)</div>';
             html += '</div></div>';
             html += '<div style="font-size:12px;color:#8E8E93;padding:6px 0 0">fleet.spawnkit.ai • Hetzner node</div>';
             html += '</div>';

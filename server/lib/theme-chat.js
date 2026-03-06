@@ -166,7 +166,7 @@ window.ThemeChat = {
     poll();
     startPoll();
 
-    self._panel = panel; self._container = container; self._sendMessage = sendMessage;
+    self._panel = panel; self._container = container; self._sendMessage = sendMessage; self._appendMsg = appendMessage;
     self._callbacks = callbacks; self._startPoll = startPoll; self._stopPoll = stopPoll;
   },
   show: function() {

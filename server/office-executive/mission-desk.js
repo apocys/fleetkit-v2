@@ -2,8 +2,15 @@
 (function () {
   'use strict';
 
+  // Configuration
+  var setupConfig = {};
+  try {
+    setupConfig = JSON.parse(localStorage.getItem('spawnkit-config') || '{}');
+  } catch(e) {}
+  var ceoName = setupConfig.userName || 'ApoMac';
+
   var AGENTS = [
-    { id: 'ceo',      name: 'Sycopa',   role: 'CEO', avatar: '#avatar-ceo',      status: 'active', color: '#007AFF' },
+    { id: 'ceo',      name: 'ApoMac',   role: 'CEO', avatar: '#avatar-ceo',      status: 'active', color: '#007AFF' },
     { id: 'atlas',    name: 'Atlas',    role: 'COO', avatar: '#avatar-atlas',    status: 'idle',   color: '#BF5AF2' },
     { id: 'forge',    name: 'Forge',    role: 'CTO', avatar: '#avatar-forge',    status: 'idle',   color: '#FF9F0A' },
     { id: 'hunter',   name: 'Hunter',   role: 'CRO', avatar: '#avatar-hunter',   status: 'idle',   color: '#FF453A' },

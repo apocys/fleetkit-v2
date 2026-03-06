@@ -4,6 +4,13 @@
         var RELAY_URL = window.OC_RELAY_URL || 'http://127.0.0.1:18789';
         var RELAY_TOKEN = window.OC_RELAY_TOKEN || '';
 
+        // Configuration
+        var setupConfig = {};
+        try {
+            setupConfig = JSON.parse(localStorage.getItem('spawnkit-config') || '{}');
+        } catch(e) {}
+        var ceoName = setupConfig.userName || 'ApoMac';
+
         // ── Relay fetch helper ──
         function relayGet(endpoint) {
             var url = RELAY_URL.replace(/\/+$/, '') + endpoint;
@@ -142,7 +149,7 @@
             // Clean display name: remove "Cron: " prefix, use label over key
             function cleanName(s) {
                 var name = s.label || s.displayName || s.key || 'unknown';
-                return name.replace(/^Cron:\s*/i, '').replace(/^agent:main:(main|hook:proactive)$/, 'Sycopa (CEO)');
+                return name.replace(/^Cron:\s*/i, '').replace(/^agent:main:(main|hook:proactive)$/, ceoName + ' (CEO)');
             }
             
             var html = '';
@@ -153,7 +160,7 @@
                 html += '<div class="orch-agent-card" data-agent="ceo" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;background:linear-gradient(135deg,rgba(255,214,10,0.08),var(--bg-tertiary));margin-bottom:8px;cursor:pointer;border:1px solid rgba(255,214,10,0.15);">';
                 html += '<div style="width:8px;height:8px;border-radius:50%;background:#30D158;flex-shrink:0;"></div>';
                 html += '<div style="flex:1;min-width:0;">';
-                html += '<div style="font-size:13px;font-weight:600;color:var(--text-primary);">👑 Sycopa <span style="font-weight:400;color:var(--text-tertiary);">Orchestrator</span></div>';
+                html += '<div style="font-size:13px;font-weight:600;color:var(--text-primary);">👑 ' + ceoName + ' <span style="font-weight:400;color:var(--text-tertiary);">Orchestrator</span></div>';
                 html += '<div style="font-size:11px;color:var(--text-secondary);margin-top:2px;">' + (mainSession.totalTokens || 0).toLocaleString() + ' tokens · ' + (mainSession.model || 'unknown') + '</div>';
                 html += '</div></div>';
             }
@@ -381,7 +388,7 @@
                 var html = '<div style="font-size:11px;text-transform:uppercase;font-weight:600;color:var(--text-tertiary);letter-spacing:0.5px;margin-bottom:8px;">Sessions (' + deduped.length + ')</div>';
                 deduped.forEach(function(s) {
                     var isActive = s.status === 'active';
-                    var label = (s.label || s.displayName || s.key || 'session').replace(/^Cron:\s*/i, '').replace(/^agent:main:main$/, 'Sycopa (CEO)');
+                    var label = (s.label || s.displayName || s.key || 'session').replace(/^Cron:\s*/i, '').replace(/^agent:main:main$/, ceoName + ' (CEO)');
                     var kind = s.kind || 'unknown';
                     var model = s.model || '';
                     var tokens = s.totalTokens || 0;
@@ -640,7 +647,7 @@
             // CEO Name
             html += '<div style="margin-bottom:16px;">';
             html += '<label style="font-size:12px;font-weight:500;color:var(--text-secondary);display:block;margin-bottom:4px;">CEO Name</label>';
-            html += '<input type="text" id="setupCeoName" value="' + esc(stored.userName || 'Sycopa') + '" style="width:100%;padding:8px 12px;border-radius:8px;border:1px solid var(--border-medium);background:var(--bg-secondary);color:var(--text-primary);font-size:13px;font-family:inherit;box-sizing:border-box;" />';
+            html += '<input type="text" id="setupCeoName" value="' + esc(stored.userName || 'ApoMac') + '" style="width:100%;padding:8px 12px;border-radius:8px;border:1px solid var(--border-medium);background:var(--bg-secondary);color:var(--text-primary);font-size:13px;font-family:inherit;box-sizing:border-box;" />';
             html += '</div>';
 
             // Save button

@@ -11,6 +11,13 @@
     return (window.skFetch || fetch)(url, opts);
   }
 
+  /* ── Configuration ─────────────────────────────────────────────── */
+  var setupConfig = {};
+  try {
+    setupConfig = JSON.parse(localStorage.getItem('spawnkit-config') || '{}');
+  } catch(e) {}
+  var ceoName = setupConfig.userName || 'ApoMac';
+
   /* ── Helpers ────────────────────────────────────────────────────── */
   function escMc(s) {
     return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -83,8 +90,8 @@
 
   /* ── Agent chat routing ─────────────────────────────────────────── */
   var AGENT_DEFS = {
-    ceo:      { name: 'Sycopa',   avatar: '#avatar-ceo',      role: 'CEO' },
-    sycopa:   { name: 'Sycopa',   avatar: '#avatar-ceo',      role: 'CEO' },
+    ceo:      { name: 'ApoMac',   avatar: '#avatar-ceo',      role: 'CEO' },
+    sycopa:   { name: 'ApoMac',   avatar: '#avatar-ceo',      role: 'CEO' },
     atlas:    { name: 'Atlas',    avatar: '#avatar-atlas',    role: 'Navigator' },
     forge:    { name: 'Forge',    avatar: '#avatar-forge',    role: 'Builder' },
     hunter:   { name: 'Hunter',   avatar: '#avatar-hunter',   role: 'Scout' },

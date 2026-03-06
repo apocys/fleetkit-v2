@@ -819,6 +819,7 @@ const server = http.createServer(async (req, res) => {
     res.setHeader('Content-Type', 'application/json');
     const body = await readBody(req);
     const message = body?.message;
+    const targetSession = body?.sessionKey; // Optional: route to sub-agent session
     if (!message || typeof message !== 'string') {
       res.writeHead(400);
       res.end(JSON.stringify({ error: 'Missing message field' }));
@@ -827,6 +828,29 @@ const server = http.createServer(async (req, res) => {
     try {
       const OC_GATEWAY = 'http://localhost:18789';
       const OC_TOKEN = process.env.OC_GATEWAY_TOKEN || '2b1b2cdb509e42c71b487eca06502e794baff0d7e6a8e81e';
+
+      // If targeting a specific sub-agent session, use sessions_send
+      if (targetSession && targetSession !== 'agent:main:main') {
+        const resp = await fetch(OC_GATEWAY + '/api/sessions/' + encodeURIComponent(targetSession) + '/send', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + OC_TOKEN,
+          },
+          body: JSON.stringify({ message }),
+        });
+        if (!resp.ok) {
+          const errText = await resp.text();
+          console.error('[chat] Session send error:', resp.status, errText);
+          res.writeHead(502);
+          res.end(JSON.stringify({ error: 'Session send error', status: resp.status }));
+          return;
+        }
+        const data = await resp.json();
+        res.writeHead(200);
+        res.end(JSON.stringify({ ok: true, reply: data?.reply || data?.message || '(Awaiting response...)' }));
+        return;
+      }
 
       // Detect persona prefix: [Speaking to Hunter] message
       let agentMessage = message;

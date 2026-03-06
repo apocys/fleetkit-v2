@@ -14,6 +14,13 @@
         var mcTodoContent = null; // cache loaded TODO content
         var mcTranscriptContent = null; // cache loaded transcript
 
+        // Configuration
+        var setupConfig = {};
+        try {
+            setupConfig = JSON.parse(localStorage.getItem('spawnkit-config') || '{}');
+        } catch(e) {}
+        var ceoName = setupConfig.userName || 'ApoMac';
+
         function escMc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
         // ── Open/Close ──
@@ -162,7 +169,7 @@
                 var mainSess = sessArr.find(function(s) { return s.key === 'agent:main:main'; });
                 if (mainSess) {
                     activeTasks.unshift({
-                        text: '🎭 Main Session (Sycopa)',
+                        text: '🎭 Main Session (' + ceoName + ')',
                         status: 'active', icon: '👑', agent: 'ceo',
                         subtasks: [
                             { text: 'Model: ' + (mainSess.model || 'unknown'), done: false },
@@ -205,7 +212,7 @@
                     var allItems = group.active.concat(group.done);
                     if (allItems.length === 0) return;
 
-                    var agentName = agentKey === 'ceo' ? 'Sycopa' : agentKey.charAt(0).toUpperCase() + agentKey.slice(1);
+                    var agentName = agentKey === 'ceo' ? ceoName : agentKey.charAt(0).toUpperCase() + agentKey.slice(1);
 
                     // Collapsible section per agent
                     html += '<div class="mc-progression" style="background:rgba(255,255,255,0.03);border-radius:12px;padding:12px 14px;margin-bottom:8px;">';
@@ -421,7 +428,7 @@
                 html += '<div id="mcFeedList" style="display:none;"></div>';
                 html += '<div class="mc-raw-transcript" id="mcRawTranscript" style="display:block;">Loading transcript...</div>';
                 html += '<div id="mcChatInputBar" style="display:flex;gap:8px;padding:8px 12px;border-top:1px solid var(--border-subtle);background:var(--bg-secondary);align-items:center;">';
-                html += '<input type="text" id="mcChatInput" placeholder="Message Sycopa..." style="flex:1;padding:8px 12px;border:1px solid var(--border-medium);border-radius:20px;font-size:13px;font-family:inherit;background:var(--bg-primary);color:var(--text-primary);outline:none;" />';
+                html += '<input type="text" id="mcChatInput" placeholder="Message ' + ceoName + '..." style="flex:1;padding:8px 12px;border:1px solid var(--border-medium);border-radius:20px;font-size:13px;font-family:inherit;background:var(--bg-primary);color:var(--text-primary);outline:none;" />';
                 html += '<button id="mcChatSend" style="width:32px;height:32px;border-radius:50%;border:none;background:var(--exec-blue);color:white;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;">↑</button>';
                 html += '</div>';
             }
@@ -454,7 +461,7 @@
                     chatSend.disabled = true;
                     var el = document.getElementById('mcRawTranscript');
                     if (el) {
-                        el.innerHTML += '<div class="mc-transcript-msg mc-transcript-msg--user"><div class="mc-transcript-bubble"><div class="mc-transcript-role">Kira</div><div>' + msg.replace(/</g, '&lt;').replace(/\n/g, '<br>') + '</div></div></div>';
+                        el.innerHTML += '<div class="mc-transcript-msg mc-transcript-msg--user"><div class="mc-transcript-bubble"><div class="mc-transcript-role">You</div><div>' + msg.replace(/</g, '&lt;').replace(/\n/g, '<br>') + '</div></div></div>';
                         el.scrollTop = el.scrollHeight + 9999;
                     }
                     var apiUrl = window.OC_API_URL || (window.location.hostname.includes('spawnkit.ai') ? window.location.origin : 'http://127.0.0.1:8222');
@@ -469,7 +476,7 @@
                         if (data.reply) {
                             var el2 = document.getElementById('mcRawTranscript');
                             if (el2) {
-                                el2.innerHTML += '<div class="mc-transcript-msg mc-transcript-msg--assistant"><div class="mc-transcript-bubble"><div class="mc-transcript-role">Sycopa</div><div>' + data.reply.replace(/</g, '&lt;').replace(/\n/g, '<br>') + '</div></div></div>';
+                                el2.innerHTML += '<div class="mc-transcript-msg mc-transcript-msg--assistant"><div class="mc-transcript-bubble"><div class="mc-transcript-role">' + ceoName + '</div><div>' + data.reply.replace(/</g, '&lt;').replace(/\n/g, '<br>') + '</div></div></div>';
                                 el2.scrollTop = el2.scrollHeight + 9999;
                             }
                         }
@@ -601,7 +608,7 @@
 
                 var preview = content.length > 600 ? content.substring(0, 600) + '…' : content;
                 var isUser = role === 'user' || role === 'human';
-                var roleName = isUser ? 'Kira' : 'Sycopa';
+                var roleName = isUser ? 'You' : ceoName;
                 var roleClass = isUser ? 'mc-transcript-msg--user' : 'mc-transcript-msg--assistant';
 
                 html += '<div class="mc-transcript-msg ' + roleClass + '">';
