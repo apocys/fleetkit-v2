@@ -154,20 +154,26 @@
             sentinel: ['🛡️ Audit', '✅ QA', '⚠️ Risk', '🔍 Review']
         };
 
-        /* Live data caches */
+        /* Live data caches — populated by OcStore subscription */
         var liveSessionData = null;
         var liveCronData = null;
         var liveMemoryData = null;
         var chatHistory = JSON.parse(localStorage.getItem('spawnkit-chat-history') || '[]');
 
-        /* Pre-fetch cron + memory data for panels */
-        async function prefetchPanelData() {
-            if (!API) return;
-            try { liveCronData = await Promise.resolve(API.getCrons()); } catch(e) {}
-            try { liveMemoryData = await Promise.resolve(API.getMemory()); } catch(e) {}
+        /* Sync OcStore data into local caches (replaces prefetchPanelData polling) */
+        function initOcStoreSubscription() {
+            if (window.OcStore) {
+                window.OcStore.subscribe(function(data) {
+                    liveCronData = data.crons;
+                    liveMemoryData = data.memory;
+                    liveSessionData = data.sessions;
+                });
+            } else {
+                // OcStore not ready yet — retry on DOM
+                document.addEventListener('DOMContentLoaded', initOcStoreSubscription);
+            }
         }
-        prefetchPanelData();
-        setInterval(prefetchPanelData, 30000);
+        initOcStoreSubscription();
 
         /* SVG avatar ID map for mailbox rendering */
         var AVATAR_MAP = {
@@ -652,13 +658,10 @@
             body += '<div class="detail-metric"><div class="detail-metric-value">—</div><div class="detail-metric-label">Last Active</div></div>';
             body += '</div></div>';
 
-            // Fetch real metrics from API bridge
+            // Use cached sessions from OcStore (no extra fetch)
             (async function() {
                 try {
-                    var apiUrl = (window.OC_API_URL || (window.location.hostname.includes('spawnkit.ai') ? window.location.origin : 'http://127.0.0.1:8222'));
-                    var resp = await  skFetch(apiUrl + '/api/oc/sessions');
-                    if (!resp.ok) return;
-                    var sessions = await resp.json();
+                    var sessions = (window.OcStore && window.OcStore.sessions) || [];
                     // Map agentId to session key patterns
                     var agentKeyMap = {
                         ceo: 'agent:main:main',
@@ -725,13 +728,10 @@
             body += '<div class="detail-section" id="detailSubAgents"><div class="detail-section-title">Sub-Agents</div>';
             body += '<div id="detailSubAgentList" style="color:var(--text-tertiary);font-size:13px;">Loading...</div></div>';
 
-            // Async: populate sub-agents from live sessions
+            // Populate sub-agents from OcStore cache (no extra fetch)
             (async function() {
                 try {
-                    var apiUrl = (window.OC_API_URL || (window.location.hostname.includes('spawnkit.ai') ? window.location.origin : 'http://127.0.0.1:8222'));
-                    var resp = await  skFetch(apiUrl + '/api/oc/sessions');
-                    if (!resp.ok) return;
-                    var sessions = await resp.json();
+                    var sessions = (window.OcStore && window.OcStore.sessions) || [];
                     var agentKeyMap = { ceo: 'main', atlas: 'atlas', forge: 'forge', hunter: 'hunter', echo: 'echo', sentinel: 'sentinel' };
                     var matchKey = agentKeyMap[agentId] || agentId;
                     // Find sub-agents: sessions with kind=subagent whose label contains the matchKey
@@ -2508,21 +2508,16 @@
                     }
                 }
                 
-                // 3. Also fetch sessions for additional context
-                var sessResponse = await  skFetch(apiUrl + '/api/oc/sessions');
-                if (sessResponse.ok) {
-                    var sessions = await sessResponse.json();
-                    if (Array.isArray(sessions)) {
-                        sessions.filter(function(s) { return s.status === 'active'; }).slice(0, 10).forEach(function(s) {
-                            combinedHistory.push({
-                                role: 'assistant',
-                                content: '📋 Session: ' + (s.label || s.displayName || s.key) + ' (' + s.model + ')',
-                                timestamp: s.lastActive || Date.now(),
-                                target: s.channel || 'system'
-                            });
-                        });
-                    }
-                }
+                // 3. Use OcStore sessions for additional context (no extra fetch)
+                var sessions = (window.OcStore && window.OcStore.sessions) || [];
+                sessions.filter(function(s) { return s.status === 'active'; }).slice(0, 10).forEach(function(s) {
+                    combinedHistory.push({
+                        role: 'assistant',
+                        content: '📋 Session: ' + (s.label || s.displayName || s.key) + ' (' + s.model + ')',
+                        timestamp: s.lastActive || Date.now(),
+                        target: s.channel || 'system'
+                    });
+                });
             } catch (error) {
                 console.warn('[ChatHistory] API fetch failed:', error.message);
             }
@@ -2596,37 +2591,31 @@
             var activities = [];
             var apiUrl = window.OC_API_URL || (window.location.hostname.includes('spawnkit.ai') ? window.location.origin : 'http://127.0.0.1:8222');
 
-            // Fetch sessions from API
+            // Use OcStore sessions (no extra fetch)
             try {
-                var sessResp = await skFetch(apiUrl + '/api/oc/sessions');
-                if (sessResp.ok) {
-                    var sessData = await sessResp.json();
-                    var sessions = Array.isArray(sessData) ? sessData : (sessData.sessions || []);
-                    sessions.forEach(function(s) {
-                        if (s.startedAt || s.lastActive || s.createdAt) {
-                            var ts = s.startedAt || s.createdAt || s.lastActive;
-                            var name = s.label || s.displayName || s.key || 'Session';
-                            var icon = s.kind === 'subagent' ? '🤖' : '💻';
-                            var statusText = s.status === 'active' ? 'started' : (s.status === 'ended' ? 'ended' : s.status || 'active');
-                            activities.push({ time: new Date(ts), icon: icon, text: name + ' ' + statusText });
-                        }
-                    });
-                }
-            } catch(e) { console.warn('[Activity] sessions fetch:', e); }
+                var sessData = (window.OcStore && window.OcStore.sessions) || [];
+                var sessions = Array.isArray(sessData) ? sessData : (sessData.sessions || []);
+                sessions.forEach(function(s) {
+                    if (s.startedAt || s.lastActive || s.createdAt) {
+                        var ts = s.startedAt || s.createdAt || s.lastActive;
+                        var name = s.label || s.displayName || s.key || 'Session';
+                        var icon = s.kind === 'subagent' ? '🤖' : '💻';
+                        var statusText = s.status === 'active' ? 'started' : (s.status === 'ended' ? 'ended' : s.status || 'active');
+                        activities.push({ time: new Date(ts), icon: icon, text: name + ' ' + statusText });
+                    }
+                });
+            } catch(e) { console.warn('[Activity] OcStore read:', e); }
 
-            // Fetch cron run history
+            // Use OcStore crons (no extra fetch)
             try {
-                var cronResp = await skFetch(apiUrl + '/api/oc/crons');
-                if (cronResp.ok) {
-                    var cronData = await cronResp.json();
-                    var cronList = Array.isArray(cronData) ? cronData : (cronData.jobs || cronData.crons || []);
-                    cronList.forEach(function(c) {
-                        if (c.state && c.state.lastRunAtMs) {
-                            activities.push({ time: new Date(c.state.lastRunAtMs), icon: '⏰', text: (c.name || 'Cron') + ' triggered' });
-                        }
-                    });
-                }
-            } catch(e) { console.warn('[Activity] crons fetch:', e); }
+                var cronData = (window.OcStore && window.OcStore.crons) || {};
+                var cronList = Array.isArray(cronData) ? cronData : (cronData.jobs || cronData.crons || []);
+                cronList.forEach(function(c) {
+                    if (c.state && c.state.lastRunAtMs) {
+                        activities.push({ time: new Date(c.state.lastRunAtMs), icon: '⏰', text: (c.name || 'Cron') + ' triggered' });
+                    }
+                });
+            } catch(e) { console.warn('[Activity] OcStore crons read:', e); }
 
             // From in-memory agents
             var agents = (window.SpawnKit && SpawnKit.data && SpawnKit.data.agents) ? SpawnKit.data.agents : [];
@@ -2665,12 +2654,19 @@
             }).join('');
         }
 
-        // Auto-refresh chat every 10s when communications hub is open with chat tab active
-        setInterval(function() {
-            if (mailboxOverlay.classList.contains('open') && document.getElementById('chatTab').classList.contains('active')) {
-                loadChatTabTranscript();
+        // Chat auto-refresh via OcStore (replaces dedicated 10s setInterval)
+        function initChatRefresh() {
+            if (window.OcStore) {
+                window.OcStore.subscribe(function() {
+                    if (mailboxOverlay.classList.contains('open') && document.getElementById('chatTab').classList.contains('active')) {
+                        loadChatTabTranscript();
+                    }
+                });
+            } else {
+                document.addEventListener('DOMContentLoaded', initChatRefresh);
             }
-        }, 10000);
+        }
+        initChatRefresh();
 
         /* ═══════════════════════════════════════════════
            Cron / Calendar Panel (Feature 4)
@@ -3284,33 +3280,24 @@
                 try { sessions = await API.getSessions(); } catch(e) {}
             }
             
-            // Fallback: fetch from API bridge
-            if (!sessions) {
-                try {
-                    var apiUrl = (window.OC_API_URL || (window.location.hostname.includes('spawnkit.ai') ? window.location.origin : 'http://127.0.0.1:8222'));
-                    var resp = await  skFetch(apiUrl + '/api/oc/sessions');
-                    if (resp.ok) {
-                        var data = await resp.json();
-                        // API bridge returns array of sessions
-                        if (Array.isArray(data)) {
-                            sessions = { 
-                                subagents: data.filter(function(s) { return s.kind === 'subagent'; }).map(function(s) {
-                                    return {
-                                        id: s.key,
-                                        name: s.label || s.displayName || s.key.split(':').pop(),
-                                        label: s.label || s.displayName,
-                                        status: s.status === 'active' ? 'running' : 'completed',
-                                        parentAgent: s.key.split(':')[1] || 'main',
-                                        model: s.model,
-                                        totalTokens: s.totalTokens || 0,
-                                        lastActive: s.lastActive
-                                    };
-                                }),
-                                activeSessions: data.filter(function(s) { return s.status === 'active'; })
-                            };
-                        }
-                    }
-                } catch(e) {}
+            // Fallback: use OcStore cache (no extra fetch)
+            if (!sessions && window.OcStore && window.OcStore.sessions.length > 0) {
+                var data = window.OcStore.sessions;
+                sessions = { 
+                    subagents: data.filter(function(s) { return s.kind === 'subagent'; }).map(function(s) {
+                        return {
+                            id: s.key,
+                            name: s.label || s.displayName || s.key.split(':').pop(),
+                            label: s.label || s.displayName,
+                            status: s.status === 'active' ? 'running' : 'completed',
+                            parentAgent: s.key.split(':')[1] || 'main',
+                            model: s.model,
+                            totalTokens: s.totalTokens || 0,
+                            lastActive: s.lastActive
+                        };
+                    }),
+                    activeSessions: data.filter(function(s) { return s.status === 'active'; })
+                };
             }
 
             // Build mission list from sessions
@@ -3392,10 +3379,17 @@
             missionsBody.innerHTML = html;
         }
 
-        // Auto-refresh missions every 15s when open
-        setInterval(function() {
-            if (missionsOverlay.classList.contains('open')) renderMissions();
-        }, 15000);
+        // Missions auto-refresh via OcStore (replaces dedicated 15s setInterval)
+        function initMissionsRefresh() {
+            if (window.OcStore) {
+                window.OcStore.subscribe(function() {
+                    if (missionsOverlay.classList.contains('open')) renderMissions();
+                });
+            } else {
+                document.addEventListener('DOMContentLoaded', initMissionsRefresh);
+            }
+        }
+        initMissionsRefresh();
 
         /* ═══════════════════════════════════════════════
            Settings Panel (NEW #3: API Keys + NEW #5: Mapping)
@@ -3712,16 +3706,21 @@
             });
         }
         
-        // Check for decommissions every 10s
-        setInterval(checkForDecommissions, 10000);
-        // Initialize the set
-        if (API) {
-            API.getSessions().then(function(sessions) {
-                (sessions.subagents || []).filter(function(sa) { return sa.status === 'running'; }).forEach(function(sa) {
-                    previousSubagentIds.add(sa.id);
-                });
-            }).catch(function() {});
+        // Decommission checks via OcStore (replaces dedicated 10s setInterval)
+        function initDecommissionCheck() {
+            if (window.OcStore) {
+                window.OcStore.subscribe(function() { checkForDecommissions(); });
+                // Initialize the set from current cache
+                if (window.OcStore.sessions) {
+                    window.OcStore.sessions.filter(function(s) { return s.kind === 'subagent' && s.status === 'active'; }).forEach(function(s) {
+                        previousSubagentIds.add(s.key || s.id);
+                    });
+                }
+            } else {
+                document.addEventListener('DOMContentLoaded', initDecommissionCheck);
+            }
         }
+        initDecommissionCheck();
 
         /* ═══════════════════════════════════════════════
            Update meeting room preview on load (FIX #7)
@@ -3750,7 +3749,15 @@
             }
         }
         updateMeetingPreview();
-        setInterval(updateMeetingPreview, 15000);
+        // Meeting preview auto-refresh via OcStore (replaces dedicated 15s setInterval)
+        function initMeetingPreviewRefresh() {
+            if (window.OcStore) {
+                window.OcStore.subscribe(function() { updateMeetingPreview(); });
+            } else {
+                document.addEventListener('DOMContentLoaded', initMeetingPreviewRefresh);
+            }
+        }
+        initMeetingPreviewRefresh();
 
         /* Update closeAllPanels to include new panels */
         var _origCloseAll = closeAllPanels;

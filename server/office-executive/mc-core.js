@@ -3,17 +3,21 @@
 
     // ─── Overlay reference ───────────────────────────────────────────────────────
     var mcOverlay = document.getElementById('missionControlOverlay');
-    var mcRefreshTimer = null;
+    var _mcSubscriber = null;
 
     // ─── Open / Close ────────────────────────────────────────────────────────────
     window.openMissionControl = function() {
-        if (mcRefreshTimer) clearInterval(mcRefreshTimer);
         mcOverlay.style.display = 'flex';
         requestAnimationFrame(function() {
             mcOverlay.classList.add('visible');
         });
+        // Render immediately from OcStore cache
         loadMC();
-        mcRefreshTimer = setInterval(loadMC, 15000);
+        // Subscribe for live updates while MC is open
+        if (window.OcStore && !_mcSubscriber) {
+            _mcSubscriber = function() { loadMC(); };
+            window.OcStore.subscribe(_mcSubscriber);
+        }
     };
 
     window.closeMissionControl = function() {
@@ -21,9 +25,10 @@
         setTimeout(function() {
             mcOverlay.style.display = 'none';
         }, 300);
-        if (mcRefreshTimer) {
-            clearInterval(mcRefreshTimer);
-            mcRefreshTimer = null;
+        // Unsubscribe when MC closes
+        if (window.OcStore && _mcSubscriber) {
+            window.OcStore.unsubscribe(_mcSubscriber);
+            _mcSubscriber = null;
         }
     };
 
@@ -36,13 +41,13 @@
 
     // ─── Cleanup on unload ───────────────────────────────────────────────────────
     window.addEventListener('beforeunload', function() {
-        if (mcRefreshTimer) {
-            clearInterval(mcRefreshTimer);
-            mcRefreshTimer = null;
+        if (window.OcStore && _mcSubscriber) {
+            window.OcStore.unsubscribe(_mcSubscriber);
+            _mcSubscriber = null;
         }
     });
 
-    // ─── Data loader (core wiring) ───────────────────────────────────────────────
+    // ─── Data loader (uses OcStore cache) ────────────────────────────────────────
     var _mcLoading = false;
     var _lastMcHash = '';
 
@@ -50,41 +55,30 @@
         if (_mcLoading) return;
         _mcLoading = true;
 
-        var API_URL = window.OC_API_URL || (
-            window.location.hostname.includes('spawnkit.ai')
-                ? window.location.origin
-                : 'http://127.0.0.1:8222'
-        );
-        var skF = window.skFetch || fetch;
+        // Read sessions from OcStore instead of fetching
+        var sessions = (window.OcStore && window.OcStore.sessions) || [];
 
-        skF(API_URL + '/api/oc/sessions').then(function(r) {
-            return r.ok ? r.json() : [];
-        }).then(function(sessions) {
-            if (!Array.isArray(sessions)) sessions = [];
+        // Hash check — skip re-render if nothing changed
+        var hash = JSON.stringify(sessions.map(function(s) {
+            return s.key + ':' + (s.status || '') + ':' + (s.totalTokens || 0);
+        }));
 
-            // Hash check — skip re-render if nothing changed
-            var hash = JSON.stringify(sessions.map(function(s) {
-                return s.key + ':' + (s.status || '') + ':' + (s.totalTokens || 0);
-            }));
+        if (hash !== _lastMcHash) {
+            _lastMcHash = hash;
 
-            if (hash !== _lastMcHash) {
-                _lastMcHash = hash;
+            // Delegate rendering to each panel module
+            if (window.McSidebarLeft)  window.McSidebarLeft.render(sessions);
+            if (window.McCenter)       window.McCenter.render(sessions);
+            if (window.McSidebarRight) window.McSidebarRight.render(sessions);
+        }
 
-                // Delegate rendering to each panel module
-                if (window.McSidebarLeft)  window.McSidebarLeft.render(sessions);
-                if (window.McCenter)       window.McCenter.render(sessions);
-                if (window.McSidebarRight) window.McSidebarRight.render(sessions);
-            }
-        }).catch(function(err) {
-            console.warn('[MC Core] Failed to load sessions:', err);
-        }).finally(function() {
-            _mcLoading = false;
-        });
+        _mcLoading = false;
     }
 
     // ─── Force-refresh global ────────────────────────────────────────────────────
     window.mcRefresh = function() {
         _lastMcHash = '';
+        if (window.OcStore) window.OcStore.refresh();
         loadMC();
     };
 

@@ -399,23 +399,18 @@
 
   function loadOrchestration() {
     showLoading();
-    skF(API_URL + '/api/oc/sessions')
-      .then(function (r) { return r.json(); })
-      .then(function (data) {
-        var sessions = data.sessions || data || [];
-        elBody.innerHTML = renderAgentTree(sessions);
-        // agent click → load sub-transcript
-        var rows = elBody.querySelectorAll('.mc-agent-item');
-        for (var i = 0; i < rows.length; i++) {
-          rows[i].addEventListener('click', function () {
-            var sid = this.dataset.sessionId;
-            if (sid) loadAgentTranscript(sid);
-          });
-        }
-      })
-      .catch(function (err) {
-        showError('Could not load sessions: ' + err.message);
+    // Use OcStore cache instead of fetching
+    var data = (window.OcStore && window.OcStore.sessions) || [];
+    var sessions = data.sessions || data || [];
+    elBody.innerHTML = renderAgentTree(sessions);
+    // agent click → load sub-transcript
+    var rows = elBody.querySelectorAll('.mc-agent-item');
+    for (var i = 0; i < rows.length; i++) {
+      rows[i].addEventListener('click', function () {
+        var sid = this.dataset.sessionId;
+        if (sid) loadAgentTranscript(sid);
       });
+    }
   }
 
   function loadAgentTranscript(sessionId) {

@@ -8,7 +8,7 @@
         var mcRight = document.getElementById('mcRightCol');
         var mcStatus = document.getElementById('mcStatusBar');
         var API_URL = window.OC_API_URL || (window.location.hostname.includes('spawnkit.ai') ? window.location.origin : 'http://127.0.0.1:8222');
-        var mcRefreshTimer = null;
+        var _mcOcStoreSubscriber = null;
         var mcFeedMode = 'raw'; // 'filtered' or 'raw'
         var mcTodoExpanded = false;
         var mcTodoContent = null; // cache loaded TODO content
@@ -23,22 +23,32 @@
 
         function escMc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
-        // ── Open/Close ──
+        // ── Open/Close (uses OcStore subscription instead of polling) ──
         window.openMissionControl = function() {
-            if (mcRefreshTimer) { clearInterval(mcRefreshTimer); mcRefreshTimer = null; }
             mcOverlay.style.display = 'flex';
             requestAnimationFrame(function() { mcOverlay.classList.add('visible'); });
             loadMissionControl();
-            mcRefreshTimer = setInterval(loadMissionControl, 15000);
+            // Subscribe to OcStore for live updates while MC is open
+            if (window.OcStore && !_mcOcStoreSubscriber) {
+                _mcOcStoreSubscriber = function() { loadMissionControl(); };
+                window.OcStore.subscribe(_mcOcStoreSubscriber);
+            }
         };
         window.addEventListener('beforeunload', function() {
-            if (mcRefreshTimer) { clearInterval(mcRefreshTimer); mcRefreshTimer = null; }
+            if (window.OcStore && _mcOcStoreSubscriber) {
+                window.OcStore.unsubscribe(_mcOcStoreSubscriber);
+                _mcOcStoreSubscriber = null;
+            }
         });
 
         function closeMissionControl() {
             mcOverlay.classList.remove('visible');
             setTimeout(function() { mcOverlay.style.display = 'none'; }, 300);
-            if (mcRefreshTimer) { clearInterval(mcRefreshTimer); mcRefreshTimer = null; }
+            // Unsubscribe from OcStore
+            if (window.OcStore && _mcOcStoreSubscriber) {
+                window.OcStore.unsubscribe(_mcOcStoreSubscriber);
+                _mcOcStoreSubscriber = null;
+            }
             // Stop transcript polling when MC is closed
             if (_transcriptPollTimer) { clearInterval(_transcriptPollTimer); _transcriptPollTimer = null; }
             // Clear transcript cache so it reloads fresh next time
@@ -62,13 +72,8 @@
             mcLoading = true;
             // Clear task cache on each refresh so tasks stay current
             mcTodoContent = null;
-            var sessions = [];
-            try {
-                var resp = await skFetch(API_URL + '/api/oc/sessions');
-                if (resp.ok) sessions = await resp.json();
-            } catch(e) {
-                console.warn('[MC] Failed to load sessions:', e.message || e);
-            }
+            // Use OcStore cache (no extra fetch)
+            var sessions = (window.OcStore && window.OcStore.sessions) || [];
             try {
                 // Skip re-render if data unchanged (prevents blinking)
                 var hash = JSON.stringify(sessions.map(function(s) { return s.key + ':' + (s.status || '') + ':' + (s.totalTokens || 0); }));

@@ -124,37 +124,34 @@
       }
     }
 
-    // Build progression from active sub-agents (real-time from sessions)
+    // Build progression from active sub-agents (use OcStore cache)
     // Sub-agents spawned during current work = progression items
-    skF(API_URL + '/api/oc/sessions')
-      .then(function (r) { return r.ok ? r.json() : []; })
-      .then(function (sessions) {
-        if (!Array.isArray(sessions)) sessions = [];
-        var progressItems = [];
-        for (var i = 0; i < sessions.length; i++) {
-          var s = sessions[i];
-          var key = s.key || '';
-          if (key.indexOf('subagent') === -1) continue;
-          if (!s.label) continue;
-          var isActive = (s.status === 'active' || s.status === 'running');
-          var isDone = !isActive;
-          progressItems.push({
-            text: s.label,
-            status: isActive ? 'active' : 'done'
-          });
-        }
-        // Sort: active first, then done (newest first within each group)
-        progressItems.sort(function(a, b) {
-          if (a.status === 'active' && b.status !== 'active') return -1;
-          if (b.status === 'active' && a.status !== 'active') return 1;
-          return 0;
-        });
-        // Limit to 10 most recent
-        renderTasks(progressItems.slice(0, 10));
-      })
-      .catch(function () {
-        renderTasks([]);
+    var sessions = (window.OcStore && window.OcStore.sessions) || [];
+    if (!Array.isArray(sessions)) sessions = [];
+    
+    var progressItems = [];
+    for (var i = 0; i < sessions.length; i++) {
+      var s = sessions[i];
+      var key = s.key || '';
+      if (key.indexOf('subagent') === -1) continue;
+      if (!s.label) continue;
+      var isActive = (s.status === 'active' || s.status === 'running');
+      var isDone = !isActive;
+      progressItems.push({
+        text: s.label,
+        status: isActive ? 'active' : 'done'
       });
+    }
+    
+    // Sort: active first, then done (newest first within each group)
+    progressItems.sort(function(a, b) {
+      if (a.status === 'active' && b.status !== 'active') return -1;
+      if (b.status === 'active' && a.status !== 'active') return 1;
+      return 0;
+    });
+    
+    // Limit to 10 most recent
+    renderTasks(progressItems.slice(0, 10));
   }
 
   // ─── Section 2: Files ─────────────────────────────────────────────────────────

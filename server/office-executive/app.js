@@ -31,37 +31,10 @@
         //   LIVE AGENT BEHAVIORS — Real-time API Integration
         // ═══════════════════════════════════════════════════════════════
         
-        // Global state for agent polling
+        // Global state for agent behaviors (data from OcStore)
         var lastAgentState = {};
         var lastChatMessageCount = 0;
-        var pollTimer = null;
         var animationQueue = [];
-        
-        // API URL helper
-        function getApiUrl() {
-            return window.OC_API_URL || (window.location.hostname.includes('spawnkit.ai') ? window.location.origin : 'http://127.0.0.1:8222');
-        }
-        
-        // Agent polling function - fetches all necessary data
-        async function pollAgentState() {
-            try {
-                const [sessionsResp, memoryResp, chatResp, cronsResp] = await Promise.allSettled([
-                    skFetch(getApiUrl() + '/api/oc/sessions'),
-                    skFetch(getApiUrl() + '/api/oc/memory'),
-                    skFetch(getApiUrl() + '/api/oc/chat'),
-                    skFetch(getApiUrl() + '/api/oc/crons')
-                ]);
-                
-                const sessions = sessionsResp.status === 'fulfilled' && sessionsResp.value.ok ? await sessionsResp.value.json() : [];
-                const memory = memoryResp.status === 'fulfilled' && memoryResp.value.ok ? await memoryResp.value.json() : {};
-                const chat = chatResp.status === 'fulfilled' && chatResp.value.ok ? await chatResp.value.json() : [];
-                const crons = cronsResp.status === 'fulfilled' && cronsResp.value.ok ? await cronsResp.value.json() : {};
-                
-                processAgentStateChanges(sessions, memory, chat, crons);
-            } catch (error) {
-                console.warn('[LiveAgentBehaviors] Poll failed:', error.message || error);
-            }
-        }
         
         // Process state changes and trigger animations
         function processAgentStateChanges(sessions, memory, chat, crons) {
@@ -479,48 +452,23 @@
         `;
         document.head.appendChild(liveAnimationStyles);
         
-        // Initialize live agent behaviors
-        function initLiveAgentBehaviors() {
-            console.log('[LiveAgentBehaviors] Initializing...');
-            
-            // Initial poll
-            pollAgentState();
-            
-            // Set up polling interval (15 seconds)
-            if (pollTimer) clearInterval(pollTimer);
-            pollTimer = setInterval(pollAgentState, 15000);
-            
-            console.log('[LiveAgentBehaviors] Active - polling every 15s');
-        }
-        
-        // Start when DOM is ready — gated behind auth
-        function startAfterAuth() {
-            if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', initLiveAgentBehaviors);
-            } else {
-                initLiveAgentBehaviors();
-            }
-        }
-        if (typeof window.skAuthReady === 'function') {
-            window.skAuthReady(startAfterAuth);
+        // Subscribe to OcStore for live agent behavior updates (replaces pollAgentState)
+        if (window.OcStore) {
+            window.OcStore.subscribe(function(data) {
+                processAgentStateChanges(data.sessions, data.memory, data.chat, data.crons);
+            });
+            console.log('[LiveAgentBehaviors] Subscribed to OcStore');
         } else {
-            // auth.js not yet loaded — wait for it
+            // OcStore not yet available — wait for DOM
             document.addEventListener('DOMContentLoaded', function() {
-                if (typeof window.skAuthReady === 'function') {
-                    window.skAuthReady(startAfterAuth);
-                } else {
-                    startAfterAuth();
+                if (window.OcStore) {
+                    window.OcStore.subscribe(function(data) {
+                        processAgentStateChanges(data.sessions, data.memory, data.chat, data.crons);
+                    });
+                    console.log('[LiveAgentBehaviors] Subscribed to OcStore (deferred)');
                 }
             });
         }
-        
-        // Cleanup on page unload
-        window.addEventListener('beforeunload', () => {
-            if (pollTimer) {
-                clearInterval(pollTimer);
-                pollTimer = null;
-            }
-        });
         
         // ═══════════════════════════════════════════════════════════════
         //   THEME PICKER (Original functionality preserved)
