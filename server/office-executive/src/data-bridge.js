@@ -407,7 +407,7 @@
                 cpuUsage: 0.32,
                 model: 'claude-opus-4-6'
             },
-            sessions: sessionArray,
+            sessions: Array.isArray(raw.sessions) ? raw.sessions : [],
             events: [],
             memory: { lastUpdated: new Date(now - 3600000).toISOString(), fileCount: 12, totalSize: '48KB' }
         };
