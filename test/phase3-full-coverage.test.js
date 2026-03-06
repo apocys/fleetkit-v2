@@ -306,9 +306,9 @@ async function run() {
     });
   });
 
-  await test('static', 'GET /exec-styles.css returns CSS', async function () {
+  await test('static', 'GET /office-executive/styles.css returns CSS', async function () {
     return new Promise(function (resolve, reject) {
-      http.get(API_BASE + '/exec-styles.css', function (res) {
+      http.get(API_BASE + '/office-executive/styles.css', function (res) {
         let data = '';
         res.on('data', function (c) { data += c; });
         res.on('end', function () {
@@ -321,10 +321,10 @@ async function run() {
   });
 
   await test('static', 'Extracted JS files are served', async function () {
-    var jsFiles = ['gateway-detect.js', 'app-init.js', 'agent-wizard.js', 'relay-bridge.js', 'mc-wiring.js', 'live-agents.js'];
+    var jsFiles = ['auth.js', 'app.js', 'main.js', 'mission-desk.js', 'agents.js', 'mc-core.js'];
     for (var f of jsFiles) {
       const r = await new Promise(function (resolve, reject) {
-        http.get(API_BASE + '/' + f, function (res) {
+        http.get(API_BASE + '/office-executive/' + f, function (res) {
           resolve({ status: res.statusCode, ct: res.headers['content-type'] });
         }).on('error', reject);
       });

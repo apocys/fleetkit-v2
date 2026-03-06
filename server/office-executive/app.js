@@ -550,7 +550,7 @@
         var themeUrls = {
             executive: isProduction ? 'https://app.spawnkit.ai' : '/office-executive/index.html',
             medieval: isProduction ? 'https://app.spawnkit.ai/office-medieval/' : '/office-medieval/index.html',
-            simcity: isProduction ? 'https://app.spawnkit.ai/office-simcity/' : '/office-simcity/index.html'
+
         };
 
         document.querySelectorAll('.theme-card').forEach(function(card) {

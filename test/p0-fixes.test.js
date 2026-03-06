@@ -237,10 +237,10 @@ async function runSourceTests() {
     }
   });
 
-  await test('comms-panel', 'Mailbox overlay has correct CSS for visibility', async function () {
-    const css = fs.readFileSync(path.join(__dirname, '..', 'server', 'exec-styles.css'), 'utf8');
+  await test('comms-panel', 'Office executive styles contain exec room CSS rules', async function () {
+    const css = fs.readFileSync(path.join(__dirname, '..', 'server', 'office-executive', 'styles.css'), 'utf8');
     if (!css.includes('.mailbox-overlay.open')) {
-      throw new Error('Missing .mailbox-overlay.open CSS rule');
+      throw new Error('Missing .mailbox-overlay.open CSS rule in office-executive styles');
     }
     // .open state should set opacity: 1
     const openRule = css.substring(

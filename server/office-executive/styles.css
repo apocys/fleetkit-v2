@@ -83,7 +83,7 @@
             --color-sentinel: #30D158;
 
             /* ── Typography ─────────────────────────────────── */
-            --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji';
 
             /* ── Animation ──────────────────────────────────── */
             --ease-smooth: cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -113,6 +113,33 @@
             color: var(--text-primary);
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* Semantic button reset for room tiles */
+        button.exec-room {
+            background: none;
+            border: none;
+            padding: 0;
+            font: inherit;
+            color: inherit;
+            text-align: left;
+            cursor: pointer;
+            display: block;
+            width: 100%;
+        }
+
+        /* Semantic button reset for mission desk and org chart buttons */
+        button.md-agent,
+        button.md-agent-icon,
+        button.org-card {
+            background: none;
+            border: none;
+            padding: 0;
+            font: inherit;
+            color: inherit;
+            text-align: inherit;
+            cursor: pointer;
+            display: block;
         }
 
         /* ═══════════════════════════════════════════════════

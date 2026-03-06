@@ -1,7 +1,0 @@
-# Build artifacts
-dist/
-node_modules/
-
-# Pre-build copies
-lib/
-sprites/

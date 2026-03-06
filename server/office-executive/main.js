@@ -338,7 +338,7 @@
 
             // ── CEO node ──
             html += '<div class="org-node">';
-            html += '  <div class="org-card org-card--ceo" data-agent="ceo" tabindex="0" role="button" aria-label="' + esc(AGENTS.ceo.name) + ' — ' + esc(AGENTS.ceo.role) + '">';
+            html += '  <button class="org-card org-card--ceo" data-agent="ceo" aria-label="' + esc(AGENTS.ceo.name) + ' — ' + esc(AGENTS.ceo.role) + '">';
             html += '    <div class="agent-avatar agent-avatar--lg" aria-hidden="true"><svg><use href="#avatar-ceo"/></svg>';
             html += '      <span class="agent-status-dot agent-status-dot--active"></span>';
             html += '    </div>';
@@ -346,7 +346,7 @@
             html += '      <span class="agent-name">' + esc(AGENTS.ceo.name) + '</span>';
             html += '      <span class="agent-role">' + esc(AGENTS.ceo.role === 'CEO' ? 'Chief Executive Officer' : AGENTS.ceo.role) + '</span>';
             html += '    </div>';
-            html += '  </div>';
+            html += '  </button>';
             // CEO sub-agents
             if (subsByParent['ceo'] && subsByParent['ceo'].length > 0) {
                 html += renderSubagentCluster(subsByParent['ceo']);
@@ -362,7 +362,7 @@
                 var statusClass = agent.status === 'active' ? 'active' : (agent.status === 'busy' ? 'busy' : 'idle');
                 html += '<div class="org-child">';
                 html += '  <div class="org-connector--branch"></div>';
-                html += '  <div class="org-card" data-agent="' + agent.id + '" tabindex="0" role="button" aria-label="' + esc(agent.name) + ' — ' + esc(agent.role) + '">';
+                html += '  <button class="org-card" data-agent="' + agent.id + '" aria-label="' + esc(agent.name) + ' — ' + esc(agent.role) + '">';
                 html += '    <div class="agent-avatar" aria-hidden="true"><svg><use href="#' + agent.avatar + '"/></svg>';
                 html += '      <span class="agent-status-dot agent-status-dot--' + statusClass + '"></span>';
                 html += '    </div>';
@@ -370,7 +370,7 @@
                 html += '      <span class="agent-name">' + esc(agent.name) + '</span>';
                 html += '      <span class="agent-role">' + esc(agent.role) + '</span>';
                 html += '    </div>';
-                html += '  </div>';
+                html += '  </button>';
                 // Sub-agents under this C-level
                 var subs = subsByParent[agent.id] || [];
                 if (subs.length > 0) {
@@ -450,17 +450,20 @@
             if (typeof tab === 'object') tab = undefined; // Handle event object
             closeAllPanels();
             mailboxOverlay.classList.add('open');
-            
+
+            // Always populate targets eagerly so "Loading targets..." is replaced
+            loadChatTargets();
+
             // Switch to specified tab or default to Messages when opened via mailbox button
             if (tab === 'chat') {
                 switchCommTab('chat');
-                loadChatTargets(); // Load available targets for chat tab
-                document.getElementById('chatTabInput').focus();
+                var chatInput = document.getElementById('chatTabInput');
+                if (chatInput) chatInput.focus();
             } else {
                 switchCommTab('messages'); // Default to Messages tab when opened via CEO mailbox button
-                mailboxClose.focus();
+                if (mailboxClose) mailboxClose.focus();
             }
-            
+
             document.body.style.overflow = 'hidden';
             loadChatTabTranscript(); // Load chat data when opening
         }
@@ -2183,6 +2186,15 @@
         ];
 
         function loadChatTargets() {
+            // Try to enrich targets from relay/data-bridge
+            try {
+                var agents = (window.SpawnKit && window.SpawnKit.data && window.SpawnKit.data.agents) || [];
+                if (agents.length > 0) {
+                    availableChatTargets = agents.map(function(a) {
+                        return { id: a.id, name: a.name + ' (' + (a.role || '') + ')', emoji: a.id === 'ceo' ? '\uD83C\uDFAD' : '\uD83E\uDD16' };
+                    });
+                }
+            } catch(e) {}
             updateChatTargetSelector();
         }
 
@@ -2636,21 +2648,37 @@
         async function renderCronJobs() {
             var crons = null;
 
-            // Always prefer API bridge (has full state with nextRunAtMs)
-            {
-                try {
-                    var apiUrl = (window.OC_API_URL || (window.location.hostname.includes('spawnkit.ai') ? window.location.origin : 'http://127.0.0.1:8222'));
-                    var resp = await  skFetch(apiUrl + '/api/oc/crons');
-                    if (resp.ok) {
-                        var data = await resp.json();
-                        crons = data.jobs || data.crons || (Array.isArray(data) ? data : []);
-                    }
-                } catch(e) {}
-            }
+            // Show loading state (safe: static string, no user input)
+            cronBody.textContent = '';
+            var loadingEl = document.createElement('div');
+            loadingEl.style.cssText = 'text-align:center;padding:40px 20px;color:var(--text-tertiary);font-size:13px;';
+            loadingEl.textContent = 'Loading cron jobs\u2026';
+            cronBody.appendChild(loadingEl);
 
-            // Fallback to cached liveCronData if bridge failed
+            // 1) Prefer API bridge (has full state with nextRunAtMs)
+            try {
+                var apiUrl = (window.OC_API_URL || (window.location.hostname.includes('spawnkit.ai') ? window.location.origin : 'http://127.0.0.1:8222'));
+                var fetchFn = window.skFetch || fetch;
+                var resp = await fetchFn(apiUrl + '/api/oc/crons');
+                if (resp.ok) {
+                    var data = await resp.json();
+                    crons = data.jobs || data.crons || (Array.isArray(data) ? data : []);
+                }
+            } catch(e) {}
+
+            // 2) Fallback to cached liveCronData if bridge failed
             if ((!crons || !Array.isArray(crons) || crons.length === 0) && liveCronData) {
                 crons = liveCronData;
+            }
+
+            // 3) Fallback to SpawnKit data-bridge (direct)
+            if ((!crons || !Array.isArray(crons) || crons.length === 0) && window.SpawnKit && window.SpawnKit.data && window.SpawnKit.data.crons) {
+                crons = window.SpawnKit.data.crons;
+            }
+
+            // 4) Fallback to API bridge getCrons() (may have loaded since prefetch)
+            if ((!crons || !Array.isArray(crons) || crons.length === 0) && API && API.getCrons) {
+                try { crons = await Promise.resolve(API.getCrons()); } catch(e) {}
             }
 
             if (!crons || !Array.isArray(crons) || crons.length === 0) {
@@ -2709,7 +2737,7 @@
                     var currentState = btn.classList.contains('on');
                     btn.classList.toggle('on'); // optimistic update
                     var apiUrl = window.OC_API_URL || (window.location.hostname.includes('spawnkit.ai') ? window.location.origin : 'http://127.0.0.1:8222');
-                    skFetch(apiUrl + '/api/oc/crons', {
+                    (window.skFetch || fetch)(apiUrl + '/api/oc/crons', {
                         method: 'POST',
                         headers: {'Content-Type': 'application/json'},
                         body: JSON.stringify({action: 'update', jobId: cronId, patch: {enabled: !currentState}})
@@ -2803,6 +2831,13 @@
         }
 
         async function renderMemory() {
+            // Show loading state
+            memoryBody.textContent = '';
+            var loadingEl = document.createElement('div');
+            loadingEl.style.cssText = 'text-align:center;padding:40px 20px;color:var(--text-tertiary);font-size:13px;';
+            loadingEl.textContent = 'Loading memory\u2026';
+            memoryBody.appendChild(loadingEl);
+
             var mem = liveMemoryData;
             // Resolve if liveMemoryData is a Promise
             if (mem && typeof mem.then === 'function') {
@@ -2811,6 +2846,12 @@
             if (API && !mem) {
                 try { mem = await Promise.resolve(API.getMemory()); } catch(e) {}
             }
+
+            // Fallback to SpawnKit data-bridge (direct)
+            if (!mem && window.SpawnKit && window.SpawnKit.data && window.SpawnKit.data.memory) {
+                mem = window.SpawnKit.data.memory;
+            }
+
             // If mem came from data-bridge, it has {longTerm, daily, ...} shape
             // If longTerm is a string (legacy), wrap it
             if (mem && typeof mem.longTerm === 'string') {
@@ -2821,7 +2862,8 @@
             if (!mem) {
                 try {
                     var apiUrl = (window.OC_API_URL || (window.location.hostname.includes('spawnkit.ai') ? window.location.origin : 'http://127.0.0.1:8222'));
-                    var resp = await  skFetch(apiUrl + '/api/oc/memory');
+                    var fetchFn = window.skFetch || fetch;
+                    var resp = await fetchFn(apiUrl + '/api/oc/memory');
                     if (resp.ok) {
                         var data = await resp.json();
                         // API bridge returns { main: "content", files: [{name,size,modified}] }
@@ -2934,6 +2976,7 @@
             closeMemoryPanel();
             closeRemotePanel();
         }
+        window.closeAllPanels = closeAllPanels;
 
         /* ═══════════════════════════════════════════════
            Announce readiness to parent
@@ -3602,7 +3645,7 @@
 
         /* Update closeAllPanels to include new panels */
         var _origCloseAll = closeAllPanels;
-        closeAllPanels = function() {
+        closeAllPanels = window.closeAllPanels = function() {
             _origCloseAll();
             closeMissionsPanel();
             closeSettingsPanel();
@@ -3613,7 +3656,21 @@
             var orchOl = document.getElementById("orchestrationOverlay"); if (orchOl) orchOl.classList.remove("open");
             var addOl = document.getElementById("addAgentOverlay"); if (addOl) addOl.classList.remove("open");
             document.body.style.overflow = '';
+            if (window.SetupWizard && typeof window.SetupWizard.close === 'function') window.SetupWizard.close();
+            if (window.SkillForge && typeof window.SkillForge.close === 'function') window.SkillForge.close();
+            if (window.SkillMarketplace && typeof window.SkillMarketplace.close === 'function') window.SkillMarketplace.close();
+            var dbOl = document.getElementById('dailyBriefOverlay'); if (dbOl) dbOl.remove();
+            document.querySelectorAll('.uce-overlay').forEach(function(el) { el.remove(); });
         };
+
+        /* ── Window API: expose all panel functions globally ── */
+        window.openCronPanel    = openCronPanel;    window.closeCronPanel    = closeCronPanel;
+        window.openMemoryPanel  = openMemoryPanel;  window.closeMemoryPanel  = closeMemoryPanel;
+        window.openRemoteOverlay= openRemoteOverlay;window.closeRemotePanel  = closeRemotePanel;
+        window.openSettingsPanel= openSettingsPanel;window.closeSettingsPanel= closeSettingsPanel;
+        window.openChatHistory  = openChatHistory;  window.closeChatHistory  = closeChatHistory;
+        window.openMeetingPanel = openMeetingPanel; window.closeMeetingPanel = closeMeetingPanel;
+        window.openMailbox      = openMailbox;      window.closeMailbox      = closeMailbox;
 
         /* ═══════════════════════════════════════════════
            Fleet Communication Animation System
@@ -3904,10 +3961,15 @@
         });
     }
 
+    window.openMarketplace = openMarketplace;
     function openMarketplace() {
+        if (typeof window.closeAllPanels === 'function') window.closeAllPanels();
+        if (window.SkillMarketplace && typeof window.SkillMarketplace.open === 'function') {
+            window.SkillMarketplace.open();
+            return;
+        }
         var overlay = document.getElementById('marketplaceOverlay');
         if (!overlay) return;
-        closeAllPanels();
         overlay.classList.add('open');
         document.body.style.overflow = 'hidden';
         renderMarketplace();
@@ -4008,10 +4070,11 @@
         renderSkillsBody();
     }
 
+    window.openSkills = openSkills;
     function openSkills() {
         var overlay = document.getElementById('skillsOverlay');
         if (!overlay) return;
-        closeAllPanels();
+        if (typeof window.closeAllPanels === 'function') window.closeAllPanels();
         overlay.classList.add('open');
         document.body.style.overflow = 'hidden';
         skActiveCat = 'All';
@@ -4142,9 +4205,17 @@
         }
     }
 
+    window.openCreatorProfile = openCreatorProfile;
+    window.closeCreatorProfile = closeCreatorProfile;
+    function closeCreatorProfile() {
+        var overlay = document.getElementById('creatorProfileOverlay');
+        if (overlay) overlay.classList.remove('open');
+        document.body.style.overflow = '';
+    }
     function openCreatorProfile() {
         var overlay = document.getElementById('creatorProfileOverlay');
         if (!overlay) return;
+        if (typeof window.closeAllPanels === 'function') window.closeAllPanels();
         ['marketplaceOverlay', 'skillsOverlay'].forEach(function(id) {
             var el = document.getElementById(id);
             if (el) el.classList.remove('open');

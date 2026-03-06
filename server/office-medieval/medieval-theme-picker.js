@@ -4,7 +4,7 @@
     var themes = [
         { name: 'Executive Office', path: '/server/', icon: '🏢', desc: 'Frosted glass, Apple aesthetic' },
         { name: 'Medieval Castle', path: '/office-medieval/', icon: '🏰', desc: 'Three.js 3D castle (current)', current: true },
-        { name: 'SimCity Village', path: '/office-simcity-nature/', icon: '🏘️', desc: 'Isometric pixel village' },
+
         { name: 'Green Iso', path: '/green-iso/', icon: '🌿', desc: 'Isometric agent city' },
         { name: 'GameBoy', path: '/office-gameboy/', icon: '🎮', desc: 'Retro pixel handheld' },
     ];

@@ -24,11 +24,7 @@ var css = `
 .sk-chat.sk-medieval .sk-chat-input-bar{background:rgba(62,48,30,0.25);border:1px solid rgba(180,150,100,0.3);}
 .sk-chat.sk-medieval .sk-chat-send{background:#B8860B;}
 .sk-chat.sk-medieval{font-family:'Crimson Text',serif;}
-.sk-chat.sk-simcity .sk-chat-msg-user .sk-chat-msg-body{background:rgba(50,200,100,0.1);}
-.sk-chat.sk-simcity .sk-chat-msg-assistant .sk-chat-msg-body{background:rgba(20,25,35,0.5);}
-.sk-chat.sk-simcity .sk-chat-input-bar{background:rgba(20,25,35,0.5);border:1px solid rgba(50,200,100,0.2);}
-.sk-chat.sk-simcity .sk-chat-send{background:#32C864;}
-.sk-chat.sk-simcity{font-family:monospace;}
+
 `;
 
 function injectStyles() {
@@ -58,7 +54,7 @@ window.ThemeChat = {
     for (var k in opts) { if (opts.hasOwnProperty(k)) options[k] = opts[k]; }
 
     var panel = document.createElement('div');
-    panel.className = 'sk-chat' + (options.theme === 'medieval' ? ' sk-medieval' : options.theme === 'simcity' ? ' sk-simcity' : '');
+    panel.className = 'sk-chat' + (options.theme === 'medieval' ? ' sk-medieval' : '');
 
     var msgArea = document.createElement('div');
     msgArea.className = 'sk-chat-messages';

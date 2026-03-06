@@ -13,7 +13,7 @@
   var CSS = '.sk-drag-ghost{position:fixed;pointer-events:none;z-index:10000;display:flex;align-items:center;gap:8px;padding:8px 14px;border-radius:12px;font-family:system-ui,sans-serif;font-size:13px;font-weight:600;opacity:0.9;transform:translate(-50%,-50%) scale(1.05);transition:opacity 150ms;box-shadow:0 8px 24px rgba(0,0,0,0.3)}'
     + '.sk-drag-ghost-emoji{font-size:20px}'
     + '.sk-drag-ghost.sk-medieval{background:rgba(62,48,30,0.95);border:1px solid rgba(180,150,100,0.5);color:#E8D5B0}'
-    + '.sk-drag-ghost.sk-simcity{background:rgba(20,25,35,0.95);border:1px solid rgba(50,200,100,0.4);color:#B0FFB0;font-family:monospace}'
+
     + '.sk-drag-ghost.sk-executive{background:rgba(30,30,32,0.95);border:1px solid rgba(255,255,255,0.15);color:#fff;backdrop-filter:blur(12px)}'
     + '.sk-drop-zone-active{outline:2px dashed rgba(255,200,0,0.5);outline-offset:-2px}';
   var ST = { IDLE: 0, PENDING: 1, DRAGGING: 2 };

@@ -280,7 +280,7 @@
         <div class="exec-floor" id="gridView" role="tabpanel" aria-labelledby="tabGrid">
 
             <!-- ── CEO Room ────────────────────────────── -->
-            <div class="exec-room exec-room--ceo" role="button" tabindex="0" aria-label="CEO Office — Sycopa" data-agent="ceo">
+            <button class="exec-room exec-room--ceo" aria-label="CEO Office — Sycopa" data-agent="ceo">
                 <span class="exec-room-label">CEO Office</span>
                 <div class="ceo-content">
                     <div class="agent-avatar agent-avatar--lg" aria-hidden="true">
@@ -314,10 +314,10 @@
                         <span class="agent-detail-value">4h 23m</span>
                     </div>
                 </div>
-            </div>
+            </button>
 
             <!-- ── Atlas Room ──────────────────────────── -->
-            <div class="exec-room exec-room--atlas" role="button" tabindex="0" aria-label="Atlas — COO" data-agent="atlas">
+            <button class="exec-room exec-room--atlas" aria-label="Atlas — COO" data-agent="atlas">
                 <span class="exec-room-label">Atlas</span>
                 <div class="agent-avatar" aria-hidden="true">
                     <svg><use href="#avatar-atlas"/></svg>
@@ -339,10 +339,10 @@
                         <span class="agent-detail-value">8</span>
                     </div>
                 </div>
-            </div>
+            </button>
 
             <!-- ── Forge Room ──────────────────────────── -->
-            <div class="exec-room exec-room--forge" role="button" tabindex="0" aria-label="Forge — CTO" data-agent="forge">
+            <button class="exec-room exec-room--forge" aria-label="Forge — CTO" data-agent="forge">
                 <span class="exec-room-label">Forge</span>
                 <div class="agent-avatar" aria-hidden="true">
                     <svg><use href="#avatar-forge"/></svg>
@@ -364,10 +364,10 @@
                         <span class="agent-detail-value">5</span>
                     </div>
                 </div>
-            </div>
+            </button>
 
             <!-- ── Hunter Room ─────────────────────────── -->
-            <div class="exec-room exec-room--hunter" role="button" tabindex="0" aria-label="Hunter — CRO" data-agent="hunter">
+            <button class="exec-room exec-room--hunter" aria-label="Hunter — CRO" data-agent="hunter">
                 <span class="exec-room-label">Hunter</span>
                 <div class="agent-avatar" aria-hidden="true">
                     <svg><use href="#avatar-hunter"/></svg>
@@ -389,10 +389,10 @@
                         <span class="agent-detail-value">14</span>
                     </div>
                 </div>
-            </div>
+            </button>
 
             <!-- ── Echo Room ───────────────────────────── -->
-            <div class="exec-room exec-room--echo" role="button" tabindex="0" aria-label="Echo — CMO" data-agent="echo">
+            <button class="exec-room exec-room--echo" aria-label="Echo — CMO" data-agent="echo">
                 <span class="exec-room-label">Echo</span>
                 <div class="agent-avatar" aria-hidden="true">
                     <svg><use href="#avatar-echo"/></svg>
@@ -414,10 +414,10 @@
                         <span class="agent-detail-value">3</span>
                     </div>
                 </div>
-            </div>
+            </button>
 
             <!-- ── Meeting Room / Boardroom ────────────── -->
-            <div class="exec-room exec-room--meeting" role="button" tabindex="0" aria-label="Active Boardroom — Click to view meetings" data-room="meeting">
+            <button class="exec-room exec-room--meeting" aria-label="Active Boardroom — Click to view meetings" data-room="meeting">
                 <span class="exec-room-label">Boardroom</span>
                 <div class="meeting-status">
                     <span class="meeting-icon" aria-hidden="true">🏛️</span>
@@ -427,10 +427,10 @@
                 <div class="meeting-preview" id="meetingPreview">
                     <div class="meeting-active" style="color:var(--text-tertiary);font-size:11px;">Loading...</div>
                 </div>
-            </div>
+            </button>
 
             <!-- ── Sentinel Room ───────────────────────── -->
-            <div class="exec-room exec-room--sentinel" role="button" tabindex="0" aria-label="Sentinel — QA & Security" data-agent="sentinel">
+            <button class="exec-room exec-room--sentinel" aria-label="Sentinel — QA & Security" data-agent="sentinel">
                 <span class="exec-room-label">Sentinel</span>
                 <div class="agent-avatar" aria-hidden="true">
                     <svg><use href="#avatar-sentinel"/></svg>
@@ -452,7 +452,7 @@
                         <span class="agent-detail-value">7</span>
                     </div>
                 </div>
-            </div>
+            </button>
 
         </div>
         <!-- /exec-floor -->
@@ -961,14 +961,7 @@
                     </div>
                     <span class="theme-card-badge">Switch</span>
                 </div>
-                <div class="theme-card" data-theme="simcity">
-                    <div class="theme-card-icon">🏙️</div>
-                    <div class="theme-card-info">
-                        <div class="theme-card-name">SimCity</div>
-                        <div class="theme-card-desc">Isometric city builder. Watch your agents as a living micro-city.</div>
-                    </div>
-                    <span class="theme-card-badge">Switch</span>
-                </div>
+
             </div>
             <div style="text-align:right;margin-top:18px;">
                 <button id="themePickerClose" style="padding:8px 20px;border-radius:10px;border:none;background:var(--exec-gray-100,#E5E5EA);color:var(--text-primary,#1C1C1E);font-weight:600;cursor:pointer;font-size:13px;">Close</button>
@@ -1020,5 +1013,7 @@
         </div>
     </div>
     <script src="channel-onboarding.js"></script>
+    <!-- Version footer -->
+    <div id="sk-version" style="position:fixed;bottom:4px;right:8px;font-size:10px;color:rgba(142,142,147,0.5);pointer-events:none;z-index:1;font-family:-apple-system,sans-serif;">v2.1.0-clean</div>
 </body>
 </html>

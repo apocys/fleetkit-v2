@@ -1,0 +1,13 @@
+{
+  "version": "2.1.0",
+  "buildDate": "2026-03-06T09:35:00Z",
+  "channel": "main",
+  "tag": "cleanup",
+  "changes": [
+    "Route fix: / serves office-executive",
+    "SimCity theme removed",
+    "Fake buttons → real <button> elements",
+    "Dead code cleanup: 261→83 files, 180K→47K LOC",
+    "Version footer added"
+  ]
+}

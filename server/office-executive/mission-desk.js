@@ -54,28 +54,28 @@
       var avatarHtml = a.avatar ?
         '<svg viewBox="0 0 48 48"><use href="' + a.avatar + '"/></svg>' :
         '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:20px;background:' + (a.color || '#007AFF') + '22;border-radius:50%;">' + escapeHtml(a.name.charAt(0)) + '</div>';
-      return '<div class="md-agent" data-agent-id="' + a.id + '" tabindex="0" role="button" aria-label="' + escapeHtml(a.name) + '">' +
+      return '<button class="md-agent" data-agent-id="' + a.id + '" aria-label="' + escapeHtml(a.name) + '">' +
         '<div class="md-agent-avatar">' +
           avatarHtml +
           '<span class="md-agent-status' + (a.status === 'active' ? ' md-agent-status--active' : '') + '"></span>' +
         '</div>' +
         '<div class="md-agent-name">' + escapeHtml(a.name) + '</div>' +
         '<div class="md-agent-role">' + escapeHtml(a.role) + '</div>' +
-      '</div>';
+      '</button>';
     }).join('') +
-    '<div class="md-agent md-agent--add" tabindex="0" role="button" aria-label="Add Agent">' +
+    '<button class="md-agent md-agent--add" aria-label="Add Agent">' +
       '<div class="md-agent-avatar"><div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:24px;border-radius:50%;border:2px dashed rgba(255,255,255,0.3);">+</div></div>' +
       '<div class="md-agent-name">Add Agent</div>' +
       '<div class="md-agent-role">New</div>' +
-    '</div>';
+    '</button>';
   }
 
   function buildAgentBarHtml() {
     return AGENTS.map(function (a) {
-      return '<div class="md-agent-icon" data-agent-id="' + a.id + '" tabindex="0" role="button" aria-label="' + a.name + '" title="' + a.name + ' · ' + a.role + '">' +
+      return '<button class="md-agent-icon" data-agent-id="' + a.id + '" aria-label="' + a.name + '" title="' + a.name + ' · ' + a.role + '">' +
         '<svg viewBox="0 0 48 48"><use href="' + a.avatar + '"/></svg>' +
         '<span class="md-agent-status' + (a.status === 'active' ? ' md-agent-status--active' : '') + '"></span>' +
-      '</div>';
+      '</button>';
     }).join('');
   }
 
@@ -83,10 +83,35 @@
     var sendSvg = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">' +
       '<line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>';
 
+    // Page header with platform name + user icon
+    var userDisplay = localStorage.getItem('spawnkit-user-name') || 'User';
+    var userAvatar = localStorage.getItem('spawnkit-user-avatar') || '';
+    var avatarHtml = userAvatar
+      ? '<img src="' + escapeHtml(userAvatar) + '" alt="" style="width:32px;height:32px;border-radius:50%;object-fit:cover;" />'
+      : '<div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#007AFF,#5856D6);display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:600;">' + escapeHtml(userDisplay.charAt(0).toUpperCase()) + '</div>';
+
+    var header = '<div class="md-page-header" style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px 8px;max-width:640px;margin:0 auto;width:100%;">' +
+      '<div style="display:flex;align-items:center;gap:10px;">' +
+        '<div style="font-size:20px;font-weight:700;color:var(--text-primary,#1c1c1e);letter-spacing:-0.3px;">SpawnKit</div>' +
+        '<div style="font-size:11px;color:var(--text-tertiary,#8E8E93);background:var(--bg-secondary,rgba(0,0,0,0.04));padding:2px 8px;border-radius:6px;font-weight:500;">Beta</div>' +
+      '</div>' +
+      '<button class="md-user-menu" id="mdUserMenu" style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:4px;border-radius:10px;transition:background 0.15s;background:none;border:none;" aria-label="User menu">' +
+        avatarHtml +
+      '</button>' +
+    '</div>';
+
     var landing = '<div id="missionDesk" class="md-landing">' +
+      header +
       '<div class="md-hero">' +
         '<h1>What do we build today?</h1>' +
         '<p>Your AI team is ready. Ask anything or pick a quick action.</p>' +
+      '</div>' +
+      '<div id="mdConnectBanner" style="display:none;margin:0 auto 12px;max-width:600px;padding:14px 18px;border-radius:14px;background:linear-gradient(135deg,rgba(0,122,255,0.08),rgba(88,86,214,0.08));border:1px solid rgba(0,122,255,0.2);align-items:center;gap:12px;">' +
+        '<div style="flex:1;">' +
+          '<div style="font-size:14px;font-weight:600;color:var(--text-primary,#1c1c1e);margin-bottom:2px;">🔌 Connect your OpenClaw instance</div>' +
+          '<div style="font-size:12px;color:var(--text-secondary,#636366);line-height:1.4;">Chat, live data, and agent operations require a connected OpenClaw gateway. <a href="https://docs.openclaw.ai" target="_blank" style="color:#007AFF;">Learn more →</a></div>' +
+        '</div>' +
+        '<button onclick="if(typeof window.openSettingsPanel===\'function\')window.openSettingsPanel();" style="padding:8px 16px;border-radius:10px;border:none;background:#007AFF;color:#fff;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;">Connect</button>' +
       '</div>' +
       '<div class="md-input-bar" id="missionDeskInputBar">' +
         '<input type="text" id="missionDeskInput" placeholder="Ask your team anything..." autocomplete="off" spellcheck="false" />' +
@@ -107,6 +132,7 @@
         '<button class="md-action" data-action="boardroom"><span class="md-action-icon">🧠</span><span class="md-action-label">Boardroom</span></button>' +
         '<button class="md-action" data-action="forge"><span class="md-action-icon">🔨</span><span class="md-action-label">Skill Forge</span></button>' +
         '<button class="md-action" data-action="explore"><span class="md-action-icon">🚀</span><span class="md-action-label">Explore</span></button>' +
+        '<button class="md-action" data-action="communications"><span class="md-action-icon">📬</span><span class="md-action-label">Communications</span></button>' +
         '<button class="md-action" data-action="marketplace"><span class="md-action-icon">🏪</span><span class="md-action-label">Marketplace</span></button>' +
         '<button class="md-action" data-action="profile"><span class="md-action-icon">👤</span><span class="md-action-label">Creator Profile</span></button>' +
       '</div>' +
@@ -265,6 +291,18 @@
 
   function openPanel(name) {
     if (name === 'missions') {
+      // Prefer Orchestration board (Task Graph + Kanban)
+      var orchBtn = document.getElementById('orchestrationBtn');
+      if (orchBtn) {
+        orchBtn.click();
+        // After overlay opens, switch to Missions tab (Kanban)
+        setTimeout(function () {
+          var missionsTab = document.querySelector('.orch-tab[data-tab="missions"]');
+          if (missionsTab) missionsTab.click();
+        }, 160);
+        return;
+      }
+      // Fallback to standalone missions panel
       if (typeof openMissionsPanel === 'function') { openMissionsPanel(); return; }
       var missionsBtn = document.getElementById('missionsBtn');
       if (missionsBtn) missionsBtn.click();
@@ -292,6 +330,10 @@
       if (window.SkillForge) { window.SkillForge.open(); return; }
     } else if (name === 'explore') {
       if (window.UseCaseExplorer) { window.UseCaseExplorer.open(); return; }
+    } else if (name === 'communications') {
+      if (typeof window.openMailbox === 'function') { window.openMailbox('messages'); return; }
+      var mbBtn = document.getElementById('mailboxBtn');
+      if (mbBtn) mbBtn.click();
     } else if (name === 'deploy') {
       if (window.DeployWizard) { window.DeployWizard.open(); return; }
     } else if (name === 'marketplace') {
@@ -315,12 +357,17 @@
   /* ── Agent tile click ───────────────────────────────────────────── */
 
   function handleAgentClick(agentId) {
-    // Prefer openDetailPanel directly (handles all agents including CEO)
-    if (typeof openDetailPanel === 'function') {
-      openDetailPanel(agentId);
+    // CEO agent → open Mission Control (full orchestration view)
+    if (agentId === 'ceo' && typeof window.openMissionControl === 'function') {
+      window.openMissionControl();
       return;
     }
-    // Fallback: proxy click through exec-room tiles
+    // All other agents → open their detail panel (info, skills, metrics)
+    if (typeof window.openDetailPanel === 'function') {
+      window.openDetailPanel(agentId);
+      return;
+    }
+    // Last resort: click the legacy grid tile
     var existing = document.querySelector('[data-agent="' + agentId + '"]');
     if (existing && typeof existing.click === 'function') {
       existing.click();
@@ -345,6 +392,15 @@
     console.log('[MissionDesk] instance-url:', localStorage.getItem('spawnkit-instance-url') || 'default');
     console.log('[MissionDesk] onboarded:', localStorage.getItem('spawnkit-onboarded') ? 'yes' : 'no');
     /* Onboarding guard removed — always show Mission Desk (Kira 2026-02-28) */
+
+    /* Show connection banner if no token (BUG-006 fix) */
+    var hasToken = !!(localStorage.getItem('spawnkit-token') || window.OC_RELAY_TOKEN);
+    if (!hasToken) {
+      setTimeout(function() {
+        var banner = document.getElementById('mdConnectBanner');
+        if (banner) banner.style.display = 'flex';
+      }, 1500);
+    }
 
     /* Find container */
     var container = document.querySelector('.exec-container');
@@ -397,10 +453,14 @@
       }
     });
 
-    /* Suggestion chips */
+    /* Suggestion chips — inject prompt into input (do NOT auto-send) */
     document.querySelectorAll('.md-chip').forEach(function (chip) {
       chip.addEventListener('click', function () {
-        activate(chip.getAttribute('data-prompt'));
+        var prompt = chip.getAttribute('data-prompt');
+        if (!prompt) return;
+        heroInput.value = prompt;
+        heroInput.dispatchEvent(new Event('input')); // update send-btn visibility
+        heroInput.focus();
       });
     });
 
@@ -464,9 +524,85 @@
       });
     });
 
+    /* Refresh Mission Desk team grid (called after agent creation/deletion) */
+    function refreshMissionDeskTeam() {
+      var teamEl = document.getElementById('missionDeskTeam');
+      if (!teamEl) return;
+      teamEl.innerHTML = buildTeamHtml();
+      // Re-wire click handlers
+      teamEl.querySelectorAll('.md-agent').forEach(function(tile) {
+        if (tile.classList.contains('md-agent--add')) {
+          tile.addEventListener('click', function() {
+            if (typeof window.openAddAgentWizard === 'function') window.openAddAgentWizard();
+          });
+        } else {
+          tile.addEventListener('click', function() {
+            handleAgentClick(tile.getAttribute('data-agent-id'));
+          });
+        }
+      });
+    }
+    window.refreshMissionDeskTeam = refreshMissionDeskTeam;
+
     /* Panel close */
     panelClose && panelClose.addEventListener('click', closePanel);
     backdrop   && backdrop.addEventListener('click', closePanel);
+
+    /* User menu dropdown */
+    var userMenuBtn = document.getElementById('mdUserMenu');
+    if (userMenuBtn) {
+      userMenuBtn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        var existing = document.getElementById('mdUserDropdown');
+        if (existing) { existing.remove(); return; }
+        var dd = document.createElement('div');
+        dd.id = 'mdUserDropdown';
+        dd.style.cssText = 'position:absolute;top:52px;right:20px;background:var(--bg-primary,#fff);border:1px solid var(--border-subtle,rgba(0,0,0,0.1));border-radius:12px;padding:4px;min-width:180px;box-shadow:0 8px 32px rgba(0,0,0,0.12);z-index:10010;';
+        var items = [
+          { icon: '🎨', label: 'Change Theme', action: 'theme' },
+          { icon: '⚙️', label: 'Settings', action: 'settings' },
+          { icon: '🚪', label: 'Logout', action: 'logout' }
+        ];
+        dd.innerHTML = items.map(function (it) {
+          return '<div class="md-dropdown-item" data-action="' + it.action + '" style="display:flex;align-items:center;gap:10px;padding:10px 14px;font-size:13px;border-radius:8px;cursor:pointer;transition:background 0.15s;color:var(--text-primary,#1c1c1e);"' +
+            ' onmouseover="this.style.background=\'var(--bg-secondary,rgba(0,0,0,0.04))\'" onmouseout="this.style.background=\'transparent\'">' +
+            '<span>' + it.icon + '</span><span>' + it.label + '</span></div>';
+        }).join('');
+        document.body.appendChild(dd);
+        dd.addEventListener('click', function (ev) {
+          var action = ev.target.closest('[data-action]');
+          if (!action) return;
+          dd.remove();
+          var act = action.dataset.action;
+          if (act === 'theme') {
+            // Open theme picker if available
+            var tp = document.getElementById('themePicker');
+            if (tp) { tp.classList.add('open'); }
+            else if (window.ThemePicker) { window.ThemePicker.open(); }
+            else { window.location.href = '/'; }
+          } else if (act === 'settings') {
+            var settingsBtn = document.getElementById('settingsBtn');
+            if (settingsBtn) settingsBtn.click();
+            else if (typeof openPanel === 'function') openPanel('profile');
+          } else if (act === 'logout') {
+            localStorage.removeItem('spawnkit-token');
+            localStorage.removeItem('spawnkit-instance-url');
+            localStorage.removeItem('spawnkit-connected-once');
+            localStorage.removeItem('spawnkit-user-name');
+            localStorage.removeItem('spawnkit-user-avatar');
+            window.location.reload();
+          }
+        });
+        // Close on outside click
+        setTimeout(function () {
+          document.addEventListener('click', function closeDD() {
+            var d = document.getElementById('mdUserDropdown');
+            if (d) d.remove();
+            document.removeEventListener('click', closeDD);
+          });
+        }, 10);
+      });
+    }
 
     /* Public API */
     window.MissionDesk = {

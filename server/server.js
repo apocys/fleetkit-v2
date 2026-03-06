@@ -65,9 +65,7 @@ function performUpdate() {
     // 2. Sync to live directory (same as auto-sync.sh)
     log.push('Syncing to live directory...');
     const syncCmds = [
-      `rsync -a --delete "${REPO_DIR}/server/" "${STATIC_DIR}/" --exclude='auto-sync.sh' --exclude='caddy-patch.sh'`,
-      `rsync -a --delete "${REPO_DIR}/lib/" "${STATIC_DIR}/lib/" 2>/dev/null || true`,
-      `rsync -a --delete "${REPO_DIR}/office-medieval/" "${STATIC_DIR}/office-medieval/" 2>/dev/null || true`,
+      `rsync -a --delete "${REPO_DIR}/server/" "${STATIC_DIR}/" --exclude='auto-sync.sh' --exclude='caddy-patch.sh' --exclude='_old_root/'`,
     ];
     for (const cmd of syncCmds) {
       try { execSync(cmd, { timeout: 15000 }); } catch(e) { log.push('Warning: ' + e.message); }
@@ -1378,10 +1376,16 @@ const server = http.createServer(async (req, res) => {
 
   // Static files
   let filePath = req.url.split('?')[0];
-  // Strip /office-executive/ prefix if present (Caddy proxies full path)
-  if (filePath.startsWith('/office-executive/')) filePath = filePath.slice('/office-executive'.length);
-  else if (filePath === '/office-executive') filePath = '/index.html';
-  if (filePath === '/' || filePath === '') filePath = '/index.html';
+
+  // Root → serve office-executive as the canonical entry point
+  if (filePath === '/' || filePath === '') filePath = '/office-executive/index.html';
+
+  // /office-executive without trailing slash → redirect
+  if (filePath === '/office-executive') {
+    res.writeHead(301, { 'Location': '/office-executive/' });
+    res.end();
+    return;
+  }
   // Directory URLs: append index.html (e.g. /office-medieval/ → /office-medieval/index.html)
   if (filePath.endsWith('/')) filePath += 'index.html';
   
@@ -1401,8 +1405,8 @@ const server = http.createServer(async (req, res) => {
           });
           return;
         }
-        // SPA fallback to root index.html
-        fs.readFile(path.join(STATIC_DIR, 'index.html'), (e2, html) => {
+        // SPA fallback to office-executive/index.html
+        fs.readFile(path.join(STATIC_DIR, 'office-executive', 'index.html'), (e2, html) => {
           if (e2) { res.writeHead(500); res.end('Error'); return; }
           res.writeHead(200, {'Content-Type': 'text/html', 'Cache-Control': 'no-store, no-cache, must-revalidate'}); res.end(html);
         });

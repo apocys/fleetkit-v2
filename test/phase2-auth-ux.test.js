@@ -104,33 +104,28 @@ async function run() {
     if (r.data.user !== null) throw new Error('Expected null user after logout');
   });
 
-  // ── Static file: google-auth.js served ──────────────────
-  console.log('\nGoogle Auth Static:');
+  // ── Office Executive Auth ──────────────────────────────
+  console.log('\nOffice Executive Auth:');
 
-  await test('GET /google-auth.js returns JS', async function () {
+  await test('GET / redirects to /office-executive/', async function () {
     return new Promise(function (resolve, reject) {
-      http.get(API_BASE + '/google-auth.js', function (res) {
+      http.get(API_BASE + '/', function (res) {
+        if (res.statusCode !== 302) return reject(new Error('Expected 302 redirect, got ' + res.statusCode));
+        if (!res.headers.location.includes('/office-executive/')) return reject(new Error('Redirect location does not include /office-executive/'));
+        resolve();
+      }).on('error', reject);
+    });
+  });
+
+  await test('GET /office-executive/auth.js returns JS', async function () {
+    return new Promise(function (resolve, reject) {
+      http.get(API_BASE + '/office-executive/auth.js', function (res) {
         let data = '';
         res.on('data', function (c) { data += c; });
         res.on('end', function () {
           if (res.statusCode !== 200) return reject(new Error('Status ' + res.statusCode));
           if (!res.headers['content-type'].includes('javascript')) return reject(new Error('Not JS content-type: ' + res.headers['content-type']));
-          if (!data.includes('GoogleAuth')) return reject(new Error('Missing GoogleAuth export'));
-          if (!data.includes('handleCredentialResponse')) return reject(new Error('Missing credential handler'));
-          resolve();
-        });
-      }).on('error', reject);
-    });
-  });
-
-  await test('google-auth.js includes GSI initialization', async function () {
-    return new Promise(function (resolve, reject) {
-      http.get(API_BASE + '/google-auth.js', function (res) {
-        let data = '';
-        res.on('data', function (c) { data += c; });
-        res.on('end', function () {
-          if (!data.includes('google.accounts.id.initialize')) return reject(new Error('Missing GSI init'));
-          if (!data.includes('renderButton')) return reject(new Error('Missing renderButton'));
+          if (!data.includes('auth')) return reject(new Error('Missing auth functionality'));
           resolve();
         });
       }).on('error', reject);
@@ -140,53 +135,39 @@ async function run() {
   // ── index.html contains Google auth elements ─────────────
   console.log('\nHTML Structure:');
 
-  await test('GET / contains google-auth.js script tag', async function () {
+  await test('GET /office-executive/ contains auth.js script tag', async function () {
     return new Promise(function (resolve, reject) {
-      http.get(API_BASE + '/', function (res) {
+      http.get(API_BASE + '/office-executive/', function (res) {
         let data = '';
         res.on('data', function (c) { data += c; });
         res.on('end', function () {
-          if (!data.includes('google-auth.js')) return reject(new Error('Missing google-auth.js script'));
+          if (!data.includes('auth.js')) return reject(new Error('Missing auth.js script'));
           resolve();
         });
       }).on('error', reject);
     });
   });
 
-  await test('GET / contains Google GSI script reference', async function () {
+  await test('GET /office-executive/ contains auth interface', async function () {
     return new Promise(function (resolve, reject) {
-      http.get(API_BASE + '/', function (res) {
+      http.get(API_BASE + '/office-executive/', function (res) {
         let data = '';
         res.on('data', function (c) { data += c; });
         res.on('end', function () {
-          if (!data.includes('accounts.google.com/gsi/client')) return reject(new Error('Missing GSI library script'));
+          if (!data.includes('auth')) return reject(new Error('Missing auth interface elements'));
           resolve();
         });
       }).on('error', reject);
     });
   });
 
-  await test('GET / contains user auth overlay', async function () {
+  await test('GET /office-executive/ contains styles.css link (CSS extracted)', async function () {
     return new Promise(function (resolve, reject) {
-      http.get(API_BASE + '/', function (res) {
+      http.get(API_BASE + '/office-executive/', function (res) {
         let data = '';
         res.on('data', function (c) { data += c; });
         res.on('end', function () {
-          if (!data.includes('googleAuthOverlay')) return reject(new Error('Missing googleAuthOverlay element'));
-          if (!data.includes('googleSignInBtn')) return reject(new Error('Missing googleSignInBtn element'));
-          resolve();
-        });
-      }).on('error', reject);
-    });
-  });
-
-  await test('GET / contains exec-styles.css link (CSS extracted)', async function () {
-    return new Promise(function (resolve, reject) {
-      http.get(API_BASE + '/', function (res) {
-        let data = '';
-        res.on('data', function (c) { data += c; });
-        res.on('end', function () {
-          if (!data.includes('exec-styles.css')) return reject(new Error('Missing exec-styles.css link'));
+          if (!data.includes('styles.css')) return reject(new Error('Missing styles.css link'));
           // Verify no inline <style> blocks remain (CSS fully extracted)
           const styleCount = (data.match(/<style[\s>]/g) || []).length;
           if (styleCount > 0) return reject(new Error('Found ' + styleCount + ' inline <style> block(s) — not fully extracted'));
@@ -196,9 +177,9 @@ async function run() {
     });
   });
 
-  await test('GET / has no remaining inline script blocks', async function () {
+  await test('GET /office-executive/ has no remaining inline script blocks', async function () {
     return new Promise(function (resolve, reject) {
-      http.get(API_BASE + '/', function (res) {
+      http.get(API_BASE + '/office-executive/', function (res) {
         let data = '';
         res.on('data', function (c) { data += c; });
         res.on('end', function () {

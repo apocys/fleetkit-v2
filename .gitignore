@@ -12,3 +12,6 @@ executive-office/reference-cowork-inspiration.jpg
 executive-office/tasks.json
 executive-office/node_modules/
 executive-office/*.log
+_archive/
+server/_old_root/
+node_modules/

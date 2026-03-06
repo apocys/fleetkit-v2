@@ -78,7 +78,44 @@
   /* ── State ──────────────────────────────────────────────────────── */
   var currentTab = 'chat';
   var currentMission = null;
+  var currentAgent = null; // { id, name, avatar } — null means main session
   var isSending = false;
+
+  /* ── Agent chat routing ─────────────────────────────────────────── */
+  var AGENT_DEFS = {
+    ceo:      { name: 'Sycopa',   avatar: '#avatar-ceo',      role: 'CEO' },
+    sycopa:   { name: 'Sycopa',   avatar: '#avatar-ceo',      role: 'CEO' },
+    atlas:    { name: 'Atlas',    avatar: '#avatar-atlas',    role: 'Navigator' },
+    forge:    { name: 'Forge',    avatar: '#avatar-forge',    role: 'Builder' },
+    hunter:   { name: 'Hunter',   avatar: '#avatar-hunter',   role: 'Scout' },
+    echo:     { name: 'Echo',     avatar: '#avatar-echo',     role: 'Communicator' },
+    sentinel: { name: 'Sentinel', avatar: '#avatar-sentinel', role: 'Guardian' }
+  };
+
+  function selectAgent(agentId) {
+    if (!agentId || agentId === 'main') {
+      currentAgent = null;
+      if (elTitle) elTitle.innerHTML = 'Mission Control <span class="mc-chevron">⌄</span>';
+    } else {
+      var def = AGENT_DEFS[agentId];
+      if (!def) return;
+      currentAgent = { id: agentId, name: def.name, avatar: def.avatar, role: def.role };
+      if (elTitle) {
+        elTitle.innerHTML = '<span style="display:inline-flex;align-items:center;gap:6px;">' +
+          '<svg width="20" height="20" viewBox="0 0 48 48" style="flex-shrink:0;"><use href="' + escMc(def.avatar) + '"/></svg>' +
+          escMc(def.name) + '</span> <span class="mc-chevron">⌄</span>';
+      }
+    }
+    setTab('chat');
+  }
+
+  // Listen for agent selection events from detail panel / mission desk
+  document.addEventListener('mc:select-agent', function (e) {
+    if (e.detail && e.detail.id) selectAgent(e.detail.id);
+  });
+
+  // Expose for other scripts
+  window.McSelectAgent = selectAgent;
 
   /* ── Model label ────────────────────────────────────────────────── */
   function updateModelLabel() {
@@ -171,6 +208,27 @@
   }
 
   /* ── Chat Tab ───────────────────────────────────────────────────── */
+  function isSystemMessage(m) {
+    // Filter out heartbeats, system prompts, internal signals
+    if (!m) return false;
+    var role = String(m.role || '').toLowerCase();
+    if (role === 'system') return true;
+    var content = m.content || '';
+    if (Array.isArray(content)) content = content.map(function(c){ return c.text || c.content || ''; }).join(' ');
+    var c = String(content).trim();
+    if (!c) return true;
+    var systemPatterns = [
+      'HEARTBEAT_OK', 'NO_REPLY', 'Read HEARTBEAT.md',
+      '[System Message]', 'A scheduled reminder has been triggered',
+      'STATUS UPDATE FOR KIRA', 'STALL CHECK', 'MANDATORY CHECKS',
+      'Handle this reminder internally', 'cron-event'
+    ];
+    for (var i = 0; i < systemPatterns.length; i++) {
+      if (c.indexOf(systemPatterns[i]) !== -1) return true;
+    }
+    return false;
+  }
+
   function renderMessages(messages) {
     if (!messages || !messages.length) {
       elBody.innerHTML = '<div class="mc-empty" style="padding:48px 24px;">' +
@@ -182,6 +240,7 @@
     var html = '';
     for (var i = 0; i < messages.length; i++) {
       var m = messages[i];
+      if (isSystemMessage(m)) continue;
       var role = String(m.role || 'assistant').toUpperCase();
       var content = m.content || '';
       if (Array.isArray(content)) {
@@ -192,6 +251,13 @@
         '<div class="mc-msg-role mc-role-' + role.toLowerCase() + '">' + escMc(role) + '</div>' +
         '<div class="mc-msg-content">' + mdToHtml(content) + '</div>' +
         '</div>';
+    }
+    if (!html) {
+      elBody.innerHTML = '<div class="mc-empty" style="padding:48px 24px;">' +
+        '<div style="font-size:24px;margin-bottom:8px;">💬</div>' +
+        'Start a conversation.<br>' +
+        '<span style="font-size:12px;color:var(--mc-text-dim);">Type a message below or use /mission for a guided flow.</span></div>';
+      return;
     }
     elBody.innerHTML = html;
     scrollToBottom(elBody);
@@ -385,15 +451,36 @@
   /* ── Remote Tab ─────────────────────────────────────────────────── */
   function loadRemote() {
     showLoading();
-    skF(API_URL + '/api/fleet/status')
-      .then(function (r) { return r.json(); })
-      .then(function (data) {
-        var instances = data.instances || data.connections || data || [];
-        if (!Array.isArray(instances) || !instances.length) {
-          elBody.innerHTML = '<div class="mc-empty">No remote instances connected.</div>';
-          return;
-        }
-        var html = '<div class="mc-remote-list">';
+    // Fetch both fleet status and mailbox in parallel
+    Promise.all([
+      skF(API_URL + '/api/fleet/status').then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }),
+      skF(API_URL + '/api/fleet/mailbox?limit=20').then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; })
+    ]).then(function (results) {
+      var statusData = results[0];
+      var mailboxData = results[1];
+      var instances = statusData ? (statusData.instances || []) : [];
+      var messages = mailboxData ? (mailboxData.messages || []) : [];
+
+      if (!instances.length && !messages.length) {
+        elBody.innerHTML = '<div class="mc-empty mc-empty--placeholder" style="padding:48px 24px;text-align:center;">' +
+          '<div style="font-size:40px;margin-bottom:16px;">🌐</div>' +
+          '<div style="font-size:15px;font-weight:600;color:var(--mc-text-primary,#1c1c1e);margin-bottom:8px;">No remote offices connected</div>' +
+          '<div style="font-size:13px;color:var(--mc-text-dim,#8e8e93);line-height:1.6;max-width:280px;margin:0 auto 20px;">' +
+          'Set up Fleet Relay to connect remote OpenClaw instances and collaborate across machines.' +
+          '</div>' +
+          '<a href="https://docs.openclaw.ai/fleet-relay" target="_blank" rel="noopener" ' +
+          'style="display:inline-block;padding:8px 18px;background:rgba(0,122,255,0.1);border:1px solid rgba(0,122,255,0.25);' +
+          'border-radius:8px;color:#007aff;font-size:13px;font-weight:500;text-decoration:none;">' +
+          '📖 Fleet Relay Setup Guide</a></div>';
+        return;
+      }
+
+      var html = '';
+
+      // Connected offices
+      if (instances.length) {
+        html += '<div class="mc-section-label" style="padding:8px 12px;font-size:11px;font-weight:600;text-transform:uppercase;color:var(--mc-text-muted);letter-spacing:0.5px;">Connected Offices</div>';
+        html += '<div class="mc-remote-list">';
         for (var i = 0; i < instances.length; i++) {
           var inst = instances[i];
           var status = inst.status || 'unknown';
@@ -403,23 +490,34 @@
             '<span class="mc-remote-name">' + escMc(inst.name || inst.id || 'Instance') + '</span>' +
             (inst.lastSeen ? ' <span class="mc-remote-time">' + fmtTime(inst.lastSeen) + '</span>' : '') +
             '</div>';
-          if (inst.inbox && inst.inbox.length) {
-            html += '<div class="mc-remote-inbox">';
-            for (var j = 0; j < inst.inbox.length; j++) {
-              html += '<div class="mc-remote-msg">' + escMc(inst.inbox[j]) + '</div>';
-            }
-            html += '</div>';
-          }
         }
         html += '</div>';
-        elBody.innerHTML = html;
-      })
-      .catch(function () {
-        elBody.innerHTML = '<div class="mc-empty mc-empty--placeholder">' +
-          '<span class="mc-remote-icon">📡</span><br>' +
-          'Fleet relay not reachable.<br>' +
-          '<small>Start fleet-relay to see remote connections.</small></div>';
-      });
+      }
+
+      // Relay messages
+      if (messages.length) {
+        html += '<div class="mc-section-label" style="padding:12px 12px 8px;font-size:11px;font-weight:600;text-transform:uppercase;color:var(--mc-text-muted);letter-spacing:0.5px;">Recent Messages (' + messages.length + ')</div>';
+        html += '<div class="mc-remote-messages">';
+        for (var j = 0; j < messages.length; j++) {
+          var msg = messages[j];
+          var isUnread = !msg.read;
+          var from = escMc(msg.from || msg.fromAgent || 'unknown');
+          var body = escMc(String(msg.text || msg.body || '').substring(0, 200));
+          var time = fmtTime(msg.timestamp);
+          html += '<div class="mc-remote-msg-row' + (isUnread ? ' mc-remote-msg--unread' : '') + '" style="padding:10px 12px;border-bottom:1px solid var(--mc-border,rgba(0,0,0,0.06));">' +
+            '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">' +
+              '<span style="font-weight:600;font-size:13px;color:var(--mc-text-primary);">' + from + '</span>' +
+              (isUnread ? '<span style="width:6px;height:6px;border-radius:50%;background:#007AFF;flex-shrink:0;"></span>' : '') +
+              '<span style="margin-left:auto;font-size:11px;color:var(--mc-text-muted);">' + time + '</span>' +
+            '</div>' +
+            '<div style="font-size:12px;color:var(--mc-text-dim);line-height:1.4;">' + body + '</div>' +
+          '</div>';
+        }
+        html += '</div>';
+      }
+
+      elBody.innerHTML = html;
+    });
   }
 
   /* ── Input Area ─────────────────────────────────────────────────── */
@@ -464,6 +562,11 @@
     elTextarea.style.height = 'auto';
 
     var missionId = currentMission ? currentMission.id : 'current';
+
+    // Prefix with agent persona if chatting with specific agent
+    if (currentAgent) {
+      text = '[Speaking to ' + currentAgent.name + '] ' + text;
+    }
 
     // Check if this is a /mission command — create new mission
     var isMissionCmd = /^\/m(ission)?\s+/i.test(text);

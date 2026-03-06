@@ -52,7 +52,16 @@
             }
             loadOrchAgents();
         });
-        if (orchBackdrop) orchBackdrop.addEventListener('click', function() { orchOverlay.classList.remove('open'); });
+        window.openOrchestration = function() {
+            if (typeof window.closeAllPanels === 'function') window.closeAllPanels();
+            orchOverlay.classList.add('open');
+            document.body.style.overflow = 'hidden';
+            // Reload active tab data
+            var activeTab = document.querySelector('.orch-tab[style*="border-bottom-color"]');
+            var tabName = activeTab ? activeTab.dataset.tab : 'agents';
+            switchOrchTab(activeTab || document.querySelector('.orch-tab'), tabName);
+        };
+        if (orchBackdrop) orchBackdrop.addEventListener('click', function() { orchOverlay.classList.remove('open'); document.body.style.overflow = ''; });
         if (orchClose) orchClose.addEventListener('click', function() { orchOverlay.classList.remove('open'); });
 
         // ── Agents Tab ──

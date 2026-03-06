@@ -17,11 +17,7 @@
       color: '#E8D5B0', progress: '#B8860B',
       tail: 'rgba(62,48,30,0.92)', font: 'system-ui, sans-serif'
     },
-    simcity: {
-      bg: 'rgba(20,25,35,0.9)', border: 'rgba(50,200,100,0.3)',
-      color: '#B0FFB0', progress: '#32C864',
-      tail: 'rgba(20,25,35,0.9)', font: 'monospace'
-    }
+
   };
 
   function injectStyles(t) {

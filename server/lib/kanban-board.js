@@ -33,10 +33,7 @@ var CSS = '.sk-kanban{display:flex;flex-direction:column;height:100%;font-family
 '.sk-kanban.sk-medieval .sk-kanban-card{background:rgba(62,48,30,0.5);border:1px solid rgba(180,150,100,0.2)}' +
 '.sk-kanban.sk-medieval .sk-kanban-add{background:#B8860B}' +
 '.sk-kanban.sk-medieval .sk-kanban-col-header{border-bottom:1px solid rgba(180,150,100,0.2)}' +
-'.sk-kanban.sk-simcity{color:#B0FFB0;font-family:monospace}' +
-'.sk-kanban.sk-simcity .sk-kanban-col{background:rgba(20,25,35,0.4)}' +
-'.sk-kanban.sk-simcity .sk-kanban-card{background:rgba(20,25,35,0.6);border:1px solid rgba(50,200,100,0.15)}' +
-'.sk-kanban.sk-simcity .sk-kanban-add{background:#32C864;color:#000}' +
+
 '.sk-kanban-modal{position:fixed;inset:0;z-index:10000;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.6);backdrop-filter:blur(8px)}' +
 '.sk-kanban-modal-inner{width:90%;max-width:400px;padding:24px;border-radius:16px;background:rgba(30,30,32,0.95);border:1px solid rgba(255,255,255,0.1);color:#fff}' +
 '.sk-kanban-modal-inner h3{margin:0 0 16px;font-size:16px}' +
@@ -156,7 +153,7 @@ function showModal() {
   modal.querySelector('.sk-kanban-input').focus();
 }
 function buildBoard() {
-  var themeClass = _opts.theme === 'medieval' ? ' sk-medieval' : _opts.theme === 'simcity' ? ' sk-simcity' : '';
+  var themeClass = _opts.theme === 'medieval' ? ' sk-medieval' : '';
   var colsHtml = COLS.map(function(col) {
     return '<div class="sk-kanban-col" data-col="'+col.id+'">' +
       '<div class="sk-kanban-col-header"><span class="sk-kanban-col-title">'+col.label+'</span>' +

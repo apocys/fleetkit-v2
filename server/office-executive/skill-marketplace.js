@@ -147,8 +147,8 @@
     promise.then(function(res) {
       if (!res.ok) throw new Error('HTTP ' + res.status);
       return res.json();
-    }).then(function(skills) {
-      allSkills = skills || [];
+    }).then(function(data) {
+      allSkills = Array.isArray(data) ? data : (data && data.skills ? data.skills : []);
       var subtitle = document.getElementById('skmSubtitle');
       if (subtitle) subtitle.textContent = allSkills.length + ' skills installed \u2022 Browse, search, or install new ones';
       buildCategoryTabs(allSkills);

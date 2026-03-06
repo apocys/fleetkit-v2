@@ -825,3 +825,13 @@
 .md-agent-add:hover svg {
   transform: rotate(90deg) scale(1.1);
 }
+
+/* Emoji font fix for all elements containing emoji */
+.md-chip,
+.md-action,
+.md-action-icon,
+.md-suggestion,
+.md-agent-name,
+.md-channel-name {
+  font-family: var(--font-family), 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji' !important;
+}
