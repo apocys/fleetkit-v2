@@ -1,6 +1,6 @@
 #!/bin/bash
-# SpawnKit Deploy Script — safe deploy from repo to production
-# Safety features: branch protection, backup, health check, rollback, logging
+# SpawnKit Deploy Script — v2.1
+# Deploys server/ directory to production (office-executive is the canonical app)
 set -euo pipefail
 
 REPO="/home/apocyz_runner/spawnkit"
@@ -10,7 +10,6 @@ MAX_BACKUPS=3
 HEALTH_TIMEOUT=30
 FORCE=false
 
-# Parse args
 [[ "${1:-}" == "--force" ]] && FORCE=true
 
 cd "$REPO"
@@ -27,7 +26,6 @@ if [[ -n "$(git status --porcelain)" && "$FORCE" == "false" ]]; then
   exit 1
 fi
 
-# Pull latest
 git pull origin main --ff-only 2>/dev/null || {
   echo "⚠️  git pull failed (non-fast-forward). Deploying current HEAD."
 }
@@ -42,7 +40,6 @@ if [[ -d "$DEPLOYED" ]]; then
   echo "📦 Creating backup..."
   cp -r "$DEPLOYED" "${DEPLOYED}.bak.${BACKUP_TS}"
   
-  # Keep only last N backups
   BACKUPS=($(ls -dt "${DEPLOYED}.bak."* 2>/dev/null || true))
   if (( ${#BACKUPS[@]} > MAX_BACKUPS )); then
     for OLD in "${BACKUPS[@]:$MAX_BACKUPS}"; do
@@ -52,25 +49,34 @@ if [[ -d "$DEPLOYED" ]]; then
   fi
 fi
 
-# ── 3. Deploy (rsync from repo) ──
-echo "📁 Syncing Server (core)..."
-rsync -a --delete --exclude='sync.sh' --exclude='restart.sh' "$REPO/server/" "$DEPLOYED/"
-echo "📁 Syncing Executive..."
-rsync -a --delete "$REPO/office-executive/" "$DEPLOYED/office-executive/"
-echo "📁 Syncing Medieval..."
-rsync -a --delete "$REPO/office-medieval/" "$DEPLOYED/office-medieval/" 2>/dev/null || true
-echo "📁 Syncing SimCity..."
-rsync -a --delete "$REPO/office-simcity/" "$DEPLOYED/office-simcity/" 2>/dev/null || true
+# ── 3. Deploy — server/ is the single source of truth ──
+echo "📁 Syncing server/ → production..."
+rsync -a --delete \
+  --exclude='sync.sh' \
+  --exclude='restart.sh' \
+  --exclude='auto-sync.sh' \
+  --exclude='caddy-patch.sh' \
+  --exclude='_old_root/' \
+  "$REPO/server/" "$DEPLOYED/"
 
-# Copy root files
-[[ -f "$REPO/index.html" ]] && cp "$REPO/index.html" "$DEPLOYED/index.html"
-[[ -f "$REPO/server.js" ]] && cp "$REPO/server.js" "$DEPLOYED/server.js"
+echo "📝 Recording deploy..."
+echo "$COMMIT" > /tmp/.last-deploy-commit
 
-# ── 4. Health Check + Rollback ──
+# ── 4. Restart server ──
+echo "🔄 Restarting server..."
+systemctl --user restart spawnkit-server.service 2>/dev/null || {
+  echo "⚠️  systemctl restart failed, trying kill+start..."
+  pkill -f "node.*server.js.*8765" 2>/dev/null || true
+  sleep 1
+  cd "$DEPLOYED" && nohup node server.js > /tmp/spawnkit-server.log 2>&1 &
+}
+sleep 3
+
+# ── 5. Health Check + Rollback ──
 echo "🏥 Health check..."
 HEALTH_OK=false
 for i in $(seq 1 3); do
-  if curl -sf --max-time "$HEALTH_TIMEOUT" "http://localhost:8765/health" > /dev/null 2>&1; then
+  if curl -sf --max-time "$HEALTH_TIMEOUT" "http://localhost:8765/api/oc/health" > /dev/null 2>&1; then
     HEALTH_OK=true
     break
   fi
@@ -80,31 +86,24 @@ done
 if [[ "$HEALTH_OK" == "false" ]]; then
   echo "❌ Health check FAILED after deploy!"
   
-  # Rollback from latest backup
   LATEST_BACKUP=$(ls -dt "${DEPLOYED}.bak."* 2>/dev/null | head -1)
   if [[ -n "$LATEST_BACKUP" ]]; then
     echo "🔄 Rolling back from $LATEST_BACKUP..."
     rm -rf "$DEPLOYED"
     mv "$LATEST_BACKUP" "$DEPLOYED"
+    systemctl --user restart spawnkit-server.service 2>/dev/null || true
     echo "⚠️  Rollback complete."
   fi
   
-  # Notify via fleet relay
-  curl -s -X POST "http://localhost:18790/api/fleet/message" \
-    -H 'Authorization: Bearer sk-fleet-2ad53564b03d9facbe3389bb5c461179ffc73af12e50ae00' \
-    -H 'Content-Type: application/json' \
-    -d "{\"from\":\"sycopa\",\"to\":\"apomac\",\"subject\":\"DEPLOY FAILED\",\"text\":\"Deploy of $COMMIT FAILED — health check failed. Rolled back.\",\"priority\":\"high\"}" \
-    > /dev/null 2>&1 || true
-  
   DEPLOY_END=$(date +%s)
   DURATION=$((DEPLOY_END - DEPLOY_START))
-  echo "$( date -u +%Y-%m-%dT%H:%M:%SZ) | $COMMIT | FAILED+ROLLBACK | ${DURATION}s" >> "$DEPLOY_LOG"
+  echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) | $COMMIT | FAILED+ROLLBACK | ${DURATION}s" >> "$DEPLOY_LOG"
   exit 1
 fi
 
-# ── 5. Deploy Log ──
+# ── 6. Deploy Log ──
 DEPLOY_END=$(date +%s)
 DURATION=$((DEPLOY_END - DEPLOY_START))
 echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) | $COMMIT | SUCCESS | ${DURATION}s | branch=$BRANCH" >> "$DEPLOY_LOG"
 
-echo "✅ Deploy complete: $COMMIT in ${DURATION}s"
+echo "✅ Deploy complete: $COMMIT v$(cat "$DEPLOYED/version.json" 2>/dev/null | python3 -c 'import json,sys;print(json.load(sys.stdin).get("version","?"))' 2>/dev/null || echo '?') in ${DURATION}s"
