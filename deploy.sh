@@ -53,6 +53,8 @@ if [[ -d "$DEPLOYED" ]]; then
 fi
 
 # ── 3. Deploy (rsync from repo) ──
+echo "📁 Syncing Server (core)..."
+rsync -a --delete --exclude='sync.sh' --exclude='restart.sh' "$REPO/server/" "$DEPLOYED/"
 echo "📁 Syncing Executive..."
 rsync -a --delete "$REPO/office-executive/" "$DEPLOYED/office-executive/"
 echo "📁 Syncing Medieval..."
