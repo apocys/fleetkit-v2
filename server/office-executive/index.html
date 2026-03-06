@@ -6,7 +6,8 @@
       body.sk-auth-pending { visibility: hidden; }
       body.sk-auth-pending .dw-overlay,
       body.sk-auth-pending #sk-auth-overlay,
-      body.sk-auth-pending .sk-ob-overlay { visibility: visible; }
+      body.sk-auth-pending .sk-ob-overlay,
+      body.sk-auth-pending #sk-version { visibility: visible; }
     .cron-overlay.open { z-index: 10001 !important; }
     
     /* ── Typing dots animation ── */
@@ -1014,6 +1015,6 @@
     </div>
     <script src="channel-onboarding.js"></script>
     <!-- Version footer -->
-    <div id="sk-version" style="position:fixed;bottom:4px;right:8px;font-size:10px;color:rgba(142,142,147,0.5);pointer-events:none;z-index:1;font-family:-apple-system,sans-serif;">v2.1.0-clean</div>
+    <div id="sk-version" style="position:fixed;bottom:4px;right:8px;font-size:10px;color:rgba(142,142,147,0.5);pointer-events:none;z-index:99999;font-family:-apple-system,sans-serif;">v2.1.0-clean</div>
 </body>
 </html>
