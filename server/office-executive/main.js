@@ -460,17 +460,15 @@
             return h;
         }
 
-        tabGrid.addEventListener('click', function() { switchView('grid'); });
-        tabHierarchy.addEventListener('click', function() { switchView('hierarchy'); });
-
-        // Keyboard nav for tabs
-        document.querySelector('.view-toggle-group').addEventListener('keydown', function(e) {
+        // Legacy view toggle (decommissioned — Mission Desk is primary)
+        if (tabGrid) tabGrid.addEventListener('click', function() { switchView('grid'); });
+        if (tabHierarchy) tabHierarchy.addEventListener('click', function() { switchView('hierarchy'); });
+        var toggleGroup = document.querySelector('.view-toggle-group');
+        if (toggleGroup) toggleGroup.addEventListener('keydown', function(e) {
             if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
                 e.preventDefault();
-                var current = document.querySelector('.view-toggle-btn.active');
                 var next = e.key === 'ArrowRight' ? tabHierarchy : tabGrid;
-                switchView(next.dataset.view);
-                next.focus();
+                if (next) { switchView(next.dataset.view); next.focus(); }
             }
         });
 

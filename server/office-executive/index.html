@@ -8,10 +8,7 @@
       body.sk-auth-pending #sk-auth-overlay,
       body.sk-auth-pending .sk-ob-overlay,
       body.sk-auth-pending #sk-version { visibility: visible; }
-      /* Hide legacy Office Grid by default — Mission Desk is the primary view */
-      .exec-view-toggle, .exec-statusbar { display: none !important; }
-      #gridView { display: none !important; }
-      .exec-floor { display: none !important; }
+      /* Legacy Office Grid decommissioned — elements removed from DOM */
     .cron-overlay.open { z-index: 10001 !important; }
     
     /* ── Typing dots animation ── */
@@ -268,22 +265,10 @@
     <!-- ═══ Main Container ═══ -->
     <div class="exec-container">
 
-        <!-- ═══ View Toggle ═══ -->
-        <div class="exec-view-toggle">
-            <div class="view-toggle-group" role="tablist" aria-label="View mode">
-                <button class="view-toggle-btn active" role="tab" aria-selected="true" aria-controls="gridView" id="tabGrid" data-view="grid">
-                    <span class="view-toggle-icon" aria-hidden="true">⊞</span>
-                    <span>Office Grid</span>
-                </button>
-                <button class="view-toggle-btn" role="tab" aria-selected="false" aria-controls="hierarchyView" id="tabHierarchy" data-view="hierarchy">
-                    <span class="view-toggle-icon" aria-hidden="true">⋮⋮</span>
-                    <span>Org Chart</span>
-                </button>
-            </div>
-        </div>
+        <!-- View Toggle removed: Mission Desk is the primary view -->
 
-        <!-- ═══ Office Floor Grid (Grid View) ═══ -->
-        <div class="exec-floor" id="gridView" role="tabpanel" aria-labelledby="tabGrid">
+        <!-- Office Grid decommissioned: Mission Desk is the primary view -->
+        <div id="gridView" style="display:none!important">
 
             <!-- ── CEO Room ────────────────────────────── -->
             <button class="exec-room exec-room--ceo" aria-label="CEO Office — ApoMac" data-agent="ceo">
@@ -463,73 +448,23 @@
         </div>
         <!-- /exec-floor -->
 
-        <!-- ═══ Hierarchy / Org Chart View (dynamic) ═══ -->
-        <div class="exec-hierarchy" id="hierarchyView" role="tabpanel" aria-labelledby="tabHierarchy">
-            <div class="org-tree" id="orgTree">
-                <!-- Rendered dynamically by renderOrgChart() -->
-            </div>
-        </div>
-        <!-- /exec-hierarchy -->
+        <!-- Org Chart decommissioned -->
+        <div id="hierarchyView" style="display:none!important"></div>
 
         <!-- ═══ Status Bar (Bottom) ═══ -->
-        <div class="exec-statusbar" role="status" aria-label="Office status bar">
-            <div class="statusbar-info">
-                <div class="statusbar-item">
-                    <span class="statusbar-dot" aria-hidden="true"></span>
-                    <span>Executive Office</span>
-                </div>
-                <div class="statusbar-separator" aria-hidden="true"></div>
-                <div class="statusbar-item">
-                    <span class="statusbar-item-icon" aria-hidden="true">👥</span>
-                    <span id="statusAgentCount">6 Agents</span>
-                </div>
-                <div class="statusbar-separator" aria-hidden="true"></div>
-                <div class="statusbar-item">
-                    <span class="statusbar-item-icon" aria-hidden="true">⚡</span>
-                    <span id="statusSystem">All systems nominal</span>
-                </div>
-            </div>
-            <button class="statusbar-action" id="missionsBtn" aria-label="Missions">
-                <span class="statusbar-action-icon" aria-hidden="true">🎯</span>
-                <span>Missions</span>
-            </button>
-            <button class="statusbar-action" id="cronBtn" aria-label="Cron jobs">
-                <span class="statusbar-action-icon" aria-hidden="true">📅</span>
-                <span>Crons</span>
-            </button>
-            <button class="statusbar-action" id="memoryBtn" aria-label="Memory">
-                <span class="statusbar-action-icon" aria-hidden="true">🧠</span>
-                <span>Memory</span>
-            </button>
-            <button class="statusbar-action" id="chatBtn" aria-label="Chat with CEO">
-                <span class="statusbar-action-icon" aria-hidden="true">💬</span>
-                <span>Chat</span>
-            </button>
-            <button class="statusbar-action" id="settingsBtn" aria-label="Settings">
-                <span class="statusbar-action-icon" aria-hidden="true">⚙️</span>
-                <span>Settings</span>
-            </button>
-            <button class="statusbar-action" id="remoteBtn" aria-label="Remote Offices">
-                <span class="statusbar-action-icon" aria-hidden="true">🏙️</span>
-                <span>Remote</span>
-            </button>
-            <button class="statusbar-action" id="themesBtn" aria-label="Switch Theme" style="background:linear-gradient(135deg, rgba(175,82,222,0.12), rgba(0,122,255,0.08)); border-color:rgba(175,82,222,0.3);">
-                <span class="statusbar-action-icon" aria-hidden="true">🎨</span>
-                <span>Themes</span>
-            </button>
-            <!-- Add Agent: moved to agent fleet grid (circle button inline with agents) -->
-            <button class="statusbar-action" id="addAgentBtn" aria-label="Add Agent" style="display:none;" hidden></button>
-            <div class="exec-command-input">
-                <input
-                    type="text"
-                    placeholder="Type a command or press 💬 to chat..."
-                    aria-label="Command input"
-                    id="commandInput"
-                    autocomplete="off"
-                    spellcheck="false"
-                />
-                <span class="input-icon" aria-hidden="true">⌘</span>
-            </div>
+        <!-- Legacy statusbar decommissioned. Hidden stubs preserve IDs for JS compatibility -->
+        <div style="display:none!important">
+            <button id="missionsBtn"></button>
+            <button id="cronBtn"></button>
+            <button id="memoryBtn"></button>
+            <button id="chatBtn"></button>
+            <button id="settingsBtn"></button>
+            <button id="remoteBtn"></button>
+            <button id="themesBtn"></button>
+            <button id="addAgentBtn"></button>
+            <input id="commandInput" />
+            <span id="statusAgentCount"></span>
+            <span id="statusSystem"></span>
         </div>
 
     </div>
