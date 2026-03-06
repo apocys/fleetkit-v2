@@ -178,6 +178,7 @@
               if (Array.isArray(data)) {
                 console.log('[Auth] ✅ Verified — ' + data.length + ' sessions');
                 localStorage.setItem('spawnkit-connected-once', '1');
+                localStorage.setItem('spawnkit-onboarded', 'true');
                 // Show connected indicator (element in index.html)
                 var ci = document.getElementById('connectedIndicator');
                 if (ci) { ci.style.display = 'flex'; }

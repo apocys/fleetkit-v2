@@ -108,6 +108,7 @@
     btn.addEventListener('click', function() {
       window.__skDemoMode = true;
       localStorage.setItem('spawnkit-demo-mode', '1');
+      localStorage.setItem('spawnkit-onboarded', 'true');
       window.DeployWizard.close();
       // Resolve auth gate so app initializes in demo mode
       if (typeof window.__skAuthResolve === 'function') {
@@ -175,6 +176,7 @@
             localStorage.setItem('spawnkit-instance-url', url);
             localStorage.setItem('spawnkit-api-token', tok);
             localStorage.setItem('spawnkit-token', tok); // Also set for auth.js
+            localStorage.setItem('spawnkit-onboarded', 'true');
             status.innerHTML = '<div class="dw-msg dw-msg-success">✅ Connected! ' + data.length + ' sessions found. Reloading…</div>';
             setTimeout(function() { location.reload(); }, 1200);
           });
