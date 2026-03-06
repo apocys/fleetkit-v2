@@ -284,6 +284,18 @@
 
   function openPanel(name) {
     if (name === 'missions') {
+      // Prefer Orchestration board (Task Graph + Kanban)
+      var orchBtn = document.getElementById('orchestrationBtn');
+      if (orchBtn) {
+        orchBtn.click();
+        // After overlay opens, switch to Missions tab (Kanban)
+        setTimeout(function () {
+          var missionsTab = document.querySelector('.orch-tab[data-tab="missions"]');
+          if (missionsTab) missionsTab.click();
+        }, 160);
+        return;
+      }
+      // Fallback to standalone missions panel
       if (typeof openMissionsPanel === 'function') { openMissionsPanel(); return; }
       var missionsBtn = document.getElementById('missionsBtn');
       if (missionsBtn) missionsBtn.click();
