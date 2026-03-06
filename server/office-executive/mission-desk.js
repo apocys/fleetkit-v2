@@ -818,10 +818,55 @@ window.openChannelStatusPanel = function(channelId, displayName) {
   new MutationObserver(function() { attachChannelClicks(); }).observe(document.body, { childList: true, subtree: true });
 })();
 
-// FIX 4: Daily Brief Panel
+// FIX 4: Daily Brief Panel — wired to live data
 window.openDailyBriefPanel = function() {
   var existing = document.getElementById('dailyBriefOverlay');
   if (existing) existing.remove();
+
+  var data = window.SpawnKit && window.SpawnKit.data || {};
+  var sessions = data.sessions || [];
+  var crons = data.crons || [];
+  var agents = data.agents || [];
+  var memory = data.memory || [];
+
+  // Build active sessions summary
+  var activeSessions = sessions.filter(function(s) { return s.status === 'active' || s.active; });
+  var sessHtml = '';
+  if (activeSessions.length > 0) {
+    sessHtml = activeSessions.slice(0, 8).map(function(s) {
+      var name = s.label || s.kind || s.sessionKey || 'Session';
+      var model = s.model || '';
+      var age = s.lastActive ? _timeAgo(s.lastActive) : '';
+      return '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border-subtle,rgba(255,255,255,0.06));">' +
+        '<span style="font-size:13px;color:var(--text-primary,#fff);">' + _esc(name) + '</span>' +
+        '<span style="font-size:11px;color:var(--text-tertiary,#8E8E93);">' + _esc(model) + (age ? ' · ' + age : '') + '</span></div>';
+    }).join('');
+  } else {
+    sessHtml = '<p style="margin:0;color:var(--text-tertiary,#8E8E93);font-size:13px;">No active sessions.</p>';
+  }
+
+  // Build crons summary
+  var cronHtml = '';
+  if (crons.length > 0) {
+    cronHtml = crons.slice(0, 6).map(function(c) {
+      var name = c.label || c.schedule || 'Cron';
+      var sched = c.schedule || c.cron || '';
+      var status = c.enabled === false ? '⏸' : '✅';
+      return '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border-subtle,rgba(255,255,255,0.06));">' +
+        '<span style="font-size:13px;">' + status + ' ' + _esc(name) + '</span>' +
+        '<span style="font-size:11px;color:var(--text-tertiary,#8E8E93);">' + _esc(sched) + '</span></div>';
+    }).join('');
+  } else {
+    cronHtml = '<p style="margin:0;color:var(--text-tertiary,#8E8E93);font-size:13px;">No scheduled jobs.</p>';
+  }
+
+  // Build fleet status
+  var fleetHtml = '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;text-align:center;">' +
+    '<div style="padding:12px;background:rgba(52,199,89,0.1);border-radius:10px;"><div style="font-size:24px;font-weight:700;color:#34C759;">' + agents.length + '</div><div style="font-size:11px;color:var(--text-tertiary,#8E8E93);">Agents</div></div>' +
+    '<div style="padding:12px;background:rgba(0,122,255,0.1);border-radius:10px;"><div style="font-size:24px;font-weight:700;color:#007AFF;">' + sessions.length + '</div><div style="font-size:11px;color:var(--text-tertiary,#8E8E93);">Sessions</div></div>' +
+    '<div style="padding:12px;background:rgba(255,159,10,0.1);border-radius:10px;"><div style="font-size:24px;font-weight:700;color:#FF9F0A;">' + crons.length + '</div><div style="font-size:11px;color:var(--text-tertiary,#8E8E93);">Cron Jobs</div></div>' +
+  '</div>';
+
   var o = document.createElement('div');
   o.id = 'dailyBriefOverlay';
   o.className = 'cron-overlay open';
@@ -836,19 +881,19 @@ window.openDailyBriefPanel = function() {
       '<div class="cron-body" style="padding:24px;max-height:60vh;overflow-y:auto;">' +
         '<div style="margin-bottom:20px;">' +
           '<h3 style="margin:0 0 4px;font-size:18px;font-weight:700;">Today\u2019s Focus</h3>' +
-          '<p style="margin:0;color:var(--text-tertiary,#8E8E93);font-size:13px;">Your daily executive summary</p>' +
-        '</div>' +
-        '<div style="background:var(--bg-secondary,rgba(0,0,0,0.02));padding:16px;border-radius:12px;margin-bottom:12px;border:1px solid var(--border-subtle,rgba(0,0,0,0.06));">' +
-          '<h4 style="margin:0 0 8px;font-size:14px;font-weight:600;">\ud83c\udfaf Priority Tasks</h4>' +
-          '<p style="margin:0;color:var(--text-secondary,#636366);font-size:13px;">Your top priorities and active missions will appear here when connected to a live relay.</p>' +
+          '<p style="margin:0;color:var(--text-tertiary,#8E8E93);font-size:13px;">Live executive summary \u2014 ' + new Date().toLocaleDateString('en-GB', {weekday:'long', day:'numeric', month:'long'}) + '</p>' +
         '</div>' +
         '<div style="background:var(--bg-secondary,rgba(0,0,0,0.02));padding:16px;border-radius:12px;margin-bottom:12px;border:1px solid var(--border-subtle,rgba(0,0,0,0.06));">' +
           '<h4 style="margin:0 0 8px;font-size:14px;font-weight:600;">\ud83d\udcca Fleet Status</h4>' +
-          '<p style="margin:0;color:var(--text-secondary,#636366);font-size:13px;">Agent performance and system health overview.</p>' +
+          fleetHtml +
+        '</div>' +
+        '<div style="background:var(--bg-secondary,rgba(0,0,0,0.02));padding:16px;border-radius:12px;margin-bottom:12px;border:1px solid var(--border-subtle,rgba(0,0,0,0.06));">' +
+          '<h4 style="margin:0 0 8px;font-size:14px;font-weight:600;">\ud83c\udfaf Active Sessions</h4>' +
+          sessHtml +
         '</div>' +
         '<div style="background:var(--bg-secondary,rgba(0,0,0,0.02));padding:16px;border-radius:12px;border:1px solid var(--border-subtle,rgba(0,0,0,0.06));">' +
-          '<h4 style="margin:0 0 8px;font-size:14px;font-weight:600;">\ud83d\udd2e Today\u2019s Plan</h4>' +
-          '<p style="margin:0;color:var(--text-secondary,#636366);font-size:13px;">Upcoming scheduled tasks and automation runs.</p>' +
+          '<h4 style="margin:0 0 8px;font-size:14px;font-weight:600;">\ud83d\udd2e Scheduled Jobs</h4>' +
+          cronHtml +
         '</div>' +
       '</div>' +
     '</div>';
@@ -856,6 +901,13 @@ window.openDailyBriefPanel = function() {
   document.getElementById('dailyBriefClose').onclick = function() { o.remove(); };
   o.querySelector('.cron-backdrop').onclick = function() { o.remove(); };
 };
+
+function _esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function _timeAgo(ts) {
+  var d = new Date(ts); var now = Date.now(); var diff = Math.floor((now - d) / 1000);
+  if (diff < 60) return 'just now'; if (diff < 3600) return Math.floor(diff/60) + 'm ago';
+  if (diff < 86400) return Math.floor(diff/3600) + 'h ago'; return Math.floor(diff/86400) + 'd ago';
+}
 
 // FIX 5: Creator Profile Panel
 window.openCreatorProfilePanel = function() {
