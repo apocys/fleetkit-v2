@@ -1618,6 +1618,53 @@ ${customBlock}`;
     return;
   }
 
+  // ─── POST /api/oc/skills/create — Install a skill into workspace ────
+  if (req.url === '/api/oc/skills/create' && req.method === 'POST') {
+    try {
+      const body = await readBody(req);
+      if (!body || !body.name || !body.skillMd) {
+        res.writeHead(400, {'Content-Type':'application/json'});
+        res.end(JSON.stringify({ ok: false, error: 'Missing name or skillMd' }));
+        return;
+      }
+      // Sanitize name: lowercase, hyphens only, no path traversal
+      const name = String(body.name).toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/--+/g, '-').replace(/^-|-$/g, '');
+      if (!name || name.length < 2 || name.length > 64) {
+        res.writeHead(400, {'Content-Type':'application/json'});
+        res.end(JSON.stringify({ ok: false, error: 'Invalid skill name (2-64 chars, lowercase + hyphens)' }));
+        return;
+      }
+      const skillDir = require('path').join(WORKSPACE, 'skills', name);
+      const fs = require('fs');
+      // Create directories
+      fs.mkdirSync(skillDir, { recursive: true });
+      // Write SKILL.md
+      fs.writeFileSync(require('path').join(skillDir, 'SKILL.md'), body.skillMd, 'utf8');
+      // Write optional resource files
+      if (body.resources) {
+        const cats = ['scripts', 'references', 'assets'];
+        for (const cat of cats) {
+          if (body.resources[cat] && Array.isArray(body.resources[cat])) {
+            const catDir = require('path').join(skillDir, cat);
+            fs.mkdirSync(catDir, { recursive: true });
+            for (const file of body.resources[cat]) {
+              if (file.name && typeof file.content === 'string') {
+                const safeName = String(file.name).replace(/[\/\\:]/g, '_');
+                fs.writeFileSync(require('path').join(catDir, safeName), file.content, 'utf8');
+              }
+            }
+          }
+        }
+      }
+      res.writeHead(200, {'Content-Type':'application/json'});
+      res.end(JSON.stringify({ ok: true, name, path: skillDir }));
+    } catch(e) {
+      res.writeHead(500, {'Content-Type':'application/json'});
+      res.end(JSON.stringify({ ok: false, error: e.message }));
+    }
+    return;
+  }
+
   if (req.url.startsWith('/api/oc/')) {
     res.setHeader('Content-Type', 'application/json');
     const route = req.url.replace(/\?.*/, '');

@@ -1046,6 +1046,7 @@
             display: none;
             flex: 1;
             flex-direction: column;
+            min-height: 0; /* allow flex child to shrink for overflow scroll */
         }
 
         .comm-tab-content.active {
@@ -1196,6 +1197,7 @@
         /* ── Live Chat Tab Styles ────────────────────── */
         .chat-tab-messages {
             flex: 1;
+            min-height: 0; /* critical: allow scrolling within flex container */
             overflow-y: auto;
             padding: 16px 20px;
             display: flex;

@@ -125,12 +125,12 @@ function renderStep() {
   if (s === 2) return '<div class="sf-step" data-step="2"><h2>🎯 Trigger Design</h2><p class="sf-hint">What should the user say to activate this skill? Add example phrases.</p><div class="sf-triggers" id="sfTriggers">' + renderTriggers() + '</div><div class="sf-add-trigger"><input class="sf-input" id="sfTriggerInput" placeholder="e.g. \'Create a PDF report\'" /><button class="sf-btn sf-btn-small" id="sfAddTrigger">+ Add</button></div><div class="sf-template-section"><span class="sf-suggestion-label">📋 Template Categories:</span><div class="sf-template-pills"><button class="sf-pill' + (state.activeTpl==='api'?' active':'') + '" data-tpl="api">API Integration</button><button class="sf-pill' + (state.activeTpl==='file'?' active':'') + '" data-tpl="file">File Processing</button><button class="sf-pill' + (state.activeTpl==='code'?' active':'') + '" data-tpl="code">Code Generation</button><button class="sf-pill' + (state.activeTpl==='data'?' active':'') + '" data-tpl="data">Data Analysis</button><button class="sf-pill' + (state.activeTpl==='auto'?' active':'') + '" data-tpl="auto">Automation</button><button class="sf-pill' + (state.activeTpl==='media'?' active':'') + '" data-tpl="media">Media/Content</button></div></div></div>';
   if (s === 3) return '<div class="sf-step" data-step="3"><h2>📝 Instructions</h2><p class="sf-hint">Write the skill instructions in Markdown. This is what the AI reads when your skill activates.</p><div class="sf-editor-toolbar"><button class="sf-tb-btn" data-insert="## ">H2</button><button class="sf-tb-btn" data-insert="### ">H3</button><button class="sf-tb-btn" data-insert="```bash\n\n```">Code</button><button class="sf-tb-btn" data-insert="- ">List</button><button class="sf-tb-btn" data-insert="**">Bold</button></div><textarea class="sf-textarea sf-code-editor" id="sfInstructions" rows="15" placeholder="# My Skill&#10;&#10;## Quick Start&#10;&#10;...">' + escHtml(state.instructions) + '</textarea><div class="sf-suggestions"><span class="sf-suggestion-label">💡 Framework (Ben AI method):</span><ul><li><b>Goal:</b> Define the objective briefly (deep detail goes in steps)</li><li><b>Tools/MCPs:</b> List connectors, APIs, software the agent needs</li><li><b>Step-by-step process:</b> What to do, human-in-the-loop points, what context to load per step</li><li><b>Output per step:</b> Offer multiple variations for user to choose from</li><li><b>Rules:</b> Predict failure modes, enforce reference file usage</li><li><b>Progressive updates:</b> Auto-save approved outputs as examples, auto-update rules on rejection</li><li>Keep SKILL.md clean (process only) — additional context → reference files</li></ul></div></div>';
   if (s === 4) return '<div class="sf-step" data-step="4"><h2>📦 Resources</h2><p class="sf-hint">Add scripts, reference docs, or assets. Optional — many skills only need instructions.</p><div class="sf-resource-tabs"><button class="sf-res-tab' + (state.activeTab==='scripts'?' active':'') + '" data-res="scripts">📜 Scripts</button><button class="sf-res-tab' + (state.activeTab==='references'?' active':'') + '" data-res="references">📚 References</button><button class="sf-res-tab' + (state.activeTab==='assets'?' active':'') + '" data-res="assets">🎨 Assets</button></div><div class="sf-resource-body"><div class="sf-resource-list" id="sfResourceList">' + renderResourceList() + '</div><div class="sf-resource-add"><input class="sf-input" id="sfFileName" placeholder="filename.sh" /><textarea class="sf-textarea sf-code-editor" id="sfFileContent" rows="8" placeholder="#!/bin/bash&#10;# Your script here"></textarea><button class="sf-btn" id="sfAddFile">+ Add File</button></div></div></div>';
-  if (s === 5) { var md = buildSkillMd(); return '<div class="sf-step" data-step="5"><h2>✨ Preview & Download</h2><div class="sf-preview"><div class="sf-preview-header"><span class="sf-preview-name">' + escHtml(state.name||'my-skill') + '</span><span class="sf-preview-files">' + totalFiles() + ' file' + (totalFiles()!==1?'s':'') + '</span></div><div class="sf-preview-tree" id="sfPreviewTree">' + escHtml(buildPreviewTree()) + '</div><div class="sf-preview-content" id="sfPreviewContent">' + escHtml(md) + '</div></div><div class="sf-actions"><button class="sf-btn sf-btn-primary" id="sfDownload">📥 Download .skill</button><button class="sf-btn" id="sfCopyMd">📋 Copy SKILL.md</button></div></div>'; }
+  if (s === 5) { var md = buildSkillMd(); return '<div class="sf-step" data-step="5"><h2>✨ Preview & Install</h2><div class="sf-preview"><div class="sf-preview-header"><span class="sf-preview-name">' + escHtml(state.name||'my-skill') + '</span><span class="sf-preview-files">' + totalFiles() + ' file' + (totalFiles()!==1?'s':'') + '</span></div><div class="sf-preview-tree" id="sfPreviewTree">' + escHtml(buildPreviewTree()) + '</div><div class="sf-preview-content" id="sfPreviewContent">' + escHtml(md) + '</div></div><div class="sf-actions"><button class="sf-btn sf-btn-primary" id="sfInstall">🚀 Install to OpenClaw</button><button class="sf-btn" id="sfDownload">📥 Download SKILL.md</button><button class="sf-btn" id="sfCopyMd">📋 Copy</button></div></div>'; }
 }
 
 function renderNav() {
   var back = state.step > 1 ? '<button class="sf-btn" id="sfBack">← Back</button>' : '<span></span>';
-  var next = state.step < 5 ? '<button class="sf-btn sf-btn-primary" id="sfNext">Next →</button>' : '<button class="sf-btn sf-btn-primary" id="sfDownload2">📥 Download</button>';
+  var next = state.step < 5 ? '<button class="sf-btn sf-btn-primary" id="sfNext">Next →</button>' : '<button class="sf-btn sf-btn-primary" id="sfInstall2">🚀 Install</button>';
   return '<div class="sf-nav">' + back + next + '</div>';
 }
 
@@ -145,40 +145,60 @@ function saveCurrentStep() {
   }
 }
 
-function loadJSZip(cb) {
-  if (window.JSZip) { cb(); return; }
-  var script = document.createElement('script');
-  script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
-  script.onload = cb;
-  document.head.appendChild(script);
+function doInstall() {
+  saveCurrentStep();
+  var name = state.name || 'my-skill';
+  var payload = {
+    name: name,
+    skillMd: buildSkillMd(),
+    resources: {}
+  };
+  var cats = ['scripts','references','assets'];
+  for (var c = 0; c < cats.length; c++) {
+    var cat = cats[c];
+    if (state.resources[cat].length) {
+      payload.resources[cat] = state.resources[cat];
+    }
+  }
+  var apiUrl = window.OC_API_URL || (window.location.hostname.includes('spawnkit.ai') ? window.location.origin : 'http://127.0.0.1:8222');
+  var skF = window.skFetch || fetch;
+
+  // Show installing state
+  var overlay = document.getElementById('sf-overlay');
+  var installBtn = overlay ? overlay.querySelector('#sfInstall, #sfInstall2') : null;
+  if (installBtn) { installBtn.textContent = '⏳ Installing...'; installBtn.disabled = true; }
+
+  skF(apiUrl + '/api/oc/skills/create', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  }).then(function(resp) { return resp.json(); })
+  .then(function(data) {
+    if (data.ok) {
+      // Success — show confirmation
+      if (installBtn) { installBtn.textContent = '✅ Installed!'; installBtn.style.background = '#30D158'; }
+      // Auto-close after 1.5s
+      setTimeout(function() { SkillForge.close(); }, 1500);
+    } else {
+      if (installBtn) { installBtn.textContent = '❌ ' + (data.error || 'Failed'); installBtn.disabled = false; }
+    }
+  }).catch(function(err) {
+    if (installBtn) { installBtn.textContent = '❌ Network error'; installBtn.disabled = false; }
+    console.error('[SkillForge] Install failed:', err);
+  });
 }
 
 function doDownload() {
   saveCurrentStep();
-  loadJSZip(function() {
-    var zip = new window.JSZip();
-    var name = state.name || 'my-skill';
-    var folder = zip.folder(name);
-    folder.file('SKILL.md', buildSkillMd());
-    var cats = ['scripts','references','assets'];
-    for (var c = 0; c < cats.length; c++) {
-      var cat = cats[c];
-      if (state.resources[cat].length) {
-        var sub = folder.folder(cat);
-        for (var f = 0; f < state.resources[cat].length; f++) {
-          sub.file(state.resources[cat][f].name, state.resources[cat][f].content);
-        }
-      }
-    }
-    zip.generateAsync({type:'blob'}).then(function(blob) {
-      var url = URL.createObjectURL(blob);
-      var a = document.createElement('a');
-      a.href = url;
-      a.download = name + '.skill';
-      a.click();
-      setTimeout(function() { URL.revokeObjectURL(url); }, 2000);
-    });
-  });
+  var name = state.name || 'my-skill';
+  var md = buildSkillMd();
+  var blob = new Blob([md], { type: 'text/markdown' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = name + '-SKILL.md';
+  a.click();
+  setTimeout(function() { URL.revokeObjectURL(url); }, 2000);
 }
 
 function attachEvents(overlay) {
@@ -187,6 +207,7 @@ function attachEvents(overlay) {
 
     if (t.id === 'sfBack') { saveCurrentStep(); state.step--; refresh(overlay); return; }
     if (t.id === 'sfNext') { saveCurrentStep(); state.step++; refresh(overlay); return; }
+    if (t.id === 'sfInstall' || t.id === 'sfInstall2') { doInstall(); return; }
     if (t.id === 'sfDownload' || t.id === 'sfDownload2') { doDownload(); return; }
 
     if (t.id === 'sfAddTrigger') {
