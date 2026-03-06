@@ -557,7 +557,8 @@
         if (existing) { existing.remove(); return; }
         var dd = document.createElement('div');
         dd.id = 'mdUserDropdown';
-        dd.style.cssText = 'position:absolute;top:52px;right:20px;background:var(--bg-primary,#fff);border:1px solid var(--border-subtle,rgba(0,0,0,0.1));border-radius:12px;padding:4px;min-width:180px;box-shadow:0 8px 32px rgba(0,0,0,0.12);z-index:10010;';
+        var btnRect = userMenuBtn.getBoundingClientRect();
+        dd.style.cssText = 'position:fixed;top:' + (btnRect.bottom + 6) + 'px;right:' + (window.innerWidth - btnRect.right) + 'px;background:var(--bg-primary,#fff);border:1px solid var(--border-subtle,rgba(0,0,0,0.1));border-radius:12px;padding:4px;min-width:180px;box-shadow:0 8px 32px rgba(0,0,0,0.12);z-index:10010;';
         var items = [
           { icon: '🎨', label: 'Change Theme', action: 'theme' },
           { icon: '⚙️', label: 'Settings', action: 'settings' },
@@ -575,11 +576,10 @@
           dd.remove();
           var act = action.dataset.action;
           if (act === 'theme') {
-            // Open theme picker if available
-            var tp = document.getElementById('themePicker');
+            // Open theme picker overlay
+            var tp = document.getElementById('themePickerOverlay');
             if (tp) { tp.classList.add('open'); }
             else if (window.ThemePicker) { window.ThemePicker.open(); }
-            else { window.location.href = '/'; }
           } else if (act === 'settings') {
             var settingsBtn = document.getElementById('settingsBtn');
             if (settingsBtn) settingsBtn.click();
