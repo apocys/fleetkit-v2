@@ -132,6 +132,23 @@ try {
         sentinel: { name: 'Sentinel', role: 'QA & Security', color: '#30D158', status: 'idle', task: '' },
     };
 
+    /* Load custom agents from localStorage into AGENTS dict */
+    try {
+        var _customAgents = JSON.parse(localStorage.getItem('spawnkit-created-agents') || '[]');
+        _customAgents.forEach(function(c) {
+            if (c.id && !AGENTS[c.id]) {
+                AGENTS[c.id] = {
+                    name: (c.emoji || '') + ' ' + c.name,
+                    role: c.role || 'Custom',
+                    color: '#007AFF',
+                    status: c.status || 'active',
+                    task: 'Ready for tasks',
+                    model: c.modelName || c.model || ''
+                };
+            }
+        });
+    } catch(e) {}
+
     /* Default skills by role (Feature 6 fallback) */
     var DEFAULT_SKILLS = {
         ceo:      ['🎯 Orchestration', '📊 Strategy', '🔮 Vision', '👥 Leadership'],
@@ -176,7 +193,7 @@ try {
 
     /* ── Load Live Agent Data — REAL per-agent TODO.md + SKILLS.md ──────── */
     async function loadLiveAgentData() {
-        var agentIds = ['ceo', 'atlas', 'forge', 'hunter', 'echo', 'sentinel'];
+        var agentIds = Object.keys(AGENTS);
 
         if (!window.spawnkitAPI || !await window.spawnkitAPI.isAvailable()) {
             console.debug('🏢 [Executive] No live data — showing empty state');
