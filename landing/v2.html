@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SpawnKit — AI That Actually Helps</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23007AFF'/%3E%3Ctext x='16' y='23' text-anchor='middle' font-family='system-ui' font-size='18' font-weight='bold' fill='white'%3ES%3C/text%3E%3C/svg%3E">
+<script src="https://cdn.jsdelivr.net/npm/gsap@3/dist/gsap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3/dist/ScrollTrigger.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/lenis@1/dist/lenis.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#F2F2F7;--surface:#FFFFFF;--surface2:#F8F8FA;
+  --text:#1C1C1E;--text2:#3C3C43;--text3:#8E8E93;
+  --accent:#007AFF;--accent-light:rgba(0,122,255,.06);--accent-glow:rgba(0,122,255,.2);
+  --green:#34C759;--orange:#FF9500;--purple:#AF52DE;--pink:#FF2D55;--teal:#5AC8FA;
+  --radius:16px;
+  --font:-apple-system,BlinkMacSystemFont,'SF Pro Display','Helvetica Neue',sans-serif;
+}
+::selection{background:var(--accent);color:#fff}
+html{scroll-behavior:smooth}
+body{font-family:var(--font);background:var(--bg);color:var(--text);line-height:1.6;-webkit-font-smoothing:antialiased;opacity:0}
+a{color:var(--accent);text-decoration:none}
+
+/* Nav */
+.nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:16px clamp(20px,4vw,48px);display:flex;align-items:center;justify-content:space-between;background:rgba(242,242,247,.85);backdrop-filter:blur(20px);border-bottom:1px solid rgba(0,0,0,.04)}
+.nav-logo{font-size:17px;font-weight:700;color:var(--accent)}
+.nav-right{display:flex;gap:24px;align-items:center}
+.nav-right a{color:var(--text2);font-size:14px;font-weight:500}
+.nav-cta{background:var(--accent);color:#fff!important;padding:8px 20px;border-radius:980px;font-weight:600;font-size:14px}
+@media(max-width:640px){.nav-right a:not(.nav-cta){display:none}}
+
+.container{max-width:1080px;margin:0 auto;padding:0 clamp(20px,4vw,48px)}
+section{padding:clamp(64px,10vw,120px) 0}
+
+/* Hero — conversational */
+.hero{min-height:100vh;min-height:100dvh;display:flex;align-items:center;padding-top:80px}
+.hero-inner{max-width:640px}
+.hero-title{font-size:clamp(2.4rem,5.5vw,3.8rem);font-weight:700;letter-spacing:-.03em;line-height:1.12;margin-bottom:20px}
+.hero-title em{font-style:normal;color:var(--accent)}
+.hero-sub{font-size:clamp(17px,2vw,20px);color:var(--text2);margin-bottom:32px;line-height:1.6}
+.hero-input{display:flex;gap:0;background:var(--surface);border-radius:14px;border:1.5px solid rgba(0,0,0,.08);padding:6px;box-shadow:0 4px 20px rgba(0,0,0,.06);max-width:480px;transition:border-color .3s}
+.hero-input:focus-within{border-color:var(--accent)}
+.hero-input input{flex:1;border:none;outline:none;padding:12px 16px;font-size:16px;font-family:var(--font);background:transparent;color:var(--text)}
+.hero-input input::placeholder{color:var(--text3)}
+.hero-input button{background:var(--accent);color:#fff;border:none;padding:12px 24px;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;white-space:nowrap;transition:opacity .2s}
+.hero-input button:hover{opacity:.9}
+.hero-note{font-size:13px;color:var(--text3);margin-top:12px}
+
+/* Scenario cards — the "grandma understands" section */
+.scenarios{background:var(--surface)}
+.scenario-label{font-size:13px;text-transform:uppercase;letter-spacing:.15em;color:var(--accent);font-weight:600;text-align:center;margin-bottom:12px}
+.scenario-title{font-size:clamp(1.8rem,3.5vw,2.6rem);font-weight:700;letter-spacing:-.02em;text-align:center;margin-bottom:8px}
+.scenario-desc{text-align:center;color:var(--text2);max-width:480px;margin:0 auto 48px;font-size:16px}
+
+.scenario-row{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px}
+@media(max-width:700px){.scenario-row{grid-template-columns:1fr}}
+.scenario-card{background:var(--surface2);border-radius:var(--radius);padding:28px;border:1px solid rgba(0,0,0,.03);transition:all .35s cubic-bezier(.25,1,.5,1)}
+.scenario-card:hover{transform:translateY(-3px);box-shadow:0 8px 28px rgba(0,0,0,.06);border-color:rgba(0,0,0,.06)}
+.scenario-card .cat{font-size:12px;text-transform:uppercase;letter-spacing:.1em;font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:6px}
+.cat-daily{color:var(--green)}
+.cat-work{color:var(--accent)}
+.cat-creative{color:var(--purple)}
+.cat-learning{color:var(--orange)}
+.scenario-card .ask{font-size:17px;font-weight:600;margin-bottom:8px;line-height:1.35}
+.scenario-card .result{font-size:14px;color:var(--text3);line-height:1.55}
+.scenario-card .result strong{color:var(--text2);font-weight:500}
+
+/* Big scenario — full width */
+.scenario-big{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:32px;align-items:center;background:linear-gradient(135deg,rgba(0,122,255,.04),rgba(0,122,255,.01));border:1px solid rgba(0,122,255,.1)}
+.scenario-big .scenario-text{padding:8px 0}
+.scenario-big .scenario-visual{background:var(--surface);border-radius:12px;padding:20px;font-size:13px;color:var(--text2);border:1px solid rgba(0,0,0,.04)}
+.scenario-big .scenario-visual .agent-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(0,0,0,.03)}
+.scenario-big .scenario-visual .agent-row:last-child{border:none}
+.agent-dot{width:8px;height:8px;border-radius:50%}
+.agent-name{font-weight:600;font-size:13px}
+.agent-status{margin-left:auto;font-size:12px;color:var(--text3)}
+@media(max-width:700px){.scenario-big{grid-template-columns:1fr}}
+
+/* How it works */
+.how{position:relative}
+.how-header{text-align:center;margin-bottom:48px}
+.how-header h2{font-size:clamp(1.8rem,3.5vw,2.6rem);font-weight:700;letter-spacing:-.02em}
+.how-steps{display:flex;gap:20px;justify-content:center;flex-wrap:wrap}
+.how-step{flex:1;min-width:240px;max-width:320px;background:var(--surface);border-radius:var(--radius);padding:32px 24px;text-align:center;border:1px solid rgba(0,0,0,.04)}
+.how-step .num{width:36px;height:36px;border-radius:50%;background:var(--accent);color:#fff;font-weight:700;font-size:16px;display:inline-flex;align-items:center;justify-content:center;margin-bottom:16px}
+.how-step h3{font-size:17px;font-weight:600;margin-bottom:8px}
+.how-step p{font-size:14px;color:var(--text3);line-height:1.55}
+
+/* Pricing */
+.pricing{background:var(--surface)}
+.pricing-header{text-align:center;margin-bottom:48px}
+.pricing-header h2{font-size:clamp(1.8rem,3.5vw,2.6rem);font-weight:700;letter-spacing:-.02em;margin-bottom:8px}
+.pricing-header p{color:var(--text2);font-size:16px}
+.pricing-cards{display:flex;gap:20px;justify-content:center;flex-wrap:wrap;max-width:720px;margin:0 auto}
+.p-card{flex:1;min-width:280px;max-width:340px;background:var(--bg);border-radius:var(--radius);padding:36px 28px;text-align:center;border:1.5px solid rgba(0,0,0,.04)}
+.p-card.pop{border-color:var(--accent);background:var(--surface);box-shadow:0 4px 24px var(--accent-glow)}
+.p-card .tier{font-size:13px;text-transform:uppercase;letter-spacing:.12em;color:var(--text3);font-weight:600;margin-bottom:8px}
+.p-card.pop .tier{color:var(--accent)}
+.p-card .amt{font-size:clamp(2rem,4vw,2.8rem);font-weight:700}
+.p-card .amt span{font-size:14px;font-weight:400;color:var(--text3)}
+.p-card .desc{font-size:14px;color:var(--text3);margin:8px 0 20px}
+.p-card ul{list-style:none;text-align:left;margin-bottom:24px}
+.p-card li{font-size:14px;padding:7px 0;color:var(--text2);display:flex;gap:8px}
+.p-card li::before{content:'✓';color:var(--accent);font-weight:700}
+.p-card .cta{display:block;width:100%;padding:13px;border-radius:10px;font-size:15px;font-weight:600;border:none;cursor:pointer;transition:all .2s}
+.p-card .cta-fill{background:var(--accent);color:#fff}
+.p-card .cta-outline{background:transparent;color:var(--accent);border:1.5px solid var(--accent)}
+
+/* Final */
+.final{text-align:center}
+.final h2{font-size:clamp(1.8rem,3.5vw,2.6rem);font-weight:700;letter-spacing:-.02em;margin-bottom:20px}
+.final .btn{display:inline-flex;align-items:center;gap:8px;padding:16px 32px;border-radius:12px;background:var(--accent);color:#fff;font-weight:600;font-size:16px;box-shadow:0 4px 16px var(--accent-glow);transition:all .3s}
+.final .btn:hover{transform:translateY(-2px)}
+
+footer{padding:32px;text-align:center;font-size:13px;color:var(--text3)}
+footer a{color:var(--text2);margin:0 12px}
+
+.reveal{opacity:0;transform:translateY(24px)}
+.reveal.visible{opacity:1;transform:none;transition:opacity .6s,transform .6s cubic-bezier(.25,1,.5,1)}
+@media(prefers-reduced-motion:reduce){.reveal{opacity:1;transform:none}}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <span class="nav-logo">⚡ SpawnKit</span>
+  <div class="nav-right">
+    <a href="#scenarios">Use Cases</a>
+    <a href="#pricing">Pricing</a>
+    <a href="https://app.spawnkit.ai" class="nav-cta" target="_blank">Try Free</a>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="container">
+    <div class="hero-inner">
+      <h1 class="hero-title reveal">What if you had a team that <em>never sleeps?</em></h1>
+      <p class="hero-sub reveal">Tell SpawnKit what you need in plain English. Your AI agents handle the rest — research, emails, planning, content, and more.</p>
+      <div class="hero-input reveal">
+        <input type="text" placeholder='Try: "Plan my trip to Barcelona next week"' readonly onclick="window.open('https://app.spawnkit.ai','_blank')">
+        <button onclick="window.open('https://app.spawnkit.ai','_blank')">Ask →</button>
+      </div>
+      <p class="hero-note reveal">Free forever · No credit card · Works in 60 seconds</p>
+    </div>
+  </div>
+</section>
+
+<section class="scenarios" id="scenarios">
+  <div class="container">
+    <p class="scenario-label reveal">Real examples, real results</p>
+    <h2 class="scenario-title reveal">Just tell it what you need</h2>
+    <p class="scenario-desc reveal">SpawnKit understands everyday tasks. Here's what people actually ask their AI team.</p>
+
+    <div class="scenario-row">
+      <div class="scenario-card reveal">
+        <div class="cat cat-daily">🏠 Daily Life</div>
+        <div class="ask">"Sort my inbox — what's urgent?"</div>
+        <div class="result">SpawnKit reads your emails, <strong>flags 3 urgent ones</strong>, archives 47 newsletters, and drafts 2 replies for your approval.</div>
+      </div>
+      <div class="scenario-card reveal">
+        <div class="cat cat-work">💼 Work</div>
+        <div class="ask">"Prepare Monday's client meeting"</div>
+        <div class="result">Pulls the client's latest activity, <strong>creates a 5-slide brief</strong>, and adds talking points based on last meeting's notes.</div>
+      </div>
+    </div>
+
+    <div class="scenario-row">
+      <div class="scenario-card reveal">
+        <div class="cat cat-creative">🎨 Creative</div>
+        <div class="ask">"Write 5 Instagram captions for my bakery"</div>
+        <div class="result">Researches trending food hashtags, <strong>writes 5 unique posts</strong> matching your brand voice, suggests best posting times.</div>
+      </div>
+      <div class="scenario-card reveal">
+        <div class="cat cat-learning">📚 Learning</div>
+        <div class="ask">"Help me learn Python this month"</div>
+        <div class="result">Creates a <strong>4-week study plan</strong>, finds the best free resources, quizzes you daily, tracks your progress.</div>
+      </div>
+    </div>
+
+    <div class="scenario-row">
+      <div class="scenario-card scenario-big reveal">
+        <div class="scenario-text">
+          <div class="cat cat-daily">🏠 Daily Life</div>
+          <div class="ask">"Plan a 4-day trip to Lisbon for 2 people under €1500"</div>
+          <div class="result">Your AI team splits the work: one finds flights, another researches hotels, a third builds a day-by-day itinerary with restaurants and activities. <strong>Delivered in 3 minutes.</strong></div>
+        </div>
+        <div class="scenario-visual">
+          <div class="agent-row"><span class="agent-dot" style="background:var(--accent)"></span><span class="agent-name">Scout</span><span class="agent-status">✈️ Comparing 12 flights...</span></div>
+          <div class="agent-row"><span class="agent-dot" style="background:var(--green)"></span><span class="agent-name">Vex</span><span class="agent-status">🏨 Found 3 hotels under €80/night</span></div>
+          <div class="agent-row"><span class="agent-dot" style="background:var(--orange)"></span><span class="agent-name">Nova</span><span class="agent-status">🍽️ Building restaurant list...</span></div>
+          <div class="agent-row"><span class="agent-dot" style="background:var(--purple)"></span><span class="agent-name">Echo</span><span class="agent-status">📋 Writing day-by-day plan</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="scenario-row">
+      <div class="scenario-card reveal">
+        <div class="cat cat-work">💼 Work</div>
+        <div class="ask">"What are my competitors charging?"</div>
+        <div class="result">Scans 8 competitor websites, <strong>builds a pricing comparison table</strong>, highlights where you're cheaper and where you're not.</div>
+      </div>
+      <div class="scenario-card reveal">
+        <div class="cat cat-daily">🏠 Daily Life</div>
+        <div class="ask">"Track my spending this month"</div>
+        <div class="result">Categorizes 127 transactions, <strong>spots you overspent €180 on food delivery</strong>, suggests a weekly budget to stay on track.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="how">
+  <div class="container">
+    <div class="how-header reveal">
+      <h2>Ready in three steps</h2>
+    </div>
+    <div class="how-steps">
+      <div class="how-step reveal"><div class="num">1</div><h3>Type what you need</h3><p>Just say it in plain language. No commands, no syntax. Like texting a friend.</p></div>
+      <div class="how-step reveal"><div class="num">2</div><h3>Agents get to work</h3><p>Your AI team splits up the task and works in parallel. You can watch in real-time.</p></div>
+      <div class="how-step reveal"><div class="num">3</div><h3>Review and done</h3><p>Get polished results. Approve, tweak, or ask for changes. That's it.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="pricing" id="pricing">
+  <div class="container">
+    <div class="pricing-header reveal">
+      <h2>Simple pricing</h2>
+      <p>Free to start. Upgrade when you want more.</p>
+    </div>
+    <div class="pricing-cards">
+      <div class="p-card reveal">
+        <div class="tier">Free</div>
+        <div class="amt">$0 <span>forever</span></div>
+        <p class="desc">Perfect for personal use.</p>
+        <ul>
+          <li>3 AI agents</li>
+          <li>All use case categories</li>
+          <li>Real-time dashboard</li>
+          <li>Community support</li>
+        </ul>
+        <a href="https://app.spawnkit.ai" class="cta cta-outline" target="_blank">Start free</a>
+      </div>
+      <div class="p-card pop reveal">
+        <div class="tier">Pro</div>
+        <div class="amt">$49 <span>/ month</span></div>
+        <p class="desc">Full power for teams & pros.</p>
+        <ul>
+          <li>Unlimited agents</li>
+          <li>All office themes</li>
+          <li>Priority tasks</li>
+          <li>Advanced analytics</li>
+          <li>Priority support</li>
+        </ul>
+        <a href="https://app.spawnkit.ai" class="cta cta-fill" target="_blank">Start 14-day trial</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="final">
+  <div class="container reveal">
+    <h2>Stop doing busywork.</h2>
+    <p style="color:var(--text2);margin-bottom:28px;font-size:17px">Your AI team is ready. Just tell them what you need.</p>
+    <a href="https://app.spawnkit.ai" class="btn" target="_blank">Try SpawnKit free →</a>
+  </div>
+</section>
+
+<footer>
+  <span>© 2026 SpawnKit</span>
+  <a href="https://github.com/openclaw/spawnkit">GitHub</a>
+  <a href="https://discord.com/invite/clawd">Discord</a>
+  <a href="https://docs.openclaw.ai">Docs</a>
+</footer>
+
+<script>
+const lenis=new Lenis({duration:1.2,smoothWheel:true});
+function raf(t){lenis.raf(t);requestAnimationFrame(raf)}requestAnimationFrame(raf);
+lenis.on('scroll',ScrollTrigger.update);
+gsap.ticker.add(t=>lenis.raf(t*1000));gsap.ticker.lagSmoothing(0);
+gsap.to('body',{opacity:1,duration:.5});
+const obs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('visible');obs.unobserve(e.target)}})
+},{threshold:.08,rootMargin:'0px 0px -30px 0px'});
+document.querySelectorAll('.reveal').forEach(el=>obs.observe(el));
+</script>
+</body>
+</html>
