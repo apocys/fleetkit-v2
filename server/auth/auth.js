@@ -4,15 +4,17 @@ const fs = require('fs').promises;
 const path = require('path');
 
 class AuthManager {
-  constructor() {
-    this.secret = process.env.SK_AUTH_SECRET;
+  constructor(opts = {}) {
+    this.secret = opts.secret || process.env.SK_AUTH_SECRET;
     if (!this.secret) {
       throw new Error('SK_AUTH_SECRET environment variable required');
     }
     
-    this.dataDir = '/home/apocyz_runner/spawnkit-server/data';
+    this.dataDir = opts.dataDir || process.env.SK_DATA_DIR || path.join(__dirname, '..', 'data');
     this.usersFile = path.join(this.dataDir, 'users.json');
     this.sessionsFile = path.join(this.dataDir, 'sessions.json');
+    this.baseUrl = opts.baseUrl || process.env.SK_BASE_URL || 'https://app.spawnkit.ai';
+    this._sendEmail = opts.sendEmail || null; // injectable for testing
     
     // Ensure data directory exists
     this.ensureDataDir();
@@ -79,16 +81,10 @@ class AuthManager {
     return crypto.randomBytes(32).toString('hex');
   }
 
-  async sendMagicLink(email) {
-    const resendApiKey = process.env.RESEND_API_KEY;
-    if (!resendApiKey) {
-      throw new Error('RESEND_API_KEY environment variable required');
-    }
-
+  buildMagicLinkEmail(email) {
     const token = this.generateMagicToken(email);
-    const magicLink = `https://app.spawnkit.ai/api/auth/verify?token=${token}`;
-    
-    const emailPayload = {
+    const magicLink = `${this.baseUrl}/api/auth/verify?token=${token}`;
+    return {
       from: 'SpawnKit <noreply@spawnkit.ai>',
       to: [email],
       subject: 'Sign in to SpawnKit',
@@ -100,16 +96,33 @@ class AuthManager {
           <p style="font-size: 14px; color: #86868B; margin-bottom: 10px;">This link will expire in 24 hours.</p>
           <p style="font-size: 14px; color: #86868B;">If you didn't request this, you can safely ignore this email.</p>
         </div>
-      `
+      `,
+      _token: token,
+      _magicLink: magicLink
     };
+  }
 
+  async sendMagicLink(email) {
+    const emailPayload = this.buildMagicLinkEmail(email);
+
+    // Allow injected sender for testing
+    if (this._sendEmail) {
+      return this._sendEmail(emailPayload);
+    }
+
+    const resendApiKey = process.env.RESEND_API_KEY;
+    if (!resendApiKey) {
+      throw new Error('RESEND_API_KEY environment variable required');
+    }
+
+    const { _token, _magicLink, ...payload } = emailPayload;
     const response = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${resendApiKey}`,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify(emailPayload)
+      body: JSON.stringify(payload)
     });
 
     if (!response.ok) {

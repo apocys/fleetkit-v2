@@ -4,17 +4,18 @@ const path = require('path');
 const crypto = require('crypto');
 
 class BillingManager {
-  constructor() {
-    const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+  constructor(opts = {}) {
+    const stripeSecretKey = opts.stripeKey || process.env.STRIPE_SECRET_KEY;
     if (!stripeSecretKey) {
       throw new Error('STRIPE_SECRET_KEY environment variable required');
     }
 
-    this.stripe = stripe(stripeSecretKey);
-    this.webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
-    this.priceId = process.env.STRIPE_PRICE_ID; // Pro plan price ID
+    this.stripe = opts.stripeClient || stripe(stripeSecretKey);
+    this.webhookSecret = opts.webhookSecret || process.env.STRIPE_WEBHOOK_SECRET;
+    this.priceId = opts.priceId || process.env.STRIPE_PRICE_ID;
+    this.baseUrl = opts.baseUrl || process.env.SK_BASE_URL || 'https://app.spawnkit.ai';
     
-    this.dataDir = '/home/apocyz_runner/spawnkit-server/data';
+    this.dataDir = opts.dataDir || process.env.SK_DATA_DIR || path.join(__dirname, '..', 'data');
     this.usersFile = path.join(this.dataDir, 'users.json');
   }
 
@@ -72,8 +73,8 @@ class BillingManager {
         }
       ],
       mode: 'subscription',
-      success_url: 'https://app.spawnkit.ai/?payment=success',
-      cancel_url: 'https://app.spawnkit.ai/?payment=cancelled',
+      success_url: this.baseUrl + '/?payment=success',
+      cancel_url: this.baseUrl + '/?payment=cancelled',
       metadata: {
         spawnkit_email: email
       }
@@ -92,7 +93,7 @@ class BillingManager {
 
     const session = await this.stripe.billingPortal.sessions.create({
       customer: user.stripeCustomerId,
-      return_url: 'https://app.spawnkit.ai/'
+      return_url: this.baseUrl + '/'
     });
 
     return session;
