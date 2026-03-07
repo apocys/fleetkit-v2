@@ -659,6 +659,90 @@
             // Test result area
             html += '<div id="setupTestResult" style="margin-top:12px;"></div>';
 
+            // ── MCP Configuration ──
+            html += '<div style="margin-top:28px;padding-top:20px;border-top:1px solid var(--border-subtle);">';
+            html += '<div style="font-size:11px;text-transform:uppercase;font-weight:600;color:var(--text-tertiary);letter-spacing:0.5px;margin-bottom:12px;">🔌 MCP Servers</div>';
+            html += '<p style="font-size:12px;color:var(--text-secondary);margin:0 0 12px;">Connect Model Context Protocol servers to give your agents access to external tools and data.</p>';
+            
+            var mcpServers = stored.mcpServers || [];
+            if (mcpServers.length === 0) {
+                html += '<div style="text-align:center;padding:20px;border:1px dashed var(--border-medium);border-radius:10px;margin-bottom:12px;">';
+                html += '<div style="font-size:20px;margin-bottom:6px;">🔌</div>';
+                html += '<div style="font-size:13px;color:var(--text-tertiary);margin-bottom:8px;">No MCP servers configured</div>';
+                html += '<div style="font-size:11px;color:var(--text-tertiary);">Add servers like filesystem, GitHub, Slack, databases, and more</div>';
+                html += '</div>';
+            } else {
+                mcpServers.forEach(function(srv, i) {
+                    html += '<div style="display:flex;align-items:center;gap:8px;padding:10px 12px;border:1px solid var(--border-subtle);border-radius:8px;margin-bottom:6px;background:var(--bg-secondary);">';
+                    html += '<div style="width:8px;height:8px;border-radius:50%;background:#34C759;flex-shrink:0;"></div>';
+                    html += '<div style="flex:1;min-width:0;">';
+                    html += '<div style="font-size:13px;font-weight:500;color:var(--text-primary);">' + esc(srv.name) + '</div>';
+                    html += '<div style="font-size:11px;color:var(--text-tertiary);font-family:monospace;">' + esc(srv.command || srv.url || '') + '</div>';
+                    html += '</div>';
+                    html += '<button onclick="removeMcpServer(' + i + ')" style="padding:4px 8px;background:none;border:1px solid var(--border-medium);border-radius:4px;color:var(--text-secondary);cursor:pointer;font-size:11px;">✕</button>';
+                    html += '</div>';
+                });
+            }
+            html += '<button onclick="showAddMcpForm()" id="addMcpBtn" style="width:100%;padding:10px;border-radius:8px;background:var(--bg-tertiary);color:var(--text-primary);border:1px solid var(--border-medium);font-size:12px;font-weight:500;cursor:pointer;font-family:inherit;">+ Add MCP Server</button>';
+            html += '<div id="mcpAddForm" style="display:none;margin-top:12px;padding:16px;border:1px solid var(--border-medium);border-radius:10px;background:var(--bg-secondary);">';
+            html += '<div style="margin-bottom:10px;">';
+            html += '<label style="font-size:12px;font-weight:500;color:var(--text-secondary);display:block;margin-bottom:4px;">Server Name</label>';
+            html += '<input type="text" id="mcpName" placeholder="e.g. filesystem, github, slack" style="width:100%;padding:8px 12px;border-radius:8px;border:1px solid var(--border-medium);background:var(--bg-primary);color:var(--text-primary);font-size:13px;font-family:inherit;box-sizing:border-box;" />';
+            html += '</div>';
+            html += '<div style="margin-bottom:10px;">';
+            html += '<label style="font-size:12px;font-weight:500;color:var(--text-secondary);display:block;margin-bottom:4px;">Transport</label>';
+            html += '<select id="mcpTransport" style="width:100%;padding:8px 12px;border-radius:8px;border:1px solid var(--border-medium);background:var(--bg-primary);color:var(--text-primary);font-size:13px;font-family:inherit;box-sizing:border-box;">';
+            html += '<option value="stdio">stdio (local command)</option>';
+            html += '<option value="sse">SSE (remote URL)</option>';
+            html += '</select>';
+            html += '</div>';
+            html += '<div style="margin-bottom:10px;">';
+            html += '<label style="font-size:12px;font-weight:500;color:var(--text-secondary);display:block;margin-bottom:4px;">Command / URL</label>';
+            html += '<input type="text" id="mcpCommand" placeholder="npx -y @modelcontextprotocol/server-filesystem /path" style="width:100%;padding:8px 12px;border-radius:8px;border:1px solid var(--border-medium);background:var(--bg-primary);color:var(--text-primary);font-size:12px;font-family:monospace;box-sizing:border-box;" />';
+            html += '</div>';
+            html += '<div style="margin-bottom:10px;">';
+            html += '<label style="font-size:12px;font-weight:500;color:var(--text-secondary);display:block;margin-bottom:4px;">Environment Variables <span style="color:var(--text-tertiary);">(optional, KEY=VALUE per line)</span></label>';
+            html += '<textarea id="mcpEnv" rows="2" placeholder="GITHUB_TOKEN=ghp_xxx" style="width:100%;padding:8px 12px;border-radius:8px;border:1px solid var(--border-medium);background:var(--bg-primary);color:var(--text-primary);font-size:12px;font-family:monospace;box-sizing:border-box;resize:vertical;"></textarea>';
+            html += '</div>';
+            html += '<div style="display:flex;gap:8px;">';
+            html += '<button onclick="saveMcpServer()" style="flex:1;padding:8px;border-radius:8px;background:var(--exec-blue);color:white;border:none;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;">Save Server</button>';
+            html += '<button onclick="document.getElementById(\'mcpAddForm\').style.display=\'none\'" style="padding:8px 12px;border-radius:8px;background:none;border:1px solid var(--border-medium);color:var(--text-secondary);font-size:12px;cursor:pointer;font-family:inherit;">Cancel</button>';
+            html += '</div>';
+            html += '</div>';
+            html += '</div>';
+
+            // ── Tool Integrations ──
+            html += '<div style="margin-top:28px;padding-top:20px;border-top:1px solid var(--border-subtle);">';
+            html += '<div style="font-size:11px;text-transform:uppercase;font-weight:600;color:var(--text-tertiary);letter-spacing:0.5px;margin-bottom:12px;">🔧 Tool Integrations</div>';
+            html += '<p style="font-size:12px;color:var(--text-secondary);margin:0 0 12px;">Configure API keys and credentials for agent tools.</p>';
+            
+            var tools = [
+                { id: '1password', name: '1Password', icon: '🔐', desc: 'Secret management via op CLI', configKey: 'op_service_account_token', placeholder: 'ops_xxx...' },
+                { id: 'github', name: 'GitHub', icon: '🐙', desc: 'Issues, PRs, code review', configKey: 'github_token', placeholder: 'ghp_xxx...' },
+                { id: 'openai', name: 'OpenAI', icon: '🤖', desc: 'GPT models, Whisper, DALL-E', configKey: 'openai_api_key', placeholder: 'sk-xxx...' },
+                { id: 'anthropic', name: 'Anthropic', icon: '🧠', desc: 'Claude models', configKey: 'anthropic_api_key', placeholder: 'sk-ant-xxx...' },
+                { id: 'elevenlabs', name: 'ElevenLabs', icon: '🎙️', desc: 'Voice cloning & TTS', configKey: 'elevenlabs_api_key', placeholder: 'xi_xxx...' },
+                { id: 'stripe', name: 'Stripe', icon: '💳', desc: 'Payments & subscriptions', configKey: 'stripe_secret_key', placeholder: 'sk_xxx...' }
+            ];
+
+            var toolConfig = stored.tools || {};
+            tools.forEach(function(tool) {
+                var hasKey = toolConfig[tool.id] && toolConfig[tool.id].length > 5;
+                var statusColor = hasKey ? '#34C759' : 'var(--text-tertiary)';
+                var statusText = hasKey ? 'Configured' : 'Not set';
+                html += '<div style="display:flex;align-items:center;gap:10px;padding:12px;border:1px solid var(--border-subtle);border-radius:10px;margin-bottom:8px;background:var(--bg-secondary);">';
+                html += '<div style="font-size:20px;">' + tool.icon + '</div>';
+                html += '<div style="flex:1;min-width:0;">';
+                html += '<div style="font-size:13px;font-weight:600;color:var(--text-primary);">' + esc(tool.name) + ' <span style="font-size:11px;font-weight:400;color:' + statusColor + ';">· ' + statusText + '</span></div>';
+                html += '<div style="font-size:11px;color:var(--text-tertiary);">' + esc(tool.desc) + '</div>';
+                html += '</div>';
+                html += '<input type="password" id="tool_' + tool.id + '" value="' + esc(toolConfig[tool.id] || '') + '" placeholder="' + esc(tool.placeholder) + '" style="width:180px;padding:6px 10px;border-radius:6px;border:1px solid var(--border-medium);background:var(--bg-primary);color:var(--text-primary);font-size:11px;font-family:monospace;box-sizing:border-box;" />';
+                html += '</div>';
+            });
+
+            html += '<button onclick="saveToolIntegrations()" style="width:100%;margin-top:8px;padding:10px;border-radius:8px;background:var(--exec-blue);color:white;border:none;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">💾 Save Tool Keys</button>';
+            html += '</div>';
+
             el.innerHTML = html;
         }
 
@@ -704,6 +788,50 @@
                 .catch(function(e) {
                     result.innerHTML = '<div style="font-size:12px;padding:8px 12px;border-radius:8px;background:rgba(255,59,48,0.1);color:#FF3B30;">❌ Connection failed: ' + esc(e.message) + '</div>';
                 });
+        };
+
+        // ── MCP Server Management ──
+        window.showAddMcpForm = function() {
+            var form = document.getElementById('mcpAddForm');
+            if (form) form.style.display = 'block';
+        };
+
+        window.saveMcpServer = function() {
+            var name = document.getElementById('mcpName').value.trim();
+            var transport = document.getElementById('mcpTransport').value;
+            var command = document.getElementById('mcpCommand').value.trim();
+            var envText = document.getElementById('mcpEnv').value.trim();
+            if (!name || !command) { alert('Please enter a name and command/URL.'); return; }
+            var env = {};
+            envText.split('\n').forEach(function(line) {
+                var parts = line.split('='); if (parts.length >= 2) env[parts[0].trim()] = parts.slice(1).join('=').trim();
+            });
+            var config = {}; try { config = JSON.parse(localStorage.getItem('spawnkit-config') || '{}'); } catch(e) { config = {}; }
+            if (!Array.isArray(config.mcpServers)) config.mcpServers = [];
+            config.mcpServers.push({ name: name, transport: transport, command: transport === 'stdio' ? command : undefined, url: transport === 'sse' ? command : undefined, env: Object.keys(env).length ? env : undefined });
+            localStorage.setItem('spawnkit-config', JSON.stringify(config));
+            loadOrchSetup();
+        };
+
+        window.removeMcpServer = function(index) {
+            if (!confirm('Remove this MCP server?')) return;
+            var config = {}; try { config = JSON.parse(localStorage.getItem('spawnkit-config') || '{}'); } catch(e) { config = {}; }
+            if (Array.isArray(config.mcpServers)) { config.mcpServers.splice(index, 1); localStorage.setItem('spawnkit-config', JSON.stringify(config)); }
+            loadOrchSetup();
+        };
+
+        // ── Tool Integrations ──
+        window.saveToolIntegrations = function() {
+            var config = {}; try { config = JSON.parse(localStorage.getItem('spawnkit-config') || '{}'); } catch(e) { config = {}; }
+            if (typeof config.tools !== 'object' || config.tools === null) config.tools = {};
+            var ids = ['1password', 'github', 'openai', 'anthropic', 'elevenlabs', 'stripe'];
+            ids.forEach(function(id) {
+                var el = document.getElementById('tool_' + id);
+                if (el) config.tools[id] = el.value.trim();
+            });
+            localStorage.setItem('spawnkit-config', JSON.stringify(config));
+            if (window.SpawnKitPanels) SpawnKitPanels.showToast('✅ Tool keys saved');
+            loadOrchSetup();
         };
 
         // Helper
