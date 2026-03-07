@@ -669,9 +669,14 @@
             emptyTitle.textContent = 'No Cron Jobs';
             emptyEl.appendChild(emptyTitle);
             var emptyDesc = document.createElement('div');
-            emptyDesc.style.cssText = 'font-size:12px;color:var(--text-tertiary);line-height:1.5;';
-            emptyDesc.textContent = 'No scheduled jobs found. Crons defined in OpenClaw will appear here automatically.';
+            emptyDesc.style.cssText = 'font-size:12px;color:var(--text-tertiary);line-height:1.5;margin-bottom:16px;';
+            emptyDesc.textContent = 'No scheduled jobs found. Create one below or configure crons in OpenClaw.';
             emptyEl.appendChild(emptyDesc);
+            var createBtn = document.createElement('button');
+            createBtn.style.cssText = 'padding:10px 20px;background:var(--exec-blue);color:white;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;';
+            createBtn.textContent = '+ Create Cron Job';
+            createBtn.addEventListener('click', function() { showCronCreateForm(); });
+            emptyEl.appendChild(createBtn);
             cronBody.textContent = '';
             cronBody.appendChild(emptyEl);
             return;
@@ -819,6 +824,61 @@
                 }
             });
         }, 1000);
+    }
+
+    // ── Cron Create Form ──
+    function showCronCreateForm() {
+        cronBody.textContent = '';
+        var form = document.createElement('div');
+        form.style.cssText = 'padding:16px;';
+        form.innerHTML =
+            '<div style="font-size:14px;font-weight:600;color:var(--text-primary);margin-bottom:16px;">Create Cron Job</div>' +
+            '<div style="margin-bottom:12px;">' +
+                '<label style="display:block;font-size:12px;font-weight:500;color:var(--text-secondary);margin-bottom:4px;">Name</label>' +
+                '<input id="cronCreateName" type="text" placeholder="Morning briefing" style="width:100%;padding:8px 12px;border-radius:8px;border:1px solid var(--border-medium);background:var(--bg-primary);color:var(--text-primary);font-size:13px;font-family:inherit;box-sizing:border-box;" />' +
+            '</div>' +
+            '<div style="margin-bottom:12px;">' +
+                '<label style="display:block;font-size:12px;font-weight:500;color:var(--text-secondary);margin-bottom:4px;">Schedule</label>' +
+                '<input id="cronCreateSchedule" type="text" placeholder="0 8 * * * (every day at 8am)" style="width:100%;padding:8px 12px;border-radius:8px;border:1px solid var(--border-medium);background:var(--bg-primary);color:var(--text-primary);font-size:12px;font-family:monospace;box-sizing:border-box;" />' +
+                '<div style="font-size:11px;color:var(--text-tertiary);margin-top:4px;">Common: <code>0 8 * * *</code> daily 8am · <code>*/30 * * * *</code> every 30min · <code>0 9 * * 1</code> Monday 9am</div>' +
+            '</div>' +
+            '<div style="margin-bottom:12px;">' +
+                '<label style="display:block;font-size:12px;font-weight:500;color:var(--text-secondary);margin-bottom:4px;">Task (what the agent should do)</label>' +
+                '<textarea id="cronCreateTask" rows="3" placeholder="Check fleet health and send morning report" style="width:100%;padding:8px 12px;border-radius:8px;border:1px solid var(--border-medium);background:var(--bg-primary);color:var(--text-primary);font-size:13px;font-family:inherit;box-sizing:border-box;resize:vertical;"></textarea>' +
+            '</div>' +
+            '<div style="display:flex;gap:8px;">' +
+                '<button id="cronCreateSubmit" style="flex:1;padding:10px;border-radius:8px;background:var(--exec-blue);color:white;border:none;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">Create Job</button>' +
+                '<button id="cronCreateCancel" style="padding:10px 16px;border-radius:8px;background:none;border:1px solid var(--border-medium);color:var(--text-secondary);font-size:13px;cursor:pointer;font-family:inherit;">Cancel</button>' +
+            '</div>' +
+            '<div id="cronCreateResult" style="margin-top:12px;"></div>';
+        cronBody.appendChild(form);
+        document.getElementById('cronCreateSubmit').addEventListener('click', submitCronCreate);
+        document.getElementById('cronCreateCancel').addEventListener('click', function() { renderCronJobs(); });
+        document.getElementById('cronCreateName').focus();
+    }
+
+    async function submitCronCreate() {
+        var name = document.getElementById('cronCreateName').value.trim();
+        var schedule = document.getElementById('cronCreateSchedule').value.trim();
+        var task = document.getElementById('cronCreateTask').value.trim();
+        var result = document.getElementById('cronCreateResult');
+        if (!name || !schedule || !task) { result.innerHTML = '<div style="font-size:12px;color:#FF3B30;padding:8px;">Please fill in all fields.</div>'; return; }
+        result.innerHTML = '<div style="font-size:12px;color:var(--text-tertiary);padding:8px;">Creating...</div>';
+        try {
+            var apiUrl = window.OC_API_URL || window.location.origin;
+            var resp = await (window.skFetch || fetch)(apiUrl + '/api/oc/crons', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({action: 'create', name: name, schedule: schedule, task: task, enabled: true})
+            });
+            if (!resp.ok) throw new Error('HTTP ' + resp.status);
+            var data = await resp.json();
+            if (data.error) throw new Error(data.error);
+            showToast('\u2705 Cron job created: ' + name);
+            renderCronJobs();
+        } catch(e) {
+            result.innerHTML = '<div style="font-size:12px;color:#FF3B30;padding:8px 12px;border-radius:8px;background:rgba(255,59,48,0.1);">\u274c Failed: ' + (e.message || 'Unknown error') + '</div>';
+        }
     }
 
     /* ═══════════════════════════════════════════════
