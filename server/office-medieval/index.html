@@ -14,7 +14,7 @@
     </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=MedievalSharp&family=Cinzel:wght@400;500;600;700&family=Crimson+Text:wght@400;600&display=swap" rel="stylesheet">
     <script type="importmap">
     {
         "imports": {
@@ -30,101 +30,41 @@
            ═══════════════════════════════════════════════════════════════ */
 
         :root {
-            /* ── iOS Design System — SpawnKit Blue Accent ──────────────────────────── */
-            /* Typography */
-            --font-display: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
-            --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
-            
-            /* Spacing (4px base) */
-            --space-1: 4px;
-            --space-2: 8px;
-            --space-3: 12px;
-            --space-4: 16px;
-            --space-6: 24px;
-            --space-8: 32px;
-            --space-10: 40px;
-            --space-12: 48px;
-            --space-16: 64px;
-            --space-20: 80px;
-            
-            /* Border Radius */
-            --radius-sm: 8px;
-            --radius-md: 12px;
-            --radius-lg: 16px;
-            --radius-xl: 20px;
-            --radius-pill: 980px;
-            
-            /* SpawnKit Accent (iOS Blue) */
-            --color-accent: #007AFF;
-            --color-accent-hover: #0077ED;
-            --color-accent-active: #006edb;
-            --color-accent-light: rgba(0, 122, 255, 0.1);
-            
-            /* iOS System Colors */
-            --color-bg-primary: #ffffff;
-            --color-bg-secondary: #f5f5f7;
-            --color-bg-tertiary: #e8e8ed;
-            --color-surface: #ffffff;
-            --color-text-primary: #1d1d1f;
-            --color-text-secondary: #86868b;
-            --color-text-tertiary: #aeaeb2;
-            --color-border: #d2d2d7;
-            --color-border-light: #e5e5ea;
-            --color-nav-bg: rgba(255, 255, 255, 0.72);
-            --color-nav-border: rgba(0, 0, 0, 0.08);
-            
-            /* iOS Status Colors */
-            --color-success: #30d158;
-            --color-error: #ff453a;
-            --color-warning: #ffd60a;
-            
-            /* Legacy Medieval → iOS Mapping */
-            --castle-dark-navy: var(--color-bg-primary);
-            --castle-navy: var(--color-bg-secondary);
-            --castle-blue: var(--color-accent);
-            --castle-red: var(--color-error);
-            --castle-gold: var(--color-warning);
-            --castle-brown: var(--color-text-secondary);
-            --castle-parchment: var(--color-text-primary);
-            --castle-stone-light: var(--color-text-secondary);
-            --castle-stone-dark: var(--color-text-tertiary);
-            --castle-black: var(--color-text-primary);
-            --castle-silver: var(--color-border);
-            
-            /* Background (iOS Light Mode) */
-            --bg-primary: var(--color-bg-secondary);
-            --bg-secondary: var(--color-bg-primary);
-            --bg-tertiary: var(--color-bg-tertiary);
-            --bg-parchment: var(--color-surface);
-            --bg-scroll: linear-gradient(145deg, #ffffff 0%, #f5f5f7 100%);
-            --text-primary: var(--color-text-primary);
-            --text-secondary: var(--color-text-secondary);
-            --text-accent: var(--color-accent);
-            --text-dark: var(--color-text-primary);
-            --text-red: var(--color-error);
-            --border-stone: var(--color-border);
-            --border-gold: var(--color-border);
-            --status-active: var(--color-success);
-            --status-busy: var(--color-warning);
-            --status-idle: var(--color-text-secondary);
-            --status-error: var(--color-error);
-            
-            /* iOS Typography Override */
-            --font-medieval: var(--font-display);
-            --font-serif: var(--font-display);
-            --font-body: var(--font-body);
-            --font-mono: 'SF Mono', 'Fira Code', monospace;
-            
-            /* iOS Shadows */
-            --shadow-deep: 0 8px 40px rgba(0, 0, 0, 0.12);
-            
-            /* iOS Animations */
-            --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
-            --ease-spring: cubic-bezier(0.25, 1, 0.5, 1);
-            --ease-out: cubic-bezier(0.25, 0.46, 0.45, 0.94);
-            --duration-fast: 150ms;
-            --duration-normal: 300ms;
-            --duration-slow: 500ms;
+            --castle-dark-navy: #1a1a2e;
+            --castle-navy: #16213e;
+            --castle-blue: #0f3460;
+            --castle-red: #e94560;
+            --castle-gold: #c9a959;
+            --castle-brown: #8b7355;
+            --castle-parchment: #f4e4bc;
+            --castle-stone-light: #a8a299;
+            --castle-stone-dark: #5c5750;
+            --castle-black: #0d0d0d;
+            --castle-silver: #c0c0c0;
+            --bg-primary: var(--castle-dark-navy);
+            --bg-secondary: var(--castle-navy);
+            --bg-tertiary: var(--castle-blue);
+            --bg-parchment: var(--castle-parchment);
+            --bg-scroll: linear-gradient(145deg, #f4e4bc 0%, #e8d5a3 100%);
+            --text-primary: var(--castle-parchment);
+            --text-secondary: var(--castle-stone-light);
+            --text-accent: var(--castle-gold);
+            --text-dark: var(--castle-navy);
+            --text-red: var(--castle-red);
+            --border-stone: rgba(168, 162, 153, 0.3);
+            --border-gold: rgba(201, 169, 89, 0.5);
+            --status-active: #4ade80;
+            --status-busy: #fbbf24;
+            --status-idle: #64748b;
+            --status-error: var(--castle-red);
+            --font-medieval: 'MedievalSharp', fantasy;
+            --font-serif: 'Cinzel', serif;
+            --font-body: 'Crimson Text', serif;
+            --font-mono: 'Courier New', monospace;
+            --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px;
+            --space-5: 20px; --space-6: 24px; --space-8: 32px;
+            --radius-sm: 4px; --radius-md: 8px; --radius-lg: 12px;
+            --shadow-deep: 0 8px 32px rgba(0,0,0,0.6);
         }
 
         /* ═══ MISSION CONTROL CSS ═══ */
@@ -400,17 +340,11 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
-            background: var(--bg-primary);
+            background: var(--castle-dark-navy);
             color: var(--text-primary);
             font-family: var(--font-body);
-            font-size: 1.0625rem; /* 17px - Apple's default */
-            line-height: 1.47;
-            letter-spacing: -0.005em;
             overflow: hidden;
             height: 100vh;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-            text-rendering: optimizeLegibility;
         }
 
         /* ── Main Grid Layout ──────────────────────────────── */
