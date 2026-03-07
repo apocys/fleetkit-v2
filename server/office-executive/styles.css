@@ -36,37 +36,85 @@
 #authOverlay            { z-index: var(--z-auth) !important; }
 
         :root {
-            /* ── Executive Palette ──────────────────────────── */
-            --exec-blue: #007AFF;
-            --exec-blue-hover: #0A84FF;
-            --exec-blue-muted: rgba(0, 122, 255, 0.15);
+            /* ── iOS Design System — SpawnKit Blue Accent ──────────────────────────── */
+            /* Typography */
+            --font-display: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+            --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+            
+            /* Spacing (4px base) */
+            --space-1: 4px;
+            --space-2: 8px;
+            --space-3: 12px;
+            --space-4: 16px;
+            --space-6: 24px;
+            --space-8: 32px;
+            --space-10: 40px;
+            --space-12: 48px;
+            --space-16: 64px;
+            --space-20: 80px;
+            
+            /* Border Radius */
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --radius-xl: 20px;
+            --radius-pill: 980px;
+            
+            /* SpawnKit Accent (iOS Blue) */
+            --color-accent: #007AFF;
+            --color-accent-hover: #0077ED;
+            --color-accent-active: #006edb;
+            --color-accent-light: rgba(0, 122, 255, 0.1);
+            
+            /* iOS System Colors */
+            --color-bg-primary: #ffffff;
+            --color-bg-secondary: #f5f5f7;
+            --color-bg-tertiary: #e8e8ed;
+            --color-surface: #ffffff;
+            --color-text-primary: #1d1d1f;
+            --color-text-secondary: #86868b;
+            --color-text-tertiary: #aeaeb2;
+            --color-border: #d2d2d7;
+            --color-border-light: #e5e5ea;
+            --color-nav-bg: rgba(255, 255, 255, 0.72);
+            --color-nav-border: rgba(0, 0, 0, 0.08);
+            
+            /* iOS Shadows */
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
+            --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.08);
+            --shadow-lg: 0 8px 40px rgba(0, 0, 0, 0.12);
+            
+            /* Legacy Variables (mapped to iOS) */
+            --exec-blue: var(--color-accent);
+            --exec-blue-hover: var(--color-accent-hover);
+            --exec-blue-muted: var(--color-accent-light);
             --exec-blue-glow: rgba(0, 122, 255, 0.3);
-            --exec-white: #FFFFFF;
-            --exec-gray-50: #F5F5F7;
-            --exec-gray-100: #E5E5EA;
-            --exec-gray-200: #C7C7CC;
-            --exec-gray-300: #AEAEB2;
-            --exec-gray-400: #8E8E93;
-            --exec-gray-500: #636366;
+            --exec-white: var(--color-bg-primary);
+            --exec-gray-50: var(--color-bg-secondary);
+            --exec-gray-100: var(--color-border-light);
+            --exec-gray-200: var(--color-border);
+            --exec-gray-300: var(--color-text-tertiary);
+            --exec-gray-400: var(--color-text-secondary);
+            --exec-gray-500: var(--color-text-primary);
             --exec-gray-600: #48484A;
             --exec-gray-700: #3A3A3C;
             --exec-gray-800: #2C2C2E;
             --exec-gray-900: #1C1C1E;
             --exec-black: #000000;
 
-            /* ── Semantic Colors (Light Mode Default) ───────── */
-            --bg-primary: #F5F5F7;
-            --bg-secondary: var(--exec-white);
-            --bg-tertiary: var(--exec-gray-50);
+            /* ── Semantic Colors (iOS Light Mode) ───────── */
+            --bg-primary: var(--color-bg-secondary);
+            --bg-secondary: var(--color-bg-primary);
+            --bg-tertiary: var(--color-bg-tertiary);
             --bg-room: rgba(255, 255, 255, 0.85);
             --bg-room-hover: rgba(255, 255, 255, 0.95);
-            --bg-frosted: rgba(255, 255, 255, 0.72);
-            --text-primary: var(--exec-gray-900);
-            --text-secondary: var(--exec-gray-600);
-            --text-tertiary: var(--exec-gray-500);
-            --border-subtle: rgba(0, 0, 0, 0.06);
+            --bg-frosted: var(--color-nav-bg);
+            --text-primary: var(--color-text-primary);
+            --text-secondary: var(--color-text-secondary);
+            --text-tertiary: var(--color-text-tertiary);
+            --border-subtle: var(--color-nav-border);
             --border-medium: rgba(0, 0, 0, 0.1);
-            --border-strong: rgba(0, 0, 0, 0.16);
+            --border-strong: var(--color-border);
 
             /* ── Status Colors ──────────────────────────────── */
             --status-active: #30D158;
@@ -82,16 +130,19 @@
             --color-echo: #0A84FF;
             --color-sentinel: #30D158;
 
-            /* ── Typography ─────────────────────────────────── */
-            --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji';
+            /* ── Typography (iOS) ─────────────────────────────────── */
+            --font-family: var(--font-body);
 
-            /* ── Animation ──────────────────────────────────── */
-            --ease-smooth: cubic-bezier(0.2, 0.8, 0.2, 1);
-            --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
-            --ease-out: cubic-bezier(0, 0, 0.2, 1);
+            /* ── Animation (iOS) ──────────────────────────────────── */
+            --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+            --ease-spring: cubic-bezier(0.25, 1, 0.5, 1);
+            --ease-out: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            --duration-fast: 150ms;
+            --duration-normal: 300ms;
+            --duration-slow: 500ms;
 
-            /* ── Layout ─────────────────────────────────────── */
-            --room-radius: 16px;
+            /* ── Layout (iOS) ─────────────────────────────────── */
+            --room-radius: var(--radius-lg);
             --panel-width: 380px;
         }
 
@@ -108,11 +159,15 @@
             width: 100%;
             height: 100%;
             overflow: hidden;
-            font-family: var(--font-family);
+            font-family: var(--font-body);
+            font-size: 1.0625rem; /* 17px - Apple's default */
+            line-height: 1.47;
+            letter-spacing: -0.005em;
             background: var(--bg-primary);
             color: var(--text-primary);
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
+            text-rendering: optimizeLegibility;
         }
 
         /* Semantic button reset for room tiles */
