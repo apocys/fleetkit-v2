@@ -588,7 +588,7 @@
     <!-- /exec-container -->
 
     <!-- ═══ CEO Communications Hub (was Mailbox) ═══ -->
-    <div class="mailbox-overlay" id="mailboxOverlay" role="dialog" aria-modal="true" aria-label="CEO Communications">
+    <div class="mailbox-overlay" id="mailboxOverlay" role="dialog" aria-modal="true" aria-label="CEO Communications" hidden aria-hidden="true">
         <div class="mailbox-backdrop" id="mailboxBackdrop"></div>
         <div class="mailbox-panel">
             <div class="mailbox-header">
@@ -667,7 +667,7 @@
     </div>
 
     <!-- ═══ Agent TODO Panel ═══ -->
-    <div class="todo-overlay" id="todoOverlay" role="dialog" aria-modal="true" aria-labelledby="todoTitle">
+    <div class="todo-overlay" id="todoOverlay" role="dialog" aria-modal="true" aria-labelledby="todoTitle" hidden aria-hidden="true">
         <div class="todo-backdrop" id="todoBackdrop"></div>
         <div class="todo-panel">
             <div class="todo-header">
@@ -689,7 +689,7 @@
     </div>
 
     <!-- ═══ Meeting Room Panel ═══ -->
-    <div class="meeting-overlay" id="meetingOverlay" role="dialog" aria-modal="true" aria-labelledby="meetingTitle">
+    <div class="meeting-overlay" id="meetingOverlay" role="dialog" aria-modal="true" aria-labelledby="meetingTitle" hidden aria-hidden="true">
         <div class="meeting-backdrop" id="meetingBackdrop"></div>
         <div class="meeting-panel">
             <div class="meeting-header" style="padding:16px 24px;border-bottom:1px solid var(--border-subtle);display:flex;align-items:center;gap:12px;">
@@ -706,7 +706,7 @@
     </div>
 
     <!-- ═══ Agent Detail Panel (Feature 1) ═══ -->
-    <div class="detail-overlay" id="detailOverlay" role="dialog" aria-modal="true" aria-label="Agent Details">
+    <div class="detail-overlay" id="detailOverlay" role="dialog" aria-modal="true" aria-label="Agent Details" hidden aria-hidden="true">
         <div class="detail-backdrop" id="detailBackdrop"></div>
         <div class="detail-panel">
             <div class="detail-hero">
@@ -725,7 +725,7 @@
     </div>
 
     <!-- ═══ CEO Chat Panel (HIDDEN - moved to Communications Hub) ═══ -->
-    <div class="chat-overlay" id="chatOverlay" role="dialog" aria-modal="true" aria-label="CEO Chat" style="display: none;">
+    <div class="chat-overlay" id="chatOverlay" role="dialog" aria-modal="true" aria-label="CEO Chat" style="display: none;" hidden aria-hidden="true">
         <div class="chat-backdrop" id="chatBackdrop"></div>
         <div class="chat-panel">
             <div class="chat-header">
@@ -746,7 +746,7 @@
     </div>
 
     <!-- ═══ Cron / Calendar Overlay (Feature 4) ═══ -->
-    <div class="cron-overlay" id="cronOverlay" role="dialog" aria-modal="true" aria-label="Cron Jobs">
+    <div class="cron-overlay" id="cronOverlay" role="dialog" aria-modal="true" aria-label="Cron Jobs" hidden aria-hidden="true">
         <div class="cron-backdrop" id="cronBackdrop"></div>
         <div class="cron-panel">
             <div class="cron-header">
@@ -763,7 +763,7 @@
     </div>
 
     <!-- ═══ Memory View Overlay (Feature 5) ═══ -->
-    <div class="memory-overlay" id="memoryOverlay" role="dialog" aria-modal="true" aria-label="Memory View">
+    <div class="memory-overlay" id="memoryOverlay" role="dialog" aria-modal="true" aria-label="Memory View" hidden aria-hidden="true">
         <div class="memory-backdrop" id="memoryBackdrop"></div>
         <div class="memory-panel">
             <div class="memory-header">
@@ -780,7 +780,7 @@
     </div>
 
     <!-- ═══ Missions Panel (NEW #2) ═══ -->
-    <div class="cron-overlay" id="missionsOverlay" role="dialog" aria-modal="true" aria-label="Missions">
+    <div class="cron-overlay" id="missionsOverlay" role="dialog" aria-modal="true" aria-label="Missions" hidden aria-hidden="true">
         <div class="cron-backdrop" id="missionsBackdrop"></div>
         <div class="cron-panel">
             <div class="cron-header" style="flex-wrap:wrap;gap:8px;">
@@ -811,7 +811,7 @@
     </div>
 
     <!-- ═══ Settings Panel (NEW #3 + NEW #5) ═══ -->
-    <div class="detail-overlay" id="settingsOverlay" role="dialog" aria-modal="true" aria-label="Settings">
+    <div class="detail-overlay" id="settingsOverlay" role="dialog" aria-modal="true" aria-label="Settings" hidden aria-hidden="true">
         <div class="detail-backdrop" id="settingsBackdrop"></div>
         <div class="detail-panel" style="width:440px;">
             <div class="detail-hero" style="padding:20px 24px 16px;">
@@ -829,7 +829,7 @@
     </div>
 
     <!-- ═══ Remote Offices Panel ═══ -->
-    <div class="cron-overlay" id="remoteOverlay" role="dialog" aria-modal="true" aria-label="Remote Offices">
+    <div class="cron-overlay" id="remoteOverlay" role="dialog" aria-modal="true" aria-label="Remote Offices" hidden aria-hidden="true">
         <div class="cron-backdrop" id="remoteBackdrop"></div>
         <div class="cron-panel" style="max-width:520px;">
             <div class="cron-header">
@@ -846,7 +846,7 @@
     </div>
 
     <!-- ═══ Chat History Modal ═══ -->
-    <div class="chat-history-overlay" id="chatHistoryOverlay" role="dialog" aria-modal="true" aria-label="Chat History">
+    <div class="chat-history-overlay" id="chatHistoryOverlay" role="dialog" aria-modal="true" aria-label="Chat History" hidden aria-hidden="true">
         <div class="chat-history-backdrop" id="chatHistoryBackdrop"></div>
         <div class="chat-history-modal">
             <div class="chat-history-header">
@@ -863,7 +863,7 @@
     </div>
 
     <!-- ═══ Add Agent Wizard ═══ -->
-    <div class="chat-history-overlay" id="addAgentOverlay" role="dialog" aria-modal="true" aria-label="Add Agent Wizard" style="z-index:10001;">
+    <div class="chat-history-overlay" id="addAgentOverlay" role="dialog" aria-modal="true" aria-label="Add Agent Wizard" style="z-index:10001;" hidden aria-hidden="true">
         <div class="chat-history-backdrop" id="addAgentBackdrop"></div>
         <div class="chat-history-modal" style="max-width:440px; max-height:85vh; height:auto;">
             <div class="chat-history-header">
@@ -880,7 +880,7 @@
     </div>
 
     <!-- ═══ Orchestration Panel ═══ -->
-    <div class="cron-overlay" id="orchestrationOverlay" role="dialog" aria-modal="true" aria-label="Orchestration">
+    <div class="cron-overlay" id="orchestrationOverlay" role="dialog" aria-modal="true" aria-label="Orchestration" hidden aria-hidden="true">
         <div class="cron-backdrop" id="orchestrationBackdrop"></div>
         <div class="cron-panel" style="max-width:680px; max-height:85vh;">
             <div class="cron-header">
@@ -929,6 +929,7 @@
 
     <!-- ═══ Main App Logic ═══ -->
     <script src="main.js"></script>
+    <script src="overlay-manager.js"></script>
     <script src="modules/overlays.js"></script>
     <script src="modules/chat.js"></script>
     <script src="modules/brainstorm.js"></script>
@@ -955,7 +956,7 @@
 
     <!-- Mission Control HTML (Claude Cowork layout) -->
     <link rel="stylesheet" href="mc-layout.css">
-    <div class="mc-overlay" id="missionControlOverlay">
+    <div class="mc-overlay" id="missionControlOverlay" hidden aria-hidden="true">
 
         <!-- LEFT SIDEBAR -->
         <div class="mc-sidebar-left" id="mcSideLeft">
@@ -1007,7 +1008,7 @@
 
 
     <!-- ═══ Theme Picker Overlay ═══ -->
-    <div class="theme-picker-overlay" id="themePickerOverlay" onclick="if(event.target===this)this.classList.remove('open')">
+    <div class="theme-picker-overlay" id="themePickerOverlay" onclick="if(event.target===this)this.classList.remove('open')" hidden aria-hidden="true">
         <div class="theme-picker-panel">
             <div class="theme-picker-title">🎨 Choose Your Theme</div>
             <div class="theme-picker-subtitle">Switch between different visual experiences for your fleet</div>
@@ -1039,7 +1040,7 @@
 
 
     <!-- Activate Agent Modal -->
-    <div id="activateAgentModal" role="dialog" aria-modal="true" aria-label="Activate Agent">
+    <div id="activateAgentModal" role="dialog" aria-modal="true" aria-label="Activate Agent" hidden aria-hidden="true">
         <div class="activate-modal-backdrop" id="activateModalBackdrop"></div>
         <div class="activate-modal-card">
 
@@ -1080,6 +1081,10 @@
         </div>
     </div>
     <script src="channel-onboarding.js"></script>
+    
+    <!-- Panel Fixes - Enhance Cron and Add Agent panels -->
+    <script src="panel-fixes.js"></script>
+    
     <!-- Version footer -->
     <div id="sk-version" style="position:fixed;bottom:4px;right:8px;font-size:10px;color:rgba(142,142,147,0.5);pointer-events:none;z-index:99999;font-family:-apple-system,sans-serif;">v2.1.0-clean</div>
 </body>
