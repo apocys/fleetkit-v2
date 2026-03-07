@@ -129,14 +129,31 @@ function getSessions() {
   if (!data) return [];
   const sessions = data.sessions || data;
   if (typeof sessions !== 'object') return [];
-  return Object.entries(sessions).map(([key, s]) => ({
-    key, kind: key.includes(':subagent:') ? 'subagent' : (key.includes(':cron:') ? 'cron' : 'main'),
-    label: s.label || s.displayName || key.split(':').pop(),
-    displayName: s.displayName || s.label || key,
-    status: (Date.now() - (s.updatedAt || 0)) < 300000 ? 'active' : 'idle',
-    model: s.model || 'unknown', totalTokens: s.totalTokens || 0,
-    lastActive: s.updatedAt || null, channel: s.lastChannel || s.channel || 'unknown'
-  }));
+  return Object.entries(sessions).map(([key, s]) => {
+    const isActive = (Date.now() - (s.updatedAt || 0)) < 300000;
+    const label = s.label || s.displayName || key.split(':').pop();
+    // Infer action from label keywords for game engine
+    let action = 'idle';
+    const lbl = (label || '').toLowerCase();
+    if (lbl.match(/build|code|implement|create|fix|refactor|write/)) action = 'coding';
+    else if (lbl.match(/review|audit|check|test|verify/)) action = 'reviewing';
+    else if (lbl.match(/research|search|find|analyze|investigate/)) action = 'researching';
+    else if (lbl.match(/deploy|ship|push|release|publish/)) action = 'deploying';
+    else if (lbl.match(/chat|message|respond|reply|notify/)) action = 'communicating';
+    else if (lbl.match(/plan|brainstorm|design|architect/)) action = 'planning';
+    else if (lbl.match(/debug|error|broken|fix|bug/)) action = 'debugging';
+    else if (lbl.match(/guard|security|scan|protect/)) action = 'guarding';
+    else if (isActive) action = 'working';
+    return {
+      key, kind: key.includes(':subagent:') ? 'subagent' : (key.includes(':cron:') ? 'cron' : 'main'),
+      label, displayName: s.displayName || label,
+      status: isActive ? 'active' : 'idle',
+      action: isActive ? action : 'idle',
+      model: s.model || 'unknown', totalTokens: s.totalTokens || 0,
+      lastActive: s.updatedAt || null, channel: s.lastChannel || s.channel || 'unknown',
+      task: s.task || null, inputTokens: s.inputTokens || 0, outputTokens: s.outputTokens || 0,
+    };
+  });
 }
 
 function getMemory() {
