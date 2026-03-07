@@ -1,13 +1,15 @@
-/* mission-desk.js — Mission Desk controller (IIFE) */
+/* mission-desk.js — Mission Desk controller (KISS refactor)
+ *
+ * HTML is static in index.html. This file only does:
+ * 1. Populate dynamic content (user avatar, team grid, agent bar, chat resume)
+ * 2. Bind event listeners
+ * 3. Manage state transitions (idle ↔ chat)
+ * 4. Handle API calls (chat)
+ */
 (function () {
   'use strict';
 
-  // Configuration
-  var setupConfig = {};
-  try {
-    setupConfig = JSON.parse(localStorage.getItem('spawnkit-config') || '{}');
-  } catch(e) {}
-  var ceoName = setupConfig.userName || 'ApoMac';
+  /* ── Config ─────────────────────────────────────────────────────── */
 
   var AGENTS = [
     { id: 'ceo',      name: 'ApoMac',   role: 'CEO', avatar: '#avatar-ceo',      status: 'active', color: '#007AFF' },
@@ -18,56 +20,52 @@
     { id: 'sentinel', name: 'Sentinel', role: 'QA',  avatar: '#avatar-sentinel', status: 'idle',   color: '#30D158' }
   ];
 
-  /* ── Helpers ────────────────────────────────────────────────────── */
+  /* ── Helpers ─────────────────────────────────────────────────────── */
 
-  function escapeHtml(s) {
-    return String(s)
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#39;');
+  function esc(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
 
-  function formatMessage(text) {
-    var s = escapeHtml(text);
+  function fmt(text) {
+    var s = esc(text);
     s = s.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
     s = s.replace(/`([^`]+)`/g, '<code>$1</code>');
     s = s.replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>');
-    s = s.replace(/\n/g, '<br>');
-    return s;
+    return s.replace(/\n/g, '<br>');
   }
 
   function timeNow() {
     var d = new Date();
-    return d.getHours().toString().padStart(2, '0') + ':' + d.getMinutes().toString().padStart(2, '0');
+    return d.getHours().toString().padStart(2,'0') + ':' + d.getMinutes().toString().padStart(2,'0');
   }
 
-  /* ── HTML builder ───────────────────────────────────────────────── */
+  function $(id) { return document.getElementById(id); }
+
+  /* ── Dynamic content renderers ──────────────────────────────────── */
 
   function getAllAgents() {
     var all = AGENTS.slice();
     try {
       var created = JSON.parse(localStorage.getItem('spawnkit-created-agents') || '[]');
       created.forEach(function(c) {
-        all.push({ id: c.id, name: c.emoji + ' ' + c.name, role: c.role || 'Custom', avatar: null, status: 'active', color: '#007AFF' });
+        all.push({ id: c.id, name: (c.emoji||'') + ' ' + c.name, role: c.role || 'Custom', avatar: null, status: 'active', color: '#007AFF' });
       });
     } catch(e) {}
     return all;
   }
 
-  function buildTeamHtml() {
-    return getAllAgents().map(function (a) {
-      var avatarHtml = a.avatar ?
-        '<svg viewBox="0 0 48 48"><use href="' + a.avatar + '"/></svg>' :
-        '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:20px;background:' + (a.color || '#007AFF') + '22;border-radius:50%;">' + escapeHtml(a.name.charAt(0)) + '</div>';
-      return '<button class="md-agent" data-agent-id="' + a.id + '" aria-label="' + escapeHtml(a.name) + '">' +
-        '<div class="md-agent-avatar">' +
-          avatarHtml +
-          '<span class="md-agent-status' + (a.status === 'active' ? ' md-agent-status--active' : '') + '"></span>' +
+  function renderTeamGrid(container) {
+    if (!container) return;
+    container.innerHTML = getAllAgents().map(function(a) {
+      var av = a.avatar
+        ? '<svg viewBox="0 0 48 48"><use href="' + a.avatar + '"/></svg>'
+        : '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:20px;background:' + (a.color||'#007AFF') + '22;border-radius:50%;">' + esc(a.name.charAt(0)) + '</div>';
+      return '<button class="md-agent" data-agent-id="' + a.id + '" aria-label="' + esc(a.name) + '">' +
+        '<div class="md-agent-avatar">' + av +
+          '<span class="md-agent-status' + (a.status==='active' ? ' md-agent-status--active' : '') + '"></span>' +
         '</div>' +
-        '<div class="md-agent-name">' + escapeHtml(a.name) + '</div>' +
-        '<div class="md-agent-role">' + escapeHtml(a.role) + '</div>' +
+        '<div class="md-agent-name">' + esc(a.name) + '</div>' +
+        '<div class="md-agent-role">' + esc(a.role) + '</div>' +
       '</button>';
     }).join('') +
     '<button class="md-agent md-agent--add" aria-label="Add Agent">' +
@@ -75,620 +73,367 @@
       '<div class="md-agent-name">Add Agent</div>' +
       '<div class="md-agent-role">New</div>' +
     '</button>';
+    bindTeamClicks(container);
   }
 
-  function buildAgentBarHtml() {
-    return AGENTS.map(function (a) {
+  function renderAgentBar(container) {
+    if (!container) return;
+    container.innerHTML = AGENTS.map(function(a) {
       return '<button class="md-agent-icon" data-agent-id="' + a.id + '" aria-label="' + a.name + '" title="' + a.name + ' · ' + a.role + '">' +
         '<svg viewBox="0 0 48 48"><use href="' + a.avatar + '"/></svg>' +
-        '<span class="md-agent-status' + (a.status === 'active' ? ' md-agent-status--active' : '') + '"></span>' +
+        '<span class="md-agent-status' + (a.status==='active' ? ' md-agent-status--active' : '') + '"></span>' +
       '</button>';
     }).join('');
+    container.querySelectorAll('.md-agent-icon').forEach(function(icon) {
+      icon.addEventListener('click', function() { handleAgentClick(icon.dataset.agentId); });
+    });
   }
 
-  function buildHtml() {
-    var sendSvg = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">' +
-      '<line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>';
-
-    // Page header with platform name + user icon
-    var userDisplay = localStorage.getItem('spawnkit-user-name') || 'User';
-    var userAvatar = localStorage.getItem('spawnkit-user-avatar') || '';
-    var avatarHtml = userAvatar
-      ? '<img src="' + escapeHtml(userAvatar) + '" alt="" style="width:32px;height:32px;border-radius:50%;object-fit:cover;" />'
-      : '<div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#007AFF,#5856D6);display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:600;">' + escapeHtml(userDisplay.charAt(0).toUpperCase()) + '</div>';
-
-    // Chat history preview for header button
-    var chatHistory = [];
-    try { chatHistory = JSON.parse(localStorage.getItem('spawnkit-chat-history') || '[]'); } catch(e) {}
-    var lastAiMsg = '';
-    for (var ci = chatHistory.length - 1; ci >= 0; ci--) {
-      if (chatHistory[ci].role === 'ai' && chatHistory[ci].text) { lastAiMsg = chatHistory[ci].text; break; }
-    }
-    var chatPreview = lastAiMsg ? escapeHtml(lastAiMsg.substring(0, 40)) + (lastAiMsg.length > 40 ? '...' : '') : '';
-    var chatBtnStyle = chatHistory.length > 0 ? '' : ' style="display:none"';
-
-    var header = '<div class="md-page-header" style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px 8px;max-width:640px;margin:0 auto;width:100%;">' +
-      '<div style="display:flex;align-items:center;gap:10px;">' +
-        '<div style="font-size:20px;font-weight:700;color:var(--text-primary,#1c1c1e);letter-spacing:-0.3px;">SpawnKit</div>' +
-        '<div style="font-size:11px;color:var(--text-tertiary,#8E8E93);background:var(--bg-secondary,rgba(0,0,0,0.04));padding:2px 8px;border-radius:6px;font-weight:500;">Beta</div>' +
-      '</div>' +
-      '<div style="display:flex;align-items:center;gap:8px;">' +
-        '<button class="md-chat-resume-btn" id="mdChatResumeBtn"' + chatBtnStyle + ' aria-label="Resume chat">' +
-          '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>' +
-          '<span class="md-chat-resume-preview" id="mdChatResumePreview">' + (chatPreview || 'Continue chat') + '</span>' +
-        '</button>' +
-        '<button class="md-user-menu" id="mdUserMenu" style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:4px;border-radius:10px;transition:background 0.15s;background:none;border:none;" aria-label="User menu">' +
-          avatarHtml +
-        '</button>' +
-      '</div>' +
-    '</div>';
-
-    var landing = '<div id="missionDesk" class="md-landing">' +
-      header +
-      '<div class="md-hero">' +
-        '<h1>What do we build today?</h1>' +
-        '<p>Your AI team is ready. Ask anything or pick a quick action.</p>' +
-      '</div>' +
-      '<div id="mdConnectBanner" style="display:none;margin:0 auto 12px;max-width:600px;padding:14px 18px;border-radius:14px;background:linear-gradient(135deg,rgba(0,122,255,0.08),rgba(88,86,214,0.08));border:1px solid rgba(0,122,255,0.2);align-items:center;gap:12px;">' +
-        '<div style="flex:1;">' +
-          '<div style="font-size:14px;font-weight:600;color:var(--text-primary,#1c1c1e);margin-bottom:2px;">🔌 Connect your OpenClaw instance</div>' +
-          '<div style="font-size:12px;color:var(--text-secondary,#636366);line-height:1.4;">Chat, live data, and agent operations require a connected OpenClaw gateway. <a href="https://docs.openclaw.ai" target="_blank" style="color:#007AFF;">Learn more →</a></div>' +
-        '</div>' +
-        '<button onclick="if(typeof window.openSettingsPanel===\'function\')window.openSettingsPanel();" style="padding:8px 16px;border-radius:10px;border:none;background:#007AFF;color:#fff;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;">Connect</button>' +
-      '</div>' +
-      '<div class="md-input-bar" id="missionDeskInputBar">' +
-        '<input type="text" id="missionDeskInput" placeholder="Ask your team anything..." autocomplete="off" spellcheck="false" />' +
-        '<button class="md-send-btn" id="missionDeskSend" aria-label="Send">' + sendSvg + '</button>' +
-      '</div>' +
-      '<div class="md-suggestions" id="missionDeskSuggestions">' +
-        '<button class="md-chip" data-prompt="Analyze our current roadmap and priorities">📊 Analyze our roadmap</button>' +
-        '<button class="md-chip" data-prompt="Draft a marketing strategy for our product launch">📣 Draft marketing plan</button>' +
-        '<button class="md-chip" data-prompt="Review our security posture and find vulnerabilities">🛡️ Security audit</button>' +
-        '<button class="md-chip" data-prompt="Brainstorm 5 creative feature ideas for our next sprint">💡 Brainstorm features</button>' +
-      '</div>' +
-      '<div class="md-section-label">Your Team</div>' +
-      '<div class="md-team" id="missionDeskTeam">' + buildTeamHtml() + '</div>' +
-      '<div class="md-section-label">Quick Actions</div>' +
-      '<div class="md-actions" id="missionDeskActions">' +
-        '<button class="md-action" data-action="missions"><span class="md-action-icon">🎯</span><span class="md-action-label">Missions</span></button>' +
-        '<button class="md-action" data-action="briefing"><span class="md-action-icon">📋</span><span class="md-action-label">Daily Briefing</span></button>' +
-        '<button class="md-action" data-action="boardroom"><span class="md-action-icon">🧠</span><span class="md-action-label">Boardroom</span></button>' +
-        '<button class="md-action" data-action="forge"><span class="md-action-icon">🔨</span><span class="md-action-label">Skill Forge</span></button>' +
-        '<button class="md-action" data-action="explore"><span class="md-action-icon">🚀</span><span class="md-action-label">Explore</span></button>' +
-        '<button class="md-action" data-action="communications"><span class="md-action-icon">📬</span><span class="md-action-label">Communications</span></button>' +
-        '<button class="md-action" data-action="marketplace"><span class="md-action-icon">🏪</span><span class="md-action-label">Marketplace</span></button>' +
-        '<button class="md-action" data-action="profile"><span class="md-action-icon">👤</span><span class="md-action-label">Creator Profile</span></button>' +
-      '</div>' +
-      (window.__skDemoMode ? '<div class="md-cta-wrapper" style="margin:16px 0 0;text-align:center;"><button class="md-action md-cta-primary" data-action="deploy" style="width:100%;padding:14px;font-size:14px;font-weight:600;background:linear-gradient(135deg,var(--exec-blue,#007AFF),#5856D6);color:#fff;border:none;border-radius:12px;cursor:pointer;transition:all 0.2s;box-shadow:0 4px 16px rgba(0,122,255,0.3);"><span class="md-action-icon" style="margin-right:8px;">🚀</span><span class="md-action-label">Get Started</span></button></div>' : '') +
-
-
-
-
-
-      '<div class="md-section-label">Connect Anywhere</div>' +
-      '<div class="md-channels" id="missionDeskChannels">' +
-        '<button class="md-channel" title="Telegram" data-connected="1"><span class="md-channel-icon">✈️</span><span class="md-channel-name">Telegram</span><span class="md-channel-status md-channel-on">Connected</span></button>' +
-        '<button class="md-channel" title="WhatsApp" data-connected="1"><span class="md-channel-icon">💬</span><span class="md-channel-name">WhatsApp</span><span class="md-channel-status md-channel-on">Connected</span></button>' +
-        '<button class="md-channel" title="Signal"><span class="md-channel-icon">🔒</span><span class="md-channel-name">Signal</span><span class="md-channel-status md-channel-off">Available</span></button>' +
-        '<button class="md-channel" title="Discord"><span class="md-channel-icon">🎮</span><span class="md-channel-name">Discord</span><span class="md-channel-status md-channel-off">Available</span></button>' +
-        '<button class="md-channel" title="iMessage"><span class="md-channel-icon">🍎</span><span class="md-channel-name">iMessage</span><span class="md-channel-status md-channel-off">Available</span></button>' +
-        '<button class="md-channel" title="Slack"><span class="md-channel-icon">📡</span><span class="md-channel-name">Slack</span><span class="md-channel-status md-channel-off">Available</span></button>' +
-      '</div>' +
-    '</div>';
-
-    var chat = '<div id="chatExpanded">' +
-      '<div class="md-chat-header">' +
-        '<button class="md-back-btn" id="chatBackBtn" aria-label="Back to Mission Desk">←</button>' +
-        '<div class="md-chat-title">Mission Chat</div>' +
-        '<div class="md-chat-header-spacer"></div>' +
-        '<div class="md-chat-status" id="chatStatusDot">' +
-          '<span class="md-agent-status md-agent-status--active md-status-dot"></span>' +
-          '<span class="md-connected-label">Connected</span>' +
-        '</div>' +
-      '</div>' +
-      '<div class="md-chat-thread" id="mdChatThread"></div>' +
-      '<div class="md-agent-bar" id="chatAgentBar">' + buildAgentBarHtml() + '</div>' +
-      '<div class="md-chat-input-bar">' +
-        '<input type="text" id="mdChatInput" placeholder="Follow up..." autocomplete="off" spellcheck="false" />' +
-        '<button class="md-send-btn" id="mdChatSend" aria-label="Send">' + sendSvg + '</button>' +
-      '</div>' +
-    '</div>';
-
-    var panel = '<div id="mdPanelContainer">' +
-      '<div class="md-panel-backdrop" id="mdPanelBackdrop"></div>' +
-      '<div class="md-panel" id="mdPanel">' +
-        '<div class="md-panel-handle"></div>' +
-        '<div class="md-panel-header">' +
-          '<h3 id="mdPanelTitle"></h3>' +
-          '<button class="md-panel-close" id="mdPanelClose">×</button>' +
-        '</div>' +
-        '<div class="md-panel-body" id="mdPanelBody"></div>' +
-      '</div>' +
-    '</div>';
-
-    return landing + chat + panel;
-  }
-
-  /* ── Chat rendering ─────────────────────────────────────────────── */
-
-  function renderMdChat(history) {
-    var thread = document.getElementById('mdChatThread');
-    if (!thread) return;
-    thread.innerHTML = history.map(function (m) {
-      if (m.role === 'user') {
-        return '<div class="md-msg md-msg--user"><div class="md-msg-content">' + escapeHtml(m.text) + '</div></div>';
-      }
-      var typingClass = m.typing ? ' md-msg--typing' : '';
-      var body = m.typing
-        ? '<span class="md-typing-dots"><span></span><span></span><span></span></span>'
-        : formatMessage(m.text);
-      return '<div class="md-msg md-msg--ai' + typingClass + '">' +
-        '<div class="md-msg-avatar"><svg viewBox="0 0 48 48"><use href="#avatar-ceo"/></svg></div>' +
-        '<div class="md-msg-content">' + body + '</div>' +
-      '</div>';
-    }).join('');
-    thread.scrollTop = thread.scrollHeight;
-  }
-
-  /* ── API / send ─────────────────────────────────────────────────── */
-
-  async function sendFromMissionDesk(text) {
-    if (!text || !text.trim()) return;
-    text = text.trim();
-    var t = timeNow();
-    var history = JSON.parse(localStorage.getItem('spawnkit-chat-history') || '[]');
-    history.push({ role: 'user', text: text, time: t });
-    localStorage.setItem('spawnkit-chat-history', JSON.stringify(history.slice(-50)));
-    renderMdChat(history.concat([{ role: 'ai', text: '', time: t, typing: true }]));
-
-    try {
-      var base = window.OC_API_URL ||
-        (window.location.origin);
-      var apiUrl = base + '/api/oc/chat';
-      var token = localStorage.getItem('spawnkit-api-token') || '';
-      var headers = { 'Content-Type': 'application/json' };
-      if (token) headers['Authorization'] = 'Bearer ' + token;
-
-      var resp = await fetch(apiUrl, {
-        method: 'POST',
-        headers: headers,
-        body: JSON.stringify({ message: text })
-      });
-
-      var reply;
-      if (resp.ok) {
-        var data = await resp.json();
-        reply = data.reply ||
-          (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) ||
-          JSON.stringify(data);
-      } else {
-        reply = '⚠️ Error: ' + resp.status;
-      }
-      history.push({ role: 'ai', text: reply, time: t });
-    } catch (e) {
-      history.push({ role: 'ai', text: '⚠️ ' + e.message, time: t });
-    }
-
-    localStorage.setItem('spawnkit-chat-history', JSON.stringify(history.slice(-50)));
-    renderMdChat(history);
-  }
-
-  /* ── State machine ──────────────────────────────────────────────── */
-
-  function activate(initialMessage) {
-    document.body.classList.add('md-transitioning');
-    setTimeout(function () {
-      document.body.classList.add('md-state-chat');
-      document.body.classList.remove('md-state-idle');
-    }, 10);
-    setTimeout(function () {
-      document.body.classList.remove('md-transitioning');
-      var chatInput = document.getElementById('mdChatInput');
-      if (chatInput) chatInput.focus();
-    }, 310);
-
-    if (initialMessage && initialMessage.trim()) {
-      var history = JSON.parse(localStorage.getItem('spawnkit-chat-history') || '[]');
-      renderMdChat(history);
-      sendFromMissionDesk(initialMessage);
+  function renderUserAvatar() {
+    var el = $('mdUserAvatar');
+    if (!el) return;
+    var name = localStorage.getItem('spawnkit-user-name') || 'User';
+    var img = localStorage.getItem('spawnkit-user-avatar') || '';
+    if (img) {
+      el.innerHTML = '<img src="' + esc(img) + '" alt="" style="width:32px;height:32px;border-radius:50%;object-fit:cover;" />';
     } else {
-      var existing = JSON.parse(localStorage.getItem('spawnkit-chat-history') || '[]');
-      renderMdChat(existing);
+      el.textContent = name.charAt(0).toUpperCase();
     }
-  }
-
-  function deactivate() {
-    document.body.classList.add('md-transitioning');
-    setTimeout(function () {
-      document.body.classList.add('md-state-idle');
-      document.body.classList.remove('md-state-chat');
-    }, 10);
-    setTimeout(function () {
-      document.body.classList.remove('md-transitioning');
-      var heroInput = document.getElementById('missionDeskInput');
-      if (heroInput) heroInput.focus();
-    }, 310);
-    updateChatResumeBtn();
   }
 
   function updateChatResumeBtn() {
-    var btn = document.getElementById('mdChatResumeBtn');
-    var preview = document.getElementById('mdChatResumePreview');
+    var btn = $('mdChatResumeBtn');
+    var preview = $('mdChatResumePreview');
     if (!btn) return;
     var history = [];
     try { history = JSON.parse(localStorage.getItem('spawnkit-chat-history') || '[]'); } catch(e) {}
     if (history.length > 0) {
       btn.style.display = '';
       if (preview) {
-        var lastAi = '';
+        var last = '';
         for (var i = history.length - 1; i >= 0; i--) {
-          if (history[i].role === 'ai' && history[i].text) { lastAi = history[i].text; break; }
+          if (history[i].role === 'ai' && history[i].text) { last = history[i].text; break; }
         }
-        preview.textContent = lastAi ? lastAi.substring(0, 40) + (lastAi.length > 40 ? '...' : '') : 'Continue chat';
+        preview.textContent = last ? last.substring(0, 40) + (last.length > 40 ? '...' : '') : 'Continue chat';
       }
     } else {
       btn.style.display = 'none';
     }
   }
 
-  /* ── Panel system ───────────────────────────────────────────────── */
+  /* ── Chat rendering ─────────────────────────────────────────────── */
 
-  function openPanel(name) {
-    if (name === 'missions') {
-      // Prefer Orchestration board (Task Graph + Kanban)
-      var orchBtn = document.getElementById('orchestrationBtn');
-      if (orchBtn) {
-        orchBtn.click();
-        // After overlay opens, switch to Missions tab (Kanban)
-        setTimeout(function () {
-          var missionsTab = document.querySelector('.orch-tab[data-tab="missions"]');
-          if (missionsTab) missionsTab.click();
-        }, 160);
-        return;
+  function renderChat(history) {
+    var thread = $('mdChatThread');
+    if (!thread) return;
+    thread.innerHTML = history.map(function(m) {
+      if (m.role === 'user') {
+        return '<div class="md-msg md-msg--user"><div class="md-msg-content">' + esc(m.text) + '</div></div>';
       }
-      // Fallback to standalone missions panel
-      if (typeof openMissionsPanel === 'function') { openMissionsPanel(); return; }
-      var missionsBtn = document.getElementById('missionsBtn');
-      if (missionsBtn) missionsBtn.click();
-    } else if (name === 'boardroom') {
-      if (typeof openMeetingPanel === 'function') { openMeetingPanel(); return; }
-      var overlay = document.getElementById('meetingOverlay');
-      if (overlay) { overlay.classList.add('open'); return; }
-      var meetBtn = document.getElementById('meetingBtn');
-      if (meetBtn) meetBtn.click();
-    } else if (name === 'skills') {
-      if (window.SkillForge) { window.SkillForge.open(); return; }
-      var orchBtn = document.getElementById('orchBtn') || document.getElementById('addAgentBtn');
-      if (orchBtn) {
-        orchBtn.click();
-        setTimeout(function () {
-          var skillsTab = document.querySelector('[data-tab="skills"]');
-          if (skillsTab) skillsTab.click();
-        }, 100);
-      }
-    } else if (name === 'briefing') {
-      if (window.openDailyBriefPanel) { window.openDailyBriefPanel(); return; }
-    } else if (name === 'profile') {
-      if (window.openCreatorProfilePanel) { window.openCreatorProfilePanel(); return; }
-    } else if (name === 'forge') {
-      if (window.SkillForge) { window.SkillForge.open(); return; }
-    } else if (name === 'explore') {
-      if (window.UseCaseExplorer) { window.UseCaseExplorer.open(); return; }
-    } else if (name === 'communications') {
-      if (typeof window.openMailbox === 'function') { window.openMailbox('messages'); return; }
-      var mbBtn = document.getElementById('mailboxBtn');
-      if (mbBtn) mbBtn.click();
-    } else if (name === 'deploy') {
-      if (window.DeployWizard) { window.DeployWizard.open(); return; }
-    } else if (name === 'marketplace') {
-      if (window.SkillMarketplace) { window.SkillMarketplace.open(); return; }
-      if (typeof openMarketplace === 'function') {
-        openMarketplace();
+      var body = m.typing
+        ? '<span class="md-typing-dots"><span></span><span></span><span></span></span>'
+        : fmt(m.text);
+      return '<div class="md-msg md-msg--ai' + (m.typing ? ' md-msg--typing' : '') + '">' +
+        '<div class="md-msg-avatar"><svg viewBox="0 0 48 48"><use href="#avatar-ceo"/></svg></div>' +
+        '<div class="md-msg-content">' + body + '</div></div>';
+    }).join('');
+    thread.scrollTop = thread.scrollHeight;
+  }
+
+  /* ── API ─────────────────────────────────────────────────────────── */
+
+  async function sendMessage(text) {
+    if (!text || !text.trim()) return;
+    text = text.trim();
+    var t = timeNow();
+    var history = JSON.parse(localStorage.getItem('spawnkit-chat-history') || '[]');
+    history.push({ role: 'user', text: text, time: t });
+    localStorage.setItem('spawnkit-chat-history', JSON.stringify(history.slice(-50)));
+    renderChat(history.concat([{ role: 'ai', text: '', time: t, typing: true }]));
+
+    try {
+      var base = window.OC_API_URL || window.location.origin;
+      var token = localStorage.getItem('spawnkit-api-token') || '';
+      var headers = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = 'Bearer ' + token;
+
+      var resp = await fetch(base + '/api/oc/chat', {
+        method: 'POST', headers: headers,
+        body: JSON.stringify({ message: text })
+      });
+
+      var reply;
+      if (resp.ok) {
+        var data = await resp.json();
+        reply = data.reply || (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) || JSON.stringify(data);
       } else {
-        var mktBtn = document.getElementById('addAgentBtn');
-        if (mktBtn) mktBtn.click();
+        reply = '⚠️ Error: ' + resp.status;
       }
+      history.push({ role: 'ai', text: reply, time: t });
+    } catch(e) {
+      history.push({ role: 'ai', text: '⚠️ ' + e.message, time: t });
     }
+
+    localStorage.setItem('spawnkit-chat-history', JSON.stringify(history.slice(-50)));
+    renderChat(history);
   }
 
-  function closePanel() {
-    var panel = document.getElementById('mdPanel');
-    var backdrop = document.getElementById('mdPanelBackdrop');
-    if (panel) panel.classList.remove('open');
-    if (backdrop) backdrop.classList.remove('open');
+  /* ── State transitions ──────────────────────────────────────────── */
+
+  function activate(initialMessage) {
+    document.body.classList.add('md-transitioning');
+    setTimeout(function() {
+      document.body.classList.add('md-state-chat');
+      document.body.classList.remove('md-state-idle');
+    }, 10);
+    setTimeout(function() {
+      document.body.classList.remove('md-transitioning');
+      var input = $('mdChatInput');
+      if (input) input.focus();
+    }, 310);
+
+    var history = JSON.parse(localStorage.getItem('spawnkit-chat-history') || '[]');
+    renderChat(history);
+    if (initialMessage && initialMessage.trim()) sendMessage(initialMessage);
   }
 
-  /* ── Agent tile click ───────────────────────────────────────────── */
+  function deactivate() {
+    document.body.classList.add('md-transitioning');
+    setTimeout(function() {
+      document.body.classList.add('md-state-idle');
+      document.body.classList.remove('md-state-chat');
+    }, 10);
+    setTimeout(function() {
+      document.body.classList.remove('md-transitioning');
+      var input = $('missionDeskInput');
+      if (input) input.focus();
+    }, 310);
+    updateChatResumeBtn();
+  }
+
+  /* ── Panel routing ──────────────────────────────────────────────── */
+
+  var panelRoutes = {
+    missions: function() {
+      var b = $('orchestrationBtn'); if (b) { b.click(); setTimeout(function() { var t = document.querySelector('.orch-tab[data-tab="missions"]'); if (t) t.click(); }, 160); return; }
+      if (typeof openMissionsPanel === 'function') { openMissionsPanel(); return; }
+      var m = $('missionsBtn'); if (m) m.click();
+    },
+    boardroom: function() {
+      if (typeof openMeetingPanel === 'function') { openMeetingPanel(); return; }
+      var o = $('meetingOverlay'); if (o) { o.classList.add('open'); return; }
+    },
+    forge: function() { if (window.SkillForge) window.SkillForge.open(); },
+    explore: function() { if (window.UseCaseExplorer) window.UseCaseExplorer.open(); },
+    briefing: function() { if (window.openDailyBriefPanel) window.openDailyBriefPanel(); },
+    profile: function() { if (window.openCreatorProfilePanel) window.openCreatorProfilePanel(); },
+    communications: function() {
+      if (typeof window.openMailbox === 'function') { window.openMailbox('messages'); return; }
+      var b = $('mailboxBtn'); if (b) b.click();
+    },
+    deploy: function() { if (window.DeployWizard) window.DeployWizard.open(); },
+    marketplace: function() {
+      if (window.SkillMarketplace) { window.SkillMarketplace.open(); return; }
+      if (typeof openMarketplace === 'function') { openMarketplace(); return; }
+      var b = $('addAgentBtn'); if (b) b.click();
+    }
+  };
+
+  function openPanel(name) { if (panelRoutes[name]) panelRoutes[name](); }
+
+  /* ── Agent click ────────────────────────────────────────────────── */
 
   function handleAgentClick(agentId) {
-    // CEO agent → open Mission Control (full orchestration view)
-    if (agentId === 'ceo' && typeof window.openMissionControl === 'function') {
-      window.openMissionControl();
-      return;
-    }
-    // All other agents → open their detail panel (info, skills, metrics)
-    if (typeof window.openDetailPanel === 'function') {
-      window.openDetailPanel(agentId);
-      return;
-    }
-    // Last resort: click the legacy grid tile
-    var existing = document.querySelector('[data-agent="' + agentId + '"]');
-    if (existing && typeof existing.click === 'function') {
-      existing.click();
-    }
+    if (agentId === 'ceo' && typeof window.openMissionControl === 'function') { window.openMissionControl(); return; }
+    if (typeof window.openDetailPanel === 'function') { window.openDetailPanel(agentId); return; }
+    var el = document.querySelector('[data-agent="' + agentId + '"]');
+    if (el) el.click();
+  }
+
+  function bindTeamClicks(container) {
+    container.querySelectorAll('.md-agent').forEach(function(tile) {
+      if (tile.classList.contains('md-agent--add')) {
+        tile.addEventListener('click', function() { if (typeof window.openAddAgentWizard === 'function') window.openAddAgentWizard(); });
+      } else {
+        tile.addEventListener('click', function() { handleAgentClick(tile.dataset.agentId); });
+      }
+    });
   }
 
   /* ── Send button visibility ─────────────────────────────────────── */
 
   function bindSendVisibility(input, btn) {
-    function update() {
-      btn.classList.toggle('md-send-btn--visible', input.value.length > 0);
-    }
+    if (!input || !btn) return;
+    function update() { btn.classList.toggle('md-send-btn--visible', input.value.length > 0); }
     input.addEventListener('input', update);
     update();
   }
 
-  /* ── Init ───────────────────────────────────────────────────────── */
+  /* ── User menu dropdown ─────────────────────────────────────────── */
 
-  function init() {
-    console.log('[MissionDesk] init() called');
-    console.log('[MissionDesk] token:', localStorage.getItem('spawnkit-token') ? 'present' : 'MISSING');
-    console.log('[MissionDesk] instance-url:', localStorage.getItem('spawnkit-instance-url') || 'default');
-    console.log('[MissionDesk] onboarded:', localStorage.getItem('spawnkit-onboarded') ? 'yes' : 'no');
-    /* Onboarding guard removed — always show Mission Desk (Kira 2026-02-28) */
+  function showUserMenu(btnEl) {
+    var existing = $('mdUserDropdown');
+    if (existing) { existing.remove(); return; }
 
-    /* Show connection banner only if the API is unreachable (BUG-006 fix, updated: check real connectivity) */
+    var rect = btnEl.getBoundingClientRect();
+    var dd = document.createElement('div');
+    dd.id = 'mdUserDropdown';
+    dd.style.cssText = 'position:fixed;top:' + (rect.bottom+6) + 'px;right:' + (window.innerWidth-rect.right) + 'px;background:var(--bg-primary,#fff);border:1px solid var(--border-subtle,rgba(0,0,0,0.1));border-radius:12px;padding:4px;min-width:180px;box-shadow:0 8px 32px rgba(0,0,0,0.12);z-index:10010;';
+    dd.innerHTML = [
+      { icon: '🎨', label: 'Change Theme', action: 'theme' },
+      { icon: '⚙️', label: 'Settings', action: 'settings' },
+      { icon: '🚪', label: 'Logout', action: 'logout' }
+    ].map(function(it) {
+      return '<div class="md-dropdown-item" data-action="' + it.action + '" style="display:flex;align-items:center;gap:10px;padding:10px 14px;font-size:13px;border-radius:8px;cursor:pointer;color:var(--text-primary,#1c1c1e);">' +
+        '<span>' + it.icon + '</span><span>' + it.label + '</span></div>';
+    }).join('');
+
+    document.body.appendChild(dd);
+
+    dd.addEventListener('click', function(ev) {
+      var item = ev.target.closest('[data-action]');
+      if (!item) return;
+      dd.remove();
+      var act = item.dataset.action;
+      if (act === 'theme') {
+        var tp = $('themePickerOverlay');
+        if (tp) tp.classList.add('open');
+      } else if (act === 'settings') {
+        var sb = $('settingsBtn'); if (sb) sb.click();
+      } else if (act === 'logout') {
+        var keys = [];
+        for (var i = 0; i < localStorage.length; i++) {
+          var k = localStorage.key(i);
+          if (k && k.indexOf('spawnkit') === 0) keys.push(k);
+        }
+        keys.forEach(function(k) { localStorage.removeItem(k); });
+        window.location.reload();
+      }
+    });
+
+    setTimeout(function() {
+      document.addEventListener('click', function close() {
+        var d = $('mdUserDropdown'); if (d) d.remove();
+        document.removeEventListener('click', close);
+      });
+    }, 10);
+  }
+
+  /* ── Connectivity check ─────────────────────────────────────────── */
+
+  function checkConnectivity() {
     setTimeout(function() {
       var base = window.OC_API_URL || window.location.origin;
       (window.skFetch || fetch)(base + '/api/oc/sessions').then(function(r) {
-        if (!r.ok) throw new Error('status ' + r.status);
+        if (!r.ok) throw new Error('');
         return r.json();
-      }).then(function(data) {
-        // API works — hide banner (connected)
-        var banner = document.getElementById('mdConnectBanner');
-        if (banner) banner.style.display = 'none';
+      }).then(function() {
+        var b = $('mdConnectBanner'); if (b) b.style.display = 'none';
       }).catch(function() {
-        // API unreachable — show connect banner
-        var banner = document.getElementById('mdConnectBanner');
-        if (banner) banner.style.display = 'flex';
+        var b = $('mdConnectBanner'); if (b) b.style.display = 'flex';
       });
     }, 1500);
+  }
 
-    /* Find container */
-    var container = document.querySelector('.exec-container');
-    if (!container) return;
+  /* ── Init ────────────────────────────────────────────────────────── */
 
-    /* Inject HTML before exec-floor */
-    var floor = container.querySelector('.exec-floor');
-    var wrapper = document.createElement('div');
-    wrapper.className = 'md-root';
-    wrapper.innerHTML = buildHtml();
-    container.insertBefore(wrapper, floor || null);
+  function init() {
+    console.log('[MissionDesk] init (KISS)');
 
-    /* Hide legacy chrome */
-    var toggle = document.querySelector('.exec-view-toggle');
-    var statusbar = document.querySelector('.exec-statusbar');
-    var gridView = document.getElementById('gridView');
-    if (toggle) toggle.classList.add('md-hidden');
-    if (statusbar) statusbar.classList.add('md-hidden');
-    if (gridView) gridView.classList.add('md-hidden');
+    // Hide legacy elements
+    ['exec-view-toggle', 'exec-statusbar'].forEach(function(cls) {
+      var el = document.querySelector('.' + cls);
+      if (el) el.classList.add('md-hidden');
+    });
+    var gv = $('gridView'); if (gv) gv.classList.add('md-hidden');
 
-    /* Initial state */
+    // Set initial state
     document.body.classList.add('md-state-idle');
 
-    /* Refs */
-    var heroInput  = document.getElementById('missionDeskInput');
-    var heroSend   = document.getElementById('missionDeskSend');
-    var chatInput  = document.getElementById('mdChatInput');
-    var chatSend   = document.getElementById('mdChatSend');
-    var backBtn    = document.getElementById('chatBackBtn');
-    var panelClose = document.getElementById('mdPanelClose');
-    var backdrop   = document.getElementById('mdPanelBackdrop');
+    // Populate dynamic content
+    renderUserAvatar();
+    renderTeamGrid($('missionDeskTeam'));
+    renderAgentBar($('chatAgentBar'));
+    updateChatResumeBtn();
+    checkConnectivity();
 
-    /* Send visibility */
-    if (heroInput && heroSend) bindSendVisibility(heroInput, heroSend);
-    if (chatInput && chatSend) bindSendVisibility(chatInput, chatSend);
-
-    /* Chat resume button */
-    var chatResumeBtn = document.getElementById('mdChatResumeBtn');
-    if (chatResumeBtn) {
-      chatResumeBtn.addEventListener('click', function () {
-        activate(); // open chat with existing history, no initial message
-      });
+    // Demo mode CTA
+    if (window.__skDemoMode) {
+      var actions = $('missionDeskActions');
+      if (actions) {
+        var cta = document.createElement('div');
+        cta.style.cssText = 'margin:16px 0 0;text-align:center;';
+        cta.innerHTML = '<button class="md-action md-cta-primary" data-action="deploy" style="width:100%;padding:14px;font-size:14px;font-weight:600;background:linear-gradient(135deg,var(--exec-blue,#007AFF),#5856D6);color:#fff;border:none;border-radius:12px;cursor:pointer;box-shadow:0 4px 16px rgba(0,122,255,0.3);">🚀 Get Started</button>';
+        actions.parentNode.insertBefore(cta, actions.nextSibling);
+      }
     }
 
-    /* Hero input */
-    heroInput && heroInput.addEventListener('keydown', function (e) {
-      if (e.key === 'Enter' && heroInput.value.trim()) {
-        var msg = heroInput.value.trim();
-        heroInput.value = '';
-        activate(msg);
-      }
+    // Connect button
+    var connectBtn = $('mdConnectBtn');
+    if (connectBtn) connectBtn.addEventListener('click', function() { if (typeof window.openSettingsPanel === 'function') window.openSettingsPanel(); });
+
+    // Refs
+    var heroInput = $('missionDeskInput'), heroSend = $('missionDeskSend');
+    var chatInput = $('mdChatInput'), chatSend = $('mdChatSend');
+
+    // Send button visibility
+    bindSendVisibility(heroInput, heroSend);
+    bindSendVisibility(chatInput, chatSend);
+
+    // Chat resume
+    var resumeBtn = $('mdChatResumeBtn');
+    if (resumeBtn) resumeBtn.addEventListener('click', function() { activate(); });
+
+    // Hero input
+    if (heroInput) heroInput.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' && heroInput.value.trim()) { var msg = heroInput.value.trim(); heroInput.value = ''; activate(msg); }
     });
-    heroSend && heroSend.addEventListener('click', function () {
-      if (heroInput && heroInput.value.trim()) {
-        var msg = heroInput.value.trim();
-        heroInput.value = '';
-        activate(msg);
-      }
+    if (heroSend) heroSend.addEventListener('click', function() {
+      if (heroInput && heroInput.value.trim()) { var msg = heroInput.value.trim(); heroInput.value = ''; activate(msg); }
     });
 
-    /* Suggestion chips — inject prompt into input (do NOT auto-send) */
-    document.querySelectorAll('.md-chip').forEach(function (chip) {
-      chip.addEventListener('click', function () {
-        var prompt = chip.getAttribute('data-prompt');
-        if (!prompt) return;
-        heroInput.value = prompt;
-        heroInput.dispatchEvent(new Event('input')); // update send-btn visibility
-        heroInput.focus();
+    // Suggestion chips
+    document.querySelectorAll('.md-chip').forEach(function(chip) {
+      chip.addEventListener('click', function() {
+        if (chip.dataset.prompt && heroInput) { heroInput.value = chip.dataset.prompt; heroInput.dispatchEvent(new Event('input')); heroInput.focus(); }
       });
     });
 
-    /* Chat back */
-    backBtn && backBtn.addEventListener('click', deactivate);
+    // Chat back
+    var backBtn = $('chatBackBtn');
+    if (backBtn) backBtn.addEventListener('click', deactivate);
 
-    /* Chat input */
-    chatInput && chatInput.addEventListener('keydown', function (e) {
-      if (e.key === 'Enter' && chatInput.value.trim()) {
-        var msg = chatInput.value.trim();
-        chatInput.value = '';
-        chatInput.dispatchEvent(new Event('input'));
-        sendFromMissionDesk(msg);
-      }
+    // Chat send
+    if (chatInput) chatInput.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' && chatInput.value.trim()) { var msg = chatInput.value.trim(); chatInput.value = ''; chatInput.dispatchEvent(new Event('input')); sendMessage(msg); }
     });
-    chatSend && chatSend.addEventListener('click', function () {
-      if (chatInput && chatInput.value.trim()) {
-        var msg = chatInput.value.trim();
-        chatInput.value = '';
-        chatInput.dispatchEvent(new Event('input'));
-        sendFromMissionDesk(msg);
-      }
+    if (chatSend) chatSend.addEventListener('click', function() {
+      if (chatInput && chatInput.value.trim()) { var msg = chatInput.value.trim(); chatInput.value = ''; chatInput.dispatchEvent(new Event('input')); sendMessage(msg); }
     });
 
-    /* Quick actions */
-    document.querySelectorAll('.md-action').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        openPanel(btn.getAttribute('data-action'));
-      });
+    // Quick actions
+    document.querySelectorAll('.md-action').forEach(function(btn) {
+      btn.addEventListener('click', function() { openPanel(btn.dataset.action); });
     });
 
-    /* Agent tiles (team row) */
-    document.querySelectorAll('#missionDeskTeam .md-agent').forEach(function (tile) {
-      if (tile.classList.contains('md-agent--add')) {
-        // Add Agent tile → open wizard
-        tile.addEventListener('click', function () {
-          if (typeof window.openAddAgentWizard === 'function') window.openAddAgentWizard();
-        });
-        tile.addEventListener('keydown', function (e) {
-          if (e.key === 'Enter' || e.key === ' ') {
-            if (typeof window.openAddAgentWizard === 'function') window.openAddAgentWizard();
-          }
-        });
-      } else {
-        tile.addEventListener('click', function () {
-          handleAgentClick(tile.getAttribute('data-agent-id'));
-        });
-        tile.addEventListener('keydown', function (e) {
-          if (e.key === 'Enter' || e.key === ' ') handleAgentClick(tile.getAttribute('data-agent-id'));
-        });
-      }
-    });
+    // Panel close
+    var panelClose = $('mdPanelClose'), backdrop = $('mdPanelBackdrop');
+    function closePanel() { var p = $('mdPanel'); if (p) p.classList.remove('open'); var b = $('mdPanelBackdrop'); if (b) b.classList.remove('open'); }
+    if (panelClose) panelClose.addEventListener('click', closePanel);
+    if (backdrop) backdrop.addEventListener('click', closePanel);
 
-    /* Agent icons (chat bar) */
-    document.querySelectorAll('#chatAgentBar .md-agent-icon').forEach(function (icon) {
-      icon.addEventListener('click', function () {
-        handleAgentClick(icon.getAttribute('data-agent-id'));
-      });
-      icon.addEventListener('keydown', function (e) {
-        if (e.key === 'Enter' || e.key === ' ') handleAgentClick(icon.getAttribute('data-agent-id'));
-      });
-    });
+    // User menu
+    var userMenu = $('mdUserMenu');
+    if (userMenu) userMenu.addEventListener('click', function(e) { e.stopPropagation(); showUserMenu(userMenu); });
 
-    /* Refresh Mission Desk team grid (called after agent creation/deletion) */
-    function refreshMissionDeskTeam() {
-      var teamEl = document.getElementById('missionDeskTeam');
-      if (!teamEl) return;
-      teamEl.innerHTML = buildTeamHtml();
-      // Re-wire click handlers
-      teamEl.querySelectorAll('.md-agent').forEach(function(tile) {
-        if (tile.classList.contains('md-agent--add')) {
-          tile.addEventListener('click', function() {
-            if (typeof window.openAddAgentWizard === 'function') window.openAddAgentWizard();
-          });
-        } else {
-          tile.addEventListener('click', function() {
-            handleAgentClick(tile.getAttribute('data-agent-id'));
-          });
-        }
-      });
-    }
-    window.refreshMissionDeskTeam = refreshMissionDeskTeam;
-
-    /* Panel close */
-    panelClose && panelClose.addEventListener('click', closePanel);
-    backdrop   && backdrop.addEventListener('click', closePanel);
-
-    /* User menu dropdown */
-    var userMenuBtn = document.getElementById('mdUserMenu');
-    if (userMenuBtn) {
-      userMenuBtn.addEventListener('click', function (e) {
-        e.stopPropagation();
-        var existing = document.getElementById('mdUserDropdown');
-        if (existing) { existing.remove(); return; }
-        var dd = document.createElement('div');
-        dd.id = 'mdUserDropdown';
-        var btnRect = userMenuBtn.getBoundingClientRect();
-        dd.style.cssText = 'position:fixed;top:' + (btnRect.bottom + 6) + 'px;right:' + (window.innerWidth - btnRect.right) + 'px;background:var(--bg-primary,#fff);border:1px solid var(--border-subtle,rgba(0,0,0,0.1));border-radius:12px;padding:4px;min-width:180px;box-shadow:0 8px 32px rgba(0,0,0,0.12);z-index:10010;';
-        var items = [
-          { icon: '🎨', label: 'Change Theme', action: 'theme' },
-          { icon: '⚙️', label: 'Settings', action: 'settings' },
-          { icon: '🚪', label: 'Logout', action: 'logout' }
-        ];
-        dd.innerHTML = items.map(function (it) {
-          return '<div class="md-dropdown-item" data-action="' + it.action + '" style="display:flex;align-items:center;gap:10px;padding:10px 14px;font-size:13px;border-radius:8px;cursor:pointer;transition:background 0.15s;color:var(--text-primary,#1c1c1e);"' +
-            ' onmouseover="this.style.background=\'var(--bg-secondary,rgba(0,0,0,0.04))\'" onmouseout="this.style.background=\'transparent\'">' +
-            '<span>' + it.icon + '</span><span>' + it.label + '</span></div>';
-        }).join('');
-        document.body.appendChild(dd);
-        dd.addEventListener('click', function (ev) {
-          var action = ev.target.closest('[data-action]');
-          if (!action) return;
-          dd.remove();
-          var act = action.dataset.action;
-          if (act === 'theme') {
-            // Open theme picker overlay
-            var tp = document.getElementById('themePickerOverlay');
-            if (tp) { tp.classList.add('open'); }
-            else if (window.ThemePicker) { window.ThemePicker.open(); }
-          } else if (act === 'settings') {
-            var settingsBtn = document.getElementById('settingsBtn');
-            if (settingsBtn) settingsBtn.click();
-            else if (typeof openPanel === 'function') openPanel('profile');
-          } else if (act === 'logout') {
-            // Clear ALL SpawnKit state for a clean logout
-            var keysToRemove = [];
-            for (var i = 0; i < localStorage.length; i++) {
-              var k = localStorage.key(i);
-              if (k && k.indexOf('spawnkit') === 0) keysToRemove.push(k);
-            }
-            keysToRemove.forEach(function(k) { localStorage.removeItem(k); });
-            window.location.reload();
-          }
-        });
-        // Close on outside click
-        setTimeout(function () {
-          document.addEventListener('click', function closeDD() {
-            var d = document.getElementById('mdUserDropdown');
-            if (d) d.remove();
-            document.removeEventListener('click', closeDD);
-          });
-        }, 10);
-      });
-    }
-
-    /* Public API */
-    window.MissionDesk = {
-      activate:    activate,
-      deactivate:  deactivate,
-      openPanel:   openPanel,
-      closePanel:  closePanel,
-      sendMessage: sendFromMissionDesk,
-      refreshTeam: function() {
-        var teamEl = document.getElementById('missionDeskTeam');
-        if (teamEl) teamEl.innerHTML = buildTeamHtml();
-      }
-    };
+    // Public API
+    window.MissionDesk = { activate: activate, deactivate: deactivate, openPanel: openPanel, sendMessage: sendMessage, refreshTeam: function() { renderTeamGrid($('missionDeskTeam')); } };
+    window.refreshMissionDeskTeam = function() { renderTeamGrid($('missionDeskTeam')); };
   }
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
-  } else {
-    init();
-  }
-
-}());
-
-
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+})();
 // ═══ Kira Fixes 2026-02-28 ═══
 
 

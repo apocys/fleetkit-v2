@@ -4,6 +4,8 @@
     <style>
       /* Option A: Hide everything until auth resolves. Prevents overlay chaos. */
       body.sk-auth-pending { visibility: hidden; }
+      
+      
       body.sk-auth-pending .dw-overlay,
       body.sk-auth-pending #sk-auth-overlay,
       body.sk-auth-pending .sk-ob-overlay,
@@ -264,6 +266,121 @@
 
     <!-- ═══ Main Container ═══ -->
     <div class="exec-container">
+        <!-- ═══ Mission Desk (static HTML) ═══ -->
+        <div class="md-root">
+          <div id="missionDesk" class="md-landing">
+            <!-- Header -->
+            <div class="md-page-header">
+              <div class="md-header-left">
+                <div class="md-logo">SpawnKit</div>
+                <div class="md-badge">Beta</div>
+              </div>
+              <div class="md-header-right">
+                <button class="md-chat-resume-btn" id="mdChatResumeBtn" style="display:none" aria-label="Resume chat">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                  <span class="md-chat-resume-preview" id="mdChatResumePreview">Continue chat</span>
+                </button>
+                <button class="md-user-menu" id="mdUserMenu" aria-label="User menu">
+                  <div class="md-user-avatar" id="mdUserAvatar"></div>
+                </button>
+              </div>
+            </div>
+
+            <!-- Hero -->
+            <div class="md-hero">
+              <h1>What do we build today?</h1>
+              <p>Your AI team is ready. Ask anything or pick a quick action.</p>
+            </div>
+
+            <!-- Connect Banner (hidden by default) -->
+            <div id="mdConnectBanner" class="md-connect-banner" style="display:none">
+              <div class="md-connect-info">
+                <div class="md-connect-title">🔌 Connect your OpenClaw instance</div>
+                <div class="md-connect-desc">Chat, live data, and agent operations require a connected OpenClaw gateway. <a href="https://docs.openclaw.ai" target="_blank">Learn more →</a></div>
+              </div>
+              <button class="md-connect-btn" id="mdConnectBtn">Connect</button>
+            </div>
+
+            <!-- Input Bar -->
+            <div class="md-input-bar" id="missionDeskInputBar">
+              <input type="text" id="missionDeskInput" placeholder="Ask your team anything..." autocomplete="off" spellcheck="false" />
+              <button class="md-send-btn" id="missionDeskSend" aria-label="Send">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+              </button>
+            </div>
+
+            <!-- Suggestion Chips -->
+            <div class="md-suggestions" id="missionDeskSuggestions">
+              <button class="md-chip" data-prompt="Analyze our current roadmap and priorities">📊 Analyze our roadmap</button>
+              <button class="md-chip" data-prompt="Draft a marketing strategy for our product launch">📣 Draft marketing plan</button>
+              <button class="md-chip" data-prompt="Review our security posture and find vulnerabilities">🛡️ Security audit</button>
+              <button class="md-chip" data-prompt="Brainstorm 5 creative feature ideas for our next sprint">💡 Brainstorm features</button>
+            </div>
+
+            <!-- Team -->
+            <div class="md-section-label">Your Team</div>
+            <div class="md-team" id="missionDeskTeam"></div>
+
+            <!-- Quick Actions -->
+            <div class="md-section-label">Quick Actions</div>
+            <div class="md-actions" id="missionDeskActions">
+              <button class="md-action" data-action="missions"><span class="md-action-icon">🎯</span><span class="md-action-label">Missions</span></button>
+              <button class="md-action" data-action="briefing"><span class="md-action-icon">📋</span><span class="md-action-label">Daily Briefing</span></button>
+              <button class="md-action" data-action="boardroom"><span class="md-action-icon">🧠</span><span class="md-action-label">Boardroom</span></button>
+              <button class="md-action" data-action="forge"><span class="md-action-icon">🔨</span><span class="md-action-label">Skill Forge</span></button>
+              <button class="md-action" data-action="explore"><span class="md-action-icon">🚀</span><span class="md-action-label">Explore</span></button>
+              <button class="md-action" data-action="communications"><span class="md-action-icon">📬</span><span class="md-action-label">Communications</span></button>
+              <button class="md-action" data-action="marketplace"><span class="md-action-icon">🏪</span><span class="md-action-label">Marketplace</span></button>
+              <button class="md-action" data-action="profile"><span class="md-action-icon">👤</span><span class="md-action-label">Creator Profile</span></button>
+            </div>
+
+            <!-- Channels -->
+            <div class="md-section-label">Connect Anywhere</div>
+            <div class="md-channels" id="missionDeskChannels">
+              <button class="md-channel" title="Telegram" data-connected="1"><span class="md-channel-icon">✈️</span><span class="md-channel-name">Telegram</span><span class="md-channel-status md-channel-on">Connected</span></button>
+              <button class="md-channel" title="WhatsApp" data-connected="1"><span class="md-channel-icon">💬</span><span class="md-channel-name">WhatsApp</span><span class="md-channel-status md-channel-on">Connected</span></button>
+              <button class="md-channel" title="Signal"><span class="md-channel-icon">🔒</span><span class="md-channel-name">Signal</span><span class="md-channel-status md-channel-off">Available</span></button>
+              <button class="md-channel" title="Discord"><span class="md-channel-icon">🎮</span><span class="md-channel-name">Discord</span><span class="md-channel-status md-channel-off">Available</span></button>
+              <button class="md-channel" title="iMessage"><span class="md-channel-icon">🍎</span><span class="md-channel-name">iMessage</span><span class="md-channel-status md-channel-off">Available</span></button>
+              <button class="md-channel" title="Slack"><span class="md-channel-icon">📡</span><span class="md-channel-name">Slack</span><span class="md-channel-status md-channel-off">Available</span></button>
+            </div>
+          </div>
+
+          <!-- Chat View -->
+          <div id="chatExpanded">
+            <div class="md-chat-header">
+              <button class="md-back-btn" id="chatBackBtn" aria-label="Back to Mission Desk">←</button>
+              <div class="md-chat-title">Mission Chat</div>
+              <div class="md-chat-header-spacer"></div>
+              <div class="md-chat-status" id="chatStatusDot">
+                <span class="md-agent-status md-agent-status--active md-status-dot"></span>
+                <span class="md-connected-label">Connected</span>
+              </div>
+            </div>
+            <div class="md-chat-thread" id="mdChatThread"></div>
+            <div class="md-agent-bar" id="chatAgentBar"></div>
+            <div class="md-chat-input-bar">
+              <input type="text" id="mdChatInput" placeholder="Follow up..." autocomplete="off" spellcheck="false" />
+              <button class="md-send-btn" id="mdChatSend" aria-label="Send">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Panel System -->
+          <div id="mdPanelContainer">
+            <div class="md-panel-backdrop" id="mdPanelBackdrop"></div>
+            <div class="md-panel" id="mdPanel">
+              <div class="md-panel-handle"></div>
+              <div class="md-panel-header">
+                <h3 id="mdPanelTitle"></h3>
+                <button class="md-panel-close" id="mdPanelClose">×</button>
+              </div>
+              <div class="md-panel-body" id="mdPanelBody"></div>
+            </div>
+          </div>
+        </div>
+
 
         <!-- View Toggle removed: Mission Desk is the primary view -->
 
