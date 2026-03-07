@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SpawnKit — Medieval Castle</title>
+    <title>SpawnKit — Medieval Castle 3D</title>
     <script>
         if (window.location.hostname.includes('spawnkit.ai')) {
             window.OC_RELAY_URL = window.location.origin;
@@ -15,10 +15,18 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=MedievalSharp&family=Cinzel:wght@400;500;600;700&family=Crimson+Text:wght@400;600&display=swap" rel="stylesheet">
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.162.0/build/three.module.js",
+            "three/addons/": "https://unpkg.com/three@0.162.0/examples/jsm/"
+        }
+    }
+    </script>
     <style>
         /* ═══════════════════════════════════════════════════════════════
-           SpawnKit Medieval Castle v5.0 — 2D Canvas Engine
-           Tile-based canvas renderer, zone pathfinding, personality system
+           SpawnKit Medieval Castle v4.0 — Three.js 3D Diorama
+           Real Kenney .glb models, isometric camera, animated characters
            ═══════════════════════════════════════════════════════════════ */
 
         :root {
@@ -421,7 +429,7 @@
         .metric-label { font-size: 9px; color: var(--text-secondary); text-transform: uppercase; display: block; }
         .metric-value { font-family: var(--font-serif); font-size: 13px; color: var(--castle-gold); font-weight: 600; }
 
-        /* ── Main Scene (Canvas 2D) ──────────────────── */
+        /* ── Main Scene (Three.js Canvas) ──────────────────── */
         .castle-main {
             grid-area: main;
             position: relative;
@@ -688,15 +696,6 @@
         /* ── Responsive ────────────────────────────────────── */
         @media (max-width: 1200px) { }
         @media (max-width: 1024px) { }
-        /* ── Canvas engine overrides (v5.0) ── */
-        #game-canvas { position: fixed !important; top: 0; left: 0; width: 100vw !important; height: 100vh !important; z-index: 10 !important; }
-        #castle-sidebar, #castle-rightpanel, #loading-screen, #castle-layout, .castle-header { display: none !important; }
-        #scene-container { background: transparent !important; position: static !important; }
-        #roblox-hotbar { z-index: 100 !important; }
-        #medievalChat { z-index: 200 !important; }
-        #missionControlOverlay { z-index: 300 !important; }
-        #summonOverlay { z-index: 400 !important; }
-        .sk-med-ob-overlay, #skAuthOverlay { z-index: 500 !important; }
     </style>
 </head>
 <body>
@@ -731,7 +730,7 @@
             <div class="agents-scroll" id="agents-list"></div>
         </aside>
 
-        <main class="castle-main" id="scene-container"><canvas id="game-canvas" style="position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:10;cursor:grab;"></canvas>
+        <main class="castle-main" id="scene-container">
             <!-- Loading Screen -->
             <div class="loading-screen" id="loading-screen">
                 <div class="loading-title">⚔️ Summoning the Castle</div>
@@ -778,12 +777,13 @@
     <script src="../lib/theme-customize.js"></script>
     <script src="onboarding.js"></script>
     <script src="../src/data-bridge.js"></script>
-    <!-- Canvas engine (load order: types → map → renderer → personalities → engine) -->
-    <script src="medieval-types.js"></script>
-    <script src="medieval-map.js"></script>
-    <script src="medieval-renderer.js"></script>
-    <script src="medieval-personalities.js"></script>
-    <script src="medieval-engine.js"></script>
+    <script type="module" src="medieval-scene.js"></script>
+    <script type="module" src="medieval-world.js"></script>
+    <script type="module" src="medieval-particles.js"></script>
+    <script type="module" src="medieval-characters-v2.js"></script>
+    <script type="module" src="medieval-agent-lifecycle.js"></script>
+    <script type="module" src="medieval-sky.js"></script>
+    <script type="module" src="medieval-weather.js"></script>
 
     <!-- ═══ MISSION CONTROL OVERLAY ═══ -->
     <div class="mc-overlay" id="missionControlOverlay">
