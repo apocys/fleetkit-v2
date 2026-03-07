@@ -358,8 +358,9 @@
     updateChatResumeBtn();
     checkConnectivity();
 
-    // Demo mode CTA
-    if (window.__skDemoMode) {
+    // Demo mode CTA — only show if NOT connected to a real instance
+    var isConnected = !!localStorage.getItem('spawnkit-token') || localStorage.getItem('spawnkit-connected-once') === '1';
+    if (window.__skDemoMode && !isConnected) {
       var actions = $('missionDeskActions');
       if (actions) {
         var cta = document.createElement('div');
