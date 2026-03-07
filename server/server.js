@@ -1674,6 +1674,14 @@ ${customBlock}`;
   if (req.url.startsWith('/api/oc/')) {
     res.setHeader('Content-Type', 'application/json');
     const route = req.url.replace(/\?.*/, '');
+    // Auth check: all /api/oc/ routes except health require a valid token
+    const publicRoutes = ['/api/oc/health'];
+    if (!publicRoutes.includes(route)) {
+      const authHeader = (req.headers.authorization || '').replace(/^Bearer\s+/i, '').trim();
+      if (OC_TOKEN && authHeader !== OC_TOKEN) {
+        res.writeHead(401); res.end(JSON.stringify({error:'unauthorized'})); return;
+      }
+    }
     let data;
     switch(route) {
       case '/api/oc/sessions': data = getSessions(); break;

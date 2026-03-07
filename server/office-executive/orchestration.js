@@ -725,7 +725,7 @@
                 { id: 'stripe', name: 'Stripe', icon: '💳', desc: 'Payments & subscriptions', configKey: 'stripe_secret_key', placeholder: 'sk_xxx...' }
             ];
 
-            var toolConfig = stored.tools || {};
+            var toolConfig = {}; try { toolConfig = JSON.parse(sessionStorage.getItem('spawnkit-secrets') || '{}'); } catch(e) {}
             tools.forEach(function(tool) {
                 var hasKey = toolConfig[tool.id] && toolConfig[tool.id].length > 5;
                 var statusColor = hasKey ? '#34C759' : 'var(--text-tertiary)';
@@ -822,15 +822,20 @@
 
         // ── Tool Integrations ──
         window.saveToolIntegrations = function() {
-            var config = {}; try { config = JSON.parse(localStorage.getItem('spawnkit-config') || '{}'); } catch(e) { config = {}; }
-            if (typeof config.tools !== 'object' || config.tools === null) config.tools = {};
+            var config = {}; try { config = JSON.parse(sessionStorage.getItem('spawnkit-secrets') || '{}'); } catch(e) { config = {}; }
             var ids = ['1password', 'github', 'openai', 'anthropic', 'elevenlabs', 'stripe'];
             ids.forEach(function(id) {
                 var el = document.getElementById('tool_' + id);
-                if (el) config.tools[id] = el.value.trim();
+                if (el && el.value.trim()) config[id] = el.value.trim();
             });
-            localStorage.setItem('spawnkit-config', JSON.stringify(config));
-            if (window.SpawnKitPanels) SpawnKitPanels.showToast('✅ Tool keys saved');
+            sessionStorage.setItem('spawnkit-secrets', JSON.stringify(config));
+            // Also push to server if connected
+            var apiUrl = window.OC_API_URL || window.location.origin;
+            (window.skFetch || fetch)(apiUrl + '/api/oc/update', {
+                method: 'POST', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({action: 'tools', tools: config})
+            }).catch(function() {});
+            if (window.SpawnKitPanels) SpawnKitPanels.showToast('✅ Tool keys saved (session-only)');
             loadOrchSetup();
         };
 

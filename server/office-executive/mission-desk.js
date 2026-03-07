@@ -307,6 +307,7 @@
           if (k && k.indexOf('spawnkit') === 0) keys.push(k);
         }
         keys.forEach(function(k) { localStorage.removeItem(k); });
+        sessionStorage.clear();
         window.location.reload();
       }
     });
